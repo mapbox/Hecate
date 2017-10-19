@@ -1,0 +1,16 @@
+name: Hecate
+version: "0.1.0"
+author: Nicholas Ingalls <ingalls@protonmail.com>
+about: Data Storage Backend Focused on Speed and GeoJSON Interchange
+args:
+    - database:
+        short: db
+        long: database
+        value_name: DATABASE
+        help: Specify an alternate database
+        takes_value: true
+
+    - init:
+        value_name: INIT
+        help: Initialize an empty database schema
+
