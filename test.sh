@@ -22,3 +22,5 @@ curl -X POST\
 echo "
     SELECT * FROM geo;
 " | psql -U postgres hecate
+
+pkill hecate

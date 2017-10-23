@@ -54,7 +54,7 @@ pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
         INSERT INTO geo (geom, props)
             VALUES (
                 ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
-                $2
+                TO_JSON($2)
             );
     ", &[&geom_str, &props_str]).unwrap();
 
