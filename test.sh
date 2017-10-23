@@ -10,9 +10,11 @@ echo "
 psql -U postgres -f src/schema.sql hecate
 
 pkill hecate || true
+cargo build
+
 cargo run &
 
-sleep 5
+sleep 1
 
 curl -X POST\
     --data '{ "type": "Feature", "properties": { "building": "yes" }, "geometry": { "type": "Point", "coordinates": [ 1, 1 ] } }'\

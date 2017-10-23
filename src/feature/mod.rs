@@ -50,11 +50,13 @@ pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
+    println!("{}", props_str);
+
     conn.execute("
         INSERT INTO geo (geom, props)
             VALUES (
                 ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
-                TO_JSON($2)
+                $2::TEXT::JSON
             );
     ", &[&geom_str, &props_str]).unwrap();
 
