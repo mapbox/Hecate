@@ -7,6 +7,7 @@ extern crate serde_json;
 use self::geojson::Feature;
 
 pub enum FeatureError {
+    NotFoundError,
     NoGeometryError,
     NoPropsError
 }
@@ -38,3 +39,19 @@ pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
 
     Ok(true)
 }
+
+pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<(), FeatureError> {
+    let res = conn.query("SELECT ST_AsGeoJSON(geom) FROM geo WHERE id = $1;", &[&id]).unwrap();
+
+    if res.len() != 1 {
+        return Err(FeatureError::NotFoundError);
+    }
+
+    let res = res.get(0);
+
+    println!("{:?}", res);
+
+    Ok(())
+}
+
+
