@@ -12,6 +12,22 @@ pub enum FeatureError {
     NoPropsError
 }
 
+impl FeatureError {
+    pub fn to_string(&self) -> &str {
+        match (&self) {
+            NotFoundError => {
+                "Geometry Not Found For Given ID"
+            },
+            NoGeometryError => {
+                "Null or Invalid Geometry"
+            },
+            NoPropsError => {
+                "Null or Invalid Properties"
+            }
+        }
+    }
+}
+
 pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: Feature) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
         None => {

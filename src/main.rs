@@ -74,7 +74,12 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
-    let geojson = body_str.parse::<GeoJson>().unwrap();
+    let geojson = match body_str.parse::<GeoJson>() {
+        Err(_) => {
+            return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature")));
+        },
+        Ok(geo) => geo
+    };
 
     let geojson = match geojson {
         GeoJson::Feature(feat) => {
@@ -88,9 +93,14 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     let pool = req.get::<persistent::Read<DB>>().unwrap();
     let conn = pool.get().unwrap();
 
-    feature::put(conn, geojson);
-
-    Ok(Response::with((status::Ok)))
+    match feature::put(conn, geojson) {
+        Ok(_) => {
+            Ok(Response::with((status::Ok)))
+        },
+        Err(err) => {
+            return Ok(Response::with((status::ExpectationFailed, err.to_string())));
+        }
+    }
 }
 
 fn feature_get(_req: &mut Request) -> IronResult<Response> {
