@@ -173,8 +173,6 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
         }
     };
 
-    println!("{}", feature_id);
-
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
     match feature::get(conn, &feature_id) {
