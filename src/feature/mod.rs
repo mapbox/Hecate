@@ -5,24 +5,30 @@ extern crate postgres;
 extern crate serde_json;
 
 pub enum FeatureError {
-    NotFoundError,
-    NoGeometryError,
-    InvalidBBOXError,
+    NotFound,
+    NoGeometry,
+    InvalidBBOX,
     InvalidFeature,
-    NoPropsError
+    NoProps
 }
 
 impl FeatureError {
     pub fn to_string(&self) -> &str {
         match (&self) {
-            NotFoundError => {
+            NotFound => {
                 "Geometry Not Found For Given ID"
             },
-            NoGeometryError => {
+            NoGeometry => {
                 "Null or Invalid Geometry"
             },
-            NoPropsError => {
+            NoProps => {
                 "Null or Invalid Properties"
+            },
+            InvalidBBox => {
+                "Invalid Bounding Box"
+            },
+            InvalidFeature => {
+                "Could not parse Feature - Feature is invalid"
             }
         }
     }
@@ -30,21 +36,13 @@ impl FeatureError {
 
 pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
-        None => {
-            return Err(FeatureError::NoGeometryError);
-        },
-        Some(geom) => {
-            geom
-        }
+        None => { return Err(FeatureError::NoGeometry); },
+        Some(geom) => geom
     };
 
     let props = match feat.properties {
-        None => {
-            return Err(FeatureError::NoPropsError);
-        },
-        Some(props) => {
-            props
-        }
+        None => { return Err(FeatureError::NoProps); },
+        Some(props) => props
     };
 
     let geom_str = serde_json::to_string(&geom).unwrap();
@@ -63,23 +61,42 @@ pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     Ok(true)
 }
 
-pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<(), FeatureError> {
-    let res = conn.query("SELECT ST_AsGeoJSON(geom) FROM geo WHERE id = $1;", &[&id]).unwrap();
+pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {
+    let res = conn.query("
+        SELECT
+            row_to_json(f)::TEXT AS feature
+        FROM (
+            SELECT
+                id AS id,
+                'Feature' AS type,
+                version AS version,
+                ST_AsGeoJSON(geom)::JSON AS geometry,
+                props AS properties
+            FROM geo
+            WHERE id = $1
+        ) f;
+    ", &[&id]).unwrap();
 
     if res.len() != 1 {
-        return Err(FeatureError::NotFoundError);
+        return Err(FeatureError::NotFound);
     }
 
-    let res = res.get(0);
+    let feat: postgres::rows::Row = res.get(0);
+    let feat: String = feat.get(0);
+    let feat: geojson::Feature = match feat.parse() {
+        Ok(feat) => match feat {
+            geojson::GeoJson::Feature(feat) => feat,
+            _ => { return Err(FeatureError::InvalidFeature); }
+        },
+        Err(_) => { return Err(FeatureError::InvalidFeature); }
+    };
 
-    println!("{:?}", res);
-
-    Ok(())
+    Ok(feat)
 }
 
 pub fn get_bbox(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, FeatureError> {
     if bbox.len() != 4 {
-        return Err(FeatureError::InvalidBBOXError);
+        return Err(FeatureError::InvalidBBOX);
     }
 
     let res = conn.query("

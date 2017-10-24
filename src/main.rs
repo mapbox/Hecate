@@ -35,7 +35,7 @@ pub type PostgresPooledConnection = PooledConnection<PostgresConnectionManager>;
 
 fn main() {
     let cli_cnf = load_yaml!("cli.yml");
-    let matched = App::from_yaml(cli_cnf).get_matches();
+    let _matched = App::from_yaml(cli_cnf).get_matches();
 
     let cn_str = String::from("postgres://postgres@localhost:5432/hecate");
     let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, TlsMode::None).unwrap();
@@ -48,7 +48,10 @@ fn main() {
     // Individual Feature Operations in GeoJSON Only
     router.post("/api/data/feature", feature_post, "postFeature");
     router.get("/api/data/feature/:feature", feature_get, "getFeature");
-    router.delete("/api/data/delete", feature_del, "Feature");
+    router.delete("/api/data/feature/:feature", feature_del, "Feature");
+
+    // Multiple Feature Operations in GeoJSON Only
+    router.get("/api/data/features", features_get, "getFeatures");
 
     router.get("/api/0.6/map", xml_map, "xml_map");
 
@@ -62,6 +65,33 @@ fn main() {
 
 fn index(_req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok)))
+}
+
+fn features_get(req: &mut Request) -> IronResult<Response> {
+    let bbox_error = Response::with((status::BadRequest, "single bbox query param required"));
+
+    let query = match req.get_ref::<UrlEncodedQuery>() {
+        Ok(hashmap) => {
+            match hashmap.get("bbox") {
+                Some(bbox) => {
+                    if bbox.len() != 1 { return Ok(bbox_error); }
+
+                    let split: Vec<f64> = bbox[0].split(',').map(|s| s.parse().unwrap()).collect();
+
+                    split
+                },
+                None => { return Ok(bbox_error); }
+            }
+        }
+        Err(_) => { return Ok(bbox_error); }
+    };
+
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+
+    match feature::get_bbox(conn, query) {
+        Ok(features) => Ok(Response::with((status::Ok, geojson::GeoJson::from(features).to_string()))),
+        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+    }
 }
 
 fn xml_map(req: &mut Request) -> IronResult<Response> {
@@ -79,7 +109,7 @@ fn xml_map(req: &mut Request) -> IronResult<Response> {
                 },
                 None => { return Ok(bbox_error); }
             }
-        }
+        },
         Err(_) => { return Ok(bbox_error); }
     };
 
@@ -130,8 +160,27 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-fn feature_get(_req: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok)))
+fn feature_get(req: &mut Request) -> IronResult<Response> {
+    let feature_id: i64 = match req.extensions.get::<Router>().unwrap().find("feature") {
+        Some(id) => match id.parse() {
+            Ok(id) => id,
+            Err(_) =>  {
+                return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be numeric")));
+            }
+        },
+        None =>  {
+            return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided")));
+        }
+    };
+
+    println!("{}", feature_id);
+
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+
+    match feature::get(conn, &feature_id) {
+        Ok(features) => Ok(Response::with((status::Ok, geojson::GeoJson::from(features).to_string()))),
+        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+    }
 }
 
 fn feature_del(_req: &mut Request) -> IronResult<Response> {

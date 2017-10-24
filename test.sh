@@ -23,6 +23,8 @@ curl -s -X POST\
     -H 'Content-Type: application/json'\
     'localhost:3000/api/data/feature'
 
+echo $(curl -s -X GET 'localhost:3000/api/data/feature/1')
+echo ""
 echo "
     SELECT id, version, ST_AsGeoJSON(geom), props, hashes FROM geo;
 " | psql -U postgres hecate
@@ -33,6 +35,8 @@ curl -s -X POST\
     -H 'Content-Type: application/json'\
     'localhost:3000/api/data/feature'
 
+echo $(curl -s -X GET 'localhost:3000/api/data/feature/2')
+echo ""
 echo "
     SELECT id, version, ST_AsGeoJSON(geom), props, hashes FROM geo;
 " | psql -U postgres hecate
@@ -40,6 +44,7 @@ echo "
 # --- XML Map ---
 
 echo $(curl -s -X GET 'localhost:3000/api/0.6/map?bbox=-1,-1,1,1')
+echo ""
 
 # KILL SERVER
 pkill hecate || true

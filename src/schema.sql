@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TABLE IF NOT EXISTS geo (
-    id          SERIAL,
+    id          BIGSERIAL,
     version     BIGINT,
     geom        GEOMETRY(GEOMETRY, 4326),
     props       JSONB,
@@ -14,6 +14,6 @@ CREATE TABLE IF NOT EXISTS geo (
 );
 
 CREATE TABLE IF NOT EXISTS deltas (
-    hash        SERIAL,
+    hash        BIGSERIAL,
     props       JSONB
 );
