@@ -93,7 +93,7 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     let pool = req.get::<persistent::Read<DB>>().unwrap();
     let conn = pool.get().unwrap();
 
-    match feature::put(conn, geojson) {
+    match feature::put(conn, geojson, &1) {
         Ok(_) => {
             Ok(Response::with((status::Ok)))
         },

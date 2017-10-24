@@ -28,7 +28,7 @@ impl FeatureError {
     }
 }
 
-pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: Feature) -> Result<bool, FeatureError> {
+pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: Feature, hash: &i64) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
         None => {
             return Err(FeatureError::NoGeometryError);
@@ -50,15 +50,15 @@ pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    println!("{}", props_str);
-
     conn.execute("
-        INSERT INTO geo (geom, props)
+        INSERT INTO geo (version, geom, props, hashes)
             VALUES (
+                1,
                 ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
-                $2::TEXT::JSON
+                $2::TEXT::JSON,
+                array[$3::BIGINT]
             );
-    ", &[&geom_str, &props_str]).unwrap();
+    ", &[&geom_str, &props_str, &hash]).unwrap();
 
     Ok(true)
 }

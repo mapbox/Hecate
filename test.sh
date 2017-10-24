@@ -1,18 +1,19 @@
 #! /bin/bash
 
-set -xeuo pipefail
+set -euo pipefail
 
 echo "
     DROP DATABASE hecate;
     CREATE DATABASE hecate;
-" | psql -U postgres
+" | psql -U postgres -q
 
-psql -U postgres -f src/schema.sql hecate
+psql -q -U postgres -f src/schema.sql hecate
 
 pkill hecate || true
-cargo build
 
-cargo run &
+cargo build -q 2>/dev/null || (echo "not ok - Failed to build" && exit 1)
+
+cargo run -q &
 
 sleep 1
 
@@ -25,4 +26,4 @@ echo "
     SELECT * FROM geo;
 " | psql -U postgres hecate
 
-pkill hecate
+pkill hecate || true
