@@ -7,7 +7,9 @@ extern crate postgres;
 extern crate mount;
 extern crate persistent;
 extern crate r2d2;
+extern crate urlencoded;
 extern crate r2d2_postgres;
+extern crate serde_json;
 
 use iron::typemap::Key;
 
@@ -18,6 +20,7 @@ use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 pub struct DB;
 impl Key for DB { type Value = PostgresPool; }
 
+use urlencoded::UrlEncodedQuery;
 use clap::App;
 use iron::prelude::*;
 use iron::status;
@@ -47,6 +50,8 @@ fn main() {
     router.get("/api/data/feature/:feature", feature_get, "getFeature");
     router.delete("/api/data/delete", feature_del, "Feature");
 
+    router.get("/api/0.6/map", xml_map, "xml_map");
+
     let mut mount = Mount::new();
     mount.mount("/", router);
 
@@ -57,6 +62,33 @@ fn main() {
 
 fn index(_req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok)))
+}
+
+fn xml_map(req: &mut Request) -> IronResult<Response> {
+    let bbox_error = Response::with((status::BadRequest, "single bbox query param required"));
+
+    let query = match req.get_ref::<UrlEncodedQuery>() {
+        Ok(hashmap) => {
+            match hashmap.get("bbox") {
+                Some(bbox) => {
+                    if bbox.len() != 1 { return Ok(bbox_error); }
+
+                    let split: Vec<f64> = bbox[0].split(',').map(|s| s.parse().unwrap()).collect();
+
+                    split
+                },
+                None => { return Ok(bbox_error); }
+            }
+        }
+        Err(_) => { return Ok(bbox_error); }
+    };
+
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+
+    match feature::get_bbox(conn, query) {
+        Ok(features) => Ok(Response::with((status::Ok, geojson::GeoJson::from(features).to_string()))),
+        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+    }
 }
 
 fn feature_post(req: &mut Request) -> IronResult<Response> {
@@ -90,16 +122,11 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
         }
     };
 
-    let pool = req.get::<persistent::Read<DB>>().unwrap();
-    let conn = pool.get().unwrap();
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
     match feature::put(conn, geojson, &1) {
-        Ok(_) => {
-            Ok(Response::with((status::Ok)))
-        },
-        Err(err) => {
-            return Ok(Response::with((status::ExpectationFailed, err.to_string())));
-        }
+        Ok(_) => Ok(Response::with((status::Ok))),
+        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
 }
 

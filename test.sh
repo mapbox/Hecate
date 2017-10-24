@@ -18,7 +18,7 @@ cargo run -q &
 sleep 1
 
 # --- Simple Point Addition ---
-curl -X POST\
+curl -s -X POST\
     --data '{ "type": "Feature", "properties": { "building": "yes" }, "geometry": { "type": "Point", "coordinates": [ 1, 1 ] } }'\
     -H 'Content-Type: application/json'\
     'localhost:3000/api/data/feature'
@@ -28,7 +28,7 @@ echo "
 " | psql -U postgres hecate
 
 # --- Simple Line Addition ---
-curl -X POST\
+curl -s -X POST\
     --data '{ "type": "Feature", "properties": { "highway": "residential" }, "geometry": { "type": "LineString", "coordinates": [ [ 1, 1 ], [ 0, 0 ] ] } }'\
     -H 'Content-Type: application/json'\
     'localhost:3000/api/data/feature'
@@ -37,4 +37,9 @@ echo "
     SELECT id, version, ST_AsGeoJSON(geom), props, hashes FROM geo;
 " | psql -U postgres hecate
 
+# --- XML Map ---
+
+echo $(curl -s -X GET 'localhost:3000/api/0.6/map?bbox=-1,-1,1,1')
+
+# KILL SERVER
 pkill hecate || true

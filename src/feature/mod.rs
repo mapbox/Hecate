@@ -4,11 +4,11 @@ extern crate geojson;
 extern crate postgres;
 extern crate serde_json;
 
-use self::geojson::Feature;
-
 pub enum FeatureError {
     NotFoundError,
     NoGeometryError,
+    InvalidBBOXError,
+    InvalidFeature,
     NoPropsError
 }
 
@@ -28,7 +28,7 @@ impl FeatureError {
     }
 }
 
-pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: Feature, hash: &i64) -> Result<bool, FeatureError> {
+pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
         None => {
             return Err(FeatureError::NoGeometryError);
@@ -77,4 +77,45 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     Ok(())
 }
 
+pub fn get_bbox(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, FeatureError> {
+    if bbox.len() != 4 {
+        return Err(FeatureError::InvalidBBOXError);
+    }
 
+    let res = conn.query("
+        SELECT
+            row_to_json(f)::TEXT AS feature
+        FROM (
+            SELECT
+                id AS id,
+                'Feature' AS type,
+                version AS version,
+                ST_AsGeoJSON(geom)::JSON AS geometry,
+                props AS properties
+            FROM geo
+            WHERE
+                ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
+                OR ST_Within(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
+        ) f;
+    ", &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]]).unwrap();
+
+    let mut fc = geojson::FeatureCollection {
+        bbox: None,
+        features: vec![],
+        foreign_members: None
+    };
+
+    for row in res.iter() {
+        let feat: String = row.get(0);
+        let feat: geojson::Feature = match feat.parse().unwrap() {
+            geojson::GeoJson::Feature(feat) => feat,
+            _ => {
+                return Err(FeatureError::InvalidFeature);
+            }
+        };
+
+        fc.features.push(feat);
+    }
+
+    Ok(fc)
+}
