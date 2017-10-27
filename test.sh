@@ -44,6 +44,15 @@ echo "# --- Feature Removal ---"
     echo ""
     echo "SELECT id, version, ST_AsGeoJSON(geom), props, hashes FROM geo WHERE id = 2;" | psql -U postgres hecate
 
+echo "# --- Feature Alteration ---"
+    curl -s -X PATCH\
+        --data '{ "type": "Feature", "properties": { "number": "1234" }, "geometry": { "type": "Point", "coordinates": [0, 0] } }'\
+        -H 'Content-Type: application/json'\
+        'localhost:3000/api/data/feature/1'
+    echo $(curl -s -X GET 'localhost:3000/api/data/feature/1')
+    echo ""
+    echo "SELECT id, version, ST_AsGeoJSON(geom), props, hashes FROM geo WHERE id = 1;" | psql -U postgres hecate
+
 echo "# --- XML Map ---"
     echo $(curl -s -X GET 'localhost:3000/api/0.6/map?bbox=-1,-1,1,1')
     echo ""

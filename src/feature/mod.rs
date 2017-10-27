@@ -14,10 +14,7 @@ pub enum FeatureError {
 
 impl FeatureError {
     pub fn to_string(&self) -> &str {
-        match (&self) {
-            NotFound => {
-                "Geometry Not Found For Given ID"
-            },
+        match &self {
             NoGeometry => {
                 "Null or Invalid Geometry"
             },
@@ -29,7 +26,10 @@ impl FeatureError {
             },
             InvalidFeature => {
                 "Could not parse Feature - Feature is invalid"
-            }
+            },
+            NotFound => {
+                "Geometry Not Found For Given ID"
+            },
         }
     }
 }
@@ -56,6 +56,32 @@ pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
                 $2::TEXT::JSON,
                 array[$3::BIGINT]
             );
+    ", &[&geom_str, &props_str, &hash]).unwrap();
+
+    Ok(true)
+}
+
+pub fn patch(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
+    let geom = match feat.geometry {
+        None => { return Err(FeatureError::NoGeometry); },
+        Some(geom) => geom
+    };
+
+    let props = match feat.properties {
+        None => { return Err(FeatureError::NoProps); },
+        Some(props) => props
+    };
+
+    let geom_str = serde_json::to_string(&geom).unwrap();
+    let props_str = serde_json::to_string(&props).unwrap();
+
+    conn.execute("
+        UPDATE geo
+            SET
+                version = 1,
+                geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                props = $2::TEXT::JSON,
+                hashes = array_append(hashes, $3::BIGINT)
     ", &[&geom_str, &props_str, &hash]).unwrap();
 
     Ok(true)
@@ -95,7 +121,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
 }
 
 pub fn delete(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<bool, FeatureError> {
-    let res = conn.query("
+    conn.query("
         DELETE FROM geo WHERE id = $1;
     ", &[&id]).unwrap();
 

@@ -48,7 +48,8 @@ fn main() {
     // Individual Feature Operations in GeoJSON Only
     router.post("/api/data/feature", feature_post, "postFeature");
     router.get("/api/data/feature/:feature", feature_get, "getFeature");
-    router.delete("/api/data/feature/:feature", feature_del, "Feature");
+    router.delete("/api/data/feature/:feature", feature_del, "delFeature");
+    router.patch("/api/data/feature/:feature", feature_patch, "patchFeature");
 
     // Multiple Feature Operations in GeoJSON Only
     router.get("/api/data/features", features_get, "getFeatures");
@@ -128,33 +129,56 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
                 return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json")));
             }
         },
-        None => {
-            return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json")));
-        }
+        None => { return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json"))); }
     }
 
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
     let geojson = match body_str.parse::<GeoJson>() {
-        Err(_) => {
-            return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature")));
-        },
+        Err(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); },
         Ok(geo) => geo
     };
 
     let geojson = match geojson {
-        GeoJson::Feature(feat) => {
-            feat
-        },
-        _ => {
-            return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature")));
-        }
+        GeoJson::Feature(feat) => feat,
+        _ => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
     match feature::put(conn, geojson, &1) {
+        Ok(_) => Ok(Response::with((status::Ok))),
+        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+    }
+}
+
+fn feature_patch(req: &mut Request) -> IronResult<Response> {
+    match req.headers.get::<iron::headers::ContentType>() {
+        Some(ref header) => {
+            if **header != iron::headers::ContentType::json() {
+                return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json")));
+            }
+        },
+        None => { return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json"))); }
+    }
+
+    let mut body_str = String::new();
+    req.body.read_to_string(&mut body_str).unwrap();
+
+    let geojson = match body_str.parse::<GeoJson>() {
+        Err(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); },
+        Ok(geo) => geo
+    };
+
+    let geojson = match geojson {
+        GeoJson::Feature(feat) => feat,
+        _ => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
+    };
+
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+
+    match feature::patch(conn, geojson, &1) {
         Ok(_) => Ok(Response::with((status::Ok))),
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
@@ -166,9 +190,7 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
             Ok(id) => id,
             Err(_) =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be numeric"))); }
         },
-        None =>  {
-            return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided")));
-        }
+        None =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided"))); }
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
@@ -185,9 +207,7 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
             Ok(id) => id,
             Err(_) =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be numeric"))); }
         },
-        None =>  {
-            return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided")));
-        }
+        None =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided"))); }
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
