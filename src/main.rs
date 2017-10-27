@@ -97,26 +97,10 @@ fn features_get(req: &mut Request) -> IronResult<Response> {
 }
 
 fn features_post(req: &mut Request) -> IronResult<Response> {
-    match req.headers.get::<iron::headers::ContentType>() {
-        Some(ref header) => {
-            if **header != iron::headers::ContentType::json() {
-                return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json")));
-            }
-        },
-        None => { return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json"))); }
-    }
-
-    let mut body_str = String::new();
-    req.body.read_to_string(&mut body_str).unwrap();
-
-    let geojson = match body_str.parse::<GeoJson>() {
-        Err(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); },
-        Ok(geo) => geo
-    };
-
-    let fc = match geojson {
-        GeoJson::FeatureCollection(fc) => fc,
-        _ => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
+    let fc = match get_geojson(req) {
+        Ok(GeoJson::FeatureCollection(fc)) => fc,
+        Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
+        Err(err) => { return Ok(err); }
     };
 
     Ok(Response::with((status::Ok, "true")))
@@ -150,26 +134,10 @@ fn xml_map(req: &mut Request) -> IronResult<Response> {
 }
 
 fn feature_post(req: &mut Request) -> IronResult<Response> {
-    match req.headers.get::<iron::headers::ContentType>() {
-        Some(ref header) => {
-            if **header != iron::headers::ContentType::json() {
-                return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json")));
-            }
-        },
-        None => { return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json"))); }
-    }
-
-    let mut body_str = String::new();
-    req.body.read_to_string(&mut body_str).unwrap();
-
-    let geojson = match body_str.parse::<GeoJson>() {
-        Err(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); },
-        Ok(geo) => geo
-    };
-
-    let geojson = match geojson {
-        GeoJson::Feature(feat) => feat,
-        _ => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
+    let geojson = match get_geojson(req) {
+        Ok(GeoJson::Feature(feat)) => feat,
+        Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
+        Err(err) => { return Ok(err); }
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
@@ -181,26 +149,10 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
 }
 
 fn feature_patch(req: &mut Request) -> IronResult<Response> {
-    match req.headers.get::<iron::headers::ContentType>() {
-        Some(ref header) => {
-            if **header != iron::headers::ContentType::json() {
-                return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json")));
-            }
-        },
-        None => { return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json"))); }
-    }
-
-    let mut body_str = String::new();
-    req.body.read_to_string(&mut body_str).unwrap();
-
-    let geojson = match body_str.parse::<GeoJson>() {
-        Err(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); },
-        Ok(geo) => geo
-    };
-
-    let geojson = match geojson {
-        GeoJson::Feature(feat) => feat,
-        _ => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
+    let geojson = match get_geojson(req) {
+        Ok(GeoJson::Feature(feat)) => feat,
+        Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
+        Err(err) => { return Ok(err); }
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
@@ -243,4 +195,25 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
         Ok(_) => Ok(Response::with((status::Ok, "true"))),
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
+}
+
+fn get_geojson(req: &mut Request) -> Result<geojson::GeoJson, Response> {
+    match req.headers.get::<iron::headers::ContentType>() {
+        Some(ref header) => {
+            if **header != iron::headers::ContentType::json() {
+                return Err(Response::with((status::UnsupportedMediaType, "ContentType must be application/json")));
+            }
+        },
+        None => { return Err(Response::with((status::UnsupportedMediaType, "ContentType must be application/json"))); }
+    }
+
+    let mut body_str = String::new();
+    req.body.read_to_string(&mut body_str).unwrap();
+
+    let geojson = match body_str.parse::<GeoJson>() {
+        Err(_) => { return Err(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); },
+        Ok(geo) => geo
+    };
+
+    Ok(geojson)
 }
