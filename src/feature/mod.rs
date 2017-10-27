@@ -92,7 +92,7 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: geojson::Feature,
     Ok(true)
 }
 
-pub fn get(trans: &postgres::transaction::Transaction>, id: &i64) -> Result<geojson::Feature, FeatureError> {
+pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {
     let res = trans.query("
         SELECT
             row_to_json(f)::TEXT AS feature
