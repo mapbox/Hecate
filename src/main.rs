@@ -97,6 +97,28 @@ fn features_get(req: &mut Request) -> IronResult<Response> {
 }
 
 fn features_post(req: &mut Request) -> IronResult<Response> {
+    match req.headers.get::<iron::headers::ContentType>() {
+        Some(ref header) => {
+            if **header != iron::headers::ContentType::json() {
+                return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json")));
+            }
+        },
+        None => { return Ok(Response::with((status::UnsupportedMediaType, "ContentType must be application/json"))); }
+    }
+
+    let mut body_str = String::new();
+    req.body.read_to_string(&mut body_str).unwrap();
+
+    let geojson = match body_str.parse::<GeoJson>() {
+        Err(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); },
+        Ok(geo) => geo
+    };
+
+    let fc = match geojson {
+        GeoJson::FeatureCollection(fc) => fc,
+        _ => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
+    };
+
     Ok(Response::with((status::Ok, "true")))
 }
 
