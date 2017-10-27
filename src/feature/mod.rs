@@ -92,8 +92,16 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: geojson::Feature,
     Ok(true)
 }
 
-pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {
-    let res = trans.query("
+pub fn delete(trans: &postgres::transaction::Transaction, id: &i64) -> Result<bool, FeatureError> {
+    trans.query("
+        DELETE FROM geo WHERE id = $1;
+    ", &[&id]).unwrap();
+
+    Ok(true)
+}
+
+pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {
+    let res = conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature
         FROM (
@@ -123,14 +131,6 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     };
 
     Ok(feat)
-}
-
-pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<bool, FeatureError> {
-    conn.query("
-        DELETE FROM geo WHERE id = $1;
-    ", &[&id]).unwrap();
-
-    Ok(true)
 }
 
 pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, FeatureError> {

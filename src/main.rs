@@ -169,9 +169,13 @@ fn feature_patch(req: &mut Request) -> IronResult<Response> {
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    let trans = conn.transaction().unwrap();
 
-    match feature::patch(&conn, geojson, &1) {
-        Ok(_) => Ok(Response::with((status::Ok))),
+    match feature::patch(&trans, geojson, &1) {
+        Ok(_) => {
+            trans.commit().unwrap();
+            Ok(Response::with((status::Ok)))
+        },
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
 }
@@ -203,9 +207,13 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    let trans = conn.transaction().unwrap();
 
-    match feature::delete(&conn, &feature_id) {
-        Ok(_) => Ok(Response::with((status::Ok, "true"))),
+    match feature::delete(&trans, &feature_id) {
+        Ok(_) => {
+            trans.commit().unwrap();
+            Ok(Response::with((status::Ok, "true")))
+        },
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
 }
