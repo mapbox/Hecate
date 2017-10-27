@@ -28,6 +28,7 @@ use router::Router;
 use std::io::Read;
 use geojson::GeoJson;
 use hecate::feature;
+use hecate::xml;
 use mount::Mount;
 
 pub type PostgresPool = Pool<PostgresConnectionManager>;
@@ -46,15 +47,16 @@ fn main() {
     router.get("/", index, "index");
 
     // Individual Feature Operations in GeoJSON Only
-    router.get("/api/data/feature/:feature", feature_get, "getFeature");
-    router.post("/api/data/feature", feature_post, "postFeature");
-    router.patch("/api/data/feature/:feature", feature_patch, "patchFeature");
-    router.delete("/api/data/feature/:feature", feature_del, "delFeature");
+    router.get("/api/data/feature/:feature", feature_get, "feature_get");
+    router.post("/api/data/feature", feature_post, "feature_post");
+    router.patch("/api/data/feature/:feature", feature_patch, "feature_patch");
+    router.delete("/api/data/feature/:feature", feature_del, "feature_del");
 
     // Multiple Feature Operations in GeoJSON Only (BBOX)
-    router.get("/api/data/features", features_get, "getFeatures");
-    router.post("/api/data/features", features_post, "postFeatures");
+    router.get("/api/data/features", features_get, "features_get");
+    router.post("/api/data/features", features_post, "features_post");
 
+    router.get("/api/capabilities", xml_capabilities, "xml_capabilities");
     router.get("/api/0.6/map", xml_map, "xml_map");
 
     let mut mount = Mount::new();
@@ -136,10 +138,32 @@ fn xml_map(req: &mut Request) -> IronResult<Response> {
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
-    match feature::get_bbox(&conn, query) {
-        Ok(features) => Ok(Response::with((status::Ok, geojson::GeoJson::from(features).to_string()))),
-        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
-    }
+    let fc = match feature::get_bbox(&conn, query) {
+        Ok(features) => features,
+        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))) }
+    };
+
+    let xml_str = match xml::from(&fc) {
+        Ok(xml_str) => xml_str,
+        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))) }
+    };
+
+    Ok(Response::with((status::Ok)))
+}
+
+fn xml_capabilities(req: &mut Request) -> IronResult<Response> {
+    Ok(Response::with((status::Ok, "
+        <osm version=\"0.6\" generator=\"Hecate Server\">
+            <api>
+                <version minimum=\"0.6\" maximum=\"0.6\"/>
+                <area maximum=\"0.25\"/>
+                <waynodes maximum=\"2000\"/>
+                <changesets maximum_elements=\"10000\"/>
+                <timeout seconds=\"300\"/>
+                <status database=\"online\" api=\"online\">
+            </api>
+        </osm>
+    ")))
 }
 
 fn feature_post(req: &mut Request) -> IronResult<Response> {
