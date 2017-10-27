@@ -84,13 +84,13 @@ fn features_get(req: &mut Request) -> IronResult<Response> {
                 },
                 None => { return Ok(bbox_error); }
             }
-        }
+        },
         Err(_) => { return Ok(bbox_error); }
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
-    match feature::get_bbox(conn, query) {
+    match feature::get_bbox(&conn, query) {
         Ok(features) => Ok(Response::with((status::Ok, geojson::GeoJson::from(features).to_string()))),
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
@@ -99,9 +99,18 @@ fn features_get(req: &mut Request) -> IronResult<Response> {
 fn features_post(req: &mut Request) -> IronResult<Response> {
     let fc = match get_geojson(req) {
         Ok(GeoJson::FeatureCollection(fc)) => fc,
-        Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
+        Ok(typ) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON FeatureCollection"))); }
         Err(err) => { return Ok(err); }
     };
+
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    let trans = conn.transaction().unwrap();
+
+    for feat in fc.features {
+        feature::action(&trans, feat, &1);
+    }
+
+    trans.commit().unwrap();
 
     Ok(Response::with((status::Ok, "true")))
 }
@@ -127,7 +136,7 @@ fn xml_map(req: &mut Request) -> IronResult<Response> {
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
-    match feature::get_bbox(conn, query) {
+    match feature::get_bbox(&conn, query) {
         Ok(features) => Ok(Response::with((status::Ok, geojson::GeoJson::from(features).to_string()))),
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
@@ -141,9 +150,13 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    let trans = conn.transaction().unwrap();
 
-    match feature::put(conn, geojson, &1) {
-        Ok(_) => Ok(Response::with((status::Ok))),
+    match feature::put(&trans, geojson, &1) {
+        Ok(_) => {
+            trans.commit().unwrap();
+            Ok(Response::with((status::Ok)))
+        },
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
 }
@@ -157,7 +170,7 @@ fn feature_patch(req: &mut Request) -> IronResult<Response> {
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
-    match feature::patch(conn, geojson, &1) {
+    match feature::patch(&conn, geojson, &1) {
         Ok(_) => Ok(Response::with((status::Ok))),
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
@@ -174,7 +187,7 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
-    match feature::get(conn, &feature_id) {
+    match feature::get(&conn, &feature_id) {
         Ok(features) => Ok(Response::with((status::Ok, geojson::GeoJson::from(features).to_string()))),
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
@@ -191,7 +204,7 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
-    match feature::delete(conn, &feature_id) {
+    match feature::delete(&conn, &feature_id) {
         Ok(_) => Ok(Response::with((status::Ok, "true"))),
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }

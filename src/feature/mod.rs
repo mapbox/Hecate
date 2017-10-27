@@ -34,7 +34,12 @@ impl FeatureError {
     }
 }
 
-pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
+pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
+
+    Ok(true)
+}
+
+pub fn put(trans: &postgres::transaction::Transaction, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(geom) => geom
@@ -48,7 +53,7 @@ pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    conn.execute("
+    trans.execute("
         INSERT INTO geo (version, geom, props, hashes)
             VALUES (
                 1,
@@ -61,7 +66,7 @@ pub fn put(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     Ok(true)
 }
 
-pub fn patch(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
+pub fn patch(trans: &postgres::transaction::Transaction, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(geom) => geom
@@ -75,7 +80,7 @@ pub fn patch(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    conn.execute("
+    trans.execute("
         UPDATE geo
             SET
                 version = 1,
@@ -87,8 +92,8 @@ pub fn patch(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     Ok(true)
 }
 
-pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {
-    let res = conn.query("
+pub fn get(trans: &postgres::transaction::Transaction>, id: &i64) -> Result<geojson::Feature, FeatureError> {
+    let res = trans.query("
         SELECT
             row_to_json(f)::TEXT AS feature
         FROM (
@@ -120,7 +125,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     Ok(feat)
 }
 
-pub fn delete(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<bool, FeatureError> {
+pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<bool, FeatureError> {
     conn.query("
         DELETE FROM geo WHERE id = $1;
     ", &[&id]).unwrap();
@@ -128,7 +133,7 @@ pub fn delete(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMana
     Ok(true)
 }
 
-pub fn get_bbox(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, FeatureError> {
+pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, FeatureError> {
     if bbox.len() != 4 {
         return Err(FeatureError::InvalidBBOX);
     }
