@@ -94,6 +94,14 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     Ok(feat)
 }
 
+pub fn delete(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<bool, FeatureError> {
+    let res = conn.query("
+        DELETE FROM geo WHERE id = $1;
+    ", &[&id]).unwrap();
+
+    Ok(true)
+}
+
 pub fn get_bbox(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, FeatureError> {
     if bbox.len() != 4 {
         return Err(FeatureError::InvalidBBOX);

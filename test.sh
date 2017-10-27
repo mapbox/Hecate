@@ -37,6 +37,13 @@ echo "# --- Simple Line Addition ---"
     echo ""
     echo "SELECT id, version, ST_AsGeoJSON(geom), props, hashes FROM geo WHERE id = 2;" | psql -U postgres hecate
 
+echo "# --- Feature Removal ---"
+    curl -s -X DELETE 'localhost:3000/api/data/feature/2'
+    echo ""
+    echo $(curl -s -X GET 'localhost:3000/api/data/feature/2')
+    echo ""
+    echo "SELECT id, version, ST_AsGeoJSON(geom), props, hashes FROM geo WHERE id = 2;" | psql -U postgres hecate
+
 echo "# --- XML Map ---"
     echo $(curl -s -X GET 'localhost:3000/api/0.6/map?bbox=-1,-1,1,1')
     echo ""

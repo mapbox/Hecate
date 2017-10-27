@@ -164,9 +164,7 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
     let feature_id: i64 = match req.extensions.get::<Router>().unwrap().find("feature") {
         Some(id) => match id.parse() {
             Ok(id) => id,
-            Err(_) =>  {
-                return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be numeric")));
-            }
+            Err(_) =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be numeric"))); }
         },
         None =>  {
             return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided")));
@@ -181,6 +179,21 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-fn feature_del(_req: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok)))
+fn feature_del(req: &mut Request) -> IronResult<Response> {
+    let feature_id: i64 = match req.extensions.get::<Router>().unwrap().find("feature") {
+        Some(id) => match id.parse() {
+            Ok(id) => id,
+            Err(_) =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be numeric"))); }
+        },
+        None =>  {
+            return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided")));
+        }
+    };
+
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+
+    match feature::delete(conn, &feature_id) {
+        Ok(_) => Ok(Response::with((status::Ok, "true"))),
+        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+    }
 }
