@@ -46,13 +46,14 @@ fn main() {
     router.get("/", index, "index");
 
     // Individual Feature Operations in GeoJSON Only
-    router.post("/api/data/feature", feature_post, "postFeature");
     router.get("/api/data/feature/:feature", feature_get, "getFeature");
-    router.delete("/api/data/feature/:feature", feature_del, "delFeature");
+    router.post("/api/data/feature", feature_post, "postFeature");
     router.patch("/api/data/feature/:feature", feature_patch, "patchFeature");
+    router.delete("/api/data/feature/:feature", feature_del, "delFeature");
 
-    // Multiple Feature Operations in GeoJSON Only
+    // Multiple Feature Operations in GeoJSON Only (BBOX)
     router.get("/api/data/features", features_get, "getFeatures");
+    router.post("/api/data/features", features_post, "postFeatures");
 
     router.get("/api/0.6/map", xml_map, "xml_map");
 
@@ -93,6 +94,10 @@ fn features_get(req: &mut Request) -> IronResult<Response> {
         Ok(features) => Ok(Response::with((status::Ok, geojson::GeoJson::from(features).to_string()))),
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
+}
+
+fn features_post(req: &mut Request) -> IronResult<Response> {
+    Ok(Response::with((status::Ok, "true")))
 }
 
 fn xml_map(req: &mut Request) -> IronResult<Response> {
