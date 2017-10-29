@@ -212,7 +212,10 @@ fn feature_patch(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    changeset::create(&trans, &fc, &1);
+    if changeset::create(&trans, &fc, &1).is_err() {
+        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
+    }
+
 
     match feature::patch(&trans, &feat, &1) {
         Ok(_) => {
@@ -266,7 +269,9 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    changeset::create(&trans, &fc, &1);
+    if changeset::create(&trans, &fc, &1).is_err() {
+        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
+    }
 
     match feature::delete(&trans, &feature_id) {
         Ok(_) => {
