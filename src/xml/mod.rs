@@ -47,13 +47,27 @@ pub fn from(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {
         match feat.geometry {
             Some(ref geom) => {
                 match geom.value {
-                    geojson::Value::Point(ref coords) => point(&feat, &coords, &mut osm),
-                    geojson::Value::MultiPoint(ref coords) => multipoint(&feat, &coords, &osm),
-                    geojson::Value::LineString(ref coords) => linestring(&feat, &coords, &osm),
-                    geojson::Value::MultiLineString(ref coords) => multilinestring(&feat, &coords, &osm),
-                    geojson::Value::Polygon(ref coords) => polygon(&feat, &coords, &osm),
-                    geojson::Value::MultiPolygon(ref coords) => multipolygon(&feat, &coords, &osm),
-                    _ => { return Err(XMLError::GCNotSupported); }
+                    geojson::Value::Point(ref coords) => {
+                        point(&feat, &coords, &mut osm);
+                    },
+                    geojson::Value::MultiPoint(ref coords) => {
+                        multipoint(&feat, &coords, &mut osm);
+                    },
+                    geojson::Value::LineString(ref coords) => {
+                        linestring(&feat, &coords, &mut osm);
+                    },
+                    geojson::Value::MultiLineString(ref coords) => {
+                        multilinestring(&feat, &coords, &mut osm);
+                    },
+                    geojson::Value::Polygon(ref coords) => {
+                        polygon(&feat, &coords, &mut osm);
+                    },
+                    geojson::Value::MultiPolygon(ref coords) => {
+                        multipolygon(&feat, &coords, &mut osm);
+                    },
+                    _ => {
+                        return Err(XMLError::GCNotSupported);
+                    }
 				}
             },
             None => { return Err(XMLError::Unknown); }
@@ -79,17 +93,16 @@ pub fn point(feat: &geojson::Feature, coords: &geojson::PointType, osm: &mut OSM
 
     writer.write_event(XMLEvents::Event::Start(xml_node)).unwrap();
 
-	match feat.properties {
-		Some(props) => {
+	match *&feat.properties {
+		Some(ref props) => {
 			for (k, v) in props.iter() {
-				//let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
-				//xml_tag.push_attribute(("k", &*k.to_string()));
-				//xml_tag.push_attribute(("v", &*v.to_string()));
-
-				//writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+				let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+				xml_tag.push_attribute(("k", &*k.to_string()));
+				xml_tag.push_attribute(("v", &*v.to_string()));
+				writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
 			}
 		},
-		None => ()
+        None => { return Err(XMLError::Unknown); }
 	};
 
     writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"node"))).unwrap();
@@ -98,13 +111,14 @@ pub fn point(feat: &geojson::Feature, coords: &geojson::PointType, osm: &mut OSM
 
 	Ok(true)
 }
-pub fn multipoint(feat: &geojson::Feature, coords: &Vec<geojson::PointType>, osm: &OSMTypes) {
+
+pub fn multipoint(feat: &geojson::Feature, coords: &Vec<geojson::PointType>, osm: &mut OSMTypes) {
 }
-pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm: &OSMTypes) {
+pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm: &mut OSMTypes) {
 }
-pub fn multilinestring(feat: &geojson::Feature, coords: &Vec<geojson::LineStringType>, osm: &OSMTypes) {
+pub fn multilinestring(feat: &geojson::Feature, coords: &Vec<geojson::LineStringType>, osm: &mut OSMTypes) {
 }
-pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &OSMTypes) {
+pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &mut OSMTypes) {
 }
-pub fn multipolygon(feat: &geojson::Feature, coords: &Vec<geojson::PolygonType>, osm: &OSMTypes) {
+pub fn multipolygon(feat: &geojson::Feature, coords: &Vec<geojson::PolygonType>, osm: &mut OSMTypes) {
 }
