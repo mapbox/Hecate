@@ -183,7 +183,9 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    changeset::create(&trans, &fc, &1);
+    if changeset::create(&trans, &fc, &1).is_err() {
+        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
+    }
 
     match feature::put(&trans, &feat, &1) {
         Ok(_) => {
