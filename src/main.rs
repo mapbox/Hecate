@@ -148,7 +148,7 @@ fn xml_map(req: &mut Request) -> IronResult<Response> {
         Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))) }
     };
 
-    Ok(Response::with((status::Ok)))
+    Ok(Response::with((status::Ok, xml_str)))
 }
 
 fn xml_capabilities(req: &mut Request) -> IronResult<Response> {
