@@ -1,6 +1,9 @@
 CREATE TABLE IF NOT EXISTS users (
+    id          BIGSERIAL,
     username    TEXT,
-    email       TEXT
+    password    TEXT,
+    email       TEXT,
+    meta        JSON
 );
 
 CREATE EXTENSION IF NOT EXISTS postgis;
@@ -10,10 +13,12 @@ CREATE TABLE IF NOT EXISTS geo (
     version     BIGINT,
     geom        GEOMETRY(GEOMETRY, 4326),
     props       JSONB,
-    hashes      BIGINT[]
+    deltas      BIGINT[]
 );
 
 CREATE TABLE IF NOT EXISTS deltas (
-    hash        BIGSERIAL,
-    props       JSONB
+    id          BIGSERIAL,
+    created     TIMESTAMP,
+    features    JSONB,
+    uid         BIGINT
 );

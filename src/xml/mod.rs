@@ -13,12 +13,8 @@ pub enum XMLError {
 impl XMLError {
     pub fn to_string(&self) -> &str {
         match &self {
-            Unknown => {
-                "Unknown Error"
-            },
-            GCNotSupported => {
-                "GeometryCollection are not currently supported"
-            }
+            Unknown => { "Unknown Error" },
+            GCNotSupported => { "GeometryCollection are not currently supported" }
         }
     }
 }

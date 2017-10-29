@@ -15,66 +15,55 @@ pub enum FeatureError {
 impl FeatureError {
     pub fn to_string(&self) -> &str {
         match &self {
-            NoGeometry => {
-                "Null or Invalid Geometry"
-            },
-            NoProps => {
-                "Null or Invalid Properties"
-            },
-            InvalidBBox => {
-                "Invalid Bounding Box"
-            },
-            InvalidFeature => {
-                "Could not parse Feature - Feature is invalid"
-            },
-            NotFound => {
-                "Geometry Not Found For Given ID"
-            },
+            NoGeometry => { "Null or Invalid Geometry" },
+            NoProps => { "Null or Invalid Properties" },
+            InvalidBBox => { "Invalid Bounding Box" },
+            InvalidFeature => { "Could not parse Feature - Feature is invalid" },
+            NotFound => { "Geometry Not Found For Given ID" },
         }
     }
 }
 
-pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
-
+pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
     Ok(true)
 }
 
-pub fn put(trans: &postgres::transaction::Transaction, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
+pub fn put(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
-        Some(geom) => geom
+        Some(ref geom) => geom
     };
 
     let props = match feat.properties {
         None => { return Err(FeatureError::NoProps); },
-        Some(props) => props
+        Some(ref props) => props
     };
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
     trans.execute("
-        INSERT INTO geo (version, geom, props, hashes)
+        INSERT INTO geo (version, geom, props, deltas)
             VALUES (
                 1,
                 ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                 $2::TEXT::JSON,
                 array[$3::BIGINT]
             );
-    ", &[&geom_str, &props_str, &hash]).unwrap();
+    ", &[&geom_str, &props_str, &delta]).unwrap();
 
     Ok(true)
 }
 
-pub fn patch(trans: &postgres::transaction::Transaction, feat: geojson::Feature, hash: &i64) -> Result<bool, FeatureError> {
+pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
-        Some(geom) => geom
+        Some(ref geom) => geom
     };
 
     let props = match feat.properties {
         None => { return Err(FeatureError::NoProps); },
-        Some(props) => props
+        Some(ref props) => props
     };
 
     let geom_str = serde_json::to_string(&geom).unwrap();
@@ -86,8 +75,8 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: geojson::Feature,
                 version = 1,
                 geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                 props = $2::TEXT::JSON,
-                hashes = array_append(hashes, $3::BIGINT)
-    ", &[&geom_str, &props_str, &hash]).unwrap();
+                deltas = array_append(deltas, $3::BIGINT)
+    ", &[&geom_str, &props_str, &delta]).unwrap();
 
     Ok(true)
 }

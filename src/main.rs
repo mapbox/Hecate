@@ -28,6 +28,7 @@ use router::Router;
 use std::io::Read;
 use geojson::GeoJson;
 use hecate::feature;
+use hecate::changeset;
 use hecate::xml;
 use mount::Mount;
 
@@ -151,7 +152,7 @@ fn xml_map(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, xml_str)))
 }
 
-fn xml_capabilities(req: &mut Request) -> IronResult<Response> {
+fn xml_capabilities(_req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "
         <osm version=\"0.6\" generator=\"Hecate Server\">
             <api>
@@ -167,16 +168,24 @@ fn xml_capabilities(req: &mut Request) -> IronResult<Response> {
 }
 
 fn feature_post(req: &mut Request) -> IronResult<Response> {
-    let geojson = match get_geojson(req) {
+    let feat = match get_geojson(req) {
         Ok(GeoJson::Feature(feat)) => feat,
         Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
         Err(err) => { return Ok(err); }
     };
 
+    let fc = geojson::FeatureCollection {
+        bbox: None,
+        features: vec![ feat.clone() ],
+        foreign_members: None,
+    };
+
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    match feature::put(&trans, geojson, &1) {
+    changeset::create(&trans, &fc, &1);
+
+    match feature::put(&trans, &feat, &1) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok)))
@@ -186,16 +195,24 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
 }
 
 fn feature_patch(req: &mut Request) -> IronResult<Response> {
-    let geojson = match get_geojson(req) {
+    let feat = match get_geojson(req) {
         Ok(GeoJson::Feature(feat)) => feat,
         Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
         Err(err) => { return Ok(err); }
     };
 
+    let fc = geojson::FeatureCollection {
+        bbox: None,
+        features: vec![ feat.clone() ],
+        foreign_members: None,
+    };
+
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    match feature::patch(&trans, geojson, &1) {
+    changeset::create(&trans, &fc, &1);
+
+    match feature::patch(&trans, &feat, &1) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok)))
@@ -230,8 +247,24 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
         None =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided"))); }
     };
 
+    let feat = geojson::Feature {
+        id: Some(serde_json::Value::Number(serde_json::Number::from_f64(feature_id as f64).unwrap())),
+        bbox: None,
+        geometry: None,
+        properties: None,
+        foreign_members: None
+    };
+
+    let fc = geojson::FeatureCollection {
+        bbox: None,
+        features: vec![ feat ],
+        foreign_members: None,
+    };
+
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
+
+    changeset::create(&trans, &fc, &1);
 
     match feature::delete(&trans, &feature_id) {
         Ok(_) => {
