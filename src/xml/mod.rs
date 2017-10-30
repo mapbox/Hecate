@@ -4,9 +4,11 @@ extern crate quick_xml;
 use std::io::Cursor;
 use self::quick_xml::writer::Writer;
 use self::quick_xml::events as XMLEvents;
+use std::collections::HashMap;
 
 pub enum XMLError {
     Unknown,
+	Invalid,
     GCNotSupported,
     EncodingFailed
 }
@@ -36,6 +38,53 @@ impl OSMTypes {
             rels: String::from("")
         }
     }
+}
+
+pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, String>) {
+	let mut kv: (Option<String>, Option<String>) = (None, None);
+
+    for attr in xml_node.attributes() {
+		let attr = attr.unwrap();
+
+        match attr.key {
+			b"k"  => kv.0 = Some(String::from_utf8_lossy(attr.value).parse().unwrap()),
+            b"v"  => kv.1 = Some(String::from_utf8_lossy(attr.value).parse().unwrap()),
+            _ => ()
+        }
+    }
+
+	map.insert(kv.0.unwrap(), kv.1.unwrap());
+}
+
+pub fn to_changeset(body: &String) -> Result<HashMap<String, String>, XMLError> {
+    let mut reader = quick_xml::reader::Reader::from_str(body);
+    let mut buf = Vec::new();
+
+	let mut map = HashMap::new();
+
+	 loop {
+        match reader.read_event(&mut buf) {
+            Ok(XMLEvents::Event::Start(ref e)) => {
+                match e.name() {
+                    b"tag" => { to_changeset_tag(&e, &mut map) },
+                    _ => (),
+                }
+            },
+            Ok(XMLEvents::Event::Empty(ref e)) => {
+                match e.name() {
+                    b"tag" => { to_changeset_tag(&e, &mut map) },
+                    _ => (),
+                }
+            },
+			Ok(XMLEvents::Event::Eof) => { return Err(XMLError::Invalid); },
+            Err(_) => { return Err(XMLError::Invalid); },
+            _ => ()
+        }
+
+        buf.clear()
+	}
+
+    Ok(map)
 }
 
 pub fn from(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {

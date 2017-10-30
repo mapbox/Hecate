@@ -60,6 +60,7 @@ fn main() {
     router.get("/api/capabilities", xml_capabilities, "xml_capabilities");
     router.get("/api/0.6/capabilities", xml_capabilities, "xml_06capabilities");
     router.get("/api/0.6/map", xml_map, "xml_map");
+    router.put("/api/0.6/changeset/create", xml_changeset_put, "xml_putChangeset");
 
     let mut mount = Mount::new();
     mount.mount("/", router);
@@ -150,6 +151,15 @@ fn xml_map(req: &mut Request) -> IronResult<Response> {
     };
 
     Ok(Response::with((status::Ok, xml_str)))
+}
+
+fn  xml_changeset_put(req: &mut Request) -> IronResult<Response> {
+    let mut body_str = String::new();
+    req.body.read_to_string(&mut body_str).unwrap();
+
+    xml::to_changeset(&body_str);
+
+    Ok(Response::with((status::Ok)))
 }
 
 fn xml_capabilities(_req: &mut Request) -> IronResult<Response> {
