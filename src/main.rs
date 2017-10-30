@@ -58,6 +58,7 @@ fn main() {
     router.post("/api/data/features", features_post, "features_post");
 
     router.get("/api/capabilities", xml_capabilities, "xml_capabilities");
+    router.get("/api/0.6/capabilities", xml_capabilities, "xml_06capabilities");
     router.get("/api/0.6/map", xml_map, "xml_map");
 
     let mut mount = Mount::new();
@@ -160,7 +161,7 @@ fn xml_capabilities(_req: &mut Request) -> IronResult<Response> {
                 <waynodes maximum=\"2000\"/>
                 <changesets maximum_elements=\"10000\"/>
                 <timeout seconds=\"300\"/>
-                <status database=\"online\" api=\"online\">
+                <status database=\"online\" api=\"online\"/>
             </api>
         </osm>
     ")))

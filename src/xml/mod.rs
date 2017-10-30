@@ -39,7 +39,7 @@ impl OSMTypes {
 }
 
 pub fn from(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {
-    let mut xml: String = String::from(r#"<?xml version='1.0' encoding='UTF-8'?><osm version="0.6" generator="ROSM">"#);
+    let mut xml: String = String::from(r#"<?xml version="1.0" encoding="UTF-8"?><osm version="0.6" generator="ROSM">"#);
     let mut osm = OSMTypes::new();
 
     for feat in &fc.features {
@@ -96,8 +96,8 @@ pub fn point(feat: &geojson::Feature, coords: &geojson::PointType, osm: &mut OSM
 		Some(ref props) => {
 			for (k, v) in props.iter() {
 				let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
-				xml_tag.push_attribute(("k", &*k.to_string()));
-				xml_tag.push_attribute(("v", &*v.to_string()));
+				xml_tag.push_attribute(("k", k.as_str()));
+				xml_tag.push_attribute(("v", v.as_str().unwrap()));
 				writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
 			}
 		},
@@ -139,8 +139,8 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
 		Some(ref props) => {
 			for (k, v) in props.iter() {
 				let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
-				xml_tag.push_attribute(("k", &*k.to_string()));
-				xml_tag.push_attribute(("v", &*v.to_string()));
+				xml_tag.push_attribute(("k", k.as_str()));
+				xml_tag.push_attribute(("v", v.as_str().unwrap()));
 				writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
 			}
 		},
@@ -165,7 +165,7 @@ pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<(Stri
 
     let mut xml_node = XMLEvents::BytesStart::owned(b"node".to_vec(), 4);
 
-    osm.node_it = osm.node_it + 1;
+    osm.node_it = osm.node_it - 1;
 
     xml_node.push_attribute(("id", &*osm.node_it.to_string()));
     xml_node.push_attribute(("version", "1"));
