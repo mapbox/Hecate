@@ -3,6 +3,14 @@
 set -euo pipefail
 
 echo "
+    SELECT pg_terminate_backend(pg_stat_activity.pid)
+        FROM pg_stat_activity
+        WHERE
+            pg_stat_activity.datname = 'hecate'
+            AND pid <> pg_backend_pid();
+" | psql -U postgres -q >/dev/null
+
+echo "
     DROP DATABASE hecate;
     CREATE DATABASE hecate;
 " | psql -U postgres -q
@@ -24,6 +32,7 @@ echo -e "\n# Simple Point Addition"
 
     if [[ "$(curl -s -X GET 'localhost:3000/api/data/feature/1')" == "$DATA" ]]; then echo "ok - feature matches"
     else echo "not ok - feature differs"; fi
+
 echo -e "\n# Simple Line Addition"
     DATA='{"geometry":{"coordinates":[[1.0,1.0],[0.0,0.0]],"type":"LineString"},"id":2,"properties":{"highway":"residential"},"type":"Feature","version":1}'
 
@@ -31,12 +40,21 @@ echo -e "\n# Simple Line Addition"
 
     if [[ "$(curl -s -X GET 'localhost:3000/api/data/feature/2')" == "$DATA" ]]; then echo "ok - feature matches"
     else echo "not ok - feature differs"; fi
+
 echo -e "\n# Feature Removal"
     if [[ $(curl -s -X DELETE 'localhost:3000/api/data/feature/2') == "true" ]]; then echo "ok - deletion returned true"
     else echo "not ok - feature returned true"; fi
 
     if [[ $(curl -s -X GET 'localhost:3000/api/data/feature/2') == "Null or Invalid Geometry" ]]; then echo "ok - null geom"
     else echo "not ok - null geom"; fi
+
+echo -e "\n# Simple Line Addition 2"
+    DATA='{"geometry":{"coordinates":[[1.0,1.0],[0.0,0.0]],"type":"LineString"},"id":3,"properties":{"access":"resricted","highway":"residential"},"type":"Feature","version":1}'
+
+    curl -s -X POST --data "$DATA" -H 'Content-Type: application/json' 'localhost:3000/api/data/feature'
+
+    if [[ "$(curl -s -X GET 'localhost:3000/api/data/feature/3')" == "$DATA" ]]; then echo "ok - feature matches"
+    else echo "not ok - feature differs"; fi
 
 echo -e "\n# Feature Alteration"
     DATA='{"geometry":{"coordinates":[0.0,0.0],"type":"Point"},"id":1,"properties":{"number":"1234"},"type":"Feature","version":1}'
@@ -50,6 +68,7 @@ echo -e "\n# Create Multiple"
     DATA='{"features":[{"geometry":{"coordinates":[0.0,0.0],"type":"Point"},"id":1,"properties":{"number":"1234"},"type":"Feature"}],"type":"FeatureCollection"}'
 
     curl -s -X POST --data "$DATA" -H 'Content-Type: application/json' 'localhost:3000/api/data/features'
+    echo ""
 
 echo -e "\n# XML Map"
     echo $(curl -s -X GET 'localhost:3000/api/0.6/map?bbox=-1,-1,1,1')

@@ -114,7 +114,6 @@ fn features_post(req: &mut Request) -> IronResult<Response> {
     }
 
     trans.commit().unwrap();
-
     Ok(Response::with((status::Ok, "true")))
 }
 

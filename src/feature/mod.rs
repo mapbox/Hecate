@@ -6,10 +6,13 @@ extern crate serde_json;
 
 pub enum FeatureError {
     NotFound,
+    NoProps,
+    NoMembers,
     NoGeometry,
+    VersionRequired,
+    IdRequired,
     InvalidBBOX,
-    InvalidFeature,
-    NoProps
+    InvalidFeature
 }
 
 impl FeatureError {
@@ -66,17 +69,40 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature
         Some(ref props) => props
     };
 
+    let id = match feat.id {
+        None => { return Err(FeatureError::IdRequired); },
+        Some(ref id) => match id.as_i64() {
+            Some(id) => id,
+            None => { return Err(FeatureError::IdRequired); },
+        }
+    };
+
+    let version = match feat.foreign_members {
+        None => { return Err(FeatureError::IdRequired); },
+        Some(ref members) => match members.get("version") {
+            Some(version) => {
+                match version.as_i64() {
+                    Some(version) => version,
+                    None => { return Err(FeatureError::VersionRequired); },
+                }
+            },
+            None => { return Err(FeatureError::VersionRequired); },
+        }
+    };
+
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
     trans.execute("
         UPDATE geo
             SET
-                version = 1,
+                version = 5,
                 geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                 props = $2::TEXT::JSON,
                 deltas = array_append(deltas, $3::BIGINT)
-    ", &[&geom_str, &props_str, &delta]).unwrap();
+            WHERE
+                id = $4
+    ", &[&geom_str, &props_str, &delta, &id, &version]).unwrap();
 
     Ok(true)
 }
