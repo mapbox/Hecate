@@ -61,7 +61,8 @@ fn main() {
     router.get("/api/capabilities", xml_capabilities, "xml_capabilities");
     router.get("/api/0.6/capabilities", xml_capabilities, "xml_06capabilities");
     router.get("/api/0.6/map", xml_map, "xml_map");
-    router.put("/api/0.6/changeset/create", xml_changeset_put, "xml_putChangeset");
+    router.put("/api/0.6/changeset/create", xml_changeset_create, "xml_createChangeset");
+    router.put("/api/0.6/changeset/:id/upload", xml_changeset_upload, "xml_putChangeset");
 
     let mut mount = Mount::new();
     mount.mount("/", router);
@@ -154,7 +155,7 @@ fn xml_map(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, xml_str)))
 }
 
-fn  xml_changeset_put(req: &mut Request) -> IronResult<Response> {
+fn  xml_changeset_create(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
@@ -171,6 +172,20 @@ fn  xml_changeset_put(req: &mut Request) -> IronResult<Response> {
     };
 
     Ok(Response::with((status::Ok, id.to_string())))
+}
+
+fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
+    let mut body_str = String::new();
+    req.body.read_to_string(&mut body_str).unwrap();
+
+    let fc = match xml::to_features(&body_str) {
+        Ok(fc) => fc,
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+    };
+
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+
+    Ok(Response::with((status::Ok)))
 }
 
 fn xml_capabilities(_req: &mut Request) -> IronResult<Response> {

@@ -90,6 +90,10 @@ pub fn to_changeset(body: &String) -> Result<HashMap<String, String>, XMLError> 
     Ok(map)
 }
 
+pub fn to_features(body: &String) -> Result<geojson::FeatureCollection, XMLError> {
+    Err(XMLError::Unknown)
+}
+
 pub fn from(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {
     let mut xml: String = String::from(r#"<?xml version="1.0" encoding="UTF-8"?><osm version="0.6" generator="ROSM">"#);
     let mut osm = OSMTypes::new();
