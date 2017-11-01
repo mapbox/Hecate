@@ -6,6 +6,7 @@ use self::quick_xml::writer::Writer;
 use self::quick_xml::events as XMLEvents;
 use std::collections::HashMap;
 
+#[derive(PartialEq)]
 pub enum XMLError {
     Unknown,
 	Invalid,
@@ -17,7 +18,9 @@ impl XMLError {
     pub fn to_string(&self) -> &str {
         match &self {
             Unknown => { "Unknown Error" },
-            GCNotSupported => { "GeometryCollection are not currently supported" }
+            GCNotSupported => { "GeometryCollection are not currently supported" },
+            Invalid => { "Could not parse XML - Invalid" },
+            EncodingFailed => { "Encoding Failed" }
         }
     }
 }
@@ -76,7 +79,7 @@ pub fn to_changeset(body: &String) -> Result<HashMap<String, String>, XMLError> 
                     _ => (),
                 }
             },
-			Ok(XMLEvents::Event::Eof) => { return Err(XMLError::Invalid); },
+            Ok(XMLEvents::Event::Eof) => { break; },
             Err(_) => { return Err(XMLError::Invalid); },
             _ => ()
         }

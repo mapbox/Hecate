@@ -4,6 +4,7 @@ extern crate geojson;
 extern crate postgres;
 extern crate serde_json;
 
+#[derive(PartialEq)]
 pub enum FeatureError {
     NotFound,
     NoProps,

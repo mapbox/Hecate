@@ -26,6 +26,7 @@ use iron::prelude::*;
 use iron::status;
 use router::Router;
 use std::io::Read;
+use std::collections::HashMap;
 use geojson::GeoJson;
 use hecate::feature;
 use hecate::changeset;
@@ -157,9 +158,19 @@ fn  xml_changeset_put(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
-    xml::to_changeset(&body_str);
+    let map = match xml::to_changeset(&body_str) {
+        Ok(map) => map,
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+    };
 
-    Ok(Response::with((status::Ok)))
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+
+    let id = match changeset::create(&conn, &map, &1) {
+        Ok(id) => id,
+        Err(err) => { println!("{}", err.to_string()); return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+    };
+
+    Ok(Response::with((status::Ok, id.to_string())))
 }
 
 fn xml_capabilities(_req: &mut Request) -> IronResult<Response> {
@@ -193,7 +204,8 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    if changeset::create(&trans, &fc, &1).is_err() {
+    let map: HashMap<String, String> = HashMap::new();
+    if changeset::create_history(&trans, &fc, &map, &1).is_err() {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
 
@@ -222,7 +234,8 @@ fn feature_patch(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    if changeset::create(&trans, &fc, &1).is_err() {
+    let map: HashMap<String, String> = HashMap::new();
+    if changeset::create_history(&trans, &fc, &map, &1).is_err() {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
 
@@ -279,7 +292,8 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    if changeset::create(&trans, &fc, &1).is_err() {
+    let map: HashMap<String, String> = HashMap::new();
+    if changeset::create_history(&trans, &fc, &map, &1).is_err() {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
 
