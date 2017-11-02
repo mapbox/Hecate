@@ -12,6 +12,7 @@ pub enum FeatureError {
     NoGeometry,
     VersionRequired,
     IdRequired,
+    ActionRequired,
     InvalidBBOX,
     InvalidFeature
 }
@@ -24,11 +25,32 @@ impl FeatureError {
             InvalidBBox => { "Invalid Bounding Box" },
             InvalidFeature => { "Could not parse Feature - Feature is invalid" },
             NotFound => { "Geometry Not Found For Given ID" },
+            ActionRequired => { "Action property required - create/modify/delete" }
         }
     }
 }
 
 pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
+    let action = match feat.foreign_members {
+        None => { return Err(FeatureError::ActionRequired); },
+        Some(ref members) => match members.get("action") {
+            Some(action) => {
+                match action.as_str() {
+                    Some(action) => action,
+                    None => { return Err(FeatureError::ActionRequired); },
+                }
+            },
+            None => { return Err(FeatureError::ActionRequired); },
+        }
+    };
+
+    match action {
+        "create" => { put(&trans, &feat, &delta); },
+        "modify" => { patch(&trans, &feat, &delta); },
+        "delete" => { delete(&trans, &feat, &delta); },
+        _ => { return Err(FeatureError::ActionRequired); }
+    }
+
     Ok(true)
 }
 
