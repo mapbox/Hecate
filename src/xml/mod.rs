@@ -43,7 +43,7 @@ impl OSMTypes {
     }
 }
 
-pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, String>) {
+pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, Option<String>>) {
 	let mut kv: (Option<String>, Option<String>) = (None, None);
 
     for attr in xml_node.attributes() {
@@ -56,10 +56,10 @@ pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut Hash
         }
     }
 
-	map.insert(kv.0.unwrap(), kv.1.unwrap());
+	map.insert(kv.0.unwrap(), kv.1);
 }
 
-pub fn to_changeset(body: &String) -> Result<HashMap<String, String>, XMLError> {
+pub fn to_changeset(body: &String) -> Result<HashMap<String, Option<String>>, XMLError> {
     let mut reader = quick_xml::reader::Reader::from_str(body);
     let mut buf = Vec::new();
 

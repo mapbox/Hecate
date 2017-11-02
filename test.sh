@@ -74,5 +74,13 @@ echo -e "\n# XML Map"
     echo $(curl -s -X GET 'localhost:3000/api/0.6/map?bbox=-1,-1,1,1')
     echo ""
 
+echo -e "\n#XML Changeset Create"
+    DATA='<osm><changeset><tag k="created_by" v="JOSM 1.61"/><tag k="comment" v="Just adding some streetnames"/></changeset></osm>'
+
+    echo "SELECT id, props FROM deltas" | psql -U postgres hecate
+    curl -s -X PUT --data "$DATA" 'localhost:3000/api/0.6/changeset/create'
+    echo ""
+    echo "SELECT id, props FROM deltas" | psql -U postgres hecate
+
 # KILL SERVER
 pkill hecate || true

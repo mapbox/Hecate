@@ -219,7 +219,7 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    let map: HashMap<String, String> = HashMap::new();
+    let map: HashMap<String, Option<String>> = HashMap::new();
     if changeset::create_history(&trans, &fc, &map, &1).is_err() {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
@@ -249,7 +249,7 @@ fn feature_patch(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    let map: HashMap<String, String> = HashMap::new();
+    let map: HashMap<String, Option<String>> = HashMap::new();
     if changeset::create_history(&trans, &fc, &map, &1).is_err() {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
@@ -307,7 +307,7 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    let map: HashMap<String, String> = HashMap::new();
+    let map: HashMap<String, Option<String>> = HashMap::new();
     if changeset::create_history(&trans, &fc, &map, &1).is_err() {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
