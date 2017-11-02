@@ -29,7 +29,7 @@ pub fn create_history(trans: &postgres::transaction::Transaction, fc: &geojson::
 			current_timestamp,
 			$1::TEXT::JSON,
 			$2
-		) RETURNING id;
+		);
     ", &[&fc_str, &uid]).unwrap();
 
     Ok(true)
