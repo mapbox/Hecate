@@ -1,3 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS hstore;
+
 CREATE TABLE IF NOT EXISTS users (
     id          BIGSERIAL,
     username    TEXT,
@@ -5,8 +8,6 @@ CREATE TABLE IF NOT EXISTS users (
     email       TEXT,
     meta        JSONB
 );
-
-CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TABLE IF NOT EXISTS geo (
     id          BIGSERIAL,
