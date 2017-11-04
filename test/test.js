@@ -2,7 +2,7 @@ const test = require('tape');
 const request = require('request');
 const exec = require('child_process').exec;
 
-test('Create Empty Database', (t) => {
+test.skip('Create Empty Database', (t) => {
     exec(`
         pkill hecate || true
 
@@ -28,7 +28,7 @@ test('Create Empty Database', (t) => {
     });
 });
 
-test('Start Server', (t) => {
+test.skip('Start Server', (t) => {
     exec('cargo run');
     exec('sleep 2', (err, stdout, stderr) => {
         t.error(err);

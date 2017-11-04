@@ -17,6 +17,7 @@ pub enum FeatureError {
     InvalidFeature
 }
 
+#[derive(PartialEq)]
 pub enum Action {
     Create,
     Modify,
@@ -25,20 +26,24 @@ pub enum Action {
 
 impl FeatureError {
     pub fn to_string(&self) -> &str {
-        match &self {
-            NoGeometry => { "Null or Invalid Geometry" },
-            NoProps => { "Null or Invalid Properties" },
-            InvalidBBox => { "Invalid Bounding Box" },
-            InvalidFeature => { "Could not parse Feature - Feature is invalid" },
-            NotFound => { "Geometry Not Found For Given ID" },
-            ActionRequired => { "Action property required - create/modify/delete" }
+        match *self {
+            FeatureError::NotFound => { "Feature Not Found" },
+            FeatureError::NoProps => { "No Properties" },
+            FeatureError::NoMembers => { "No Members" },
+            FeatureError::NoGeometry => { "No Geometry" },
+            FeatureError::VersionRequired => { "Version Required" },
+            FeatureError::IdRequired => { "ID Required" }
+            FeatureError::ActionRequired => { "Action Required" },
+            FeatureError::InvalidBBOX => { "Invalid BBOX" },
+            FeatureError::InvalidFeature => { "Invalid Feature" },
+            _ => { "Generic FeatureError" }
         }
     }
 }
 
 pub fn get_version(feat: &geojson::Feature) -> Result<i64, FeatureError> {
     match feat.foreign_members {
-        None => { return Err(FeatureError::IdRequired); },
+        None => { return Err(FeatureError::VersionRequired); },
         Some(ref members) => match members.get("version") {
             Some(version) => {
                 match version.as_i64() {
@@ -90,6 +95,8 @@ pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature
 }
 
 pub fn put(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
+    println!("{:?}", &feat.geometry);
+
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -102,8 +109,6 @@ pub fn put(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, 
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
-
-    let version = get_version(&feat)?;
 
     trans.execute("
         INSERT INTO geo (version, geom, props, deltas)
@@ -191,9 +196,7 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
         ) f;
     ", &[&id]).unwrap();
 
-    if res.len() != 1 {
-        return Err(FeatureError::NotFound);
-    }
+    if res.len() != 1 { return Err(FeatureError::NotFound); }
 
     let feat: postgres::rows::Row = res.get(0);
     let feat: String = feat.get(0);

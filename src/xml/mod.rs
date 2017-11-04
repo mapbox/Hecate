@@ -16,11 +16,11 @@ pub enum XMLError {
 
 impl XMLError {
     pub fn to_string(&self) -> &str {
-        match &self {
-            Unknown => { "Unknown Error" },
-            GCNotSupported => { "GeometryCollection are not currently supported" },
-            Invalid => { "Could not parse XML - Invalid" },
-            EncodingFailed => { "Encoding Failed" }
+        match *self {
+            XMLError::Unknown => { "Unknown Error" },
+            XMLError::GCNotSupported => { "GeometryCollection are not currently supported" },
+            XMLError::Invalid => { "Could not parse XML - Invalid" },
+            XMLError::EncodingFailed => { "Encoding Failed" }
         }
     }
 }

@@ -14,9 +14,9 @@ pub enum ChangesetError {
 
 impl ChangesetError {
     pub fn to_string(&self) -> &str {
-        match &self {
-            CreationFail => { "Changeset Creation Failure" },
-            NotFound => { "Changeset not found" }
+        match *self {
+            ChangesetError::CreationFail => { "Changeset Creation Failure" },
+            ChangesetError::NotFound => { "Changeset not found" }
         }
     }
 }
