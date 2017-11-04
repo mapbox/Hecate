@@ -17,6 +17,12 @@ pub enum FeatureError {
     InvalidFeature
 }
 
+pub enum Action {
+    Create,
+    Modify,
+    Delete
+}
+
 impl FeatureError {
     pub fn to_string(&self) -> &str {
         match &self {
@@ -30,26 +36,51 @@ impl FeatureError {
     }
 }
 
-pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
-    let action = match feat.foreign_members {
+pub fn get_version(feat: &geojson::Feature) -> Result<i64, FeatureError> {
+    match feat.foreign_members {
+        None => { return Err(FeatureError::IdRequired); },
+        Some(ref members) => match members.get("version") {
+            Some(version) => {
+                match version.as_i64() {
+                    Some(version) => Ok(version),
+                    None => { return Err(FeatureError::VersionRequired); },
+                }
+            },
+            None => { return Err(FeatureError::VersionRequired); },
+        }
+    }
+}
+
+pub fn get_id(feat: &geojson::Feature) -> Result<i64, FeatureError> {
+    match feat.id {
+        None => { return Err(FeatureError::IdRequired); },
+        Some(ref id) => match id.as_i64() {
+            Some(id) => Ok(id),
+            None => { return Err(FeatureError::IdRequired); },
+        }
+    }
+}
+
+pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
+    match feat.foreign_members {
         None => { return Err(FeatureError::ActionRequired); },
         Some(ref members) => match members.get("action") {
             Some(action) => {
                 match action.as_str() {
-                    Some(action) => action,
-                    None => { return Err(FeatureError::ActionRequired); },
+                    Some("create") => Ok(Action::Create),
+                    Some("modify") => Ok(Action::Modify),
+                    Some("delete") => Ok(Action::Delete),
+                    Some(_) => { return Err(FeatureError::ActionRequired); },
+                    None => { return Err(FeatureError::ActionRequired); }
                 }
             },
             None => { return Err(FeatureError::ActionRequired); },
         }
-    };
-
-    match action {
-        "create" => { put(&trans, &feat, &delta); },
-        "modify" => { patch(&trans, &feat, &delta); },
-        "delete" => { delete(&trans, &feat, &delta); },
-        _ => { return Err(FeatureError::ActionRequired); }
     }
+}
+
+pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
+    let action = get_action(&feat)?;
 
     Ok(true)
 }
@@ -67,6 +98,8 @@ pub fn put(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, 
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
+
+    let version = get_version(&feat)?;
 
     trans.execute("
         INSERT INTO geo (version, geom, props, deltas)
@@ -92,26 +125,8 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature
         Some(ref props) => props
     };
 
-    let id = match feat.id {
-        None => { return Err(FeatureError::IdRequired); },
-        Some(ref id) => match id.as_i64() {
-            Some(id) => id,
-            None => { return Err(FeatureError::IdRequired); },
-        }
-    };
-
-    let version = match feat.foreign_members {
-        None => { return Err(FeatureError::IdRequired); },
-        Some(ref members) => match members.get("version") {
-            Some(version) => {
-                match version.as_i64() {
-                    Some(version) => version,
-                    None => { return Err(FeatureError::VersionRequired); },
-                }
-            },
-            None => { return Err(FeatureError::VersionRequired); },
-        }
-    };
+    let id = get_id(&feat)?;
+    let version = get_version(&feat)?;
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
@@ -130,7 +145,10 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature
     Ok(true)
 }
 
-pub fn delete(trans: &postgres::transaction::Transaction, id: &i64) -> Result<bool, FeatureError> {
+pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
+    let id = get_id(&feat)?;
+    let version = get_version(&feat)?;
+
     trans.query("
         DELETE FROM geo WHERE id = $1;
     ", &[&id]).unwrap();

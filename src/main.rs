@@ -300,7 +300,7 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
 
     let fc = geojson::FeatureCollection {
         bbox: None,
-        features: vec![ feat ],
+        features: vec![ feat.clone() ],
         foreign_members: None,
     };
 
@@ -312,7 +312,7 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
 
-    match feature::delete(&trans, &feature_id) {
+    match feature::put(&trans, &feat, &1) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))

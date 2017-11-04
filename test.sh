@@ -42,7 +42,9 @@ echo -e "\n# Simple Line Addition"
     else echo "not ok - feature differs"; fi
 
 echo -e "\n# Feature Removal"
-    if [[ $(curl -s -X DELETE 'localhost:3000/api/data/feature/2') == "true" ]]; then echo "ok - deletion returned true"
+    DATA='{"version":1}'
+
+    if [[ $(curl -s -X DELETE --data "$DATA" 'localhost:3000/api/data/feature/2') == "true" ]]; then echo "ok - deletion returned true"
     else echo "not ok - feature returned true"; fi
 
     if [[ $(curl -s -X GET 'localhost:3000/api/data/feature/2') == "Null or Invalid Geometry" ]]; then echo "ok - null geom"
