@@ -80,7 +80,11 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
 }
 
 pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
-    let action = get_action(&feat)?;
+    match get_action(&feat)? {
+        Action::Create => { put(&trans, &feat, &delta); },
+        Action::Modify => { patch(&trans, &feat, &delta); },
+        Action::Delete => { delete(&trans, &feat, &delta); }
+    }
 
     Ok(true)
 }
@@ -132,14 +136,20 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature
     let props_str = serde_json::to_string(&props).unwrap();
 
     trans.execute("
-        UPDATE geo
-            SET
-                version = 5,
-                geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
-                props = $2::TEXT::JSON,
-                deltas = array_append(deltas, $3::BIGINT)
-            WHERE
-                id = $4
+        DO $$ BEGIN
+            UPDATE geo
+                SET
+                    version = $5,
+                    geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                    props = $2::TEXT::JSON,
+                    deltas = array_append(deltas, $3::BIGINT)
+                WHERE
+                    id = $4
+                    AND version + 1 = $5
+            IF NOT FOUND THEN
+                RAISE EXCEPTION 'MODIFY: ID or VERSION Mismatch';
+            END IF;
+        END $$;
     ", &[&geom_str, &props_str, &delta, &id, &version]).unwrap();
 
     Ok(true)
@@ -150,6 +160,15 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     let version = get_version(&feat)?;
 
     trans.query("
+        DO $$ BEGIN
+            DELETE FROM geo
+                WHERE
+                    id = $4
+                    AND version + 1 = $5
+            IF NOT FOUND THEN
+                RAISE EXCEPTION 'DELETE: ID or VERSION Mismatch';
+            END IF;
+        END $$;
         DELETE FROM geo WHERE id = $1;
     ", &[&id]).unwrap();
 
