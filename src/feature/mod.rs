@@ -170,7 +170,7 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
             END IF;
         END $$;
         DELETE FROM geo WHERE id = $1;
-    ", &[&id]).unwrap();
+    ", &[&id, &version]).unwrap();
 
     Ok(true)
 }
