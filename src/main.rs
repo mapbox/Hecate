@@ -10,6 +10,8 @@ extern crate r2d2;
 extern crate urlencoded;
 extern crate r2d2_postgres;
 extern crate serde_json;
+extern crate logger;
+extern crate env_logger;
 
 use iron::typemap::Key;
 
@@ -32,6 +34,7 @@ use hecate::feature;
 use hecate::changeset;
 use hecate::xml;
 use mount::Mount;
+use logger::Logger;
 
 pub type PostgresPool = Pool<PostgresConnectionManager>;
 pub type PostgresPooledConnection = PooledConnection<PostgresConnectionManager>;
@@ -40,12 +43,17 @@ fn main() {
     let cli_cnf = load_yaml!("cli.yml");
     let _matched = App::from_yaml(cli_cnf).get_matches();
 
+    env_logger::init();
+
     let cn_str = String::from("postgres://postgres@localhost:5432/hecate");
     let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, TlsMode::None).unwrap();
     let config = ::r2d2::Config::builder().pool_size(6).build();
     let pool = ::r2d2::Pool::new(config, manager).unwrap();
 
+    let (logger_before, logger_after) = Logger::new(None);
+
     let mut router = Router::new();
+
     router.get("/", index, "index");
 
     // Create Edit Modify Feature
@@ -70,9 +78,11 @@ fn main() {
     let mut mount = Mount::new();
     mount.mount("/", router);
 
-    let mut middleware = Chain::new(mount);
-    middleware.link(persistent::Read::<DB>::both(pool));
-    Iron::new(middleware).http("localhost:3000").unwrap();
+    let mut chain = Chain::new(mount);
+    chain.link_before(logger_before);
+    chain.link_after(logger_after);
+    chain.link(persistent::Read::<DB>::both(pool));
+    Iron::new(chain).http("localhost:3000").unwrap();
 }
 
 fn index(_req: &mut Request) -> IronResult<Response> {

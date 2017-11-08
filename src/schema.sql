@@ -46,7 +46,7 @@ CREATE OR REPLACE FUNCTION delete_geo(BIGINT, BIGINT)
     $$ LANGUAGE plpgsql;
 
 -- patch_geo( geom_str, props_str, delta, id, version)
-CREATE OR REPLACE FUNCTION patch_geo(TEXT, TEXT, BIGINT BIGINT, BIGINT)
+CREATE OR REPLACE FUNCTION patch_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT)
     RETURNS boolean AS $$
     BEGIN
         UPDATE geo

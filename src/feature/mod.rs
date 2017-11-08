@@ -146,7 +146,7 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    match trans.query("SELECT modify_geo($1, $2, $3, $4, $5);", &[&geom_str, &props_str, &delta, &id, &version]) {
+    match trans.query("SELECT patch_geo($1, $2, $3, $4, $5);", &[&geom_str, &props_str, &delta, &id, &version]) {
         Ok(_) => Ok(true),
         Err(err) => {
             match err.as_db() {
@@ -154,6 +154,7 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature
                     if e.message == "DELETE: ID or VERSION Mismatch" {
                         Err(FeatureError::PatchVersionMismatch)
                     } else {
+                        println!("{:?}", e);
                         Err(FeatureError::PatchError)
                     }
                 },
