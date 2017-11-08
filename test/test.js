@@ -45,7 +45,7 @@ test.skip('Start Server', (t) => {
 });
 
 test('feature#create', (t) => {
-    t.test('featur#create - no geometry/props', (q) => {
+    t.test('feature#create - no geometry/props', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -61,7 +61,7 @@ test('feature#create', (t) => {
         });
     });
 
-    t.test('featur#create - no geometry', (q) => {
+    t.test('feature#create - no geometry', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -80,7 +80,7 @@ test('feature#create', (t) => {
         });
     });
 
-    t.test('featur#create - no props', (q) => {
+    t.test('feature#create - no props', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -100,7 +100,7 @@ test('feature#create', (t) => {
         });
     });
 
-    t.test('featur#create - Point', (q) => {
+    t.test('feature#create - Point', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -122,7 +122,7 @@ test('feature#create', (t) => {
         });
     });
 
-    t.test('featur#create - MultiPoint', (q) => {
+    t.test('feature#create - MultiPoint', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -144,7 +144,7 @@ test('feature#create', (t) => {
         });
     });
 
-    t.test('featur#create - LineString', (q) => {
+    t.test('feature#create - LineString', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -166,7 +166,7 @@ test('feature#create', (t) => {
         });
     });
 
-    t.test('featur#create - MultiLineString', (q) => {
+    t.test('feature#create - MultiLineString', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -192,7 +192,7 @@ test('feature#create', (t) => {
 });
 
 test('feature#patch', (t) => {
-    t.test('featur#patch - Point', (q) => {
+    t.test('feature#patch - Point', (q) => {
         request.patch({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -216,7 +216,7 @@ test('feature#patch', (t) => {
         });
     });
 
-    t.test('featur#patch - MultiPoint', (q) => {
+    t.test('feature#patch - MultiPoint', (q) => {
         request.patch({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -240,7 +240,7 @@ test('feature#patch', (t) => {
         });
     });
 
-    t.test('featur#patch - LineString', (q) => {
+    t.test('feature#patch - LineString', (q) => {
         request.patch({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -264,7 +264,7 @@ test('feature#patch', (t) => {
         });
     });
 
-    t.test('featur#patch - MultiLineString', (q) => {
+    t.test('feature#patch - MultiLineString', (q) => {
         request.patch({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -292,7 +292,7 @@ test('feature#patch', (t) => {
 });
 
 test.skip('feature#delete', (t) => {
-    t.test('featur#delete - version mismatch', (q) => {
+    t.test('feature#delete - version mismatch', (q) => {
         request.delete({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -312,7 +312,7 @@ test.skip('feature#delete', (t) => {
         });
     });
 
-    t.test('featur#delete - Point', (q) => {
+    t.test('feature#delete - Point', (q) => {
         request.delete({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -332,7 +332,7 @@ test.skip('feature#delete', (t) => {
         });
     });
 
-    t.test('featur#delete - MultiPoint', (q) => {
+    t.test('feature#delete - MultiPoint', (q) => {
         request.delete({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -352,7 +352,7 @@ test.skip('feature#delete', (t) => {
         });
     });
 
-    t.test('featur#delete - LineString', (q) => {
+    t.test('feature#delete - LineString', (q) => {
         request.delete({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -372,7 +372,7 @@ test.skip('feature#delete', (t) => {
         });
     });
 
-    t.test('featur#delete - MultiLineString', (q) => {
+    t.test('feature#delete - MultiLineString', (q) => {
         request.delete({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -393,6 +393,28 @@ test.skip('feature#delete', (t) => {
     });
 });
 
+t.test('features', (t) => {
+    t.test('features#basic', (q) => {
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/features',
+            body: JSON.stringify({
+                type: 'FeatureCollection',
+                features: []
+            })
+        }, (err, res) => {
+            t.error(err);
+
+            t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
+            q.end();
+        });
+
+    });
+
+    t.end();
+});
+
 test('Stop Server', (t) => {
     exec(`
         pkill hecate || true
@@ -403,37 +425,6 @@ test('Stop Server', (t) => {
 });
 
 /**
-echo -e "\n# Feature Removal"
-    DATA='{"version":1}'
-
-    if [[ $(curl -s -X DELETE --data "$DATA" 'localhost:3000/api/data/feature/2') == "true" ]]; then echo "ok - deletion returned true"
-    else echo "not ok - feature returned true"; fi
-
-    if [[ $(curl -s -X GET 'localhost:3000/api/data/feature/2') == "Null or Invalid Geometry" ]]; then echo "ok - null geom"
-    else echo "not ok - null geom"; fi
-
-echo -e "\n# Simple Line Addition 2"
-    DATA='{"geometry":{"coordinates":[[1.0,1.0],[0.0,0.0]],"type":"LineString"},"id":3,"properties":{"access":"resricted","highway":"residential"},"type":"Feature","version":1}'
-
-    curl -s -X POST --data "$DATA" -H 'Content-Type: application/json' 'localhost:3000/api/data/feature'
-
-    if [[ "$(curl -s -X GET 'localhost:3000/api/data/feature/3')" == "$DATA" ]]; then echo "ok - feature matches"
-    else echo "not ok - feature differs"; fi
-
-echo -e "\n# Feature Alteration"
-    DATA='{"geometry":{"coordinates":[0.0,0.0],"type":"Point"},"id":1,"properties":{"number":"1234"},"type":"Feature","version":1}'
-
-    curl -s -X PATCH --data "$DATA" -H 'Content-Type: application/json' 'localhost:3000/api/data/feature/1'
-
-    if [[ "$(curl -s -X GET 'localhost:3000/api/data/feature/1')" == "$DATA" ]]; then echo "ok - feature matches"
-    else echo "not ok - feature differs"; fi
-
-echo -e "\n# Create Multiple"
-    DATA='{"features":[{"geometry":{"coordinates":[0.0,0.0],"type":"Point"},"id":1,"properties":{"number":"1234"},"type":"Feature"}],"type":"FeatureCollection"}'
-
-    curl -s -X POST --data "$DATA" -H 'Content-Type: application/json' 'localhost:3000/api/data/features'
-    echo ""
-
 echo -e "\n# XML Map"
     echo $(curl -s -X GET 'localhost:3000/api/0.6/map?bbox=-1,-1,1,1')
     echo ""

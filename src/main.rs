@@ -43,7 +43,7 @@ fn main() {
     let cli_cnf = load_yaml!("cli.yml");
     let _matched = App::from_yaml(cli_cnf).get_matches();
 
-    env_logger::init();
+    env_logger::init().unwrap();
 
     let cn_str = String::from("postgres://postgres@localhost:5432/hecate");
     let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, TlsMode::None).unwrap();
