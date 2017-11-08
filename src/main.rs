@@ -171,7 +171,7 @@ fn  xml_changeset_create(req: &mut Request) -> IronResult<Response> {
 
     let id = match changeset::create(&conn, &map, &1) {
         Ok(id) => id,
-        Err(err) => { println!("{}", err.to_string()); return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
 
     Ok(Response::with((status::Ok, id.to_string())))

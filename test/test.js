@@ -2,10 +2,8 @@ const test = require('tape');
 const request = require('request');
 const exec = require('child_process').exec;
 
-test('Create Empty Database', (t) => {
+test('Reset Database', (t) => {
     exec(`
-        pkill hecate || true
-
         echo "
             SELECT pg_terminate_backend(pg_stat_activity.pid)
                 FROM pg_stat_activity
@@ -20,6 +18,16 @@ test('Create Empty Database', (t) => {
         " | psql -U postgres -q
 
         psql -q -U postgres -f src/schema.sql hecate
+    `, (err, stdout, stderr) => {
+        t.error(err);
+        t.end();
+    });
+
+});
+
+test.skip('Compile & Run', (t) => {
+    exec(`
+        pkill hecate || true
 
         cargo build
     `, (err, stdout, stderr) => {
@@ -28,7 +36,7 @@ test('Create Empty Database', (t) => {
     });
 });
 
-test('Start Server', (t) => {
+test.skip('Start Server', (t) => {
     exec('cargo run');
     exec('sleep 2', (err, stdout, stderr) => {
         t.error(err);
@@ -179,14 +187,33 @@ test('feature#create', (t) => {
     t.end();
 });
 
-
 test('feature#delete', (t) => {
-    t.test('featur#delete - missing ID', (q) => {
+    t.test('featur#delete - version mismatch', (q) => {
         request.delete({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
             body: JSON.stringify({
-                id: 10000,
+                id: 1,
+                type: 'Feature',
+                version: 1,
+                properties: null,
+                geometry: null
+            })
+        }, (err, res) => {
+            t.error(err);
+
+            t.equals(res.statusCode, 417);
+            t.equals(res.body, 'Delete Version Mismatch');
+            q.end();
+        });
+    });
+
+    t.test('featur#delete - Point', (q) => {
+        request.delete({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                id: 1,
                 type: 'Feature',
                 version: 2,
                 properties: null,
@@ -196,7 +223,67 @@ test('feature#delete', (t) => {
             t.error(err);
 
             t.equals(res.statusCode, 200);
-            t.equals(res.body, 'Body must be valid GeoJSON Feature');
+            t.equals(res.body, 'true');
+            q.end();
+        });
+    });
+
+    t.test('featur#delete - MultiPoint', (q) => {
+        request.delete({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                id: 2,
+                type: 'Feature',
+                version: 2,
+                properties: null,
+                geometry: null
+            })
+        }, (err, res) => {
+            t.error(err);
+
+            t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
+            q.end();
+        });
+    });
+
+    t.test('featur#delete - LineString', (q) => {
+        request.delete({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                id: 3,
+                type: 'Feature',
+                version: 2,
+                properties: null,
+                geometry: null
+            })
+        }, (err, res) => {
+            t.error(err);
+
+            t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
+            q.end();
+        });
+    });
+
+    t.test('featur#delete - MultiLineString', (q) => {
+        request.delete({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                id: 4,
+                type: 'Feature',
+                version: 2,
+                properties: null,
+                geometry: null
+            })
+        }, (err, res) => {
+            t.error(err);
+
+            t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
             q.end();
         });
     });

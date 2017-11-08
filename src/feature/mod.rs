@@ -11,6 +11,8 @@ pub enum FeatureError {
     NoMembers,
     NoGeometry,
     VersionRequired,
+    DeleteVersionMismatch,
+    DeleteError,
     IdRequired,
     ActionRequired,
     InvalidBBOX,
@@ -32,6 +34,8 @@ impl FeatureError {
             FeatureError::NoMembers => { "No Members" },
             FeatureError::NoGeometry => { "No Geometry" },
             FeatureError::VersionRequired => { "Version Required" },
+            FeatureError::DeleteVersionMismatch => { "Delete Version Mismatch" },
+            FeatureError::DeleteError => { "Internal Delete Error" },
             FeatureError::IdRequired => { "ID Required" }
             FeatureError::ActionRequired => { "Action Required" },
             FeatureError::InvalidBBOX => { "Invalid BBOX" },
@@ -86,17 +90,15 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
 
 pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
     match get_action(&feat)? {
-        Action::Create => { put(&trans, &feat, &delta); },
-        Action::Modify => { patch(&trans, &feat, &delta); },
-        Action::Delete => { delete(&trans, &feat, &delta); }
+        Action::Create => { put(&trans, &feat, &delta)?; },
+        Action::Modify => { patch(&trans, &feat, &delta)?; },
+        Action::Delete => { delete(&trans, &feat, &delta)?; }
     }
 
     Ok(true)
 }
 
 pub fn put(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
-    println!("{:?}", &feat.geometry);
-
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -164,20 +166,21 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
 
-    trans.query("
-        DO $$ BEGIN
-            DELETE FROM geo
-                WHERE
-                    id = $4
-                    AND version + 1 = $5
-            IF NOT FOUND THEN
-                RAISE EXCEPTION 'DELETE: ID or VERSION Mismatch';
-            END IF;
-        END $$;
-        DELETE FROM geo WHERE id = $1;
-    ", &[&id, &version]).unwrap();
-
-    Ok(true)
+    match trans.query("SELECT delete_geo($1, $2);", &[&id, &version]) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => {
+                    if e.message == "DELETE: ID or VERSION Mismatch" {
+                        Err(FeatureError::DeleteVersionMismatch)
+                    } else {
+                        Err(FeatureError::DeleteError)
+                    }
+                },
+                _ => Err(FeatureError::DeleteError)
+            }
+        }
+    }
 }
 
 pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {

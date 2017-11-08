@@ -27,3 +27,19 @@ CREATE TABLE deltas (
     props       JSONB,
     uid         BIGINT
 );
+
+CREATE OR REPLACE FUNCTION delete_geo(BIGINT, BIGINT)
+    RETURNS boolean AS $$
+    BEGIN
+        DELETE FROM geo
+            WHERE
+                id = $1
+                AND version + 1 = $2;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'DELETE: ID or VERSION Mismatch';
+        END IF;
+
+        RETURN true;
+    END;
+    $$ LANGUAGE plpgsql;
