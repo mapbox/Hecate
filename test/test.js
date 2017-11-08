@@ -2,7 +2,7 @@ const test = require('tape');
 const request = require('request');
 const exec = require('child_process').exec;
 
-test.skip('Create Empty Database', (t) => {
+test('Create Empty Database', (t) => {
     exec(`
         pkill hecate || true
 
@@ -28,7 +28,7 @@ test.skip('Create Empty Database', (t) => {
     });
 });
 
-test.skip('Start Server', (t) => {
+test('Start Server', (t) => {
     exec('cargo run');
     exec('sleep 2', (err, stdout, stderr) => {
         t.error(err);
@@ -92,7 +92,7 @@ test('feature#create', (t) => {
         });
     });
 
-    t.test('featur#create - point', (q) => {
+    t.test('featur#create - Point', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:3000/api/data/feature',
@@ -108,13 +108,98 @@ test('feature#create', (t) => {
             })
         }, (err, res) => {
             t.error(err);
-            t.equals(res.statusCode, 415);
-            t.equals(res.body, 'Body must be valid GeoJSON Feature');
+            t.equals(res.statusCode, 200);
+            q.end();
+        });
+    });
+
+    t.test('featur#create - MultiPoint', (q) => {
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                type: 'Feature',
+                properties: {
+                    number: '123'
+                },
+                geometry: {
+                    type: 'MultiPoint',
+                    coordinates: [[ 0, 0 ], [ 1,1 ]]
+                }
+            })
+        }, (err, res) => {
+            t.error(err);
+            t.equals(res.statusCode, 200);
+            q.end();
+        });
+    });
+
+    t.test('featur#create - LineString', (q) => {
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                type: 'Feature',
+                properties: {
+                    building: true
+                },
+                geometry: {
+                    type: 'LineString',
+                    coordinates: [[ 0, 0 ], [ 1,1 ]]
+                }
+            })
+        }, (err, res) => {
+            t.error(err);
+            t.equals(res.statusCode, 200);
+            q.end();
+        });
+    });
+
+    t.test('featur#create - MultiLineString', (q) => {
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                type: 'Feature',
+                properties: {
+                    building: true
+                },
+                geometry: {
+                    type: 'MultiLineString',
+                    coordinates: [[[ 0, 0 ], [ 1,1 ]], [[ 1,1 ], [ 2, 2 ]]]
+                }
+            })
+        }, (err, res) => {
+            t.error(err);
+            t.equals(res.statusCode, 200);
             q.end();
         });
     });
 
     t.end();
+});
+
+
+test('feature#delete', (t) => {
+    t.test('featur#delete - missing ID', (q) => {
+        request.delete({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                id: 10000,
+                type: 'Feature',
+                version: 2,
+                properties: null,
+                geometry: null
+            })
+        }, (err, res) => {
+            t.error(err);
+
+            t.equals(res.statusCode, 200);
+            t.equals(res.body, 'Body must be valid GeoJSON Feature');
+            q.end();
+        });
+    });
 });
 
 test('Stop Server', (t) => {
@@ -126,15 +211,7 @@ test('Stop Server', (t) => {
     });
 });
 
-/*
-echo -e "\n# Simple Line Addition"
-    DATA='{"geometry":{"coordinates":[[1.0,1.0],[0.0,0.0]],"type":"LineString"},"id":2,"properties":{"highway":"residential"},"type":"Feature","version":1}'
-
-    curl -s -X POST --data "$DATA" -H 'Content-Type: application/json' 'localhost:3000/api/data/feature'
-
-    if [[ "$(curl -s -X GET 'localhost:3000/api/data/feature/2')" == "$DATA" ]]; then echo "ok - feature matches"
-    else echo "not ok - feature differs"; fi
-
+/**
 echo -e "\n# Feature Removal"
     DATA='{"version":1}'
 

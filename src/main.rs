@@ -48,16 +48,19 @@ fn main() {
     let mut router = Router::new();
     router.get("/", index, "index");
 
-    // Individual Feature Operations in GeoJSON Only
-    router.get("/api/data/feature/:feature", feature_get, "feature_get");
+    // Create Edit Modify Feature
     router.post("/api/data/feature", feature_post, "feature_post");
-    router.patch("/api/data/feature/:feature", feature_patch, "feature_patch");
-    router.delete("/api/data/feature/:feature", feature_del, "feature_del");
+    router.patch("/api/data/feature", feature_patch, "feature_patch");
+    router.delete("/api/data/feature", feature_del, "feature_del");
 
-    // Multiple Feature Operations in GeoJSON Only (BBOX)
-    router.get("/api/data/features", features_get, "features_get");
+    // Create Edit Modify Feature
     router.post("/api/data/features", features_post, "features_post");
 
+    // Get Features
+    router.get("/api/data/feature/:feature", feature_get, "feature_get");
+    router.get("/api/data/features", features_get, "features_get");
+
+    //OSM XML Compat. Shim
     router.get("/api/capabilities", xml_capabilities, "xml_capabilities");
     router.get("/api/0.6/capabilities", xml_capabilities, "xml_06capabilities");
     router.get("/api/0.6/map", xml_map, "xml_map");
@@ -254,7 +257,6 @@ fn feature_patch(req: &mut Request) -> IronResult<Response> {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
 
-
     match feature::patch(&trans, &feat, &1) {
         Ok(_) => {
             trans.commit().unwrap();
@@ -272,7 +274,7 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
         },
         None =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided"))); }
     };
-
+    
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
     match feature::get(&conn, &feature_id) {
@@ -282,20 +284,10 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
 }
 
 fn feature_del(req: &mut Request) -> IronResult<Response> {
-    let feature_id: i64 = match req.extensions.get::<Router>().unwrap().find("feature") {
-        Some(id) => match id.parse() {
-            Ok(id) => id,
-            Err(_) =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be numeric"))); }
-        },
-        None =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided"))); }
-    };
-
-    let feat = geojson::Feature {
-        id: Some(serde_json::Value::Number(serde_json::Number::from_f64(feature_id as f64).unwrap())),
-        bbox: None,
-        geometry: None,
-        properties: None,
-        foreign_members: None
+    let feat = match get_geojson(req) {
+        Ok(GeoJson::Feature(feat)) => feat,
+        Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
+        Err(err) => { return Ok(err); }
     };
 
     let fc = geojson::FeatureCollection {
@@ -312,7 +304,7 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
 
-    match feature::put(&trans, &feat, &1) {
+    match feature::delete(&trans, &feat, &1) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
