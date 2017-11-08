@@ -230,7 +230,7 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     match feature::put(&trans, &feat, &1) {
         Ok(_) => {
             trans.commit().unwrap();
-            Ok(Response::with((status::Ok)))
+            Ok(Response::with((status::Ok, "true")))
         },
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }
@@ -260,7 +260,7 @@ fn feature_patch(req: &mut Request) -> IronResult<Response> {
     match feature::patch(&trans, &feat, &1) {
         Ok(_) => {
             trans.commit().unwrap();
-            Ok(Response::with((status::Ok)))
+            Ok(Response::with((status::Ok, "true")))
         },
         Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
     }

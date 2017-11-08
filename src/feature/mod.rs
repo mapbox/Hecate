@@ -13,6 +13,8 @@ pub enum FeatureError {
     VersionRequired,
     DeleteVersionMismatch,
     DeleteError,
+    PatchError,
+    PatchVersionMismatch,
     IdRequired,
     ActionRequired,
     InvalidBBOX,
@@ -36,6 +38,8 @@ impl FeatureError {
             FeatureError::VersionRequired => { "Version Required" },
             FeatureError::DeleteVersionMismatch => { "Delete Version Mismatch" },
             FeatureError::DeleteError => { "Internal Delete Error" },
+            FeatureError::PatchVersionMismatch => { "Patch Version Mismatch" },
+            FeatureError::PatchError => { "Internal Patch Error" },
             FeatureError::IdRequired => { "ID Required" }
             FeatureError::ActionRequired => { "Action Required" },
             FeatureError::InvalidBBOX => { "Invalid BBOX" },
@@ -142,24 +146,21 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    trans.execute("
-        DO $$ BEGIN
-            UPDATE geo
-                SET
-                    version = $5,
-                    geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
-                    props = $2::TEXT::JSON,
-                    deltas = array_append(deltas, $3::BIGINT)
-                WHERE
-                    id = $4
-                    AND version + 1 = $5
-            IF NOT FOUND THEN
-                RAISE EXCEPTION 'MODIFY: ID or VERSION Mismatch';
-            END IF;
-        END $$;
-    ", &[&geom_str, &props_str, &delta, &id, &version]).unwrap();
-
-    Ok(true)
+    match trans.query("SELECT modify_geo($1, $2, $3, $4, $5);", &[&geom_str, &props_str, &delta, &id, &version]) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => {
+                    if e.message == "DELETE: ID or VERSION Mismatch" {
+                        Err(FeatureError::PatchVersionMismatch)
+                    } else {
+                        Err(FeatureError::PatchError)
+                    }
+                },
+                _ => Err(FeatureError::PatchError)
+            }
+        }
+    }
 }
 
 pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {

@@ -117,6 +117,7 @@ test('feature#create', (t) => {
         }, (err, res) => {
             t.error(err);
             t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
             q.end();
         });
     });
@@ -138,6 +139,7 @@ test('feature#create', (t) => {
         }, (err, res) => {
             t.error(err);
             t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
             q.end();
         });
     });
@@ -159,6 +161,7 @@ test('feature#create', (t) => {
         }, (err, res) => {
             t.error(err);
             t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
             q.end();
         });
     });
@@ -180,6 +183,7 @@ test('feature#create', (t) => {
         }, (err, res) => {
             t.error(err);
             t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
             q.end();
         });
     });
@@ -187,7 +191,107 @@ test('feature#create', (t) => {
     t.end();
 });
 
-test('feature#delete', (t) => {
+test('feature#patch', (t) => {
+    t.test('featur#patch - Point', (q) => {
+        request.patch({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                id: 1,
+                version: 2,
+                type: 'Feature',
+                properties: {
+                    number: '321'
+                },
+                geometry: {
+                    type: 'Point',
+                    coordinates: [ 1, 1 ]
+                }
+            })
+        }, (err, res) => {
+            t.error(err);
+            t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
+            q.end();
+        });
+    });
+
+    t.test('featur#patch - MultiPoint', (q) => {
+        request.patch({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                id: 2,
+                version: 2,
+                type: 'Feature',
+                properties: {
+                    number: '321'
+                },
+                geometry: {
+                    type: 'MultiPoint',
+                    coordinates: [[ 1, 1 ], [ 0, 0 ]]
+                }
+            })
+        }, (err, res) => {
+            t.error(err);
+            t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
+            q.end();
+        });
+    });
+
+    t.test('featur#patch - LineString', (q) => {
+        request.patch({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                id: 3,
+                version: 2,
+                type: 'Feature',
+                properties: {
+                    building: false
+                },
+                geometry: {
+                    type: 'LineString',
+                    coordinates: [[ 1, 1 ], [ 0, 0 ]]
+                }
+            })
+        }, (err, res) => {
+            t.error(err);
+            t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
+            q.end();
+        });
+    });
+
+    t.test('featur#patch - MultiLineString', (q) => {
+        request.patch({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/feature',
+            body: JSON.stringify({
+                id: 4,
+                version: 2,
+                type: 'Feature',
+                properties: {
+                    building: false
+                },
+                geometry: {
+                    type: 'MultiLineString',
+                    coordinates: [[[ 1, 1 ], [ 0, 0 ]], [[ 2, 2 ], [ 1, 1 ]]]
+                }
+            })
+        }, (err, res) => {
+            t.error(err);
+            t.equals(res.statusCode, 200);
+            t.equals(res.body, 'true');
+            q.end();
+        });
+    });
+
+    t.end();
+});
+
+test.skip('feature#delete', (t) => {
     t.test('featur#delete - version mismatch', (q) => {
         request.delete({
             headers: { 'content-type' : 'application/json' },
@@ -215,7 +319,7 @@ test('feature#delete', (t) => {
             body: JSON.stringify({
                 id: 1,
                 type: 'Feature',
-                version: 2,
+                version: 3,
                 properties: null,
                 geometry: null
             })
@@ -235,7 +339,7 @@ test('feature#delete', (t) => {
             body: JSON.stringify({
                 id: 2,
                 type: 'Feature',
-                version: 2,
+                version: 3,
                 properties: null,
                 geometry: null
             })
@@ -255,7 +359,7 @@ test('feature#delete', (t) => {
             body: JSON.stringify({
                 id: 3,
                 type: 'Feature',
-                version: 2,
+                version: 3,
                 properties: null,
                 geometry: null
             })
@@ -275,7 +379,7 @@ test('feature#delete', (t) => {
             body: JSON.stringify({
                 id: 4,
                 type: 'Feature',
-                version: 2,
+                version: 3,
                 properties: null,
                 geometry: null
             })

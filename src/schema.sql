@@ -28,6 +28,7 @@ CREATE TABLE deltas (
     uid         BIGINT
 );
 
+-- delete_geo( id, version )
 CREATE OR REPLACE FUNCTION delete_geo(BIGINT, BIGINT)
     RETURNS boolean AS $$
     BEGIN
@@ -38,6 +39,28 @@ CREATE OR REPLACE FUNCTION delete_geo(BIGINT, BIGINT)
 
         IF NOT FOUND THEN
             RAISE EXCEPTION 'DELETE: ID or VERSION Mismatch';
+        END IF;
+
+        RETURN true;
+    END;
+    $$ LANGUAGE plpgsql;
+
+-- patch_geo( geom_str, props_str, delta, id, version)
+CREATE OR REPLACE FUNCTION patch_geo(TEXT, TEXT, BIGINT BIGINT, BIGINT)
+    RETURNS boolean AS $$
+    BEGIN
+        UPDATE geo
+            SET
+                version = $5,
+                geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                props = $2::TEXT::JSON,
+                deltas = array_append(deltas, $3::BIGINT)
+            WHERE
+                id = $4
+                AND version + 1 = $5;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'PATCH: ID or VERSION Mismatch';
         END IF;
 
         RETURN true;
