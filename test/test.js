@@ -1,6 +1,13 @@
 const test = require('tape');
 const request = require('request');
 const exec = require('child_process').exec;
+const Pool = require('pg-pool');
+
+const pool = new Pool({
+    database: 'hecate',
+    user: 'postgres',
+    port: 5432
+});
 
 test('Reset Database', (t) => {
     exec(`
@@ -19,30 +26,32 @@ test('Reset Database', (t) => {
 
         psql -q -U postgres -f src/schema.sql hecate
     `, (err, stdout, stderr) => {
-        t.error(err);
+        t.error(err, 'no errors');
         t.end();
     });
 
 });
 
-test.skip('Compile & Run', (t) => {
-    exec(`
-        pkill hecate || true
+if (!process.env.DEBUG) {
+    test('Compile & Run', (t) => {
+        exec(`
+            pkill hecate || true
 
-        cargo build
-    `, (err, stdout, stderr) => {
-        t.error(err);
-        t.end();
+            cargo build
+        `, (err, stdout, stderr) => {
+            t.error(err, 'no errors');
+            t.end();
+        });
     });
-});
 
-test.skip('Start Server', (t) => {
-    exec('cargo run');
-    exec('sleep 2', (err, stdout, stderr) => {
-        t.error(err);
-        t.end();
+    test('Start Server', (t) => {
+        exec('cargo run');
+        exec('sleep 2', (err, stdout, stderr) => {
+            t.error(err, 'no errors');
+            t.end();
+        });
     });
-});
+}
 
 test('feature#create', (t) => {
     t.test('feature#create - no geometry/props', (q) => {
@@ -53,10 +62,10 @@ test('feature#create', (t) => {
                 type: 'Feature'
             })
         }, (err, res) => {
-            t.error(err);
+            t.error(err, 'no errors');
 
-            t.equals(res.statusCode, 415);
-            t.equals(res.body, 'Body must be valid GeoJSON Feature');
+            q.equals(res.statusCode, 415);
+            q.equals(res.body, 'Body must be valid GeoJSON Feature');
             q.end();
         });
     });
@@ -72,10 +81,10 @@ test('feature#create', (t) => {
                 }
             })
         }, (err, res) => {
-            t.error(err);
+            t.error(err, 'no errors');
 
-            t.equals(res.statusCode, 415);
-            t.equals(res.body, 'Body must be valid GeoJSON Feature');
+            q.equals(res.statusCode, 415);
+            q.equals(res.body, 'Body must be valid GeoJSON Feature');
             q.end();
         });
     });
@@ -92,100 +101,168 @@ test('feature#create', (t) => {
                 }
             })
         }, (err, res) => {
-            t.error(err);
+            q.error(err, 'no errors');
 
-            t.equals(res.statusCode, 415);
-            t.equals(res.body, 'Body must be valid GeoJSON Feature');
+            q.equals(res.statusCode, 415);
+            q.equals(res.body, 'Body must be valid GeoJSON Feature');
             q.end();
         });
     });
 
     t.test('feature#create - Point', (q) => {
-        request.post({
-            headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/feature',
-            body: JSON.stringify({
-                type: 'Feature',
-                properties: {
-                    number: '123'
-                },
-                geometry: {
-                    type: 'Point',
-                    coordinates: [ 0, 0 ]
-                }
-            })
-        }, (err, res) => {
-            t.error(err);
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
-            q.end();
+        q.test('feature#create - Point - endpoint', (r) => {
+            request.post({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/data/feature',
+                body: JSON.stringify({
+                    type: 'Feature',
+                    properties: {
+                        number: '123'
+                    },
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [ 0, 0 ]
+                    }
+                })
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, 'true');
+                r.end();
+            });
         });
+
+        q.test('feature#create - Point - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
+                r.error(err, 'no errors');
+                r.deepEquals(res.rows[0], {
+                    id: '1',
+                    version: '1',
+                    geom: '{"type":"Point","coordinates":[0,0]}',
+                    props: { number: '123' },
+                    deltas: [ '1' ]
+                });
+                r.end();
+            });
+        });
+        q.end();
     });
 
     t.test('feature#create - MultiPoint', (q) => {
-        request.post({
-            headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/feature',
-            body: JSON.stringify({
-                type: 'Feature',
-                properties: {
-                    number: '123'
-                },
-                geometry: {
-                    type: 'MultiPoint',
-                    coordinates: [[ 0, 0 ], [ 1,1 ]]
-                }
-            })
-        }, (err, res) => {
-            t.error(err);
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
-            q.end();
+        q.test('feature#create - MultiPoint - endpoint', (r) => {
+            request.post({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/data/feature',
+                body: JSON.stringify({
+                    type: 'Feature',
+                    properties: {
+                        number: '123'
+                    },
+                    geometry: {
+                        type: 'MultiPoint',
+                        coordinates: [[ 0, 0 ], [ 1,1 ]]
+                    }
+                })
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, 'true');
+                r.end();
+            });
         });
+
+        q.test('feature#create - MultiPoint - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 2;', (err, res) => {
+                r.error(err, 'no errors');
+                r.deepEquals(res.rows[0], {
+                    id: '2',
+                    version: '1',
+                    geom: '{"type":"MultiPoint","coordinates":[[0,0],[1,1]]}',
+                    props: { number: '123' },
+                    deltas: [ '2' ]
+                });
+                r.end();
+            });
+        });
+        q.end();
     });
 
     t.test('feature#create - LineString', (q) => {
-        request.post({
-            headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/feature',
-            body: JSON.stringify({
-                type: 'Feature',
-                properties: {
-                    building: true
-                },
-                geometry: {
-                    type: 'LineString',
-                    coordinates: [[ 0, 0 ], [ 1,1 ]]
-                }
-            })
-        }, (err, res) => {
-            t.error(err);
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
-            q.end();
+        q.test('feature#create - LineString - endpoint', (r) => {
+            request.post({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/data/feature',
+                body: JSON.stringify({
+                    type: 'Feature',
+                    properties: {
+                        building: true
+                    },
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: [[ 0, 0 ], [ 1,1 ]]
+                    }
+                })
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, 'true');
+                r.end();
+            });
         });
+
+        q.test('feature#create - LineString - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 3;', (err, res) => {
+                r.error(err, 'no errors');
+                r.deepEquals(res.rows[0], {
+                    id: '3',
+                    version: '1',
+                    geom: '{"type":"LineString","coordinates":[[0,0],[1,1]]}',
+                    props: { building: true },
+                    deltas: [ '3' ]
+                });
+                r.end();
+            });
+        });
+        q.end();
     });
 
     t.test('feature#create - MultiLineString', (q) => {
-        request.post({
-            headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/feature',
-            body: JSON.stringify({
-                type: 'Feature',
-                properties: {
-                    building: true
-                },
-                geometry: {
-                    type: 'MultiLineString',
-                    coordinates: [[[ 0, 0 ], [ 1,1 ]], [[ 1,1 ], [ 2, 2 ]]]
-                }
-            })
-        }, (err, res) => {
-            t.error(err);
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
-            q.end();
+        q.test('feature#create - MultiLineString - endpoint', (r) => {
+            request.post({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/data/feature',
+                body: JSON.stringify({
+                    type: 'Feature',
+                    properties: {
+                        building: true
+                    },
+                    geometry: {
+                        type: 'MultiLineString',
+                        coordinates: [[[ 0, 0 ], [ 1,1 ]], [[ 1,1 ], [ 2, 2 ]]]
+                    }
+                })
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, 'true');
+                r.end();
+            });
         });
+
+        q.test('feature#create - MultiLineString - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 4;', (err, res) => {
+                r.error(err, 'no errors');
+                r.deepEquals(res.rows[0], {
+                    id: '4',
+                    version: '1',
+                    geom: '{"type":"MultiLineString","coordinates":[[[0,0],[1,1]],[[1,1],[2,2]]]}',
+                    props: { building: true },
+                    deltas: [ '4' ]
+                });
+                r.end();
+            });
+        });
+        q.end();
     });
 
     t.end();
@@ -193,27 +270,44 @@ test('feature#create', (t) => {
 
 test('feature#patch', (t) => {
     t.test('feature#patch - Point', (q) => {
-        request.patch({
-            headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/feature',
-            body: JSON.stringify({
-                id: 1,
-                version: 2,
-                type: 'Feature',
-                properties: {
-                    number: '321'
-                },
-                geometry: {
-                    type: 'Point',
-                    coordinates: [ 1, 1 ]
-                }
-            })
-        }, (err, res) => {
-            t.error(err);
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
-            q.end();
+        q.test('feature#patch - Point - endpoint', (r) => {
+            request.patch({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/data/feature',
+                body: JSON.stringify({
+                    id: 1,
+                    version: 2,
+                    type: 'Feature',
+                    properties: {
+                        number: '321'
+                    },
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [ 1, 1 ]
+                    }
+                })
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, 'true');
+                r.end();
+            });
         });
+
+        q.test('feature#create - MultiLineString - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
+                r.error(err, 'no errors');
+                r.deepEquals(res.rows[0], {
+                    id: '1',
+                    version: '2',
+                    geom: '{"type":"Point","coordinates":[1,1]}',
+                    props: { number: '321' },
+                    deltas: [ '1' ]
+                });
+                r.end();
+            });
+        });
+        q.end();
     });
 
     t.test('feature#patch - MultiPoint', (q) => {
@@ -233,9 +327,9 @@ test('feature#patch', (t) => {
                 }
             })
         }, (err, res) => {
-            t.error(err);
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
+            q.error(err, 'no errors');
+            q.equals(res.statusCode, 200);
+            q.equals(res.body, 'true');
             q.end();
         });
     });
@@ -257,9 +351,9 @@ test('feature#patch', (t) => {
                 }
             })
         }, (err, res) => {
-            t.error(err);
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
+            q.error(err, 'no errors');
+            q.equals(res.statusCode, 200);
+            q.equals(res.body, 'true');
             q.end();
         });
     });
@@ -281,9 +375,9 @@ test('feature#patch', (t) => {
                 }
             })
         }, (err, res) => {
-            t.error(err);
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
+            q.error(err, 'no errors');
+            q.equals(res.statusCode, 200);
+            q.equals(res.body, 'true');
             q.end();
         });
     });
@@ -291,7 +385,7 @@ test('feature#patch', (t) => {
     t.end();
 });
 
-test.skip('feature#delete', (t) => {
+test('feature#delete', (t) => {
     t.test('feature#delete - version mismatch', (q) => {
         request.delete({
             headers: { 'content-type' : 'application/json' },
@@ -304,10 +398,10 @@ test.skip('feature#delete', (t) => {
                 geometry: null
             })
         }, (err, res) => {
-            t.error(err);
+            q.error(err, 'no errors');
 
-            t.equals(res.statusCode, 417);
-            t.equals(res.body, 'Delete Version Mismatch');
+            q.equals(res.statusCode, 417);
+            q.equals(res.body, 'Delete Version Mismatch');
             q.end();
         });
     });
@@ -324,10 +418,10 @@ test.skip('feature#delete', (t) => {
                 geometry: null
             })
         }, (err, res) => {
-            t.error(err);
+            q.error(err, 'no errors');
 
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
+            q.equals(res.statusCode, 200);
+            q.equals(res.body, 'true');
             q.end();
         });
     });
@@ -344,10 +438,10 @@ test.skip('feature#delete', (t) => {
                 geometry: null
             })
         }, (err, res) => {
-            t.error(err);
+            q.error(err, 'no errors');
 
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
+            q.equals(res.statusCode, 200);
+            q.equals(res.body, 'true');
             q.end();
         });
     });
@@ -364,10 +458,10 @@ test.skip('feature#delete', (t) => {
                 geometry: null
             })
         }, (err, res) => {
-            t.error(err);
+            q.error(err, 'no errors');
 
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
+            q.equals(res.statusCode, 200);
+            q.equals(res.body, 'true');
             q.end();
         });
     });
@@ -384,16 +478,16 @@ test.skip('feature#delete', (t) => {
                 geometry: null
             })
         }, (err, res) => {
-            t.error(err);
+            q.error(err, 'no errors');
 
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
+            q.equals(res.statusCode, 200);
+            q.equals(res.body, 'true');
             q.end();
         });
     });
 });
 
-t.test('features', (t) => {
+test('features', (t) => {
     t.test('features#basic', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
@@ -403,10 +497,10 @@ t.test('features', (t) => {
                 features: []
             })
         }, (err, res) => {
-            t.error(err);
+            q.error(err, 'no errors');
 
-            t.equals(res.statusCode, 200);
-            t.equals(res.body, 'true');
+            q.equals(res.statusCode, 200);
+            q.equals(res.body, 'true');
             q.end();
         });
 
@@ -415,14 +509,16 @@ t.test('features', (t) => {
     t.end();
 });
 
-test('Stop Server', (t) => {
-    exec(`
-        pkill hecate || true
-    `, (err, stdout, stderr) => {
-        t.error(err);
-        t.end();
+if (!process.env.DEBUG) {
+    test('Stop Server', (t) => {
+        exec(`
+            pkill hecate || true
+        `, (err, stdout, stderr) => {
+            t.error(err, 'no errors');
+            t.end();
+        });
     });
-});
+}
 
 /**
 echo -e "\n# XML Map"

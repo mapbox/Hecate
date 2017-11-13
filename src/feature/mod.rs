@@ -11,6 +11,7 @@ pub enum FeatureError {
     NoMembers,
     NoGeometry,
     VersionRequired,
+    PutError,
     DeleteVersionMismatch,
     DeleteError,
     PatchError,
@@ -36,6 +37,7 @@ impl FeatureError {
             FeatureError::NoMembers => { "No Members" },
             FeatureError::NoGeometry => { "No Geometry" },
             FeatureError::VersionRequired => { "Version Required" },
+            FeatureError::PutError => { "Put Error" },
             FeatureError::DeleteVersionMismatch => { "Delete Version Mismatch" },
             FeatureError::DeleteError => { "Internal Delete Error" },
             FeatureError::PatchVersionMismatch => { "Patch Version Mismatch" },
@@ -94,15 +96,15 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
 
 pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
     match get_action(&feat)? {
-        Action::Create => { put(&trans, &feat, &delta)?; },
-        Action::Modify => { patch(&trans, &feat, &delta)?; },
+        Action::Create => { put(&trans, &feat)?; },
+        Action::Modify => { patch(&trans, &feat)?; },
         Action::Delete => { delete(&trans, &feat, &delta)?; }
     }
 
     Ok(true)
 }
 
-pub fn put(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
+pub fn put(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -116,20 +118,29 @@ pub fn put(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    trans.execute("
+    match trans.execute("
         INSERT INTO geo (version, geom, props, deltas)
             VALUES (
                 1,
                 ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                 $2::TEXT::JSON,
-                array[$3::BIGINT]
+                array[currval('deltas_id_seq')::BIGINT]
             );
-    ", &[&geom_str, &props_str, &delta]).unwrap();
-
-    Ok(true)
+    ", &[&geom_str, &props_str]) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => {
+                    println!("{:?}", e);
+                    Err(FeatureError::PutError)
+                },
+                _ => Err(FeatureError::PutError)
+            }
+        }
+    }
 }
 
-pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
+pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -145,6 +156,8 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
+
+    let delta = 1;
 
     match trans.query("SELECT patch_geo($1, $2, $3, $4, $5);", &[&geom_str, &props_str, &delta, &id, &version]) {
         Ok(_) => Ok(true),
