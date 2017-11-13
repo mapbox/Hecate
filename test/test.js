@@ -294,7 +294,7 @@ test('feature#patch', (t) => {
             });
         });
 
-        q.test('feature#create - MultiLineString - database', (r) => {
+        q.test('feature#patch - Point - database', (r) => {
             pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
@@ -302,7 +302,7 @@ test('feature#patch', (t) => {
                     version: '2',
                     geom: '{"type":"Point","coordinates":[1,1]}',
                     props: { number: '321' },
-                    deltas: [ '1' ]
+                    deltas: [ '1', '5' ]
                 });
                 r.end();
             });
@@ -544,7 +544,4 @@ echo -e "\n# Features Post"
     '
 
     curl -i -s -X POST --data "$DATA" -H 'Content-Type: application/json' 'localhost:3000/api/data/features'
-
-# KILL SERVER
-pkill hecate || true
 */

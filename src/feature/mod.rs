@@ -98,7 +98,7 @@ pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature
     match get_action(&feat)? {
         Action::Create => { put(&trans, &feat)?; },
         Action::Modify => { patch(&trans, &feat)?; },
-        Action::Delete => { delete(&trans, &feat, &delta)?; }
+        Action::Delete => { delete(&trans, &feat)?; }
     }
 
     Ok(true)
@@ -159,7 +159,7 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature
 
     let delta = 1;
 
-    match trans.query("SELECT patch_geo($1, $2, $3, $4, $5);", &[&geom_str, &props_str, &delta, &id, &version]) {
+    match trans.query("SELECT patch_geo($1, $2, currval('deltas_id_seq')::BIGINT, $3, $4);", &[&geom_str, &props_str, &id, &version]) {
         Ok(_) => Ok(true),
         Err(err) => {
             match err.as_db() {
@@ -177,7 +177,7 @@ pub fn patch(trans: &postgres::transaction::Transaction, feat: &geojson::Feature
     }
 }
 
-pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
+pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<bool, FeatureError> {
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
 

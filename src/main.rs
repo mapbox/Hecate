@@ -324,7 +324,7 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
 
-    match feature::delete(&trans, &feat, &1) {
+    match feature::delete(&trans, &feat) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
