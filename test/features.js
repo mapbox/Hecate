@@ -54,8 +54,8 @@ if (!process.env.DEBUG) {
 }
 
 test('features', (t) => {
-    t.test('features - basic', (q) => {
-        q.test('features - basic - endpoint', (r) => {
+    t.test('features - basic create', (q) => {
+        q.test('features - basic create - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
                 url: 'http://localhost:3000/api/data/features',
@@ -71,6 +71,26 @@ test('features', (t) => {
                             type: 'Point',
                             coordinates: [ 1,1 ]
                         }
+                    }, {
+                        type: 'Feature',
+                        action: 'create',
+                        properties: {
+                            shop: true,
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [ 1.1,1.1 ]
+                        }
+                    }, {
+                        type: 'Feature',
+                        action: 'create',
+                        properties: {
+                            shop: true,
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [ 1.2,1.2 ]
+                        }
                     }]
                 })
             }, (err, res) => {
@@ -81,8 +101,8 @@ test('features', (t) => {
             });
         });
 
-        q.test('features - basic - database', (r) => {
-            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
+        q.test('features - basic create - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo ORDER BY id', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
                     id: '1',
@@ -90,6 +110,99 @@ test('features', (t) => {
                     geom: '{"type":"Point","coordinates":[1,1]}',
                     props: { shop: true },
                     deltas: [ '1' ]
+                });
+                r.deepEquals(res.rows[1], {
+                    id: '2',
+                    version: '1',
+                    geom: '{"type":"Point","coordinates":[1.1,1.1]}',
+                    props: { shop: true },
+                    deltas: [ '1' ]
+                });
+                r.deepEquals(res.rows[2], {
+                    id: '3',
+                    version: '1',
+                    geom: '{"type":"Point","coordinates":[1.2,1.2]}',
+                    props: { shop: true },
+                    deltas: [ '1' ]
+                });
+                r.end();
+            });
+        });
+        q.end();
+    });
+
+    t.test('features - basic modify', (q) => {
+        q.test('features - basic modify - endpoint', (r) => {
+            request.post({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/data/features',
+                body: JSON.stringify({
+                    type: 'FeatureCollection',
+                    features: [{
+                        type: 'Feature',
+                        action: 'modify',
+                        properties: {
+                            shop: false,
+                            amenity: true
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [ 2,2 ]
+                        }
+                    }, {
+                        type: 'Feature',
+                        action: 'modify',
+                        properties: {
+                            shop: true,
+                            building: true
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [ 0.1,0.1 ]
+                        }
+                    }, {
+                        type: 'Feature',
+                        action: 'modify',
+                        properties: {
+                            shop: true,
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [ 2.2,2.2 ]
+                        }
+                    }]
+                })
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, 'true');
+                r.end();
+            });
+        });
+
+        q.test('features - basic modify - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo ORDER BY id', (err, res) => {
+                r.error(err, 'no errors');
+                r.deepEquals(res.rows[0], {
+                    id: '1',
+                    version: '2',
+                    geom: '{"type":"Point","coordinates":[2,2]}',
+                    props: { shop: false, amenity: true },
+                    deltas: [ '1', '2' ]
+                });
+                r.deepEquals(res.rows[1], {
+                    id: '2',
+                    version: '2',
+                    geom: '{"type":"Point","coordinates":[0.1,0.1]}',
+                    props: { shop: true, building: true },
+                    deltas: [ '1', '2' ]
+                });
+                r.deepEquals(res.rows[2], {
+                    id: '3',
+                    version: '2',
+                    geom: '{"type":"Point","coordinates":[2.2,2.2]}',
+                    props: { shop: true },
+                    deltas: [ '1', '2' ]
                 });
                 r.end();
             });
@@ -121,17 +234,4 @@ echo -e "\n# XML Changeset Create"
     curl -s -X PUT --data "$DATA" 'localhost:3000/api/0.6/changeset/create'
     echo ""
     echo "SELECT id, props FROM deltas" | psql -U postgres hecate
-
-echo -e "\n# Features Post"
-    DATA='
-        {
-            "type": "FeatureCollection",
-            "features": [
-                { "action": "create", "type": "Feature", "properties": { "addr:number": "543" }, "geometry": {"type": "Point", "coordinates": [2.1, 2.1] } },
-                { "id": 1, "action": "modify", "version": 2, "type": "Feature", "properties": { "addr:number": "543" }, "geometry": {"type": "Point", "coordinates": [2.2, 1.1] } }
-            ]
-        }
-    '
-
-    curl -i -s -X POST --data "$DATA" -H 'Content-Type: application/json' 'localhost:3000/api/data/features'
-*/
+**/

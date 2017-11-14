@@ -24,6 +24,7 @@ CREATE TABLE deltas (
     id          BIGSERIAL,
     created     TIMESTAMP,
     features    JSONB,
+    affected    BIGINT[],
     props       JSONB,
     uid         BIGINT
 );
@@ -45,8 +46,8 @@ CREATE OR REPLACE FUNCTION delete_geo(BIGINT, BIGINT)
     END;
     $$ LANGUAGE plpgsql;
 
--- patch_geo( geom_str, props_str, delta, id, version)
-CREATE OR REPLACE FUNCTION patch_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT)
+-- modify_geo( geom_str, props_str, delta, id, version)
+CREATE OR REPLACE FUNCTION modify_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT)
     RETURNS boolean AS $$
     BEGIN
         UPDATE geo
