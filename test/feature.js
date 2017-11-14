@@ -575,28 +575,6 @@ test('feature#delete', (t) => {
     });
 });
 
-test('features', (t) => {
-    t.test('features#basic', (q) => {
-        request.post({
-            headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/features',
-            body: JSON.stringify({
-                type: 'FeatureCollection',
-                features: []
-            })
-        }, (err, res) => {
-            q.error(err, 'no errors');
-
-            q.equals(res.statusCode, 200);
-            q.equals(res.body, 'true');
-            q.end();
-        });
-
-    });
-
-    t.end();
-});
-
 if (!process.env.DEBUG) {
     test('Stop Server', (t) => {
         exec(`
@@ -607,29 +585,3 @@ if (!process.env.DEBUG) {
         });
     });
 }
-
-/**
-echo -e "\n# XML Map"
-    echo $(curl -s -X GET 'localhost:3000/api/0.6/map?bbox=-1,-1,1,1')
-    echo ""
-
-echo -e "\n# XML Changeset Create"
-    DATA='<osm><changeset><tag k="created_by" v="JOSM 1.61"/><tag k="comment" v="Just adding some streetnames"/></changeset></osm>'
-
-    curl -s -X PUT --data "$DATA" 'localhost:3000/api/0.6/changeset/create'
-    echo ""
-    echo "SELECT id, props FROM deltas" | psql -U postgres hecate
-
-echo -e "\n# Features Post"
-    DATA='
-        {
-            "type": "FeatureCollection",
-            "features": [
-                { "action": "create", "type": "Feature", "properties": { "addr:number": "543" }, "geometry": {"type": "Point", "coordinates": [2.1, 2.1] } },
-                { "id": 1, "action": "modify", "version": 2, "type": "Feature", "properties": { "addr:number": "543" }, "geometry": {"type": "Point", "coordinates": [2.2, 1.1] } }
-            ]
-        }
-    '
-
-    curl -i -s -X POST --data "$DATA" -H 'Content-Type: application/json' 'localhost:3000/api/data/features'
-*/

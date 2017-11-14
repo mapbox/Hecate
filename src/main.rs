@@ -126,6 +126,12 @@ fn features_post(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
+    let map: HashMap<String, Option<String>> = HashMap::new();
+
+    if changeset::create(&trans, &fc, &map, &1).is_err() {
+        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
+    }
+
     for feat in fc.features {
         feature::action(&trans, feat, &1);
     }
