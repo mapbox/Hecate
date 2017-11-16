@@ -11,11 +11,11 @@ pub enum FeatureError {
     NoMembers,
     NoGeometry,
     VersionRequired,
-    PutError,
+    CreateError,
     DeleteVersionMismatch,
     DeleteError,
-    PatchError,
-    PatchVersionMismatch,
+    ModifyError,
+    ModifyVersionMismatch,
     IdRequired,
     ActionRequired,
     InvalidBBOX,
@@ -37,11 +37,11 @@ impl FeatureError {
             FeatureError::NoMembers => { "No Members" },
             FeatureError::NoGeometry => { "No Geometry" },
             FeatureError::VersionRequired => { "Version Required" },
-            FeatureError::PutError => { "Put Error" },
+            FeatureError::CreateError => { "Create Error" },
             FeatureError::DeleteVersionMismatch => { "Delete Version Mismatch" },
             FeatureError::DeleteError => { "Internal Delete Error" },
-            FeatureError::PatchVersionMismatch => { "Patch Version Mismatch" },
-            FeatureError::PatchError => { "Internal Patch Error" },
+            FeatureError::ModifyVersionMismatch => { "Modify Version Mismatch" },
+            FeatureError::ModifyError => { "Internal Modify Error" },
             FeatureError::IdRequired => { "ID Required" }
             FeatureError::ActionRequired => { "Action Required" },
             FeatureError::InvalidBBOX => { "Invalid BBOX" },
@@ -132,9 +132,9 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
             match err.as_db() {
                 Some(e) => {
                     println!("{:?}", e);
-                    Err(FeatureError::PutError)
+                    Err(FeatureError::CreateError)
                 },
-                _ => Err(FeatureError::PutError)
+                _ => Err(FeatureError::CreateError)
             }
         }
     }
@@ -164,14 +164,14 @@ pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
         Err(err) => {
             match err.as_db() {
                 Some(e) => {
-                    if e.message == "DELETE: ID or VERSION Mismatch" {
-                        Err(FeatureError::PatchVersionMismatch)
+                    if e.message == "MODIFY: ID or VERSION Mismatch" {
+                        Err(FeatureError::ModifyVersionMismatch)
                     } else {
                         println!("{:?}", e);
-                        Err(FeatureError::PatchError)
+                        Err(FeatureError::ModifyError)
                     }
                 },
-                _ => Err(FeatureError::PatchError)
+                _ => Err(FeatureError::ModifyError)
             }
         }
     }

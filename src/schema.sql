@@ -61,7 +61,7 @@ CREATE OR REPLACE FUNCTION modify_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT)
                 AND version + 1 = $5;
 
         IF NOT FOUND THEN
-            RAISE EXCEPTION 'PATCH: ID or VERSION Mismatch';
+            RAISE EXCEPTION 'MODIFY: ID or VERSION Mismatch';
         END IF;
 
         RETURN true;

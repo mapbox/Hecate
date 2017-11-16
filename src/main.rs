@@ -133,7 +133,14 @@ fn features_post(req: &mut Request) -> IronResult<Response> {
     }
 
     for feat in fc.features {
-        feature::action(&trans, feat, &1);
+        match feature::action(&trans, feat, &1) {
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Ok(Response::with((status::ExpectationFailed, err.to_string())));
+            },
+            Ok(_) => ()
+        }
     }
 
     trans.commit().unwrap();
