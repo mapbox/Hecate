@@ -5,6 +5,7 @@ extern crate postgres;
 extern crate serde_json;
 
 #[derive(PartialEq)]
+#[derive(Debug)]
 pub enum FeatureError {
     NotFound,
     NoProps,
@@ -23,6 +24,7 @@ pub enum FeatureError {
 }
 
 #[derive(PartialEq)]
+#[derive(Debug)]
 pub enum Action {
     Create,
     Modify,
@@ -94,7 +96,9 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
 }
 
 pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature) -> Result<bool, FeatureError> {
-    match get_action(&feat)? {
+    let action = get_action(&feat)?;
+
+    match action {
         Action::Create => { create(&trans, &feat)?; },
         Action::Modify => { modify(&trans, &feat)?; },
         Action::Delete => { delete(&trans, &feat)?; }
@@ -130,7 +134,6 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
         Err(err) => {
             match err.as_db() {
                 Some(e) => {
-                    println!("{:?}", e);
                     Err(FeatureError::CreateError)
                 },
                 _ => Err(FeatureError::CreateError)
@@ -164,7 +167,6 @@ pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
                     if e.message == "MODIFY: ID or VERSION Mismatch" {
                         Err(FeatureError::ModifyVersionMismatch)
                     } else {
-                        println!("{:?}", e);
                         Err(FeatureError::ModifyError)
                     }
                 },

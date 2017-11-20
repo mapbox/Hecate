@@ -139,8 +139,10 @@ test('features', (t) => {
                 body: JSON.stringify({
                     type: 'FeatureCollection',
                     features: [{
+                        id: 1,
                         type: 'Feature',
                         action: 'modify',
+                        version: 2,
                         properties: {
                             shop: false,
                             amenity: true
@@ -150,8 +152,10 @@ test('features', (t) => {
                             coordinates: [ 2,2 ]
                         }
                     }, {
+                        id: 2,
                         type: 'Feature',
                         action: 'modify',
+                        version: 2,
                         properties: {
                             shop: true,
                             building: true
@@ -161,8 +165,10 @@ test('features', (t) => {
                             coordinates: [ 0.1,0.1 ]
                         }
                     }, {
+                        id: 3,
                         type: 'Feature',
                         action: 'modify',
+                        version: 2,
                         properties: {
                             shop: true,
                         },

@@ -7,6 +7,7 @@ extern crate serde_json;
 use std::collections::HashMap;
 
 #[derive(PartialEq)]
+#[derive(Debug)]
 pub enum ChangesetError {
     CreationFail,
     NotFound
@@ -35,10 +36,7 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
     ", &[&fc_str, &uid, &props]) {
         Err(err) => {
             match err.as_db() {
-                Some(e) => {
-                    println!("{:?}", e);
-                    Err(ChangesetError::CreationFail)
-                },
+                Some(_e) => { Err(ChangesetError::CreationFail) },
                 _ => Err(ChangesetError::CreationFail)
             }
         },

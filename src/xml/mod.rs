@@ -7,6 +7,7 @@ use self::quick_xml::events as XMLEvents;
 use std::collections::HashMap;
 
 #[derive(PartialEq)]
+#[derive(Debug)]
 pub enum XMLError {
     Unknown,
     Invalid,
