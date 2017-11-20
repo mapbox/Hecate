@@ -9,7 +9,7 @@ use std::collections::HashMap;
 #[derive(PartialEq)]
 pub enum XMLError {
     Unknown,
-	Invalid,
+    Invalid,
     GCNotSupported,
     EncodingFailed
 }
@@ -44,28 +44,28 @@ impl OSMTypes {
 }
 
 pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, Option<String>>) {
-	let mut kv: (Option<String>, Option<String>) = (None, None);
+    let mut kv: (Option<String>, Option<String>) = (None, None);
 
     for attr in xml_node.attributes() {
-		let attr = attr.unwrap();
+        let attr = attr.unwrap();
 
         match attr.key {
-			b"k"  => kv.0 = Some(String::from_utf8_lossy(attr.value).parse().unwrap()),
+            b"k"  => kv.0 = Some(String::from_utf8_lossy(attr.value).parse().unwrap()),
             b"v"  => kv.1 = Some(String::from_utf8_lossy(attr.value).parse().unwrap()),
             _ => ()
         }
     }
 
-	map.insert(kv.0.unwrap(), kv.1);
+    map.insert(kv.0.unwrap(), kv.1);
 }
 
 pub fn to_changeset(body: &String) -> Result<HashMap<String, Option<String>>, XMLError> {
     let mut reader = quick_xml::reader::Reader::from_str(body);
     let mut buf = Vec::new();
 
-	let mut map = HashMap::new();
+    let mut map = HashMap::new();
 
-	 loop {
+     loop {
         match reader.read_event(&mut buf) {
             Ok(XMLEvents::Event::Start(ref e)) => {
                 match e.name() {
@@ -85,12 +85,12 @@ pub fn to_changeset(body: &String) -> Result<HashMap<String, Option<String>>, XM
         }
 
         buf.clear()
-	}
+    }
 
     Ok(map)
 }
 
-pub fn to_features(body: &String) -> Result<geojson::FeatureCollection, XMLError> {
+pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLError> {
     Err(XMLError::Unknown)
 }
 
@@ -103,13 +103,13 @@ pub fn from(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {
             Some(ref geom) => {
                 match geom.value {
                     geojson::Value::Point(ref coords) => {
-                        point(&feat, &coords, &mut osm);
+                        point(&feat, &coords, &mut osm)?;
                     },
                     geojson::Value::MultiPoint(ref coords) => {
                         multipoint(&feat, &coords, &mut osm);
                     },
                     geojson::Value::LineString(ref coords) => {
-                        linestring(&feat, &coords, &mut osm);
+                        linestring(&feat, &coords, &mut osm)?;
                     },
                     geojson::Value::MultiLineString(ref coords) => {
                         multilinestring(&feat, &coords, &mut osm);
@@ -123,7 +123,7 @@ pub fn from(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {
                     _ => {
                         return Err(XMLError::GCNotSupported);
                     }
-				}
+                }
             },
             None => { return Err(XMLError::Unknown); }
         }
@@ -148,26 +148,28 @@ pub fn point(feat: &geojson::Feature, coords: &geojson::PointType, osm: &mut OSM
 
     writer.write_event(XMLEvents::Event::Start(xml_node)).unwrap();
 
-	match *&feat.properties {
-		Some(ref props) => {
-			for (k, v) in props.iter() {
-				let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
-				xml_tag.push_attribute(("k", k.as_str()));
-				xml_tag.push_attribute(("v", v.as_str().unwrap()));
-				writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
-			}
-		},
+    match *&feat.properties {
+        Some(ref props) => {
+            for (k, v) in props.iter() {
+                let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+                xml_tag.push_attribute(("k", k.as_str()));
+                xml_tag.push_attribute(("v", v.as_str().unwrap()));
+                writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+            }
+        },
         None => { return Err(XMLError::Unknown); }
-	};
+    };
 
     writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"node"))).unwrap();
 
     osm.nodes.push_str(&*String::from_utf8(writer.into_inner().into_inner()).unwrap());
 
-	Ok(true)
+    Ok(true)
 }
 
-pub fn multipoint(feat: &geojson::Feature, coords: &Vec<geojson::PointType>, osm: &mut OSMTypes) { }
+pub fn multipoint(_feat: &geojson::Feature, _coords: &Vec<geojson::PointType>, _osm: &mut OSMTypes) {
+
+}
 
 pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm: &mut OSMTypes) -> Result<bool, XMLError> {
     let mut writer = Writer::new(Cursor::new(Vec::new()));
@@ -191,30 +193,35 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
         writer.write_event(XMLEvents::Event::Empty(xml_nd)).unwrap();
     }
 
-	match *&feat.properties {
-		Some(ref props) => {
-			for (k, v) in props.iter() {
-				let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
-				xml_tag.push_attribute(("k", k.as_str()));
-				xml_tag.push_attribute(("v", v.as_str().unwrap()));
-				writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
-			}
-		},
+    match *&feat.properties {
+        Some(ref props) => {
+            for (k, v) in props.iter() {
+                let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+                xml_tag.push_attribute(("k", k.as_str()));
+                xml_tag.push_attribute(("v", v.as_str().unwrap()));
+                writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+            }
+        },
         None => { return Err(XMLError::Unknown); }
-	};
+    };
 
     writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"way"))).unwrap();
 
     osm.ways.push_str(&*String::from_utf8(writer.into_inner().into_inner()).unwrap());
 
-	Ok(true)
+    Ok(true)
 }
-pub fn multilinestring(feat: &geojson::Feature, coords: &Vec<geojson::LineStringType>, osm: &mut OSMTypes) { }
-
-pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &mut OSMTypes) {
+pub fn multilinestring(_feat: &geojson::Feature, _coords: &Vec<geojson::LineStringType>, _osm: &mut OSMTypes) {
 
 }
-pub fn multipolygon(feat: &geojson::Feature, coords: &Vec<geojson::PolygonType>, osm: &mut OSMTypes) { }
+
+pub fn polygon(_feat: &geojson::Feature, _coords: &geojson::PolygonType, _osm: &mut OSMTypes) {
+
+}
+
+pub fn multipolygon(_feat: &geojson::Feature, _coords: &Vec<geojson::PolygonType>, _osm: &mut OSMTypes) {
+
+}
 
 pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<(String, i64), XMLError> {
     let mut writer = Writer::new(Cursor::new(Vec::new()));
@@ -230,5 +237,5 @@ pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<(Stri
 
     writer.write_event(XMLEvents::Event::Empty(xml_node)).unwrap();
 
-	Ok((String::from_utf8(writer.into_inner().into_inner()).unwrap(), osm.node_it))
+    Ok((String::from_utf8(writer.into_inner().into_inner()).unwrap(), osm.node_it))
 }

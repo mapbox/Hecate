@@ -45,8 +45,7 @@ impl FeatureError {
             FeatureError::IdRequired => { "ID Required" }
             FeatureError::ActionRequired => { "Action Required" },
             FeatureError::InvalidBBOX => { "Invalid BBOX" },
-            FeatureError::InvalidFeature => { "Invalid Feature" },
-            _ => { "Generic FeatureError" }
+            FeatureError::InvalidFeature => { "Invalid Feature" }
         }
     }
 }
@@ -94,7 +93,7 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     }
 }
 
-pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &i64) -> Result<bool, FeatureError> {
+pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature) -> Result<bool, FeatureError> {
     match get_action(&feat)? {
         Action::Create => { create(&trans, &feat)?; },
         Action::Modify => { modify(&trans, &feat)?; },
@@ -156,8 +155,6 @@ pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
-
-    let delta = 1;
 
     match trans.query("SELECT modify_geo($1, $2, currval('deltas_id_seq')::BIGINT, $3, $4);", &[&geom_str, &props_str, &id, &version]) {
         Ok(_) => Ok(true),

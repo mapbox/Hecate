@@ -119,7 +119,7 @@ fn features_get(req: &mut Request) -> IronResult<Response> {
 fn features_post(req: &mut Request) -> IronResult<Response> {
     let fc = match get_geojson(req) {
         Ok(GeoJson::FeatureCollection(fc)) => fc,
-        Ok(typ) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON FeatureCollection"))); }
+        Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON FeatureCollection"))); }
         Err(err) => { return Ok(err); }
     };
 
@@ -133,7 +133,7 @@ fn features_post(req: &mut Request) -> IronResult<Response> {
     }
 
     for feat in fc.features {
-        match feature::action(&trans, feat, &1) {
+        match feature::action(&trans, feat) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
@@ -214,12 +214,12 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
-    let fc = match xml::to_features(&body_str) {
+    let _fc = match xml::to_features(&body_str) {
         Ok(fc) => fc,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
 
-    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    let _conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
     Ok(Response::with((status::Ok)))
 }
