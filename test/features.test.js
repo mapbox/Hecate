@@ -215,7 +215,58 @@ test('features', (t) => {
         });
         q.end();
     });
+
+    t.test('features - basic delete', (q) => {
+        q.test('features - basic delete - endpoint', (r) => {
+            request.post({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/data/features',
+                body: JSON.stringify({
+                    type: 'FeatureCollection',
+                    features: [{
+                        id: 1,
+                        type: 'Feature',
+                        action: 'delete',
+                        version: 3,
+                        properties: null,
+                        geometry: null
+                    }, {
+                        id: 2,
+                        type: 'Feature',
+                        action: 'delete',
+                        version: 3,
+                        properties: null,
+                        geometry: null
+                    }, {
+                        id: 3,
+                        type: 'Feature',
+                        action: 'delete',
+                        version: 3,
+                        properties: null,
+                        geometry: null
+                    }]
+                })
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, 'true');
+                r.end();
+            });
+        });
+
+        q.test('features - basic delete - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo', (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.rows.length, 0);
+                r.end();
+            });
+        });
+    });
     t.end();
+});
+
+test('Disconnect', (t) => {
+    pool.end(t.end);
 });
 
 if (!process.env.DEBUG) {

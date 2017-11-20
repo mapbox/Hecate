@@ -575,6 +575,10 @@ test('feature#delete', (t) => {
     });
 });
 
+test('Disconnect', (t) => {
+    pool.end(t.end);
+});
+
 if (!process.env.DEBUG) {
     test('Stop Server', (t) => {
         exec(`
