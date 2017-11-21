@@ -1,5 +1,6 @@
 extern crate geojson;
 extern crate quick_xml;
+extern crate serde_json;
 
 use std::io::Cursor;
 use self::quick_xml::writer::Writer;
@@ -199,7 +200,19 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
             for (k, v) in props.iter() {
                 let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
                 xml_tag.push_attribute(("k", k.as_str()));
-                xml_tag.push_attribute(("v", v.as_str().unwrap()));
+
+                let v_str = match *v {
+                    serde_json::value::Value::Null => String::from(""),
+                    serde_json::value::Value::Bool(ref json_bool) => match *json_bool {
+                        true => String::from("yes"),
+                        false => String::from("no")
+                    },
+                    serde_json::value::Value::Number(ref json_num) => String::from(format!("{}", json_num)),
+                    serde_json::value::Value::String(ref json_str) => json_str.to_string(),
+                    _ => { v.to_string() }
+                };
+
+                xml_tag.push_attribute(("v", &*v_str));
                 writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
             }
         },
