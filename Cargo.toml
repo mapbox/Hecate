@@ -22,3 +22,7 @@ env_logger = "0.3"
 [dependencies.clap]
 features = ["yaml"]
 version = "2.19.0"
+
+[[bin]]
+name = "hecate"
+doc = false
