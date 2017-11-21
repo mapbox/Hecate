@@ -133,9 +133,7 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
         Ok(_) => Ok(true),
         Err(err) => {
             match err.as_db() {
-                Some(e) => {
-                    Err(FeatureError::CreateError)
-                },
+                Some(_e) => { Err(FeatureError::CreateError) },
                 _ => Err(FeatureError::CreateError)
             }
         }
