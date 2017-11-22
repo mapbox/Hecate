@@ -71,6 +71,7 @@ fn main() {
     //OSM XML Compat. Shim
     router.get("/api/capabilities", xml_capabilities, "xml_capabilities");
     router.get("/api/0.6/capabilities", xml_capabilities, "xml_06capabilities");
+    router.get("/api/0.6/user/details", xml_user, "xml_06user");
     router.get("/api/0.6/map", xml_map, "xml_map");
     router.put("/api/0.6/changeset/create", xml_changeset_create, "xml_createChangeset");
     router.put("/api/0.6/changeset/:id/upload", xml_changeset_upload, "xml_putChangeset");
@@ -235,6 +236,21 @@ fn xml_capabilities(_req: &mut Request) -> IronResult<Response> {
                 <timeout seconds=\"300\"/>
                 <status database=\"online\" api=\"online\"/>
             </api>
+        </osm>
+    ")))
+}
+
+fn xml_user(_req: &mut Request) -> IronResult<Response> {
+    Ok(Response::with((status::Ok, "
+        <osm version=\"0.6\" generator=\"Hecate Server\">
+            <user id=\"1\" display_name=\"user\" account_created=\"2010-06-18T12:34:58Z\">
+                <description></description>
+                <languages><lang>en-US</lang><lang>en</lang></languages>
+                <messages>
+                    <recieved county=\"0\" unread=\"0\"/>
+                    <send count=\"0\"/>
+                </messages>
+            </user>
         </osm>
     ")))
 }
