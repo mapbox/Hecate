@@ -155,7 +155,9 @@ pub fn point(feat: &geojson::Feature, coords: &geojson::PointType, osm: &mut OSM
             for (k, v) in props.iter() {
                 let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
                 xml_tag.push_attribute(("k", k.as_str()));
-                xml_tag.push_attribute(("v", v.as_str().unwrap()));
+
+                xml_tag.push_attribute(("v", &*json2str(&v)));
+
                 writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
             }
         },
@@ -201,18 +203,7 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
                 let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
                 xml_tag.push_attribute(("k", k.as_str()));
 
-                let v_str = match *v {
-                    serde_json::value::Value::Null => String::from(""),
-                    serde_json::value::Value::Bool(ref json_bool) => match *json_bool {
-                        true => String::from("yes"),
-                        false => String::from("no")
-                    },
-                    serde_json::value::Value::Number(ref json_num) => String::from(format!("{}", json_num)),
-                    serde_json::value::Value::String(ref json_str) => json_str.to_string(),
-                    _ => { v.to_string() }
-                };
-
-                xml_tag.push_attribute(("v", &*v_str));
+                xml_tag.push_attribute(("v", &*json2str(&v)));
                 writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
             }
         },
@@ -235,6 +226,19 @@ pub fn polygon(_feat: &geojson::Feature, _coords: &geojson::PolygonType, _osm: &
 
 pub fn multipolygon(_feat: &geojson::Feature, _coords: &Vec<geojson::PolygonType>, _osm: &mut OSMTypes) {
 
+}
+
+pub fn json2str(v: &serde_json::value::Value) -> String {
+    match *v {
+        serde_json::value::Value::Null => String::from(""),
+        serde_json::value::Value::Bool(ref json_bool) => match *json_bool {
+            true => String::from("yes"),
+            false => String::from("no")
+        },
+        serde_json::value::Value::Number(ref json_num) => String::from(format!("{}", json_num)),
+        serde_json::value::Value::String(ref json_str) => json_str.to_string(),
+        _ => v.to_string()
+    }
 }
 
 pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<(String, i64), XMLError> {
