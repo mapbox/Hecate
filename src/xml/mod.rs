@@ -2,7 +2,18 @@ extern crate geojson;
 extern crate quick_xml;
 extern crate serde_json;
 
-use osm::*;
+mod node;
+mod way;
+mod rel;
+mod tree;
+
+use xml::node::Node;
+use xml::way::Way;
+use xml::rel::Rel;
+use xml::tree::OSMTree;
+
+use std::string;
+use std::num;
 use std::io::Cursor;
 use self::quick_xml::writer::Writer;
 use self::quick_xml::events as XMLEvents;
@@ -15,19 +26,86 @@ pub enum XMLError {
     Invalid,
     GCNotSupported,
     EncodingFailed,
-    InternalError
+    InternalError,
+    ParsingError,
+    InvalidNode,
+    InvalidNodeRef,
+    InvalidWay,
+    InvalidWayRef,
+    InvalidRel,
+    InvalidXML,
+    NotFoundError,
+    StringParsing(string::ParseError),
+    IntParsing(num::ParseIntError),
+    FloatParsing(num::ParseFloatError)
 }
 
 impl XMLError {
     pub fn to_string(&self) -> &str {
         match *self {
-            XMLError::Unknown => { "Unknown Error" },
-            XMLError::GCNotSupported => { "GeometryCollection are not currently supported" },
-            XMLError::Invalid => { "Could not parse XML - Invalid" },
-            XMLError::EncodingFailed => { "Encoding Failed" },
-            XMLError::InternalError => { "Internal Error" }
+            XMLError::Unknown => "Unknown Error",
+            XMLError::GCNotSupported => "GeometryCollection are not currently supported",
+            XMLError::Invalid => "Could not parse XML - Invalid",
+            XMLError::EncodingFailed => "Encoding Failed",
+            XMLError::InternalError => "Internal Error",
+            XMLError::ParsingError => "Parsing Error",
+            XMLError::InvalidNode => "Invalid Node",
+            XMLError::InvalidNodeRef => "Invalid Node Reference",
+            XMLError::InvalidWay => "Invalid Way",
+            XMLError::InvalidWayRef => "Invalid Way Reference",
+            XMLError::InvalidRel => "Invalid Relation",
+            XMLError::InvalidXML => "Invalid XML",
+            XMLError::NotFoundError => "Not Found",
+            XMLError::StringParsing(_) => "Could not parse attribute to string",
+            XMLError::IntParsing(_) => "Could not parse attribute to integer",
+            XMLError::FloatParsing(_) => "Could not parse attribute to float"
         }
     }
+}
+
+impl From<string::FromUtf8Error> for XMLError {
+    fn from(error: string::FromUtf8Error) -> XMLError {
+        XMLError::ParsingError
+    }   
+}
+
+impl From<quick_xml::errors::Error> for XMLError {
+    fn from(error: quick_xml::errors::Error) -> XMLError {
+        XMLError::InvalidXML
+    }   
+}
+
+impl From<string::ParseError> for XMLError {
+    fn from(error: string::ParseError) -> XMLError {
+        XMLError::StringParsing(error)
+    }
+}
+
+impl From<num::ParseFloatError> for XMLError {
+    fn from(error: num::ParseFloatError) -> XMLError {
+        XMLError::FloatParsing(error)
+    }
+}
+
+impl From<num::ParseIntError> for XMLError {
+    fn from(error: num::ParseIntError) -> XMLError {
+        XMLError::IntParsing(error)
+    }
+}
+
+#[derive(PartialEq)]
+pub enum Value {
+    None,
+    Node,
+    Way,
+    Rel 
+}
+
+pub trait Generic {
+    fn new() -> Self;
+    fn value(&self) -> Value;
+    fn set_tag(&mut self, k: String, v: String);
+    fn is_valid(&self) -> bool;
 }
 
 pub struct OSMTypes {
@@ -229,7 +307,8 @@ pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLErro
                         if current != Value::None { return Err(XMLError::InternalError); }
                         if !opening_osm { return Err(XMLError::InternalError); }
 
-                        return Ok(tree);
+                        //ACTUALLY CONVERT TO GEOJSON HERE
+                        return Err(XMLError::Unknown);
                     }
                     _ => ()
                 }
@@ -241,9 +320,6 @@ pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLErro
 
         buf.clear();
     }
-
-    
-    Err(XMLError::Unknown)
 }
 
 pub fn from_features(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {
@@ -406,4 +482,151 @@ pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<(Stri
     writer.write_event(XMLEvents::Event::Empty(xml_node)).unwrap();
 
     Ok((String::from_utf8(writer.into_inner().into_inner()).unwrap(), osm.node_it))
+}
+
+pub fn parse_osm(xml_node: &XMLEvents::BytesStart, meta: &mut HashMap<String, String>) -> Result<bool, XMLError> {
+    for attr in xml_node.attributes() {
+        let attr = attr?;
+
+        let key = String::from_utf8_lossy(attr.key);
+        let val = String::from_utf8_lossy(attr.value);
+
+        meta.insert(key.to_string(), val.to_string());
+    }
+
+    if !meta.contains_key("version") {
+        return Err(XMLError::InternalError);
+    }
+
+    let v: f32 = match meta.get("version") {
+        Some(ver) => ver.parse()?,
+        None => { return Err(XMLError::InternalError); }
+    };
+
+    if v != 0.6 {
+        return Err(XMLError::InternalError);
+    }
+
+    return Ok(true);
+}
+
+pub fn parse_node(xml_node: &XMLEvents::BytesStart) -> Result<Node, XMLError> {
+    let mut node = Node::new();
+
+    for attr in xml_node.attributes() {
+        let attr = attr?;
+
+        match attr.key {
+            b"id" => node.id = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"lat" => node.lat = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"lon" => node.lon = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"user" => node.user = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"uid" => node.uid = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"version"  => node.version = Some(String::from_utf8_lossy(attr.value).parse()?),
+            _ => ()
+        }
+    }
+
+    return Ok(node);
+}
+
+pub fn parse_way(xml_node: &XMLEvents::BytesStart) -> Result<Way, XMLError> {
+    let mut way = Way::new();
+
+    for attr in xml_node.attributes() {
+        let attr = attr?;
+
+        match attr.key {
+            b"id" => way.id = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"version"  => way.version = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"user" => way.user = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"uid" => way.uid = Some(String::from_utf8_lossy(attr.value).parse()?),
+            _ => ()
+        }
+    }
+
+    return Ok(way);
+}
+
+pub fn parse_rel(xml_node: &XMLEvents::BytesStart) -> Result<Rel, XMLError> {
+    let mut rel = Rel::new();
+
+    for attr in xml_node.attributes() {
+        let attr = attr?;
+
+        match attr.key {
+            b"id" => rel.id = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"version"  => rel.version = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"user" => rel.user = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"uid" => rel.uid = Some(String::from_utf8_lossy(attr.value).parse()?),
+            _ => ()
+        }
+    }
+
+    return Ok(rel);
+}
+
+pub fn parse_nd(xml_node: &XMLEvents::BytesStart) -> Result<i64, XMLError> {
+    let mut ndref: Option<i64> = None;
+
+    for attr in xml_node.attributes() {
+        let attr = attr?;
+
+        match attr.key {
+            b"ref" => ndref = Some(String::from_utf8_lossy(attr.value).parse()?),
+            _ => ()
+        }
+    }
+
+    match ndref {
+        Some(val) => Ok(val),
+        None => Err(XMLError::InternalError)
+    }
+}
+
+pub fn parse_tag(xml_node: &XMLEvents::BytesStart) -> Result<(String, String), XMLError> {
+    let mut k: Option<String> = None;
+    let mut v: Option<String> = None;
+
+    for attr in xml_node.attributes() {
+        let attr = attr?;
+
+        match attr.key {
+            b"k" => k = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"v" => v = Some(String::from_utf8_lossy(attr.value).parse()?),
+            _ => ()
+        }
+    }
+
+    return Ok((match k {
+        Some(key) => key,
+        None => { return Err(XMLError::InternalError) }
+    }, match v {
+        Some(val) => val,
+        None => { return Err(XMLError::InternalError) }
+    }));
+}
+
+pub fn parse_member(xml_node: &XMLEvents::BytesStart) -> Result<(Option<Value>, Option<i64>, Option<String>), XMLError> {
+    let mut rtype: Option<Value> = None;
+    let mut rref: Option<i64> = None;
+    let mut rrole: Option<String> = None;
+
+    for attr in xml_node.attributes() {
+        let attr = attr?;
+
+        match attr.key {
+            b"type" => rtype = Some(match attr.value {
+                b"node" => Value::Node,
+                b"way" => Value::Way,
+                b"relation" => Value::Rel,
+                _ => { return Err(XMLError::InternalError); }
+            }),
+            b"rref" => rref = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"rrole" => rrole = Some(String::from_utf8_lossy(attr.value).parse()?),
+            _ => ()
+        }
+    }
+
+    return Ok((rtype, rref, rrole))
 }
