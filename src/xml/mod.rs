@@ -2,6 +2,7 @@ extern crate geojson;
 extern crate quick_xml;
 extern crate serde_json;
 
+use osm::*;
 use std::io::Cursor;
 use self::quick_xml::writer::Writer;
 use self::quick_xml::events as XMLEvents;
@@ -13,7 +14,8 @@ pub enum XMLError {
     Unknown,
     Invalid,
     GCNotSupported,
-    EncodingFailed
+    EncodingFailed,
+    InternalError
 }
 
 impl XMLError {
@@ -22,7 +24,8 @@ impl XMLError {
             XMLError::Unknown => { "Unknown Error" },
             XMLError::GCNotSupported => { "GeometryCollection are not currently supported" },
             XMLError::Invalid => { "Could not parse XML - Invalid" },
-            XMLError::EncodingFailed => { "Encoding Failed" }
+            XMLError::EncodingFailed => { "Encoding Failed" },
+            XMLError::InternalError => { "Internal Error" }
         }
     }
 }
@@ -93,10 +96,157 @@ pub fn to_changeset(body: &String) -> Result<HashMap<String, Option<String>>, XM
 }
 
 pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLError> {
+    let mut tree: OSMTree = OSMTree::new();
+
+    let mut opening_osm = false;
+    let mut n: Node = Node::new();
+    let mut w: Way = Way::new();
+    let mut r: Rel = Rel::new();
+
+    let mut current = Value::None;
+
+    let mut reader = quick_xml::reader::Reader::from_str(_body);
+    let mut buf = Vec::new();
+  
+    loop {
+        match reader.read_event(&mut buf) {
+            Ok(XMLEvents::Event::Start(ref e)) => {
+                match e.name() {
+                    b"osm" => {
+                        parse_osm(&e, &mut tree.meta)?;
+                        opening_osm = true;
+                    }
+                    b"node" => {
+                        if current != Value::None { return Err(XMLError::InternalError) }
+
+                        n = parse_node(e)?;
+                        current = Value::Node;
+                    },
+                    b"way" => {
+                        if current != Value::None { return Err(XMLError::InternalError) }
+
+                        w = parse_way(e)?;
+                        current = Value::Way;
+                    },
+                    b"relation" => {
+                        if current != Value::None { return Err(XMLError::InternalError) }
+
+                        r = parse_rel(e)?;
+                        current = Value::Rel;
+                    },
+                    b"tag" => {
+                        let (k, v) = parse_tag(&e)?;
+
+                        match current {
+                            Value::None => { return Err(XMLError::InternalError) },
+                            Value::Node => {
+                                n.set_tag(k, v);
+                            },
+                            Value::Way => {
+                                w.set_tag(k, v);
+                            },
+                            Value::Rel => {
+                                r.set_tag(k, v);
+                            }
+                        };
+
+                    }
+                    _ => (),
+                }
+            },
+            Ok(XMLEvents::Event::Empty(ref e)) => {
+                match e.name() {
+                    b"node" => {
+                        if current != Value::None { return Err(XMLError::InternalError) }
+                        tree.add_node(parse_node(&e)?)?;
+                    },
+                    b"way" => {
+                        return Err(XMLError::InternalError);
+                    },
+                    b"relation" => {
+                        return Err(XMLError::InternalError);
+                    },
+                    b"nd" => {
+                    if current != Value::Way { return Err(XMLError::InternalError) }
+
+                        let ndref = parse_nd(&e)?;
+                        w.nodes.push(ndref);
+                    },
+                    b"tag" => {
+                        let (k, v) = parse_tag(&e)?;
+
+                        match current {
+                            Value::None => { return Err(XMLError::InternalError) },
+                            Value::Node => {
+                                n.set_tag(k, v);
+                            },
+                            Value::Way => {
+                                w.set_tag(k, v);
+                            },
+                            Value::Rel => {
+                                r.set_tag(k, v);
+                            }
+                        };
+                    },
+                    b"member" => {
+                        let (rtype, rref, rrole) = parse_member(&e)?;
+
+                        match current {
+                            Value::Rel => {
+                                r.set_member(rtype, rref, rrole);
+                            },
+                            _ => {
+                                return Err(XMLError::InternalError);
+                            }
+                        };
+
+                    }
+                    _ => ()
+                }
+            },
+            Ok(XMLEvents::Event::End(ref e)) => {
+                match e.name() {
+                    b"node" => {
+                        if current != Value::Node { return Err(XMLError::InternalError); }
+
+                        tree.add_node(n)?;
+                        n = Node::new();
+                        current = Value::None;
+                    },
+                    b"way" => {
+                        if current != Value::Way { return Err(XMLError::InternalError); }
+                        tree.add_way(w)?;
+                        w = Way::new();
+                        current = Value::None;
+                    },
+                    b"relation" => {
+                        if current != Value::Rel { return Err(XMLError::InternalError); }
+                        tree.add_rel(r)?;
+                        r = Rel::new();
+                        current = Value::None;
+                    },
+                    b"osm" => {
+                        if current != Value::None { return Err(XMLError::InternalError); }
+                        if !opening_osm { return Err(XMLError::InternalError); }
+
+                        return Ok(tree);
+                    }
+                    _ => ()
+                }
+            }
+            Ok(XMLEvents::Event::Eof) => { return Err(XMLError::Invalid); },
+            Err(_) => { return Err(XMLError::Invalid); },
+            _ => ()
+        }
+
+        buf.clear();
+    }
+
+    
     Err(XMLError::Unknown)
 }
 
-pub fn from(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {
+pub fn from_features(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {
     let mut xml: String = String::from(r#"<?xml version="1.0" encoding="UTF-8"?><osm version="0.6" generator="ROSM">"#);
     let mut osm = OSMTypes::new();
 

@@ -174,7 +174,7 @@ fn xml_map(req: &mut Request) -> IronResult<Response> {
         Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))) }
     };
 
-    let xml_str = match xml::from(&fc) {
+    let xml_str = match xml::from_features(&fc) {
         Ok(xml_str) => xml_str,
         Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))) }
     };
@@ -215,14 +215,16 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
-    let _fc = match xml::to_features(&body_str) {
+    let fc = match xml::to_features(&body_str) {
         Ok(fc) => fc,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
 
+    println!("{:?}", fc);
+
     let _conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
-    Ok(Response::with((status::Ok)))
+    Ok(Response::with((status::Ok, "<diffResult generator=\"Hecate Server\" version=\"0.6\"></diffResult>")))
 }
 
 fn xml_capabilities(_req: &mut Request) -> IronResult<Response> {
