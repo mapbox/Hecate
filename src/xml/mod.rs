@@ -221,8 +221,8 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
     let mut w: Way = Way::new();
     let mut r: Rel = Rel::new();
 
-    let mut currentValue = Value::None;
-    let mut currentAction = Action::None;
+    let mut current_value = Value::None;
+    let mut current_action = Action::None;
 
     let mut reader = quick_xml::reader::Reader::from_str(body);
     let mut buf = Vec::new();
@@ -236,60 +236,60 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         opening_osm = true;
                     },
                     b"create" => {
-                        if currentAction != Action::None { return Err(XMLError::InternalError); }
-                        currentAction = Action::Create;
+                        if current_action != Action::None { return Err(XMLError::InternalError); }
+                        current_action = Action::Create;
                     },
                     b"modify" => {
-                        if currentAction != Action::None { return Err(XMLError::InternalError); }
-                        currentAction = Action::Modify;
+                        if current_action != Action::None { return Err(XMLError::InternalError); }
+                        current_action = Action::Modify;
                     },
                     b"delete" => {
-                        if currentAction != Action::None { return Err(XMLError::InternalError); }
-                        currentAction = Action::Delete;
+                        if current_action != Action::None { return Err(XMLError::InternalError); }
+                        current_action = Action::Delete;
                     },
                     b"node" => {
-                        if currentAction == Action::None { return Err(XMLError::InternalError) }
-                        if currentValue != Value::None { return Err(XMLError::InternalError) }
+                        if current_action == Action::None { return Err(XMLError::InternalError) }
+                        if current_value != Value::None { return Err(XMLError::InternalError) }
 
                         n = parse_node(e)?;
-                        n.action = Some(currentAction.clone());
+                        n.action = Some(current_action.clone());
 
                         if n.action == Some(Action::Create) {
                             n.version = Some(1);
                         }
 
-                        currentValue = Value::Node;
+                        current_value = Value::Node;
                     },
                     b"way" => {
-                        if currentAction == Action::None { return Err(XMLError::InternalError) }
-                        if currentValue != Value::None { return Err(XMLError::InternalError) }
+                        if current_action == Action::None { return Err(XMLError::InternalError) }
+                        if current_value != Value::None { return Err(XMLError::InternalError) }
 
                         w = parse_way(e)?;
-                        w.action = Some(currentAction.clone());
+                        w.action = Some(current_action.clone());
 
                         if w.action == Some(Action::Create) {
                             w.version = Some(1);
                         }
 
-                        currentValue = Value::Way;
+                        current_value = Value::Way;
                     },
                     b"relation" => {
-                        if currentAction == Action::None { return Err(XMLError::InternalError) }
-                        if currentValue != Value::None { return Err(XMLError::InternalError) }
+                        if current_action == Action::None { return Err(XMLError::InternalError) }
+                        if current_value != Value::None { return Err(XMLError::InternalError) }
 
                         r = parse_rel(e)?;
-                        r.action = Some(currentAction.clone());
+                        r.action = Some(current_action.clone());
 
                         if r.action == Some(Action::Create) {
                             r.version = Some(1);
                         }
 
-                        currentValue = Value::Rel;
+                        current_value = Value::Rel;
                     },
                     b"tag" => {
                         let (k, v) = parse_tag(&e)?;
 
-                        match currentValue {
+                        match current_value {
                             Value::None => { return Err(XMLError::InternalError) },
                             Value::Node => {
                                 n.set_tag(k, v);
@@ -309,11 +309,11 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
             Ok(XMLEvents::Event::Empty(ref e)) => {
                 match e.name() {
                     b"node" => {
-                        if currentAction == Action::None { return Err(XMLError::InternalError) }
-                        if currentValue != Value::None { return Err(XMLError::InternalError) }
+                        if current_action == Action::None { return Err(XMLError::InternalError) }
+                        if current_value != Value::None { return Err(XMLError::InternalError) }
 
                         n = parse_node(&e)?;
-                        n.action = Some(currentAction.clone());
+                        n.action = Some(current_action.clone());
 
                         if n.action == Some(Action::Create) {
                             n.version = Some(1);
@@ -330,7 +330,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         return Err(XMLError::InternalError);
                     },
                     b"nd" => {
-                        if currentValue != Value::Way { return Err(XMLError::InternalError) }
+                        if current_value != Value::Way { return Err(XMLError::InternalError) }
 
                         let ndref = parse_nd(&e)?;
                         w.nodes.push(ndref);
@@ -338,7 +338,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                     b"tag" => {
                         let (k, v) = parse_tag(&e)?;
 
-                        match currentValue {
+                        match current_value {
                             Value::None => { return Err(XMLError::InternalError) },
                             Value::Node => {
                                 n.set_tag(k, v);
@@ -354,7 +354,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                     b"member" => {
                         let (rtype, rref, rrole) = parse_member(&e)?;
 
-                        match currentValue {
+                        match current_value {
                             Value::Rel => {
                                 r.set_member(rtype, rref, rrole);
                             },
@@ -370,38 +370,38 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
             Ok(XMLEvents::Event::End(ref e)) => {
                 match e.name() {
                     b"node" => {
-                        if currentValue != Value::Node { return Err(XMLError::InternalError); }
+                        if current_value != Value::Node { return Err(XMLError::InternalError); }
 
                         tree.add_node(n)?;
                         n = Node::new();
-                        currentValue = Value::None;
+                        current_value = Value::None;
                     },
                     b"way" => {
-                        if currentValue != Value::Way { return Err(XMLError::InternalError); }
+                        if current_value != Value::Way { return Err(XMLError::InternalError); }
                         tree.add_way(w)?;
                         w = Way::new();
-                        currentValue = Value::None;
+                        current_value = Value::None;
                     },
                     b"relation" => {
-                        if currentValue != Value::Rel { return Err(XMLError::InternalError); }
+                        if current_value != Value::Rel { return Err(XMLError::InternalError); }
                         tree.add_rel(r)?;
                         r = Rel::new();
-                        currentValue = Value::None;
+                        current_value = Value::None;
                     },
                     b"create" => {
-                        if currentAction != Action::Create { return Err(XMLError::InternalError); }
-                        currentAction = Action::None;
+                        if current_action != Action::Create { return Err(XMLError::InternalError); }
+                        current_action = Action::None;
                     },
                     b"modify" => {
-                        if currentAction != Action::Modify { return Err(XMLError::InternalError); }
-                        currentAction = Action::None;
+                        if current_action != Action::Modify { return Err(XMLError::InternalError); }
+                        current_action = Action::None;
                     },
                     b"delete" => {
-                        if currentAction != Action::Delete { return Err(XMLError::InternalError); }
-                        currentAction = Action::None;
+                        if current_action != Action::Delete { return Err(XMLError::InternalError); }
+                        current_action = Action::None;
                     },
                     b"osmChange" => {
-                        if currentValue != Value::None { return Err(XMLError::InternalError); }
+                        if current_value != Value::None { return Err(XMLError::InternalError); }
                         if !opening_osm { return Err(XMLError::InternalError); }
 
                         return Ok(tree);
