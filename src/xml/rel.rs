@@ -8,6 +8,7 @@ pub struct Rel {
     pub uid: Option<i32>,
     pub modified: bool,
     pub tags: HashMap<String, String>,
+    pub action: Option<Action>,
     pub version: Option<i32>,
     pub parents: Vec<i64>,
     pub members: Vec<RelMem>
@@ -34,6 +35,7 @@ impl Generic for Rel {
             user: None,
             uid: None,
             tags: HashMap::new(),
+            action: None,
             parents: Vec::new(),
             version: None,
             members: Vec::new()
@@ -46,6 +48,20 @@ impl Generic for Rel {
 
     fn set_tag(&mut self, k: String, v: String) {
         self.tags.insert(k, v);
+    }
+
+    fn has_tags(&self) -> bool {
+        !self.tags.is_empty()
+    }
+
+    fn to_feat(&self) -> geojson::Feature {
+        geojson::Feature {
+            bbox: None,
+            geometry: None,
+            id: None,
+            properties: None,
+            foreign_members: None
+        }
     }
 
     fn is_valid(&self) -> bool {

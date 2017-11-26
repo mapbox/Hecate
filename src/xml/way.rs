@@ -8,6 +8,7 @@ pub struct Way {
     pub uid: Option<i32>,
     pub modified: bool,
     pub nodes: Vec<i64>,
+    pub action: Option<Action>,
     pub tags: HashMap<String, String>,
     pub version: Option<i32>,
     pub parents: Vec<i64>
@@ -22,6 +23,7 @@ impl Generic for Way {
             user: None,
             uid: None,
             nodes: Vec::new(),
+            action: None,
             parents: Vec::new(),
             version: None
         }
@@ -33,6 +35,20 @@ impl Generic for Way {
 
     fn set_tag(&mut self, k: String, v: String) {
         self.tags.insert(k, v);
+    }
+
+    fn has_tags(&self) -> bool {
+        !self.tags.is_empty()
+    }
+
+    fn to_feat(&self) -> geojson::Feature {
+        geojson::Feature {
+            bbox: None,
+            geometry: None,
+            id: None,
+            properties: None,
+            foreign_members: None
+        }
     }
 
     fn is_valid(&self) -> bool {

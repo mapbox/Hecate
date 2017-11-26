@@ -252,7 +252,6 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
-    println!("GENERATING A FEATURE");
     let fc = match xml::to_features(&body_str) {
         Ok(fc) => fc,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }

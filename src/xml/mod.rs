@@ -93,7 +93,7 @@ impl From<num::ParseIntError> for XMLError {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum Value {
     None,
     Node,
@@ -101,10 +101,20 @@ pub enum Value {
     Rel 
 }
 
+#[derive(PartialEq, Debug, Clone)]
+pub enum Action {
+    None,
+    Create,
+    Modify,
+    Delete
+}
+
 pub trait Generic {
     fn new() -> Self;
     fn value(&self) -> Value;
     fn set_tag(&mut self, k: String, v: String);
+    fn has_tags(&self) -> bool;
+    fn to_feat(&self) -> geojson::Feature;
     fn is_valid(&self) -> bool;
 }
 
@@ -173,7 +183,37 @@ pub fn to_changeset(body: &String) -> Result<HashMap<String, Option<String>>, XM
     Ok(map)
 }
 
-pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLError> {
+pub fn to_features(body: &String) -> Result<geojson::FeatureCollection, XMLError> {
+    let mut tree = tree_parser(&body)?;
+
+    let mut fc = geojson::FeatureCollection {
+        bbox: None,
+        features: vec![],
+        foreign_members: None
+    };
+
+    for (i, rel) in tree.get_rels() {
+        if !rel.has_tags() { continue; }
+
+        fc.features.push(rel.to_feat());        
+    }
+
+    for (i, way) in tree.get_ways() {
+        if !way.has_tags() { continue; }
+
+        fc.features.push(way.to_feat());        
+    }
+
+    for (i, node) in tree.get_nodes() {
+        if !node.has_tags() { continue; }
+
+        fc.features.push(node.to_feat());        
+    }
+
+    Err(XMLError::InternalError)
+}
+
+pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
     let mut tree: OSMTree = OSMTree::new();
 
     let mut opening_osm = false;
@@ -181,41 +221,75 @@ pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLErro
     let mut w: Way = Way::new();
     let mut r: Rel = Rel::new();
 
-    let mut current = Value::None;
+    let mut currentValue = Value::None;
+    let mut currentAction = Action::None;
 
-    let mut reader = quick_xml::reader::Reader::from_str(_body);
+    let mut reader = quick_xml::reader::Reader::from_str(body);
     let mut buf = Vec::new();
   
     loop {
         match reader.read_event(&mut buf) {
             Ok(XMLEvents::Event::Start(ref e)) => {
                 match e.name() {
-                    b"osm" => {
+                    b"osmChange" => {
                         parse_osm(&e, &mut tree.meta)?;
                         opening_osm = true;
-                    }
+                    },
+                    b"create" => {
+                        if currentAction != Action::None { return Err(XMLError::InternalError); }
+                        currentAction = Action::Create;
+                    },
+                    b"modify" => {
+                        if currentAction != Action::None { return Err(XMLError::InternalError); }
+                        currentAction = Action::Modify;
+                    },
+                    b"delete" => {
+                        if currentAction != Action::None { return Err(XMLError::InternalError); }
+                        currentAction = Action::Delete;
+                    },
                     b"node" => {
-                        if current != Value::None { return Err(XMLError::InternalError) }
+                        if currentAction == Action::None { return Err(XMLError::InternalError) }
+                        if currentValue != Value::None { return Err(XMLError::InternalError) }
 
                         n = parse_node(e)?;
-                        current = Value::Node;
+                        n.action = Some(currentAction.clone());
+
+                        if n.action == Some(Action::Create) {
+                            n.version = Some(1);
+                        }
+
+                        currentValue = Value::Node;
                     },
                     b"way" => {
-                        if current != Value::None { return Err(XMLError::InternalError) }
+                        if currentAction == Action::None { return Err(XMLError::InternalError) }
+                        if currentValue != Value::None { return Err(XMLError::InternalError) }
 
                         w = parse_way(e)?;
-                        current = Value::Way;
+                        w.action = Some(currentAction.clone());
+
+                        if w.action == Some(Action::Create) {
+                            w.version = Some(1);
+                        }
+
+                        currentValue = Value::Way;
                     },
                     b"relation" => {
-                        if current != Value::None { return Err(XMLError::InternalError) }
+                        if currentAction == Action::None { return Err(XMLError::InternalError) }
+                        if currentValue != Value::None { return Err(XMLError::InternalError) }
 
                         r = parse_rel(e)?;
-                        current = Value::Rel;
+                        r.action = Some(currentAction.clone());
+
+                        if r.action == Some(Action::Create) {
+                            r.version = Some(1);
+                        }
+
+                        currentValue = Value::Rel;
                     },
                     b"tag" => {
                         let (k, v) = parse_tag(&e)?;
 
-                        match current {
+                        match currentValue {
                             Value::None => { return Err(XMLError::InternalError) },
                             Value::Node => {
                                 n.set_tag(k, v);
@@ -235,8 +309,19 @@ pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLErro
             Ok(XMLEvents::Event::Empty(ref e)) => {
                 match e.name() {
                     b"node" => {
-                        if current != Value::None { return Err(XMLError::InternalError) }
-                        tree.add_node(parse_node(&e)?)?;
+                        if currentAction == Action::None { return Err(XMLError::InternalError) }
+                        if currentValue != Value::None { return Err(XMLError::InternalError) }
+
+                        n = parse_node(&e)?;
+                        n.action = Some(currentAction.clone());
+
+                        if n.action == Some(Action::Create) {
+                            n.version = Some(1);
+                        }
+
+                        tree.add_node(n)?;
+
+                        n = Node::new();
                     },
                     b"way" => {
                         return Err(XMLError::InternalError);
@@ -245,7 +330,7 @@ pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLErro
                         return Err(XMLError::InternalError);
                     },
                     b"nd" => {
-                    if current != Value::Way { return Err(XMLError::InternalError) }
+                        if currentValue != Value::Way { return Err(XMLError::InternalError) }
 
                         let ndref = parse_nd(&e)?;
                         w.nodes.push(ndref);
@@ -253,7 +338,7 @@ pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLErro
                     b"tag" => {
                         let (k, v) = parse_tag(&e)?;
 
-                        match current {
+                        match currentValue {
                             Value::None => { return Err(XMLError::InternalError) },
                             Value::Node => {
                                 n.set_tag(k, v);
@@ -269,7 +354,7 @@ pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLErro
                     b"member" => {
                         let (rtype, rref, rrole) = parse_member(&e)?;
 
-                        match current {
+                        match currentValue {
                             Value::Rel => {
                                 r.set_member(rtype, rref, rrole);
                             },
@@ -285,31 +370,41 @@ pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLErro
             Ok(XMLEvents::Event::End(ref e)) => {
                 match e.name() {
                     b"node" => {
-                        if current != Value::Node { return Err(XMLError::InternalError); }
+                        if currentValue != Value::Node { return Err(XMLError::InternalError); }
 
                         tree.add_node(n)?;
                         n = Node::new();
-                        current = Value::None;
+                        currentValue = Value::None;
                     },
                     b"way" => {
-                        if current != Value::Way { return Err(XMLError::InternalError); }
+                        if currentValue != Value::Way { return Err(XMLError::InternalError); }
                         tree.add_way(w)?;
                         w = Way::new();
-                        current = Value::None;
+                        currentValue = Value::None;
                     },
                     b"relation" => {
-                        if current != Value::Rel { return Err(XMLError::InternalError); }
+                        if currentValue != Value::Rel { return Err(XMLError::InternalError); }
                         tree.add_rel(r)?;
                         r = Rel::new();
-                        current = Value::None;
+                        currentValue = Value::None;
                     },
-                    b"osm" => {
-                        if current != Value::None { return Err(XMLError::InternalError); }
+                    b"create" => {
+                        if currentAction != Action::Create { return Err(XMLError::InternalError); }
+                        currentAction = Action::None;
+                    },
+                    b"modify" => {
+                        if currentAction != Action::Modify { return Err(XMLError::InternalError); }
+                        currentAction = Action::None;
+                    },
+                    b"delete" => {
+                        if currentAction != Action::Delete { return Err(XMLError::InternalError); }
+                        currentAction = Action::None;
+                    },
+                    b"osmChange" => {
+                        if currentValue != Value::None { return Err(XMLError::InternalError); }
                         if !opening_osm { return Err(XMLError::InternalError); }
 
-                        //ACTUALLY CONVERT TO GEOJSON HERE
-                        println!("{}", tree);
-                        return Err(XMLError::Unknown);
+                        return Ok(tree);
                     }
                     _ => ()
                 }
@@ -321,6 +416,8 @@ pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLErro
 
         buf.clear();
     }
+
+    Err(XMLError::InvalidXML)
 }
 
 pub fn from_features(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {
@@ -523,7 +620,7 @@ pub fn parse_node(xml_node: &XMLEvents::BytesStart) -> Result<Node, XMLError> {
             b"lon" => node.lon = Some(String::from_utf8_lossy(attr.value).parse()?),
             b"user" => node.user = Some(String::from_utf8_lossy(attr.value).parse()?),
             b"uid" => node.uid = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"version"  => node.version = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"version" => node.version = Some(String::from_utf8_lossy(attr.value).parse()?),
             _ => ()
         }
     }

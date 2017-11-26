@@ -6,6 +6,7 @@ pub struct Node {
     pub id: Option<i64>,
     pub lat: Option<f32>,
     pub user: Option<String>,
+    pub action: Option<Action>,
     pub uid: Option<i32>,
     pub lon: Option<f32>,
     pub modified: bool,
@@ -23,6 +24,7 @@ impl Generic for Node {
             user: None,
             uid: None,
             modified: false,
+            action: None,
             tags: HashMap::new(),
             parents: Vec::new(),
             version: None
@@ -35,6 +37,20 @@ impl Generic for Node {
 
     fn set_tag(&mut self, k: String, v: String) {
         self.tags.insert(k, v);
+    }
+
+    fn has_tags(&self) -> bool {
+        !self.tags.is_empty()
+    }
+
+    fn to_feat(&self) -> geojson::Feature {
+        geojson::Feature {
+            bbox: None,
+            geometry: None,
+            id: None,
+            properties: None,
+            foreign_members: None
+        }
     }
 
     fn is_valid(&self) -> bool {
