@@ -308,6 +308,7 @@ pub fn to_features(_body: &String) -> Result<geojson::FeatureCollection, XMLErro
                         if !opening_osm { return Err(XMLError::InternalError); }
 
                         //ACTUALLY CONVERT TO GEOJSON HERE
+                        println!("{}", tree);
                         return Err(XMLError::Unknown);
                     }
                     _ => ()

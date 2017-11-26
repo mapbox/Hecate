@@ -74,7 +74,8 @@ fn main() {
     router.get("/api/0.6/user/details", xml_user, "xml_06user");
     router.get("/api/0.6/map", xml_map, "xml_map");
     router.put("/api/0.6/changeset/create", xml_changeset_create, "xml_createChangeset");
-    router.put("/api/0.6/changeset/:id/upload", xml_changeset_upload, "xml_putChangeset");
+    router.put("/api/0.6/changeset/:id", xml_changeset_modify, "xml_modifyChangeset");
+    router.post("/api/0.6/changeset/:id/upload", xml_changeset_upload, "xml_putChangeset");
 
     let mut mount = Mount::new();
     mount.mount("/", router);
@@ -211,16 +212,51 @@ fn xml_changeset_create(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, id.to_string())))
 }
 
+fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
+    let changeset_id: i64 = match req.extensions.get::<Router>().unwrap().find("id") {
+        Some(id) => match id.parse() {
+            Ok(id) => id,
+            Err(_) =>  { return Ok(Response::with((status::ExpectationFailed, "Changeset ID Must be numeric"))); }
+        },
+        None =>  { return Ok(Response::with((status::ExpectationFailed, "Changeset ID Must be provided"))); }
+    };
+
+    let mut body_str = String::new();
+    req.body.read_to_string(&mut body_str).unwrap();
+
+    let map = match xml::to_changeset(&body_str) {
+        Ok(map) => map,
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+    };
+
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    let trans = conn.transaction().unwrap();
+
+    let fc = geojson::FeatureCollection {
+        bbox: None,
+        features: vec![ ],
+        foreign_members: None,
+    };
+
+    let id = match changeset::modify(&changeset_id, &trans, &fc, &map, &1) {
+        Ok(id) => id,
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+    };
+
+    trans.commit().unwrap();
+
+    Ok(Response::with((status::Ok, id.to_string())))
+}
+
 fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
+    println!("GENERATING A FEATURE");
     let fc = match xml::to_features(&body_str) {
         Ok(fc) => fc,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
-
-    println!("{:?}", fc);
 
     let _conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
