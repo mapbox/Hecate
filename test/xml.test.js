@@ -2,6 +2,8 @@ const test = require('tape');
 const request = require('request');
 const exec = require('child_process').exec;
 const Pool = require('pg-pool');
+const path = require('path');
+const fs = require('fs');
 
 const pool = new Pool({
     database: 'hecate',
@@ -68,6 +70,7 @@ test('xml#changeset#create', (t) => {
             }, (err, res) => {
                 r.error(err, 'no errors');
                 r.equals(res.statusCode, 200);
+                r.equals(res.body, '1');
                 r.end();
             });
         });
@@ -87,6 +90,61 @@ test('xml#changeset#create', (t) => {
                         created_by: 'Hecate Server'
                     },
                     uid: '1'
+                });
+                r.end();
+            });
+        });
+
+        q.end();
+    });
+
+    t.end();
+});
+
+test('xml#changeset#upload', (t) => {
+    t.test('xml#changeset#upload - point', (q) => {
+        q.test('xml#changeset#upload - point - endpoint', (r) => {
+            request.post({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/0.6/changeset/1/upload',
+                body: `
+                    <osmChange version="0.6" generator="Hecate Server">
+                        <create>
+                            <node id='8' version='1' changeset='13' lat='-0.66180939203' lon='3.59219690827'>
+                                <tag k='amenity' v='shop' />
+                                <tag k='building' v='yes' />
+                            </node>
+                        </create>
+                    </osmChange>
+                `
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+
+
+                let fixture = String(fs.readFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#point')));
+                r.equals(res.body, fixture);
+                if (res.body != fixture && process.env.UPDATE) {
+                    t.fail('Updated Fixture');
+                    fs.writeFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#point'), res.body);
+                }
+
+                r.end();
+            });
+        });
+
+        q.test('xml#changeset#upload - point - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
+                r.error(err, 'no errors');
+                r.deepEquals(res.rows[0], {
+                    id: '1',
+                    version: '1',
+                    geom: '{"type":"Point","coordinates":[3.59219694137573,-0.661809384822845]}',
+                    props: {
+                        amenity: 'shop',
+                        building: 'yes'
+                    },
+                    deltas: ['1']
                 });
                 r.end();
             });
