@@ -10,7 +10,7 @@ pub struct Node {
     pub uid: Option<i32>,
     pub lon: Option<f32>,
     pub modified: bool,
-    pub tags: HashMap<String, String>,
+    pub tags: serde_json::Map<String, serde_json::Value>,
     pub version: Option<i32>,
     pub parents: Vec<i64>
 }
@@ -25,7 +25,7 @@ impl Generic for Node {
             uid: None,
             modified: false,
             action: None,
-            tags: HashMap::new(),
+            tags: serde_json::Map::new(),
             parents: Vec::new(),
             version: None
         }
@@ -36,7 +36,7 @@ impl Generic for Node {
     }
 
     fn set_tag(&mut self, k: String, v: String) {
-        self.tags.insert(k, v);
+        self.tags.insert(k, serde_json::Value::String(v));
     }
 
     fn has_tags(&self) -> bool {
@@ -44,12 +44,29 @@ impl Generic for Node {
     }
 
     fn to_feat(&self) -> geojson::Feature {
+        let mut foreign = serde_json::Map::new();
+
+        foreign.insert(String::from("action"), serde_json::Value::String(match self.action {
+            Some(Action::Create) => String::from("create"),
+            Some(Action::Modify) => String::from("modify"),
+            Some(Action::Delete) => String::from("delete"),
+            _ => String::new()
+        }));
+
+        foreign.insert(String::from("version"), json!(self.version));
+
+        let mut coords: Vec<f64> = Vec::new();
+        coords.push(self.lon.unwrap() as f64);
+        coords.push(self.lat.unwrap() as f64);
+
         geojson::Feature {
             bbox: None,
-            geometry: None,
-            id: None,
-            properties: None,
-            foreign_members: None
+            geometry: Some(geojson::Geometry::new(
+                geojson::Value::Point(coords)
+            )),
+            id: Some(json!(self.id.clone())),
+            properties: Some(self.tags.clone()),
+            foreign_members: Some(foreign)
         }
     }
 

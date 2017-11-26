@@ -135,7 +135,7 @@ fn features_post(req: &mut Request) -> IronResult<Response> {
     }
 
     for feat in fc.features {
-        match feature::action(&trans, feat) {
+        match feature::action(&trans, feat, &None) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
@@ -252,12 +252,34 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
+    let changeset_id: i64 = match req.extensions.get::<Router>().unwrap().find("id") {
+        Some(id) => match id.parse() {
+            Ok(id) => id,
+            Err(_) =>  { return Ok(Response::with((status::ExpectationFailed, "Changeset ID Must be numeric"))); }
+        },
+        None =>  { return Ok(Response::with((status::ExpectationFailed, "Changeset ID Must be provided"))); }
+    };
+
     let fc = match xml::to_features(&body_str) {
         Ok(fc) => fc,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
 
-    let _conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    let trans = conn.transaction().unwrap();
+
+    for feat in fc.features {
+        match feature::action(&trans, feat, &Some(changeset_id)) {
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Ok(Response::with((status::ExpectationFailed, err.to_string())));
+            },
+            Ok(_) => ()
+        }
+    }
+
+    trans.commit().unwrap();
 
     Ok(Response::with((status::Ok, "<diffResult generator=\"Hecate Server\" version=\"0.6\"></diffResult>")))
 }
@@ -313,7 +335,7 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
 
-    match feature::create(&trans, &feat) {
+    match feature::create(&trans, &feat, &None) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))

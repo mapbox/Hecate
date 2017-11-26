@@ -95,11 +95,11 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     }
 }
 
-pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature) -> Result<bool, FeatureError> {
+pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &Option<i64>) -> Result<bool, FeatureError> {
     let action = get_action(&feat)?;
 
     match action {
-        Action::Create => { create(&trans, &feat)?; },
+        Action::Create => { create(&trans, &feat, &delta)?; },
         Action::Modify => { modify(&trans, &feat)?; },
         Action::Delete => { delete(&trans, &feat)?; }
     }
@@ -107,7 +107,7 @@ pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature
     Ok(true)
 }
 
-pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<bool, FeatureError> {
+pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<bool, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -127,13 +127,13 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
                 1,
                 ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                 $2::TEXT::JSON,
-                array[currval('deltas_id_seq')::BIGINT]
+                array[COALESCE($3, currval('deltas_id_seq')::BIGINT)]
             );
-    ", &[&geom_str, &props_str]) {
+    ", &[&geom_str, &props_str, &delta]) {
         Ok(_) => Ok(true),
         Err(err) => {
             match err.as_db() {
-                Some(_e) => { Err(FeatureError::CreateError) },
+                Some(e) => { Err(FeatureError::CreateError) },
                 _ => Err(FeatureError::CreateError)
             }
         }

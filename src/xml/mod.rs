@@ -34,6 +34,7 @@ pub enum XMLError {
     InvalidWayRef,
     InvalidRel,
     InvalidXML,
+    InvalidFeature,
     NotFoundError,
     StringParsing(string::ParseError),
     IntParsing(num::ParseIntError),
@@ -56,6 +57,7 @@ impl XMLError {
             XMLError::InvalidRel => "Invalid Relation",
             XMLError::InvalidXML => "Invalid XML",
             XMLError::NotFoundError => "Not Found",
+            XMLError::InvalidFeature => "Invalid Feature",
             XMLError::StringParsing(_) => "Could not parse attribute to string",
             XMLError::IntParsing(_) => "Could not parse attribute to integer",
             XMLError::FloatParsing(_) => "Could not parse attribute to float"
@@ -66,13 +68,13 @@ impl XMLError {
 impl From<string::FromUtf8Error> for XMLError {
     fn from(error: string::FromUtf8Error) -> XMLError {
         XMLError::ParsingError
-    }   
+    }
 }
 
 impl From<quick_xml::errors::Error> for XMLError {
     fn from(error: quick_xml::errors::Error) -> XMLError {
         XMLError::InvalidXML
-    }   
+    }
 }
 
 impl From<string::ParseError> for XMLError {
@@ -98,7 +100,7 @@ pub enum Value {
     None,
     Node,
     Way,
-    Rel 
+    Rel
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -195,22 +197,24 @@ pub fn to_features(body: &String) -> Result<geojson::FeatureCollection, XMLError
     for (i, rel) in tree.get_rels() {
         if !rel.has_tags() { continue; }
 
-        fc.features.push(rel.to_feat());        
+        fc.features.push(rel.to_feat());
     }
 
     for (i, way) in tree.get_ways() {
         if !way.has_tags() { continue; }
 
-        fc.features.push(way.to_feat());        
+        fc.features.push(way.to_feat());
     }
 
     for (i, node) in tree.get_nodes() {
         if !node.has_tags() { continue; }
 
-        fc.features.push(node.to_feat());        
+        let n = node.to_feat();
+
+        fc.features.push(n);
     }
 
-    Err(XMLError::InternalError)
+    Ok(fc)
 }
 
 pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
@@ -226,7 +230,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
 
     let mut reader = quick_xml::reader::Reader::from_str(body);
     let mut buf = Vec::new();
-  
+
     loop {
         match reader.read_event(&mut buf) {
             Ok(XMLEvents::Event::Start(ref e)) => {
@@ -358,9 +362,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                             Value::Rel => {
                                 r.set_member(rtype, rref, rrole);
                             },
-                            _ => {
-                                return Err(XMLError::InternalError);
-                            }
+                            _ => { return Err(XMLError::InternalError); }
                         };
 
                     }
@@ -446,14 +448,14 @@ pub fn from_features(fc: &geojson::FeatureCollection) -> Result<String, XMLError
                     geojson::Value::MultiPolygon(ref coords) => {
                         multipolygon(&feat, &coords, &mut osm);
                     },
-                    _ => {
-                        return Err(XMLError::GCNotSupported);
-                    }
+                    _ => { return Err(XMLError::GCNotSupported); }
                 }
             },
             None => { return Err(XMLError::Unknown); }
         }
     }
+    
+    println!("{}", osm.nodes);
 
     xml.push_str(&*osm.nodes);
     xml.push_str(&*osm.ways);
@@ -467,7 +469,10 @@ pub fn point(feat: &geojson::Feature, coords: &geojson::PointType, osm: &mut OSM
     let mut writer = Writer::new(Cursor::new(Vec::new()));
 
     let mut xml_node = XMLEvents::BytesStart::owned(b"node".to_vec(), 4);
-    xml_node.push_attribute(("id", "1"));
+
+    let id: String = feat.id.clone().unwrap().to_string().clone();
+
+    xml_node.push_attribute(("id", &*id));
     xml_node.push_attribute(("version", "1"));
     xml_node.push_attribute(("lat", &*coords[0].to_string()));
     xml_node.push_attribute(("lon", &*coords[1].to_string()));
@@ -503,7 +508,10 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
     let mut writer = Writer::new(Cursor::new(Vec::new()));
 
     let mut xml_way = XMLEvents::BytesStart::owned(b"way".to_vec(), 3);
-    xml_way.push_attribute(("id", "1"));
+
+    let id: String = feat.id.clone().unwrap().to_string().clone();
+
+    xml_way.push_attribute(("id", &*id));
     xml_way.push_attribute(("version", "1"));
 
     writer.write_event(XMLEvents::Event::Start(xml_way)).unwrap();
@@ -592,18 +600,14 @@ pub fn parse_osm(xml_node: &XMLEvents::BytesStart, meta: &mut HashMap<String, St
         meta.insert(key.to_string(), val.to_string());
     }
 
-    if !meta.contains_key("version") {
-        return Err(XMLError::InternalError);
-    }
+    if !meta.contains_key("version") { return Err(XMLError::InternalError); }
 
     let v: f32 = match meta.get("version") {
         Some(ver) => ver.parse()?,
         None => { return Err(XMLError::InternalError); }
     };
 
-    if v != 0.6 {
-        return Err(XMLError::InternalError);
-    }
+    if v != 0.6 { return Err(XMLError::InternalError); }
 
     return Ok(true);
 }
