@@ -121,7 +121,7 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    match trans.execute("
+    match trans.query("
         INSERT INTO geo (version, geom, props, deltas)
             VALUES (
                 1,

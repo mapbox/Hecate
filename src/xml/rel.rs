@@ -54,7 +54,7 @@ impl Generic for Rel {
         !self.tags.is_empty()
     }
 
-    fn to_feat(&self) -> geojson::Feature {
+    fn to_feat(&self, tree: &OSMTree) -> geojson::Feature {
         geojson::Feature {
             bbox: None,
             geometry: None,

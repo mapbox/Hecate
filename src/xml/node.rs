@@ -43,7 +43,7 @@ impl Generic for Node {
         !self.tags.is_empty()
     }
 
-    fn to_feat(&self) -> geojson::Feature {
+    fn to_feat(&self, tree: &OSMTree) -> geojson::Feature {
         let mut foreign = serde_json::Map::new();
 
         foreign.insert(String::from("action"), serde_json::Value::String(match self.action {

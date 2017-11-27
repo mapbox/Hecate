@@ -260,8 +260,8 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
         None =>  { return Ok(Response::with((status::ExpectationFailed, "Changeset ID Must be provided"))); }
     };
 
-    let fc = match xml::to_features(&body_str) {
-        Ok(fc) => fc,
+    let (fc, tree) = match xml::to_features(&body_str) {
+        Ok(fctree) => fctree,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
 

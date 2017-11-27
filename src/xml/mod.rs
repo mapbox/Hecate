@@ -117,7 +117,7 @@ pub trait Generic {
     fn value(&self) -> Value;
     fn set_tag(&mut self, k: String, v: String);
     fn has_tags(&self) -> bool;
-    fn to_feat(&self) -> geojson::Feature;
+    fn to_feat(&self, tree: &OSMTree) -> geojson::Feature;
     fn is_valid(&self) -> bool;
 }
 
@@ -186,8 +186,8 @@ pub fn to_changeset(body: &String) -> Result<HashMap<String, Option<String>>, XM
     Ok(map)
 }
 
-pub fn to_features(body: &String) -> Result<geojson::FeatureCollection, XMLError> {
-    let mut tree = tree_parser(&body)?;
+pub fn to_features(body: &String) -> Result<(geojson::FeatureCollection, OSMTree), XMLError> {
+    let tree = tree_parser(&body)?;
 
     let mut fc = geojson::FeatureCollection {
         bbox: None,
@@ -198,24 +198,24 @@ pub fn to_features(body: &String) -> Result<geojson::FeatureCollection, XMLError
     for (i, rel) in tree.get_rels() {
         if !rel.has_tags() { continue; }
 
-        fc.features.push(rel.to_feat());
+        fc.features.push(rel.to_feat(&tree));
     }
 
     for (i, way) in tree.get_ways() {
         if !way.has_tags() { continue; }
 
-        fc.features.push(way.to_feat());
+        fc.features.push(way.to_feat(&tree));
     }
 
     for (i, node) in tree.get_nodes() {
         if !node.has_tags() { continue; }
 
-        let n = node.to_feat();
+        let n = node.to_feat(&tree);
 
         fc.features.push(n);
     }
 
-    Ok(fc)
+    Ok((fc, tree))
 }
 
 pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
