@@ -140,4 +140,18 @@ mod tests {
 
         assert_eq!(format!("{}", n), "[Node: id=None]");
     }
+
+    #[test]
+    fn validity() {
+        let mut n = Node::new();
+        assert_eq!(n.is_valid(), false);
+        n.id = Some(1);
+        assert_eq!(n.is_valid(), false);
+        n.lat = Some(1.1);
+        assert_eq!(n.is_valid(), false);
+        n.lon = Some(2.2);
+        assert_eq!(n.is_valid(), false);
+        n.version = Some(1);
+        assert_eq!(n.is_valid(), true);
+    }
 }
