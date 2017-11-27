@@ -7,6 +7,7 @@ mod way;
 mod rel;
 mod tree;
 
+use feature;
 use xml::node::Node;
 use xml::way::Way;
 use xml::rel::Rel;
@@ -470,10 +471,8 @@ pub fn point(feat: &geojson::Feature, coords: &geojson::PointType, osm: &mut OSM
 
     let mut xml_node = XMLEvents::BytesStart::owned(b"node".to_vec(), 4);
 
-    let id: String = feat.id.clone().unwrap().to_string().clone();
-
-    xml_node.push_attribute(("id", &*id));
-    xml_node.push_attribute(("version", "1"));
+    xml_node.push_attribute(("id", &*feature::get_id(feat).unwrap().to_string()));
+    xml_node.push_attribute(("version", &*feature::get_version(feat).unwrap().to_string()));
     xml_node.push_attribute(("lat", &*coords[0].to_string()));
     xml_node.push_attribute(("lon", &*coords[1].to_string()));
 
@@ -509,10 +508,8 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
 
     let mut xml_way = XMLEvents::BytesStart::owned(b"way".to_vec(), 3);
 
-    let id: String = feat.id.clone().unwrap().to_string().clone();
-
-    xml_way.push_attribute(("id", &*id));
-    xml_way.push_attribute(("version", "1"));
+    xml_way.push_attribute(("id", &*feature::get_id(feat).unwrap().to_string()));
+    xml_way.push_attribute(("version", &*feature::get_version(feat).unwrap().to_string()));
 
     writer.write_event(XMLEvents::Event::Start(xml_way)).unwrap();
 
