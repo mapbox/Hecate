@@ -456,8 +456,6 @@ pub fn from_features(fc: &geojson::FeatureCollection) -> Result<String, XMLError
         }
     }
     
-    println!("{}", osm.nodes);
-
     xml.push_str(&*osm.nodes);
     xml.push_str(&*osm.ways);
     xml.push_str(&*osm.rels);
@@ -579,8 +577,8 @@ pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<(Stri
 
     xml_node.push_attribute(("id", &*osm.node_it.to_string()));
     xml_node.push_attribute(("version", "1"));
-    xml_node.push_attribute(("lat", &*coords[0].to_string()));
-    xml_node.push_attribute(("lon", &*coords[1].to_string()));
+    xml_node.push_attribute(("lat", &*coords[1].to_string()));
+    xml_node.push_attribute(("lon", &*coords[0].to_string()));
 
     writer.write_event(XMLEvents::Event::Empty(xml_node)).unwrap();
 
