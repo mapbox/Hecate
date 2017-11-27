@@ -473,8 +473,8 @@ pub fn point(feat: &geojson::Feature, coords: &geojson::PointType, osm: &mut OSM
 
     xml_node.push_attribute(("id", &*feature::get_id(feat).unwrap().to_string()));
     xml_node.push_attribute(("version", &*feature::get_version(feat).unwrap().to_string()));
-    xml_node.push_attribute(("lat", &*coords[0].to_string()));
-    xml_node.push_attribute(("lon", &*coords[1].to_string()));
+    xml_node.push_attribute(("lon", &*coords[0].to_string()));
+    xml_node.push_attribute(("lat", &*coords[1].to_string()));
 
     writer.write_event(XMLEvents::Event::Start(xml_node)).unwrap();
 
