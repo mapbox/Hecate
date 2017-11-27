@@ -161,6 +161,33 @@ mod tests {
 
     #[test]
     fn to_feat() {
-        let n = Node::new();
+        let mut n = Node::new();
+        let tree = OSMTree::new();
+        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing id"))));
+
+        n.id = Some(1);
+        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing lat"))));
+
+        n.lat = Some(1.1);
+        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing lon"))));
+
+        n.lon = Some(2.2);
+        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing version"))));
+
+        n.version = Some(1);
+        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing or invalid action"))));
+
+        n.action = Some(Action::Create);
+
+        let mut fmem = serde_json::Map::new();
+        fmem.insert(String::from("action"), json!(String::from("create")));
+        fmem.insert(String::from("version"), json!(1));
+        assert_eq!(n.to_feat(&tree).ok(), Some(geojson::Feature {
+            bbox: None,
+            id: Some(json!(1)),
+            properties: Some(serde_json::Map::new()),
+            geometry: Some(geojson::Geometry::new(geojson::Value::Point(vec!(2.200000047683716, 1.100000023841858)))),
+            foreign_members: Some(fmem)
+        }));
     }
 }
