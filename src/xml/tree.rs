@@ -20,8 +20,9 @@ impl OSMTree {
     }
 
     pub fn add_node(&mut self, node: Node) -> Result<bool, XMLError> {
-        if !node.is_valid() {
-            return Err(XMLError::InvalidNode);
+        match node.is_valid() {
+            Err(err) => { return Err(XMLError::InvalidNode(err)); }
+            _ => ()
         }
 
         self.nodes.insert(node.id.unwrap(), node);
@@ -46,8 +47,9 @@ impl OSMTree {
         }
     }
     pub fn add_way(&mut self, way: Way) -> Result<bool, XMLError> {
-        if !way.is_valid() {
-            return Err(XMLError::InvalidWay);
+        match way.is_valid() {
+            Err(err) => { return Err(XMLError::InvalidWay(err)); },
+            _ => ()
         }
 
         for nd in &way.nodes {
@@ -84,8 +86,9 @@ impl OSMTree {
     }
 
     pub fn add_rel(&mut self, rel: Rel) -> Result<bool, XMLError> {
-        if !rel.is_valid() {
-            return Err(XMLError::InvalidRel);
+        match rel.is_valid() {
+            Err(err) => { return Err(XMLError::InvalidRel(err)); },
+            _ => ()
         }
 
         self.rels.insert(rel.id.unwrap(), rel);

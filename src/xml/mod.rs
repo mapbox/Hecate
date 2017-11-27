@@ -29,11 +29,11 @@ pub enum XMLError {
     EncodingFailed,
     InternalError,
     ParsingError,
-    InvalidNode,
+    InvalidNode(String),
     InvalidNodeRef,
-    InvalidWay,
+    InvalidWay(String),
     InvalidWayRef,
-    InvalidRel,
+    InvalidRel(String),
     InvalidXML,
     InvalidFeature,
     NotFoundError,
@@ -43,25 +43,25 @@ pub enum XMLError {
 }
 
 impl XMLError {
-    pub fn to_string(&self) -> &str {
+    pub fn to_string(&self) -> String {
         match *self {
-            XMLError::Unknown => "Unknown Error",
-            XMLError::GCNotSupported => "GeometryCollection are not currently supported",
-            XMLError::Invalid => "Could not parse XML - Invalid",
-            XMLError::EncodingFailed => "Encoding Failed",
-            XMLError::InternalError => "Internal Error",
-            XMLError::ParsingError => "Parsing Error",
-            XMLError::InvalidNode => "Invalid Node",
-            XMLError::InvalidNodeRef => "Invalid Node Reference",
-            XMLError::InvalidWay => "Invalid Way",
-            XMLError::InvalidWayRef => "Invalid Way Reference",
-            XMLError::InvalidRel => "Invalid Relation",
-            XMLError::InvalidXML => "Invalid XML",
-            XMLError::NotFoundError => "Not Found",
-            XMLError::InvalidFeature => "Invalid Feature",
-            XMLError::StringParsing(_) => "Could not parse attribute to string",
-            XMLError::IntParsing(_) => "Could not parse attribute to integer",
-            XMLError::FloatParsing(_) => "Could not parse attribute to float"
+            XMLError::Unknown => String::from("Unknown Error"),
+            XMLError::GCNotSupported => String::from("GeometryCollection are not currently supported"),
+            XMLError::Invalid => String::from("Could not parse XML - Invalid"),
+            XMLError::EncodingFailed => String::from("Encoding Failed"),
+            XMLError::InternalError => String::from("Internal Error"),
+            XMLError::ParsingError => String::from("Parsing Error"),
+            XMLError::InvalidNode(ref msg) => format!("Invalid Node: {}", msg),
+            XMLError::InvalidNodeRef => String::from("Invalid Node Reference"),
+            XMLError::InvalidWay(ref msg) => format!("Invalid Way: {}", msg),
+            XMLError::InvalidWayRef => String::from("Invalid Way Reference"),
+            XMLError::InvalidRel(ref msg) => format!("Invalid Relation: {}", msg),
+            XMLError::InvalidXML => String::from("Invalid XML"),
+            XMLError::NotFoundError => String::from("Not Found"),
+            XMLError::InvalidFeature => String::from("Invalid Feature"),
+            XMLError::StringParsing(_) => String::from("Could not parse attribute to string"),
+            XMLError::IntParsing(_) => String::from("Could not parse attribute to integer"),
+            XMLError::FloatParsing(_) => String::from("Could not parse attribute to float")
         }
     }
 }
@@ -118,7 +118,7 @@ pub trait Generic {
     fn set_tag(&mut self, k: String, v: String);
     fn has_tags(&self) -> bool;
     fn to_feat(&self, tree: &OSMTree) -> geojson::Feature;
-    fn is_valid(&self) -> bool;
+    fn is_valid(&self) -> Result<bool, String>;
 }
 
 pub struct OSMTypes {

@@ -1,5 +1,4 @@
 use std::fmt;
-use std::collections::HashMap;
 use xml::*;
 
 pub struct Node {
@@ -70,25 +69,25 @@ impl Generic for Node {
         }
     }
 
-    fn is_valid(&self) -> bool {
+    fn is_valid(&self) -> Result<bool, String> {
         match self.id {
-            None => { return false; },
+            None => { return Err(String::from("Missing id")) },
             Some(_) => ()
         }
         match self.lat {
-            None => { return false; },
+            None => { return Err(String::from("Missing lat")); },
             Some(_) => ()
         }
         match self.lon {
-            None => { return false; },
+            None => { return Err(String::from("Missing lon")); },
             Some(_) => ()
         }
         match self.version {
-            None => { return false; },
+            None => { return Err(String::from("Missing version")); },
             Some(_) => ()
         }
 
-        return true;
+        return Ok(true);
     }
 }
 
@@ -120,7 +119,7 @@ mod tests {
         assert_eq!(n.version, None);
 
         assert_eq!(n.value(), Value::Node);
-        assert_eq!(n.is_valid(), false);
+        assert_eq!(n.is_valid().is_err(), true);
 
         assert_eq!(format!("{}", n), "[Node: id=None]");
 
@@ -144,14 +143,19 @@ mod tests {
     #[test]
     fn validity() {
         let mut n = Node::new();
-        assert_eq!(n.is_valid(), false);
+        assert_eq!(n.is_valid().is_err(), true);
         n.id = Some(1);
-        assert_eq!(n.is_valid(), false);
+        assert_eq!(n.is_valid().is_err(), true);
         n.lat = Some(1.1);
-        assert_eq!(n.is_valid(), false);
+        assert_eq!(n.is_valid().is_err(), true);
         n.lon = Some(2.2);
-        assert_eq!(n.is_valid(), false);
+        assert_eq!(n.is_valid().is_err(), true);
         n.version = Some(1);
-        assert_eq!(n.is_valid(), true);
+        assert_eq!(n.is_valid().is_err(), false);
+    }
+
+    #[test]
+    fn to_feat() {
+        let mut n = Node::new();
     }
 }

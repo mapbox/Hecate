@@ -1,5 +1,4 @@
 use std::fmt;
-use std::collections::HashMap;
 use xml::*;
 
 pub struct Rel {
@@ -64,17 +63,17 @@ impl Generic for Rel {
         }
     }
 
-    fn is_valid(&self) -> bool {
+    fn is_valid(&self) -> Result<bool, String> {
         match self.id {
-            None => { return false; },
+            None => { return Err(String::from("Missing id")); },
             Some(_) => ()
         }
         match self.version {
-            None => { return false; },
+            None => { return Err(String::from("Missing version")); },
             Some(_) => ()
         }
 
-        return true;
+        return Ok(true);
     }
 }
 
