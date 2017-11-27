@@ -182,12 +182,33 @@ mod tests {
         let mut fmem = serde_json::Map::new();
         fmem.insert(String::from("action"), json!(String::from("create")));
         fmem.insert(String::from("version"), json!(1));
+
         assert_eq!(n.to_feat(&tree).ok(), Some(geojson::Feature {
             bbox: None,
             id: Some(json!(1)),
             properties: Some(serde_json::Map::new()),
             geometry: Some(geojson::Geometry::new(geojson::Value::Point(vec!(2.200000047683716, 1.100000023841858)))),
-            foreign_members: Some(fmem)
+            foreign_members: Some(fmem.clone())
+        }));
+
+        n.action = Some(Action::Modify);
+        fmem.insert(String::from("action"), json!(String::from("modify")));
+        assert_eq!(n.to_feat(&tree).ok(), Some(geojson::Feature {
+            bbox: None,
+            id: Some(json!(1)),
+            properties: Some(serde_json::Map::new()),
+            geometry: Some(geojson::Geometry::new(geojson::Value::Point(vec!(2.200000047683716, 1.100000023841858)))),
+            foreign_members: Some(fmem.clone())
+        }));
+
+        n.action = Some(Action::Delete);
+        fmem.insert(String::from("action"), json!(String::from("delete")));
+        assert_eq!(n.to_feat(&tree).ok(), Some(geojson::Feature {
+            bbox: None,
+            id: Some(json!(1)),
+            properties: Some(serde_json::Map::new()),
+            geometry: Some(geojson::Geometry::new(geojson::Value::Point(vec!(2.200000047683716, 1.100000023841858)))),
+            foreign_members: Some(fmem.clone())
         }));
     }
 }
