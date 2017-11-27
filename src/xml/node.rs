@@ -42,14 +42,19 @@ impl Generic for Node {
         !self.tags.is_empty()
     }
 
-    fn to_feat(&self, tree: &OSMTree) -> geojson::Feature {
+    fn to_feat(&self, tree: &OSMTree) -> Result<geojson::Feature, XMLError> {
         let mut foreign = serde_json::Map::new();
+
+        match self.is_valid() {
+            Err(err) => { return Err(XMLError::InvalidNode(err)); },
+            _ => ()
+        }
 
         foreign.insert(String::from("action"), serde_json::Value::String(match self.action {
             Some(Action::Create) => String::from("create"),
             Some(Action::Modify) => String::from("modify"),
             Some(Action::Delete) => String::from("delete"),
-            _ => String::new()
+            _ => { return Err(XMLError::InvalidNode(String::from("Missing or invalid action"))); }
         }));
 
         foreign.insert(String::from("version"), json!(self.version));
@@ -58,7 +63,7 @@ impl Generic for Node {
         coords.push(self.lon.unwrap() as f64);
         coords.push(self.lat.unwrap() as f64);
 
-        geojson::Feature {
+        Ok(geojson::Feature {
             bbox: None,
             geometry: Some(geojson::Geometry::new(
                 geojson::Value::Point(coords)
@@ -66,7 +71,7 @@ impl Generic for Node {
             id: Some(json!(self.id.clone())),
             properties: Some(self.tags.clone()),
             foreign_members: Some(foreign)
-        }
+        })
     }
 
     fn is_valid(&self) -> Result<bool, String> {
@@ -156,6 +161,6 @@ mod tests {
 
     #[test]
     fn to_feat() {
-        let mut n = Node::new();
+        let n = Node::new();
     }
 }

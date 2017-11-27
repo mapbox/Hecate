@@ -53,14 +53,14 @@ impl Generic for Rel {
         !self.tags.is_empty()
     }
 
-    fn to_feat(&self, tree: &OSMTree) -> geojson::Feature {
-        geojson::Feature {
+    fn to_feat(&self, tree: &OSMTree) -> Result<geojson::Feature, XMLError> {
+        Ok(geojson::Feature {
             bbox: None,
             geometry: None,
             id: None,
             properties: None,
             foreign_members: None
-        }
+        })
     }
 
     fn is_valid(&self) -> Result<bool, String> {

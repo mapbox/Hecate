@@ -40,14 +40,19 @@ impl Generic for Way {
         !self.tags.is_empty()
     }
 
-    fn to_feat(&self, tree: &OSMTree) -> geojson::Feature {
+    fn to_feat(&self, tree: &OSMTree) -> Result<geojson::Feature, XMLError> {
         let mut foreign = serde_json::Map::new();
+
+        match self.is_valid() {
+            Err(err) => { return Err(XMLError::InvalidWay(err)); },
+            _ => ()
+        }
 
         foreign.insert(String::from("action"), serde_json::Value::String(match self.action {
             Some(Action::Create) => String::from("create"),
             Some(Action::Modify) => String::from("modify"),
             Some(Action::Delete) => String::from("delete"),
-            _ => String::new()
+            _ => { return Err(XMLError::InvalidNode(String::from("Missing or invalid action"))); }
         }));
 
         foreign.insert(String::from("version"), json!(self.version));
@@ -70,7 +75,7 @@ impl Generic for Way {
             let mut polycoords: Vec<Vec<geojson::Position>> = Vec::new();
             polycoords.push(linecoords);
 
-            geojson::Feature {
+            Ok(geojson::Feature {
                 bbox: None,
                 geometry: Some(geojson::Geometry::new(
                     geojson::Value::Polygon(polycoords)
@@ -78,11 +83,11 @@ impl Generic for Way {
                 id: Some(json!(self.id.clone())),
                 properties: Some(self.tags.clone()),
                 foreign_members: Some(foreign)
-            }
+            })
         } else {
             //Handle LineStrings
 
-            geojson::Feature {
+            Ok(geojson::Feature {
                 bbox: None,
                 geometry: Some(geojson::Geometry::new(
                     geojson::Value::LineString(linecoords)
@@ -90,7 +95,7 @@ impl Generic for Way {
                 id: Some(json!(self.id.clone())),
                 properties: Some(self.tags.clone()),
                 foreign_members: Some(foreign)
-            }
+            })
         }
     }
 

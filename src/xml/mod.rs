@@ -117,7 +117,7 @@ pub trait Generic {
     fn value(&self) -> Value;
     fn set_tag(&mut self, k: String, v: String);
     fn has_tags(&self) -> bool;
-    fn to_feat(&self, tree: &OSMTree) -> geojson::Feature;
+    fn to_feat(&self, tree: &OSMTree) -> Result<geojson::Feature, XMLError>;
     fn is_valid(&self) -> Result<bool, String>;
 }
 
@@ -195,22 +195,22 @@ pub fn to_features(body: &String) -> Result<(geojson::FeatureCollection, OSMTree
         foreign_members: None
     };
 
-    for (i, rel) in tree.get_rels() {
+    for (_i, rel) in tree.get_rels() {
         if !rel.has_tags() { continue; }
 
-        fc.features.push(rel.to_feat(&tree));
+        fc.features.push(rel.to_feat(&tree)?);
     }
 
-    for (i, way) in tree.get_ways() {
+    for (_i, way) in tree.get_ways() {
         if !way.has_tags() { continue; }
 
-        fc.features.push(way.to_feat(&tree));
+        fc.features.push(way.to_feat(&tree)?);
     }
 
-    for (i, node) in tree.get_nodes() {
+    for (_i, node) in tree.get_nodes() {
         if !node.has_tags() { continue; }
 
-        let n = node.to_feat(&tree);
+        let n = node.to_feat(&tree)?;
 
         fc.features.push(n);
     }
@@ -419,8 +419,6 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
 
         buf.clear();
     }
-
-    Err(XMLError::InvalidXML)
 }
 
 pub fn from_features(fc: &geojson::FeatureCollection) -> Result<String, XMLError> {

@@ -64,8 +64,6 @@ pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson
                 _ => Err(ChangesetError::CreationFail)
             }
         },
-        Ok(res) => {
-            Ok(*id)
-        }
+        _ => { Ok(*id) }
     }
 }
