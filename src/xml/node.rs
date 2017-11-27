@@ -94,7 +94,10 @@ impl Generic for Node {
 
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[Node: id={}]", self.id.unwrap())
+        write!(f, "[Node: id={}]", match self.id {
+            None => String::from("None"),
+            Some(ref id) => id.to_string()
+        })
     }
 }
 
@@ -103,8 +106,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn basic_create() {
-        let n = Node::new();
+    fn empty() {
+        let mut n = Node::new();
         assert_eq!(n.id, None);
         assert_eq!(n.lat, None);
         assert_eq!(n.lon, None);
@@ -115,5 +118,26 @@ mod tests {
         assert_eq!(n.tags.is_empty(), true);
         assert_eq!(n.parents.len(), 0);
         assert_eq!(n.version, None);
+
+        assert_eq!(n.value(), Value::Node);
+        assert_eq!(n.is_valid(), false);
+
+        assert_eq!(format!("{}", n), "[Node: id=None]");
+
+        n.id = Some(1);
+        assert_eq!(format!("{}", n), "[Node: id=1]");
+
+        n.id = Some(-1);
+        assert_eq!(format!("{}", n), "[Node: id=-1]");
+    }
+
+    #[test]
+    fn tags() {
+        let mut n = Node::new();
+        assert_eq!(n.has_tags(), false);
+        n.set_tag(String::from("hello"), String::from("world"));
+        assert_eq!(n.has_tags(), true);
+
+        assert_eq!(format!("{}", n), "[Node: id=None]");
     }
 }

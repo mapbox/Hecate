@@ -14,7 +14,7 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-RUN apt-get install -y curl wget libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc binutils-dev libiberty-dev git build-essential
+RUN apt-get install -y curl wget libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc binutils-dev libiberty-dev git build-essential pkg-config zlib1g-dev python
 
 RUN git clone http://github.com/SimonKagstrom/kcov.git && \
     cd kcov && \
@@ -24,6 +24,13 @@ RUN git clone http://github.com/SimonKagstrom/kcov.git && \
     make && \
     make install
 
-RUN curl https://sh.rustup.rs -sSf | sh
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="~/.cargo/bin/:${PATH}"
 RUN cargo install cargo-kcov
+
+WORKDIR /usr/local/src/hecate
+ADD . /usr/local/src/hecate
+
+CMD cargo kcov
+
 
