@@ -97,3 +97,23 @@ impl fmt::Display for Node {
         write!(f, "[Node: id={}]", self.id.unwrap())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn basic_create() {
+        let n = Node::new();
+        assert_eq!(n.id, None);
+        assert_eq!(n.lat, None);
+        assert_eq!(n.lon, None);
+        assert_eq!(n.user, None);
+        assert_eq!(n.uid, None);
+        assert_eq!(n.modified, false);
+        assert_eq!(n.action, None);
+        assert_eq!(n.tags.is_empty(), true);
+        assert_eq!(n.parents.len(), 0);
+        assert_eq!(n.version, None);
+    }
+}
