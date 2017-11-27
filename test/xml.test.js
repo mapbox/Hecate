@@ -196,14 +196,22 @@ test('xml#changeset#upload', (t) => {
         });
 
         q.test('xml#changeset#upload - way - database', (r) => {
-            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 2;', (err, res) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 2 OR id = 3 ORDER BY id;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
-                    id: '1',
+                    id: '2',
                     version: '1',
-                    geom: '{"type":"Point","coordinates":[3.59219694137573,-0.661809384822845]}',
+                    geom: '{"type":"LineString","coordinates":[[1.10000002384186,1.10000002384186],[2.20000004768372,2.20000004768372],[3.29999995231628,3.29999995231628]]}',
                     props: {
-                        amenity: 'shop',
+                        amenity: 'shop'
+                    },
+                    deltas: ['1']
+                });
+                r.deepEquals(res.rows[1], {
+                    id: '3',
+                    version: '1',
+                    geom: '{"type":"Polygon","coordinates":[[[1.10000002384186,1.10000002384186],[2.20000004768372,2.20000004768372],[3.29999995231628,3.29999995231628],[1.10000002384186,1.10000002384186]]]}',
+                    props: {
                         building: 'yes'
                     },
                     deltas: ['1']

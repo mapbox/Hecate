@@ -53,7 +53,7 @@ impl Generic for Way {
 
         foreign.insert(String::from("version"), json!(self.version));
 
-        let linecoords: Vec<geojson::Position> = Vec::new();
+        let mut linecoords: Vec<geojson::Position> = Vec::new();
 
         for nid in &self.nodes {
             let node = tree.get_node(&nid).unwrap();
@@ -61,6 +61,8 @@ impl Generic for Way {
             let mut coords: Vec<f64> = Vec::new();
             coords.push(node.lon.unwrap() as f64);
             coords.push(node.lat.unwrap() as f64);
+
+            linecoords.push(coords);
         }
 
         if self.nodes[0] == self.nodes[self.nodes.len() - 1] {
