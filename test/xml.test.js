@@ -102,8 +102,8 @@ test('xml#changeset#create', (t) => {
 });
 
 test('xml#changeset#upload', (t) => {
-    t.test('xml#changeset#upload - node', (q) => {
-        q.test('xml#changeset#upload - node - endpoint', (r) => {
+    t.test('xml#changeset#upload - create - node', (q) => {
+        q.test('xml#changeset#upload - create - node - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
                 url: 'http://localhost:3000/api/0.6/changeset/1/upload',
@@ -133,7 +133,7 @@ test('xml#changeset#upload', (t) => {
             });
         });
 
-        q.test('xml#changeset#upload - node - database', (r) => {
+        q.test('xml#changeset#upload - create - node - database', (r) => {
             pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
@@ -153,7 +153,86 @@ test('xml#changeset#upload', (t) => {
         q.end();
     });
 
-    t.test('xml#changeset#upload - node', (q) => {
+    t.test('xml#changeset#upload - modify - node', (q) => {
+        q.test('xml#changeset#upload - modify - node - endpoint (version mismatch)', (r) => {
+            request.post({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/0.6/changeset/1/upload',
+                body: `
+                    <osmChange version="0.6" generator="Hecate Server">
+                        <modify>
+                            <node id='1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
+                                <tag k='amenity' v='shop' />
+                                <tag k='building' v='yes' />
+                            </node>
+                        </modify>
+                    </osmChange>
+                `
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+
+
+                let fixture = String(fs.readFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#node')));
+                r.equals(res.body, fixture);
+                if (res.body != fixture && process.env.UPDATE) {
+                    t.fail('Updated Fixture');
+                    fs.writeFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#node'), res.body);
+                }
+
+                r.end();
+            });
+        });
+
+        q.test('xml#changeset#upload - modify - node - endpoint', (r) => {
+            request.post({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/0.6/changeset/1/upload',
+                body: `
+                    <osmChange version="0.6" generator="Hecate Server">
+                        <modify>
+                            <node id='1' version='2' changeset='1' lat='1.1' lon='1.1'>
+                                <tag k='building' v='house' />
+                            </node>
+                        </modify>
+                    </osmChange>
+                `
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+
+
+                let fixture = String(fs.readFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#modifynode')));
+                r.equals(res.body, fixture);
+                if (res.body != fixture && process.env.UPDATE) {
+                    t.fail('Updated Fixture');
+                    fs.writeFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#modifynode'), res.body);
+                }
+
+                r.end();
+            });
+        });
+
+        q.test('xml#changeset#upload - create - node - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
+                r.error(err, 'no errors');
+                r.deepEquals(res.rows[0], {
+                    id: '1',
+                    version: '1',
+                    geom: '{"type":"Point","coordinates":[1.1, 1,1]}',
+                    props: {
+                        building: 'house'
+                    },
+                    deltas: ['1', '2']
+                });
+                r.end();
+            });
+        });
+
+        q.end();
+    });
+
+    t.test('xml#changeset#upload - create - way', (q) => {
         q.test('xml#changeset#upload - way - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
@@ -195,7 +274,7 @@ test('xml#changeset#upload', (t) => {
             });
         });
 
-        q.test('xml#changeset#upload - way - database', (r) => {
+        q.test('xml#changeset#upload - create - way - database', (r) => {
             pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 2 OR id = 3 ORDER BY id;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {

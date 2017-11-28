@@ -119,7 +119,44 @@ impl Generic for Way {
 
 impl fmt::Display for Way {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[Way: id={}]", self.id.unwrap())
+        write!(f, "[Way: id={}]", match self.id {
+            None => String::from("None"),
+            Some(ref id) => id.to_string()
+        })
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty() {
+        let mut w = Way::new();
+        assert_eq!(w.id, None);
+        assert_eq!(w.tags, serde_json::Map::new());
+        assert_eq!(w.modified, false);
+        assert_eq!(w.user, None);
+        assert_eq!(w.uid, None);
+        assert_eq!(w.nodes, Vec::<i64>::new());
+        assert_eq!(w.action, None);
+        assert_eq!(w.parents, Vec::<i64>::new());
+        assert_eq!(w.version, None);
+
+        assert_eq!(w.value(), Value::Way);
+        assert_eq!(w.is_valid().is_err(), true);
+
+        assert_eq!(format!("{}", w), "[Way: id=None]");
+
+        w.id = Some(1);
+        assert_eq!(format!("{}", w), "[Way: id=1]");
+
+        w.id = Some(-1);
+        assert_eq!(format!("{}", w), "[Way: id=-1]");
+    }
+
+    #[test]
+    fn tags() {
+
+    }
+}
