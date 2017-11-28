@@ -1,6 +1,7 @@
 use std::fmt;
 use xml::*;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Way {
     pub id: Option<i64>,
     pub user: Option<String>,
@@ -194,15 +195,20 @@ mod tests {
 
         let mut n1 = Node::new();
         let mut n2 = Node::new();
+        let mut n3 = Node::new();
 
         n1.id = Some(1);
-        n2.id = Some(1);
+        n2.id = Some(2);
+        n3.id = Some(3);
         n1.lat = Some(1.1);
         n2.lat = Some(2.2);
+        n3.lat = Some(3.3);
         n1.lon = Some(1.1);
         n2.lon = Some(2.2);
+        n3.lon = Some(3.3);
         n1.version = Some(1);
         n2.version = Some(1);
+        n3.version = Some(1);
 
         assert_eq!(n1.is_valid(), Ok(true));
         assert_eq!(n2.is_valid(), Ok(true));
@@ -216,9 +222,45 @@ mod tests {
         w.action = Some(Action::Create);
         assert_eq!(w.to_feat(&tree).err(), Some(XMLError::InvalidWay(String::from("Node reference not found in tree"))));
 
-        assert_eq!(tree.add_node(n1), Ok(true));
-        assert_eq!(tree.add_node(n2), Ok(true));
+        assert_eq!(tree.add_node(n1.clone()), Ok(true));
+        assert_eq!(tree.add_node(n2.clone()), Ok(true));
+        assert_eq!(tree.add_node(n3.clone()), Ok(true));
 
-        assert_eq!(w.to_feat(&tree).err(), Some(XMLError::InvalidWay(String::from("Node reference not found in tree"))));
+        assert_eq!(tree.get_node(&2), Ok(&n2));
+        assert_eq!(tree.get_node(&2), Ok(&n2));
+        assert_eq!(tree.get_node(&3), Ok(&n3));
+
+        let mut fmem = serde_json::Map::new();
+        fmem.insert(String::from("action"), json!(String::from("create")));
+        fmem.insert(String::from("version"), json!(1));
+
+        let mut coords: Vec<geojson::Position> = Vec::new();
+        coords.push(vec!(1.100000023841858, 1.100000023841858));
+        coords.push(vec!(2.200000047683716, 2.200000047683716));
+
+        assert_eq!(w.to_feat(&tree).ok(), Some(geojson::Feature {
+            bbox: None,
+            id: Some(json!(1)),
+            properties: Some(serde_json::Map::new()),
+            geometry: Some(geojson::Geometry::new(geojson::Value::LineString(coords.clone()))),
+            foreign_members: Some(fmem.clone())
+        }));
+
+        w.nodes.push(3);
+        w.nodes.push(1);
+
+        coords.push(vec!(3.299999952316284, 3.299999952316284));
+        coords.push(vec!(1.100000023841858, 1.100000023841858));
+        let mut pcoords: Vec<Vec<geojson::Position>> = Vec::new();
+        pcoords.push(coords);
+
+        assert_eq!(w.to_feat(&tree).ok(), Some(geojson::Feature {
+            bbox: None,
+            id: Some(json!(1)),
+            properties: Some(serde_json::Map::new()),
+            geometry: Some(geojson::Geometry::new(geojson::Value::Polygon(pcoords))),
+            foreign_members: Some(fmem.clone())
+        }));
+
     }
 }

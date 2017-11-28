@@ -1,6 +1,7 @@
 use std::fmt;
 use xml::*;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Node {
     pub id: Option<i64>,
     pub lat: Option<f32>,
