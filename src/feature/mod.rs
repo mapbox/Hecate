@@ -31,6 +31,12 @@ pub enum Action {
     Delete
 }
 
+pub struct Response {
+    pub old: i64,
+    pub new: i64,
+    pub version: i64
+}
+
 impl FeatureError {
     pub fn to_string(&self) -> &str {
         match *self {
@@ -95,19 +101,21 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     }
 }
 
-pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &Option<i64>) -> Result<bool, FeatureError> {
+pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &Option<i64>) -> Result<Vec<Response>, FeatureError> {
     let action = get_action(&feat)?;
 
+    let mut responses: Vec<Response> = Vec::new();
+
     match action {
-        Action::Create => { create(&trans, &feat, &delta)?; },
-        Action::Modify => { modify(&trans, &feat)?; },
-        Action::Delete => { delete(&trans, &feat)?; }
+        Action::Create => { responses.push(create(&trans, &feat, &delta)?); },
+        Action::Modify => { responses.push(modify(&trans, &feat)?); },
+        Action::Delete => { responses.push(delete(&trans, &feat)?); }
     }
 
-    Ok(true)
+    Ok(responses)
 }
 
-pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<bool, FeatureError> {
+pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -128,9 +136,13 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
                 ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                 $2::TEXT::JSON,
                 array[COALESCE($3, currval('deltas_id_seq')::BIGINT)]
-            );
+            ) RETURNING id;
     ", &[&geom_str, &props_str, &delta]) {
-        Ok(_) => Ok(true),
+        Ok(_) => Ok(Response {
+            old: 1,
+            new: 1,
+            version: 1
+        }),
         Err(err) => {
             match err.as_db() {
                 Some(_e) => { Err(FeatureError::CreateError) },
@@ -140,7 +152,7 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
-pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<bool, FeatureError> {
+pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<Response, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -158,7 +170,11 @@ pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     let props_str = serde_json::to_string(&props).unwrap();
 
     match trans.query("SELECT modify_geo($1, $2, currval('deltas_id_seq')::BIGINT, $3, $4);", &[&geom_str, &props_str, &id, &version]) {
-        Ok(_) => Ok(true),
+        Ok(_) => Ok(Response {
+            old: id,
+            new: id,
+            version: version
+        }),
         Err(err) => {
             match err.as_db() {
                 Some(e) => {
@@ -174,12 +190,16 @@ pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
-pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<bool, FeatureError> {
+pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<Response, FeatureError> {
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
 
     match trans.query("SELECT delete_geo($1, $2);", &[&id, &version]) {
-        Ok(_) => Ok(true),
+        Ok(_) => Ok(Response {
+            old: id,
+            new: id,
+            version: version
+        }),
         Err(err) => {
             match err.as_db() {
                 Some(e) => {
@@ -258,9 +278,7 @@ pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
         let feat: String = row.get(0);
         let feat: geojson::Feature = match feat.parse().unwrap() {
             geojson::GeoJson::Feature(feat) => feat,
-            _ => {
-                return Err(FeatureError::InvalidFeature);
-            }
+            _ => { return Err(FeatureError::InvalidFeature); }
         };
 
         fc.features.push(feat);
