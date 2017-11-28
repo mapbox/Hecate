@@ -52,7 +52,7 @@ impl Generic for Way {
             Some(Action::Create) => String::from("create"),
             Some(Action::Modify) => String::from("modify"),
             Some(Action::Delete) => String::from("delete"),
-            _ => { return Err(XMLError::InvalidNode(String::from("Missing or invalid action"))); }
+            _ => { return Err(XMLError::InvalidWay(String::from("Missing or invalid action"))); }
         }));
 
         foreign.insert(String::from("version"), json!(self.version));
@@ -60,7 +60,10 @@ impl Generic for Way {
         let mut linecoords: Vec<geojson::Position> = Vec::new();
 
         for nid in &self.nodes {
-            let node = tree.get_node(&nid).unwrap();
+            let node = match tree.get_node(&nid) {
+                Err(_) => { return Err(XMLError::InvalidWay(String::from("Node reference not found in tree"))); },
+                Ok(n) => n
+            };
 
             let mut coords: Vec<f64> = Vec::new();
             coords.push(node.lon.unwrap() as f64);
@@ -157,6 +160,65 @@ mod tests {
 
     #[test]
     fn tags() {
+        let mut w = Way::new();
+        assert_eq!(w.has_tags(), false);
+        w.set_tag(String::from("hello"), String::from("world"));
+        assert_eq!(w.has_tags(), true);
 
+        assert_eq!(format!("{}", w), "[Way: id=None]");
+    }
+
+    #[test]
+    fn validity() {
+        let mut w = Way::new();
+        assert_eq!(w.is_valid().is_err(), true);
+        w.id = Some(1);
+        assert_eq!(w.is_valid().is_err(), true);
+        w.version = Some(1);
+        assert_eq!(w.is_valid().is_err(), true);
+        w.nodes.push(1);
+        assert_eq!(w.is_valid().is_err(), false);
+    }
+
+    #[test]
+    fn to_feat() {
+        let mut w = Way::new();
+        let mut tree = OSMTree::new();
+        assert_eq!(w.to_feat(&tree).err(), Some(XMLError::InvalidWay(String::from("Missing id"))));
+
+        w.id = Some(1);
+        assert_eq!(w.to_feat(&tree).err(), Some(XMLError::InvalidWay(String::from("Missing version"))));
+
+        w.version = Some(1);
+        assert_eq!(w.to_feat(&tree).err(), Some(XMLError::InvalidWay(String::from("Node references cannot be empty"))));
+
+        let mut n1 = Node::new();
+        let mut n2 = Node::new();
+
+        n1.id = Some(1);
+        n2.id = Some(1);
+        n1.lat = Some(1.1);
+        n2.lat = Some(2.2);
+        n1.lon = Some(1.1);
+        n2.lon = Some(2.2);
+        n1.version = Some(1);
+        n2.version = Some(1);
+
+        assert_eq!(n1.is_valid(), Ok(true));
+        assert_eq!(n2.is_valid(), Ok(true));
+
+        // Add node refs to way but don't add them to tree
+        w.nodes.push(1);
+        w.nodes.push(2);
+
+        assert_eq!(w.to_feat(&tree).err(), Some(XMLError::InvalidWay(String::from("Missing or invalid action"))));
+
+        w.action = Some(Action::Create);
+        assert_eq!(w.to_feat(&tree).err(), Some(XMLError::InvalidWay(String::from("Node reference not found in tree"))));
+
+        assert_eq!(tree.add_node(n1), Ok(true));
+        assert_eq!(tree.add_node(n2), Ok(true));
+
+        assert_eq!(w.to_feat(&tree).err(), Some(XMLError::InvalidWay(String::from("Node reference not found in tree"))));
     }
 }
