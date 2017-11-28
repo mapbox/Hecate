@@ -258,9 +258,28 @@ mod tests {
             bbox: None,
             id: Some(json!(1)),
             properties: Some(serde_json::Map::new()),
-            geometry: Some(geojson::Geometry::new(geojson::Value::Polygon(pcoords))),
+            geometry: Some(geojson::Geometry::new(geojson::Value::Polygon(pcoords.clone()))),
             foreign_members: Some(fmem.clone())
         }));
 
+        w.action = Some(Action::Modify);
+        fmem.insert(String::from("action"), json!(String::from("modify")));
+        assert_eq!(w.to_feat(&tree).ok(), Some(geojson::Feature {
+            bbox: None,
+            id: Some(json!(1)),
+            properties: Some(serde_json::Map::new()),
+            geometry: Some(geojson::Geometry::new(geojson::Value::Polygon(pcoords.clone()))),
+            foreign_members: Some(fmem.clone())
+        }));
+
+        w.action = Some(Action::Delete);
+        fmem.insert(String::from("action"), json!(String::from("delete")));
+        assert_eq!(w.to_feat(&tree).ok(), Some(geojson::Feature {
+            bbox: None,
+            id: Some(json!(1)),
+            properties: Some(serde_json::Map::new()),
+            geometry: Some(geojson::Geometry::new(geojson::Value::Polygon(pcoords.clone()))),
+            foreign_members: Some(fmem.clone())
+        }));
     }
 }
