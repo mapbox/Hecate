@@ -101,18 +101,16 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     }
 }
 
-pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &Option<i64>) -> Result<Vec<Response>, FeatureError> {
+pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let action = get_action(&feat)?;
 
-    let mut responses: Vec<Response> = Vec::new();
+    let res = match action {
+        Action::Create => create(&trans, &feat, &delta)?,
+        Action::Modify => modify(&trans, &feat)?,
+        Action::Delete => delete(&trans, &feat)?
+    };
 
-    match action {
-        Action::Create => { responses.push(create(&trans, &feat, &delta)?); },
-        Action::Modify => { responses.push(modify(&trans, &feat)?); },
-        Action::Delete => { responses.push(delete(&trans, &feat)?); }
-    }
-
-    Ok(responses)
+    Ok(res)
 }
 
 pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
