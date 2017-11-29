@@ -268,20 +268,29 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
+    let mut ids: HashMap<i64, feature::Response> = HashMap::new();
+
     for feat in fc.features {
-        match feature::action(&trans, feat, &Some(changeset_id)) {
+        let feat_res = match feature::action(&trans, feat, &Some(changeset_id)) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
                 return Ok(Response::with((status::ExpectationFailed, err.to_string())));
             },
-            Ok(_) => ()
-        }
+            Ok(feat_res) => feat_res
+        };
+
+        ids.insert(feat_res.old, feat_res);
     }
+
+    let diffres = match xml::to_diffresult(ids, tree) {
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not format diffResult XML"))); },
+        Ok(diffres) => diffres
+    };
 
     trans.commit().unwrap();
 
-    Ok(Response::with((status::Ok, "<diffResult generator=\"Hecate Server\" version=\"0.6\"></diffResult>")))
+    Ok(Response::with((status::Ok, diffres)))
 }
 
 fn xml_capabilities(_req: &mut Request) -> IronResult<Response> {

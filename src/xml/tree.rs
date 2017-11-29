@@ -29,7 +29,7 @@ impl OSMTree {
         Ok(true)
     }
 
-    pub fn get_nodes(& self) -> &HashMap<i64, Node> {
+    pub fn get_nodes(&self) -> &HashMap<i64, Node> {
         &self.nodes
     }
 

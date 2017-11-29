@@ -139,8 +139,51 @@ impl OSMTypes {
     }
 }
 
-pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, Option<String>>) {
-    let mut kv: (Option<String>, Option<String>) = (None, None);
+pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Result<String, XMLError> {
+    let mut diffres = String::from(r#"<diffResult generator="Hecate Server" version="0.6">"#);
+
+    //There had to be one horrible thing in the codebase :(
+    //JOSM requires a + int back for every node which Hecate of course
+    //couldn't care less about as it joins them with the Way/Poly
+    let mut tmpid: i64 = 8000000000000000000;
+
+    for (_i, n) in tree.get_nodes() {
+        if n.action == Some(Action::Create) {
+            match ids.get(&n.id.unwrap()) {
+                None => {
+                    tmpid += 1;
+                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="1"/>"#, n.id.unwrap(), tmpid));
+                },
+                Some(diffid) => {
+                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old, diffid.new, diffid.version));
+                }
+            }
+        } else if n.action == Some(Action::Modify) {
+            match ids.get(&n.id.unwrap()) {
+                None => {
+                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="1"/>"#, n.id.unwrap(), n.id.unwrap()));
+                },
+                Some(diffid) => {
+                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, n.id.unwrap(), n.id.unwrap(), diffid.version));
+                }
+            }
+        }
+    }
+
+    for (_i, w) in tree.get_ways() {
+
+    }
+
+    for (_i, r) in tree.get_rels() {
+
+    }
+
+    diffres.push_str(r#"</diffResult>"#);
+
+    Ok(diffres)
+}
+
+pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, Option<String>>) { let mut kv: (Option<String>, Option<String>) = (None, None);
 
     for attr in xml_node.attributes() {
         let attr = attr.unwrap();
@@ -453,7 +496,7 @@ pub fn from_features(fc: &geojson::FeatureCollection) -> Result<String, XMLError
             None => { return Err(XMLError::Unknown); }
         }
     }
-    
+
     xml.push_str(&*osm.nodes);
     xml.push_str(&*osm.ways);
     xml.push_str(&*osm.rels);
