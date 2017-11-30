@@ -145,14 +145,13 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
     //There had to be one horrible thing in the codebase :(
     //JOSM requires a + int back for every node which Hecate of course
     //couldn't care less about as it joins them with the Way/Poly
-    let mut tmpid: i64 = 8000000000000000000;
+    let tmpid: i64 = 8000000000000000000;
 
     for (_i, n) in tree.get_nodes() {
         if n.action == Some(Action::Create) {
             match ids.get(&n.id.unwrap()) {
                 None => {
-                    tmpid += 1;
-                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="1"/>"#, n.id.unwrap(), tmpid));
+                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="1"/>"#, n.id.unwrap(), tmpid + (n.id.unwrap() * -1)));
                 },
                 Some(diffid) => {
                     diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old, diffid.new, diffid.version));

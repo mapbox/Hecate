@@ -72,10 +72,12 @@ fn main() {
     router.get("/api/capabilities", xml_capabilities, "xml_capabilities");
     router.get("/api/0.6/capabilities", xml_capabilities, "xml_06capabilities");
     router.get("/api/0.6/user/details", xml_user, "xml_06user");
+    router.get("http://localhost:3000/api/0.6", index, "xml");
     router.get("/api/0.6/map", xml_map, "xml_map");
     router.put("/api/0.6/changeset/create", xml_changeset_create, "xml_createChangeset");
     router.put("/api/0.6/changeset/:id", xml_changeset_modify, "xml_modifyChangeset");
     router.post("/api/0.6/changeset/:id/upload", xml_changeset_upload, "xml_putChangeset");
+    router.put("/api/0.6/changeset/:id/close", xml_changeset_close, "xml_closeChangeset");
 
     let mut mount = Mount::new();
     mount.mount("/", router);
@@ -210,6 +212,10 @@ fn xml_changeset_create(req: &mut Request) -> IronResult<Response> {
     trans.commit().unwrap();
 
     Ok(Response::with((status::Ok, id.to_string())))
+}
+
+fn xml_changeset_close(req: &mut Request) -> IronResult<Response> {
+    Ok(Response::with((status::Ok, String::from("true"))))
 }
 
 fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {

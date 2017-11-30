@@ -12,10 +12,10 @@ pub enum FeatureError {
     NoMembers,
     NoGeometry,
     VersionRequired,
-    CreateError,
+    CreateError(String),
     DeleteVersionMismatch,
-    DeleteError,
-    ModifyError,
+    DeleteError(String),
+    ModifyError(String),
     ModifyVersionMismatch,
     IdRequired,
     ActionRequired,
@@ -38,22 +38,22 @@ pub struct Response {
 }
 
 impl FeatureError {
-    pub fn to_string(&self) -> &str {
+    pub fn to_string(&self) -> String {
         match *self {
-            FeatureError::NotFound => { "Feature Not Found" },
-            FeatureError::NoProps => { "No Properties" },
-            FeatureError::NoMembers => { "No Members" },
-            FeatureError::NoGeometry => { "No Geometry" },
-            FeatureError::VersionRequired => { "Version Required" },
-            FeatureError::CreateError => { "Create Error" },
-            FeatureError::DeleteVersionMismatch => { "Delete Version Mismatch" },
-            FeatureError::DeleteError => { "Internal Delete Error" },
-            FeatureError::ModifyVersionMismatch => { "Modify Version Mismatch" },
-            FeatureError::ModifyError => { "Internal Modify Error" },
-            FeatureError::IdRequired => { "ID Required" }
-            FeatureError::ActionRequired => { "Action Required" },
-            FeatureError::InvalidBBOX => { "Invalid BBOX" },
-            FeatureError::InvalidFeature => { "Invalid Feature" }
+            FeatureError::NotFound => String::from("Feature Not Found"),
+            FeatureError::NoProps => String::from("No Properties"),
+            FeatureError::NoMembers => String::from("No Members"),
+            FeatureError::NoGeometry => String::from("No Geometry"),
+            FeatureError::VersionRequired => String::from("Version Required"),
+            FeatureError::CreateError(ref msg) => format!("Create Error: {}", msg),
+            FeatureError::DeleteVersionMismatch => String::from("Delete Version Mismatch"),
+            FeatureError::DeleteError(ref msg) => format!("Delete Error: {}", msg),
+            FeatureError::ModifyVersionMismatch => String::from("Modify Version Mismatch"),
+            FeatureError::ModifyError(ref msg) => format!("Modify Error: {}", msg),
+            FeatureError::IdRequired => String::from( "ID Required"),
+            FeatureError::ActionRequired => String::from( "Action Required"),
+            FeatureError::InvalidBBOX => String::from( "Invalid BBOX"),
+            FeatureError::InvalidFeature => String::from( "Invalid Feature")
         }
     }
 }
@@ -143,8 +143,8 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
         }),
         Err(err) => {
             match err.as_db() {
-                Some(_e) => { Err(FeatureError::CreateError) },
-                _ => Err(FeatureError::CreateError)
+                Some(e) => { Err(FeatureError::CreateError(e.message.clone())) },
+                _ => Err(FeatureError::CreateError(String::from("generic")))
             }
         }
     }
@@ -179,10 +179,10 @@ pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
                     if e.message == "MODIFY: ID or VERSION Mismatch" {
                         Err(FeatureError::ModifyVersionMismatch)
                     } else {
-                        Err(FeatureError::ModifyError)
+                        Err(FeatureError::ModifyError(e.message.clone()))
                     }
                 },
-                _ => Err(FeatureError::ModifyError)
+                _ => Err(FeatureError::ModifyError(String::from("generic")))
             }
         }
     }
@@ -204,10 +204,10 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
                     if e.message == "DELETE: ID or VERSION Mismatch" {
                         Err(FeatureError::DeleteVersionMismatch)
                     } else {
-                        Err(FeatureError::DeleteError)
+                        Err(FeatureError::DeleteError(e.message.clone()))
                     }
                 },
-                _ => Err(FeatureError::DeleteError)
+                _ => Err(FeatureError::DeleteError(String::from("generic")))
             }
         }
     }
