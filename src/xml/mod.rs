@@ -131,7 +131,7 @@ pub struct OSMTypes {
 impl OSMTypes {
     pub fn new() -> OSMTypes {
         OSMTypes {
-            node_it: 0,
+            node_it: 9000000000000000000,
             nodes: String::from(""),
             ways: String::from(""),
             rels: String::from("")
@@ -619,7 +619,7 @@ pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<(Stri
 
     let mut xml_node = XMLEvents::BytesStart::owned(b"node".to_vec(), 4);
 
-    osm.node_it = osm.node_it - 1;
+    osm.node_it = osm.node_it + 1;
 
     xml_node.push_attribute(("id", &*osm.node_it.to_string()));
     xml_node.push_attribute(("version", "1"));
