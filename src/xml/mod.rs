@@ -183,7 +183,6 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
 }
 
 pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, Option<String>>) { let mut kv: (Option<String>, Option<String>) = (None, None);
-
     for attr in xml_node.attributes() {
         let attr = attr.unwrap();
 
@@ -587,8 +586,15 @@ pub fn multilinestring(_feat: &geojson::Feature, _coords: &Vec<geojson::LineStri
 
 }
 
-pub fn polygon(_feat: &geojson::Feature, _coords: &geojson::PolygonType, _osm: &mut OSMTypes) {
+pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &mut OSMTypes) -> Result<bool, XMLError> {
+    if coords.len() == 1 {
+        let coords = vec!(coords[0].clone());
 
+        return Ok(linestring(&feat, &coords[0], osm)?);
+    }
+
+    //Handle polygons with inners as relations
+    Ok(false)
 }
 
 pub fn multipolygon(_feat: &geojson::Feature, _coords: &Vec<geojson::PolygonType>, _osm: &mut OSMTypes) {
