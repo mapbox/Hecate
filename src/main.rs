@@ -268,7 +268,7 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
 
     let (fc, tree) = match xml::to_features(&body_str) {
         Ok(fctree) => fctree,
-        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); }
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
