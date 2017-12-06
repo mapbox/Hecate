@@ -27,7 +27,7 @@ pub enum XMLError {
     Invalid,
     GCNotSupported,
     EncodingFailed,
-    InternalError,
+    InternalError(String),
     ParsingError,
     InvalidNode(String),
     InvalidNodeRef,
@@ -49,7 +49,7 @@ impl XMLError {
             XMLError::GCNotSupported => String::from("GeometryCollection are not currently supported"),
             XMLError::Invalid => String::from("Could not parse XML - Invalid"),
             XMLError::EncodingFailed => String::from("Encoding Failed"),
-            XMLError::InternalError => String::from("Internal Error"),
+            XMLError::InternalError(ref msg) => format!("Internal Error: {}", msg),
             XMLError::ParsingError => String::from("Parsing Error"),
             XMLError::InvalidNode(ref msg) => format!("Invalid Node: {}", msg),
             XMLError::InvalidNodeRef => String::from("Invalid Node Reference"),
@@ -166,6 +166,8 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
                     diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, n.id.unwrap(), n.id.unwrap(), diffid.version));
                 }
             }
+        } else if n.action == Some(Action::Delete) {
+            diffres.push_str(&*format!(r#"<node old_id="{}"/>"#, n.id.unwrap()));
         }
     }
 
@@ -282,20 +284,20 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         opening_osm = true;
                     },
                     b"create" => {
-                        if current_action != Action::None { return Err(XMLError::InternalError); }
+                        if current_action != Action::None { return Err(XMLError::InternalError(String::from("Action Already Specialized"))); }
                         current_action = Action::Create;
                     },
                     b"modify" => {
-                        if current_action != Action::None { return Err(XMLError::InternalError); }
+                        if current_action != Action::None { return Err(XMLError::InternalError(String::from("Action Already Specialized"))); }
                         current_action = Action::Modify;
                     },
                     b"delete" => {
-                        if current_action != Action::None { return Err(XMLError::InternalError); }
+                        if current_action != Action::None { return Err(XMLError::InternalError(String::from("Action Already Specialized"))); }
                         current_action = Action::Delete;
                     },
                     b"node" => {
-                        if current_action == Action::None { return Err(XMLError::InternalError) }
-                        if current_value != Value::None { return Err(XMLError::InternalError) }
+                        if current_action == Action::None { return Err(XMLError::InternalError(String::from("node must be in Action"))); }
+                        if current_value != Value::None { return Err(XMLError::InternalError(String::from("node cannot be within another value"))); }
 
                         n = parse_node(e)?;
                         n.action = Some(current_action.clone());
@@ -307,8 +309,8 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         current_value = Value::Node;
                     },
                     b"way" => {
-                        if current_action == Action::None { return Err(XMLError::InternalError) }
-                        if current_value != Value::None { return Err(XMLError::InternalError) }
+                        if current_action == Action::None { return Err(XMLError::InternalError(String::from("way must be in Action"))); }
+                        if current_value != Value::None { return Err(XMLError::InternalError(String::from("way cannot be within another value"))); }
 
                         w = parse_way(e)?;
                         w.action = Some(current_action.clone());
@@ -320,8 +322,8 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         current_value = Value::Way;
                     },
                     b"relation" => {
-                        if current_action == Action::None { return Err(XMLError::InternalError) }
-                        if current_value != Value::None { return Err(XMLError::InternalError) }
+                        if current_action == Action::None { return Err(XMLError::InternalError(String::from("rel must be in Action"))); }
+                        if current_value != Value::None { return Err(XMLError::InternalError(String::from("rel cannot be within another value"))); }
 
                         r = parse_rel(e)?;
                         r.action = Some(current_action.clone());
@@ -336,7 +338,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         let (k, v) = parse_tag(&e)?;
 
                         match current_value {
-                            Value::None => { return Err(XMLError::InternalError) },
+                            Value::None => { return Err(XMLError::InternalError(String::from("tags must be in value"))); },
                             Value::Node => {
                                 n.set_tag(k, v);
                             },
@@ -355,8 +357,8 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
             Ok(XMLEvents::Event::Empty(ref e)) => {
                 match e.name() {
                     b"node" => {
-                        if current_action == Action::None { return Err(XMLError::InternalError) }
-                        if current_value != Value::None { return Err(XMLError::InternalError) }
+                        if current_action == Action::None { return Err(XMLError::InternalError(String::from("node must be in Action"))); }
+                        if current_value != Value::None { return Err(XMLError::InternalError(String::from("node cannot be within another value"))); }
 
                         n = parse_node(&e)?;
                         n.action = Some(current_action.clone());
@@ -370,13 +372,13 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         n = Node::new();
                     },
                     b"way" => {
-                        return Err(XMLError::InternalError);
+                        return Err(XMLError::InternalError(String::from("ways cannot be self closing")));
                     },
                     b"relation" => {
-                        return Err(XMLError::InternalError);
+                        return Err(XMLError::InternalError(String::from("rels cannot be self closing")));
                     },
                     b"nd" => {
-                        if current_value != Value::Way { return Err(XMLError::InternalError) }
+                        if current_value != Value::Way { return Err(XMLError::InternalError(String::from("nd must be in way"))); }
 
                         let ndref = parse_nd(&e)?;
                         w.nodes.push(ndref);
@@ -385,7 +387,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         let (k, v) = parse_tag(&e)?;
 
                         match current_value {
-                            Value::None => { return Err(XMLError::InternalError) },
+                            Value::None => { return Err(XMLError::InternalError(String::from("tags must be in value"))); },
                             Value::Node => {
                                 n.set_tag(k, v);
                             },
@@ -404,7 +406,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                             Value::Rel => {
                                 r.set_member(rtype, rref, rrole);
                             },
-                            _ => { return Err(XMLError::InternalError); }
+                            _ => { return Err(XMLError::InternalError(String::from("member must be in rel"))); }
                         };
 
                     }
@@ -414,39 +416,39 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
             Ok(XMLEvents::Event::End(ref e)) => {
                 match e.name() {
                     b"node" => {
-                        if current_value != Value::Node { return Err(XMLError::InternalError); }
+                        if current_value != Value::Node { return Err(XMLError::InternalError(String::from("node close outside of node"))); }
 
                         tree.add_node(n)?;
                         n = Node::new();
                         current_value = Value::None;
                     },
                     b"way" => {
-                        if current_value != Value::Way { return Err(XMLError::InternalError); }
+                        if current_value != Value::Node { return Err(XMLError::InternalError(String::from("way close outside of node"))); }
                         tree.add_way(w)?;
                         w = Way::new();
                         current_value = Value::None;
                     },
                     b"relation" => {
-                        if current_value != Value::Rel { return Err(XMLError::InternalError); }
+                        if current_value != Value::Node { return Err(XMLError::InternalError(String::from("rel close outside of node"))); }
                         tree.add_rel(r)?;
                         r = Rel::new();
                         current_value = Value::None;
                     },
                     b"create" => {
-                        if current_action != Action::Create { return Err(XMLError::InternalError); }
+                        if current_action != Action::Create { return Err(XMLError::InternalError(String::from("create close outside of create"))); }
                         current_action = Action::None;
                     },
                     b"modify" => {
-                        if current_action != Action::Modify { return Err(XMLError::InternalError); }
+                        if current_action != Action::Create { return Err(XMLError::InternalError(String::from("modify close outside of create"))); }
                         current_action = Action::None;
                     },
                     b"delete" => {
-                        if current_action != Action::Delete { return Err(XMLError::InternalError); }
+                        if current_action != Action::Create { return Err(XMLError::InternalError(String::from("delete close outside of create"))); }
                         current_action = Action::None;
                     },
                     b"osmChange" => {
-                        if current_value != Value::None { return Err(XMLError::InternalError); }
-                        if !opening_osm { return Err(XMLError::InternalError); }
+                        if current_value != Value::None { return Err(XMLError::InternalError(String::from("All values must be finished before osm close"))); }
+                        if !opening_osm { return Err(XMLError::InternalError(String::from("osm close outside of osm"))); }
 
                         return Ok(tree);
                     }
@@ -641,14 +643,14 @@ pub fn parse_osm(xml_node: &XMLEvents::BytesStart, meta: &mut HashMap<String, St
         meta.insert(key.to_string(), val.to_string());
     }
 
-    if !meta.contains_key("version") { return Err(XMLError::InternalError); }
+    if !meta.contains_key("version") { return Err(XMLError::InternalError(String::from("version required"))); }
 
     let v: f32 = match meta.get("version") {
         Some(ver) => ver.parse()?,
-        None => { return Err(XMLError::InternalError); }
+        None => { return Err(XMLError::InternalError(String::from("version required"))); }
     };
 
-    if v != 0.6 { return Err(XMLError::InternalError); }
+    if v != 0.6 { return Err(XMLError::InternalError(String::from("api only supports 0.6"))); }
 
     return Ok(true);
 }
@@ -723,7 +725,7 @@ pub fn parse_nd(xml_node: &XMLEvents::BytesStart) -> Result<i64, XMLError> {
 
     match ndref {
         Some(val) => Ok(val),
-        None => Err(XMLError::InternalError)
+        None => Err(XMLError::InternalError(String::from("unable to parse ndref")))
     }
 }
 
@@ -743,10 +745,10 @@ pub fn parse_tag(xml_node: &XMLEvents::BytesStart) -> Result<(String, String), X
 
     return Ok((match k {
         Some(key) => key,
-        None => { return Err(XMLError::InternalError) }
+        None => { return Err(XMLError::InternalError(String::from("unable to parse key"))) }
     }, match v {
         Some(val) => val,
-        None => { return Err(XMLError::InternalError) }
+        None => { return Err(XMLError::InternalError(String::from("unable to parse value"))) }
     }));
 }
 
@@ -763,7 +765,7 @@ pub fn parse_member(xml_node: &XMLEvents::BytesStart) -> Result<(Option<Value>, 
                 b"node" => Value::Node,
                 b"way" => Value::Way,
                 b"relation" => Value::Rel,
-                _ => { return Err(XMLError::InternalError); }
+                _ => { return Err(XMLError::InternalError(String::from("invalid type"))); }
             }),
             b"rref" => rref = Some(String::from_utf8_lossy(attr.value).parse()?),
             b"rrole" => rrole = Some(String::from_utf8_lossy(attr.value).parse()?),

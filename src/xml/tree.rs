@@ -64,7 +64,7 @@ impl OSMTree {
 
             match self.nodes.get_mut(&nd) {
                 Some(nd) => nd.parents.push(way.id.unwrap()),
-                None => { return Err(XMLError::InternalError) }
+                None => { return Err(XMLError::InternalError(String::from("unable to get node"))) }
             }
         }
 

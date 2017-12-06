@@ -380,7 +380,7 @@ fn feature_patch(req: &mut Request) -> IronResult<Response> {
         return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
     }
 
-    match feature::modify(&trans, &feat) {
+    match feature::modify(&trans, &feat, &None) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))

@@ -106,7 +106,7 @@ pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature
 
     let res = match action {
         Action::Create => create(&trans, &feat, &delta)?,
-        Action::Modify => modify(&trans, &feat)?,
+        Action::Modify => modify(&trans, &feat, &delta)?,
         Action::Delete => delete(&trans, &feat)?
     };
 
@@ -150,7 +150,7 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
-pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<Response, FeatureError> {
+pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -167,7 +167,7 @@ pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    match trans.query("SELECT modify_geo($1, $2, currval('deltas_id_seq')::BIGINT, $3, $4);", &[&geom_str, &props_str, &id, &version]) {
+    match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4);", &[&geom_str, &props_str, &id, &version, &delta]) {
         Ok(_) => Ok(Response {
             old: id,
             new: id,

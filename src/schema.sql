@@ -36,7 +36,7 @@ CREATE OR REPLACE FUNCTION delete_geo(BIGINT, BIGINT)
         DELETE FROM geo
             WHERE
                 id = $1
-                AND version + 1 = $2;
+                AND version = $2;
 
         IF NOT FOUND THEN
             RAISE EXCEPTION 'DELETE: ID or VERSION Mismatch';
@@ -58,7 +58,7 @@ CREATE OR REPLACE FUNCTION modify_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT)
                 deltas = array_append(deltas, $3::BIGINT)
             WHERE
                 id = $4
-                AND version + 1 = $5;
+                AND version = $5;
 
         IF NOT FOUND THEN
             RAISE EXCEPTION 'MODIFY: ID or VERSION Mismatch';
