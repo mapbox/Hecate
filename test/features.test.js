@@ -142,7 +142,7 @@ test('features', (t) => {
                         id: 1,
                         type: 'Feature',
                         action: 'modify',
-                        version: 2,
+                        version: 1,
                         properties: {
                             shop: false,
                             amenity: true
@@ -155,7 +155,7 @@ test('features', (t) => {
                         id: 2,
                         type: 'Feature',
                         action: 'modify',
-                        version: 2,
+                        version: 1,
                         properties: {
                             shop: true,
                             building: true
@@ -168,7 +168,7 @@ test('features', (t) => {
                         id: 3,
                         type: 'Feature',
                         action: 'modify',
-                        version: 2,
+                        version: 1,
                         properties: {
                             shop: true,
                         },
@@ -227,21 +227,21 @@ test('features', (t) => {
                         id: 1,
                         type: 'Feature',
                         action: 'delete',
-                        version: 3,
+                        version: 2,
                         properties: null,
                         geometry: null
                     }, {
                         id: 2,
                         type: 'Feature',
                         action: 'delete',
-                        version: 3,
+                        version: 2,
                         properties: null,
                         geometry: null
                     }, {
                         id: 3,
                         type: 'Feature',
                         action: 'delete',
-                        version: 3,
+                        version: 2,
                         properties: null,
                         geometry: null
                     }]

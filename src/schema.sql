@@ -52,7 +52,7 @@ CREATE OR REPLACE FUNCTION modify_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT)
     BEGIN
         UPDATE geo
             SET
-                version = $5,
+                version = version + 1,
                 geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                 props = $2::TEXT::JSON,
                 deltas = array_append(deltas, $3::BIGINT)

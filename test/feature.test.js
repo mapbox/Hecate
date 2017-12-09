@@ -276,7 +276,7 @@ test('feature#patch', (t) => {
                 url: 'http://localhost:3000/api/data/feature',
                 body: JSON.stringify({
                     id: 1,
-                    version: 2,
+                    version: 1,
                     type: 'Feature',
                     properties: {
                         number: '321'
@@ -317,7 +317,7 @@ test('feature#patch', (t) => {
                 url: 'http://localhost:3000/api/data/feature',
                 body: JSON.stringify({
                     id: 2,
-                    version: 2,
+                    version: 1,
                     type: 'Feature',
                     properties: {
                         number: '321'
@@ -358,7 +358,7 @@ test('feature#patch', (t) => {
                 url: 'http://localhost:3000/api/data/feature',
                 body: JSON.stringify({
                     id: 3,
-                    version: 2,
+                    version: 1,
                     type: 'Feature',
                     properties: {
                         building: false
@@ -399,7 +399,7 @@ test('feature#patch', (t) => {
                 url: 'http://localhost:3000/api/data/feature',
                 body: JSON.stringify({
                     id: 4,
-                    version: 2,
+                    version: 1,
                     type: 'Feature',
                     properties: {
                         building: false
@@ -465,7 +465,7 @@ test('feature#delete', (t) => {
                 body: JSON.stringify({
                     id: 1,
                     type: 'Feature',
-                    version: 3,
+                    version: 2,
                     properties: null,
                     geometry: null
                 })
@@ -495,7 +495,7 @@ test('feature#delete', (t) => {
                 body: JSON.stringify({
                     id: 2,
                     type: 'Feature',
-                    version: 3,
+                    version: 2,
                     properties: null,
                     geometry: null
                 })
@@ -524,7 +524,7 @@ test('feature#delete', (t) => {
                 body: JSON.stringify({
                     id: 3,
                     type: 'Feature',
-                    version: 3,
+                    version: 2,
                     properties: null,
                     geometry: null
                 })
@@ -553,7 +553,7 @@ test('feature#delete', (t) => {
                 body: JSON.stringify({
                     id: 4,
                     type: 'Feature',
-                    version: 3,
+                    version: 2,
                     properties: null,
                     geometry: null
                 })
