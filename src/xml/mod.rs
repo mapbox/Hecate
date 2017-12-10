@@ -184,7 +184,7 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
     Ok(diffres)
 }
 
-pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, Option<String>>) { let mut kv: (Option<String>, Option<String>) = (None, None);
+pub fn to_delta_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, Option<String>>) { let mut kv: (Option<String>, Option<String>) = (None, None);
     for attr in xml_node.attributes() {
         let attr = attr.unwrap();
 
@@ -198,7 +198,7 @@ pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut Hash
     map.insert(kv.0.unwrap(), kv.1);
 }
 
-pub fn to_changeset(body: &String) -> Result<HashMap<String, Option<String>>, XMLError> {
+pub fn to_delta(body: &String) -> Result<HashMap<String, Option<String>>, XMLError> {
     let mut reader = quick_xml::reader::Reader::from_str(body);
     let mut buf = Vec::new();
 
@@ -208,13 +208,13 @@ pub fn to_changeset(body: &String) -> Result<HashMap<String, Option<String>>, XM
         match reader.read_event(&mut buf) {
             Ok(XMLEvents::Event::Start(ref e)) => {
                 match e.name() {
-                    b"tag" => { to_changeset_tag(&e, &mut map) },
+                    b"tag" => { to_delta_tag(&e, &mut map) },
                     _ => (),
                 }
             },
             Ok(XMLEvents::Event::Empty(ref e)) => {
                 match e.name() {
-                    b"tag" => { to_changeset_tag(&e, &mut map) },
+                    b"tag" => { to_delta_tag(&e, &mut map) },
                     _ => (),
                 }
             },

@@ -31,7 +31,7 @@ use std::io::Read;
 use std::collections::HashMap;
 use geojson::GeoJson;
 use hecate::feature;
-use hecate::changeset;
+use hecate::delta;
 use hecate::xml;
 use mount::Mount;
 use logger::Logger;
@@ -132,8 +132,8 @@ fn features_post(req: &mut Request) -> IronResult<Response> {
 
     let map: HashMap<String, Option<String>> = HashMap::new();
 
-    if changeset::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
+    if delta::create(&trans, &fc, &map, &1).is_err() {
+        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
     }
 
     for feat in fc.features {
@@ -189,7 +189,7 @@ fn xml_changeset_create(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
-    let map = match xml::to_changeset(&body_str) {
+    let map = match xml::to_delta(&body_str) {
         Ok(map) => map,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
@@ -204,7 +204,7 @@ fn xml_changeset_create(req: &mut Request) -> IronResult<Response> {
     };
 
 
-    let id = match changeset::create(&trans, &fc, &map, &1) {
+    let id = match delta::create(&trans, &fc, &map, &1) {
         Ok(id) => id,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
@@ -230,7 +230,7 @@ fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
-    let map = match xml::to_changeset(&body_str) {
+    let map = match xml::to_delta(&body_str) {
         Ok(map) => map,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
@@ -244,7 +244,7 @@ fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
         foreign_members: None,
     };
 
-    let id = match changeset::modify(&changeset_id, &trans, &fc, &map, &1) {
+    let id = match delta::modify(&changeset_id, &trans, &fc, &map, &1) {
         Ok(id) => id,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
@@ -346,8 +346,8 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    if changeset::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
+    if delta::create(&trans, &fc, &map, &1).is_err() {
+        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
     }
 
     match feature::create(&trans, &feat, &None) {
@@ -376,8 +376,8 @@ fn feature_patch(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    if changeset::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
+    if delta::create(&trans, &fc, &map, &1).is_err() {
+        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
     }
 
     match feature::modify(&trans, &feat, &None) {
@@ -423,8 +423,8 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    if changeset::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
+    if delta::create(&trans, &fc, &map, &1).is_err() {
+        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
     }
 
     match feature::delete(&trans, &feat) {

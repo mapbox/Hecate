@@ -16,7 +16,8 @@ CREATE TABLE geo (
     version     BIGINT,
     geom        GEOMETRY(GEOMETRY, 4326),
     props       JSONB,
-    deltas      BIGINT[]
+    deltas      BIGINT[],
+    finalized   BOOLEAN
 );
 
 DROP TABLE IF EXISTS deltas;
