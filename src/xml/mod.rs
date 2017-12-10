@@ -439,11 +439,11 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         current_action = Action::None;
                     },
                     b"modify" => {
-                        if current_action != Action::Create { return Err(XMLError::InternalError(String::from("modify close outside of create"))); }
+                        if current_action != Action::Modify { return Err(XMLError::InternalError(String::from("modify close outside of create"))); }
                         current_action = Action::None;
                     },
                     b"delete" => {
-                        if current_action != Action::Create { return Err(XMLError::InternalError(String::from("delete close outside of create"))); }
+                        if current_action != Action::Delete { return Err(XMLError::InternalError(String::from("delete close outside of create"))); }
                         current_action = Action::None;
                     },
                     b"osmChange" => {

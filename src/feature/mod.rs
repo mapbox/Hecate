@@ -171,7 +171,7 @@ pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
         Ok(_) => Ok(Response {
             old: id,
             new: id,
-            version: version
+            version: version + 1
         }),
         Err(err) => {
             match err.as_db() {
@@ -196,7 +196,7 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
         Ok(_) => Ok(Response {
             old: id,
             new: id,
-            version: version
+            version: version + 1
         }),
         Err(err) => {
             match err.as_db() {
