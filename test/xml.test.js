@@ -2,8 +2,6 @@ const test = require('tape');
 const request = require('request');
 const exec = require('child_process').exec;
 const Pool = require('pg-pool');
-const path = require('path');
-const fs = require('fs');
 
 const pool = new Pool({
     database: 'hecate',
@@ -121,14 +119,11 @@ test('xml#changeset#upload', (t) => {
                 r.error(err, 'no errors');
                 r.equals(res.statusCode, 200);
 
-
-                let fixture = String(fs.readFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#node')));
-                r.equals(res.body, fixture);
-                if (res.body != fixture && process.env.UPDATE) {
-                    t.fail('Updated Fixture');
-                    fs.writeFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#node'), res.body);
-                }
-
+                r.equals(XML(res.body), XML`
+                    <diffResult generator="Hecate Server" version="0.6">
+                        <node old_id="1" new_id="1" new_version="1"/>
+                    </diffResult>
+                `);
                 r.end();
             });
         });
@@ -154,36 +149,6 @@ test('xml#changeset#upload', (t) => {
     });
 
     t.test('xml#changeset#upload - modify - node', (q) => {
-        q.test('xml#changeset#upload - modify - node - endpoint (version mismatch)', (r) => {
-            request.post({
-                headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/0.6/changeset/1/upload',
-                body: `
-                    <osmChange version="0.6" generator="Hecate Server">
-                        <modify>
-                            <node id='1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
-                                <tag k='amenity' v='shop' />
-                                <tag k='building' v='yes' />
-                            </node>
-                        </modify>
-                    </osmChange>
-                `
-            }, (err, res) => {
-                r.error(err, 'no errors');
-                r.equals(res.statusCode, 200);
-
-
-                let fixture = String(fs.readFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#node')));
-                r.equals(res.body, fixture);
-                if (res.body != fixture && process.env.UPDATE) {
-                    t.fail('Updated Fixture');
-                    fs.writeFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#node'), res.body);
-                }
-
-                r.end();
-            });
-        });
-
         q.test('xml#changeset#upload - modify - node - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
@@ -201,13 +166,11 @@ test('xml#changeset#upload', (t) => {
                 r.error(err, 'no errors');
                 r.equals(res.statusCode, 200);
 
-
-                let fixture = String(fs.readFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#modifynode')));
-                r.equals(res.body, fixture);
-                if (res.body != fixture && process.env.UPDATE) {
-                    t.fail('Updated Fixture');
-                    fs.writeFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#modifynode'), res.body);
-                }
+                r.equals(XML(res.body), XML`
+                    <diffResult generator="Hecate Server" version="0.6">
+                        <node old_id="1" new_id="1" new_version="2"/>
+                    </diffResult>
+                `);
 
                 r.end();
             });
@@ -319,4 +282,9 @@ if (!process.env.DEBUG) {
             t.end();
         });
     });
+}
+
+function XML(xml) {
+    if (Array.isArray(xml)) xml = xml[0];
+    return xml.replace(/[\n\s]/g, '')
 }
