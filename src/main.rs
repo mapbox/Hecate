@@ -132,9 +132,10 @@ fn features_post(req: &mut Request) -> IronResult<Response> {
 
     let map: HashMap<String, Option<String>> = HashMap::new();
 
-    if delta::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
-    }
+    let delta_id = match delta::create(&trans, &fc, &map, &1) {
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); },
+        Ok(id) => id
+    };
 
     for feat in fc.features {
         match feature::action(&trans, feat, &None) {
@@ -147,8 +148,13 @@ fn features_post(req: &mut Request) -> IronResult<Response> {
         }
     }
 
-    trans.commit().unwrap();
-    Ok(Response::with((status::Ok, "true")))
+    match delta::finalize(&delta_id, &trans) {
+        Ok(_) => {
+            trans.commit().unwrap();
+            Ok(Response::with((status::Ok, "true")))
+        },
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+    }
 }
 
 fn xml_map(req: &mut Request) -> IronResult<Response> {
@@ -346,16 +352,23 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    if delta::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
-    }
+
+    let delta_id = match delta::create(&trans, &fc, &map, &1) {
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); },
+        Ok(id) => id
+    };
 
     match feature::create(&trans, &feat, &None) {
+        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); }
+        _ => ()
+    }
+
+    match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
         },
-        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     }
 }
 
@@ -376,16 +389,23 @@ fn feature_patch(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    if delta::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
-    }
+
+    let delta_id = match delta::create(&trans, &fc, &map, &1) {
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); },
+        Ok(id) => id
+    };
 
     match feature::modify(&trans, &feat, &None) {
+        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); },
+        _ => ()
+    }
+
+    match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
         },
-        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     }
 }
 
@@ -397,7 +417,7 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
         },
         None =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided"))); }
     };
-    
+
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
     match feature::get(&conn, &feature_id) {
@@ -423,16 +443,23 @@ fn feature_del(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    if delta::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
-    }
+
+    let delta_id = match delta::create(&trans, &fc, &map, &1) {
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); },
+        Ok(id) => id
+    };
 
     match feature::delete(&trans, &feat) {
+        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); },
+        _ => ()
+    }
+
+    match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
         },
-        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     }
 }
 
