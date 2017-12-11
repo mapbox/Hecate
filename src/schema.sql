@@ -16,8 +16,7 @@ CREATE TABLE geo (
     version     BIGINT,
     geom        GEOMETRY(GEOMETRY, 4326),
     props       JSONB,
-    deltas      BIGINT[],
-    finalized   BOOLEAN
+    deltas      BIGINT[]
 );
 
 DROP TABLE IF EXISTS deltas;
@@ -27,7 +26,8 @@ CREATE TABLE deltas (
     features    JSONB,
     affected    BIGINT[],
     props       JSONB,
-    uid         BIGINT
+    uid         BIGINT,
+    finalized   BOOLEAN
 );
 
 -- delete_geo( id, version )

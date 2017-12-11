@@ -57,9 +57,9 @@ fn main() {
     router.get("/", index, "index");
 
     // Create Edit Modify Feature
-    router.post("/api/data/feature", feature_post, "feature_post");
-    router.patch("/api/data/feature", feature_patch, "feature_patch");
-    router.delete("/api/data/feature", feature_del, "feature_del");
+    router.post("/api/data/feature", feature_create, "feature_create");
+    router.patch("/api/data/feature", feature_modify, "feature_modify");
+    router.delete("/api/data/feature", feature_delete, "feature_delete");
 
     // Create Edit Modify Feature
     router.post("/api/data/features", features_post, "features_post");
@@ -335,7 +335,7 @@ fn xml_user(_req: &mut Request) -> IronResult<Response> {
     ")))
 }
 
-fn feature_post(req: &mut Request) -> IronResult<Response> {
+fn feature_create(req: &mut Request) -> IronResult<Response> {
     let feat = match get_geojson(req) {
         Ok(GeoJson::Feature(feat)) => feat,
         Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
@@ -372,7 +372,7 @@ fn feature_post(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-fn feature_patch(req: &mut Request) -> IronResult<Response> {
+fn feature_modify(req: &mut Request) -> IronResult<Response> {
     let feat = match get_geojson(req) {
         Ok(GeoJson::Feature(feat)) => feat,
         Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
@@ -426,7 +426,7 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-fn feature_del(req: &mut Request) -> IronResult<Response> {
+fn feature_delete(req: &mut Request) -> IronResult<Response> {
     let feat = match get_geojson(req) {
         Ok(GeoJson::Feature(feat)) => feat,
         Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
