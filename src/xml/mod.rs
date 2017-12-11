@@ -181,7 +181,7 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
 
     }
 
-    for (_i, r) in tree.get_rels() {
+    for (_i, _r) in tree.get_rels() {
 
     }
 
@@ -558,16 +558,26 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
 
     writer.write_event(XMLEvents::Event::Start(xml_way)).unwrap();
 
-    for nd in coords {
-        let node = match add_node(&nd, osm) {
-            Ok(node) => node,
-            Err(_) => { return Err(XMLError::EncodingFailed); }
-        };
+    let dedupe: HashMap<geojson::PointType, Node>;
 
-        osm.nodes.push_str(&*node.0);
+    for nd in coords {
+        let n_ref: i64;
+
+        if dedupe.has(nd) {
+            n_ref = dedupe.get(nd).unwrap();
+        } else {
+            let node = match add_node(&nd, osm) {
+                Ok(node) => node,
+                Err(_) => { return Err(XMLError::EncodingFailed); }
+            };
+
+            osm.nodes.push_str(&*node.0);
+
+            n_ref = node.1;
+        }
 
         let mut xml_nd = XMLEvents::BytesStart::owned(b"nd".to_vec(), 2);
-        xml_nd.push_attribute(("ref", &*node.1.to_string()));
+        xml_nd.push_attribute(("ref", &*n.to_string()));
         writer.write_event(XMLEvents::Event::Empty(xml_nd)).unwrap();
     }
 
