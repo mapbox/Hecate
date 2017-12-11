@@ -239,19 +239,19 @@ pub fn to_features(body: &String) -> Result<(geojson::FeatureCollection, OSMTree
     };
 
     for (_i, rel) in tree.get_rels() {
-        if !rel.has_tags() { continue; }
+        if rel.action != Some(Action::Delete) && !rel.has_tags() { continue; }
 
         fc.features.push(rel.to_feat(&tree)?);
     }
 
     for (_i, way) in tree.get_ways() {
-        if !way.has_tags() { continue; }
+        if way.action != Some(Action::Delete) && !way.has_tags() { continue; }
 
         fc.features.push(way.to_feat(&tree)?);
     }
 
     for (_i, node) in tree.get_nodes() {
-        if !node.has_tags() { continue; }
+        if node.action != Some(Action::Delete) && !node.has_tags() { continue; }
 
         let n = node.to_feat(&tree)?;
 
@@ -423,13 +423,13 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         current_value = Value::None;
                     },
                     b"way" => {
-                        if current_value != Value::Node { return Err(XMLError::InternalError(String::from("way close outside of node"))); }
+                        if current_value != Value::Way { return Err(XMLError::InternalError(String::from("way close outside of node"))); }
                         tree.add_way(w)?;
                         w = Way::new();
                         current_value = Value::None;
                     },
                     b"relation" => {
-                        if current_value != Value::Node { return Err(XMLError::InternalError(String::from("rel close outside of node"))); }
+                        if current_value != Value::Rel { return Err(XMLError::InternalError(String::from("rel close outside of node"))); }
                         tree.add_rel(r)?;
                         r = Rel::new();
                         current_value = Value::None;

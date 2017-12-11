@@ -60,15 +60,21 @@ impl Generic for Node {
 
         foreign.insert(String::from("version"), json!(self.version));
 
-        let mut coords: Vec<f64> = Vec::new();
-        coords.push(self.lon.unwrap() as f64);
-        coords.push(self.lat.unwrap() as f64);
+        let mut geom: Option<geojson::Geometry> = None;
+
+        if self.action != Some(Action::Delete) {
+            let mut coords: Vec<f64> = Vec::new();
+            coords.push(self.lon.unwrap() as f64);
+            coords.push(self.lat.unwrap() as f64);
+
+            geom = Some(geojson::Geometry::new(
+                geojson::Value::Point(coords)
+            ));
+        }
 
         Ok(geojson::Feature {
             bbox: None,
-            geometry: Some(geojson::Geometry::new(
-                geojson::Value::Point(coords)
-            )),
+            geometry: geom,
             id: Some(json!(self.id.clone())),
             properties: Some(self.tags.clone()),
             foreign_members: Some(foreign)
@@ -76,21 +82,22 @@ impl Generic for Node {
     }
 
     fn is_valid(&self) -> Result<bool, String> {
-        match self.id {
-            None => { return Err(String::from("Missing id")) },
-            Some(_) => ()
+        if self.id == None {
+            return Err(String::from("Missing id"));
         }
-        match self.lat {
-            None => { return Err(String::from("Missing lat")); },
-            Some(_) => ()
+
+        if self.action != Some(Action::Delete) {
+            if self.lat == None {
+                return Err(String::from("Missing lat"));
+            }
+
+            if self.lon == None {
+                return Err(String::from("Missing lon"));
+            }
         }
-        match self.lon {
-            None => { return Err(String::from("Missing lon")); },
-            Some(_) => ()
-        }
-        match self.version {
-            None => { return Err(String::from("Missing version")); },
-            Some(_) => ()
+
+        if self.version == None {
+            return Err(String::from("Missing version"));
         }
 
         return Ok(true);

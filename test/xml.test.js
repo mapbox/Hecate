@@ -129,12 +129,15 @@ test('xml#changeset#upload', (t) => {
         });
 
         q.test('xml#changeset#upload - create - node - database', (r) => {
-            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom)::JSON AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
                     id: '1',
                     version: '1',
-                    geom: '{"type":"Point","coordinates":[3.59219694137573,-0.661809384822845]}',
+                    geom: {
+                        type: "Point",
+                        coordinates: [3.59219694137573,-0.661809384822845]
+                    },
                     props: {
                         amenity: 'shop',
                         building: 'yes'
@@ -152,7 +155,7 @@ test('xml#changeset#upload', (t) => {
         q.test('xml#changeset#upload - modify - node - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/0.6/changeset/1/upload',
+                url: 'http://localhost:3000/api/0.6/changeset/2/upload',
                 body: `
                     <osmChange version="0.6" generator="Hecate Server">
                         <modify>
@@ -177,12 +180,15 @@ test('xml#changeset#upload', (t) => {
         });
 
         q.test('xml#changeset#upload - modify - node - database', (r) => {
-            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom)::JSON AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
                     id: '1',
-                    version: '1',
-                    geom: '{"type":"Point","coordinates":[1.10000002384186,1.10000002384186]}',
+                    version: '2',
+                    geom: {
+                        type: "Point",
+                        coordinates: [1.10000002384186,1.10000002384186]
+                    },
                     props: {
                         building: 'house'
                     },
@@ -199,7 +205,7 @@ test('xml#changeset#upload', (t) => {
         q.test('xml#changeset#upload - delete - node - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/0.6/changeset/1/upload',
+                url: 'http://localhost:3000/api/0.6/changeset/3/upload',
                 body: `
                     <osmChange version="0.6" generator="Hecate Server">
                         <delete>
@@ -222,7 +228,7 @@ test('xml#changeset#upload', (t) => {
         });
 
         q.test('xml#changeset#upload - delete - node - database', (r) => {
-            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
+            pool.query('SELECT * FROM geo WHERE id = 1;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows.length, 0);
                 r.end();
@@ -232,7 +238,7 @@ test('xml#changeset#upload', (t) => {
         q.end();
     });
 
-    t.test('xml#changeset#upload - create - way', (q) => {
+    t.skip('xml#changeset#upload - create - way', (q) => {
         q.test('xml#changeset#upload - way - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },

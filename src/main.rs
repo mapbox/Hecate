@@ -209,7 +209,6 @@ fn xml_changeset_create(req: &mut Request) -> IronResult<Response> {
         foreign_members: None,
     };
 
-
     let id = match delta::create(&trans, &fc, &map, &1) {
         Ok(id) => id,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
@@ -260,7 +259,11 @@ fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, id.to_string())))
 }
 
-fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
+//TODO
+// - INSERT FEAT INTO CHANGESET
+// - CHECK THAT CHANGESET EXISTS
+// - CHECK THAT CHANGESET IS NOT FINALIZED
+fn xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
