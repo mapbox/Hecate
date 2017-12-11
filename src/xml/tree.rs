@@ -58,7 +58,8 @@ impl OSMTree {
         }
 
         for nd in &way.nodes {
-            if !self.nodes.contains_key(&nd) {
+            //Tree must contain node refs below 0 as these are being created in the same transaction
+            if *nd < 0 && !self.nodes.contains_key(&nd) {
                 return Err(XMLError::InvalidNodeRef);
             }
 
