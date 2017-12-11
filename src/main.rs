@@ -295,7 +295,7 @@ fn xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
             Ok(feat_res) => feat_res
         };
 
-        ids.insert(feat_res.old, feat_res);
+        ids.insert(feat_res.old.unwrap(), feat_res);
     }
 
     let diffres = match xml::to_diffresult(ids, tree) {

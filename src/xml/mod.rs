@@ -154,7 +154,7 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
                     diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="1"/>"#, n.id.unwrap(), tmpid + (n.id.unwrap() * -1)));
                 },
                 Some(diffid) => {
-                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old, diffid.new, diffid.version));
+                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old.unwrap(), diffid.new.unwrap(), diffid.version.unwrap()));
                 }
             }
         } else if n.action == Some(Action::Modify) {
@@ -163,7 +163,7 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
                     diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="1"/>"#, n.id.unwrap(), n.id.unwrap()));
                 },
                 Some(diffid) => {
-                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, n.id.unwrap(), n.id.unwrap(), diffid.version));
+                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, n.id.unwrap(), n.id.unwrap(), diffid.version.unwrap()));
                 }
             }
         } else if n.action == Some(Action::Delete) {
