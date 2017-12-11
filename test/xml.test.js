@@ -108,7 +108,7 @@ test('xml#changeset#upload', (t) => {
                 body: `
                     <osmChange version="0.6" generator="Hecate Server">
                         <create>
-                            <node id='1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
+                            <node id='-1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
                                 <tag k='amenity' v='shop' />
                                 <tag k='building' v='yes' />
                             </node>
@@ -121,7 +121,7 @@ test('xml#changeset#upload', (t) => {
 
                 r.equals(XML(res.body), XML`
                     <diffResult generator="Hecate Server" version="0.6">
-                        <node old_id="1" new_id="1" new_version="1"/>
+                        <node old_id="-1" new_id="1" new_version="1"/>
                     </diffResult>
                 `);
                 r.end();
