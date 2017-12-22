@@ -1,4 +1,5 @@
 #[macro_use] extern crate clap;
+#[macro_use] extern crate serde_json;
 extern crate iron;
 extern crate router;
 extern crate geojson;
@@ -9,7 +10,6 @@ extern crate persistent;
 extern crate r2d2;
 extern crate urlencoded;
 extern crate r2d2_postgres;
-extern crate serde_json;
 extern crate logger;
 extern crate env_logger;
 
@@ -57,12 +57,12 @@ fn main() {
     router.get("/", index, "index");
 
     // Create Edit Modify Feature
-    router.post("/api/data/feature", feature_post, "feature_post");
-    router.patch("/api/data/feature", feature_patch, "feature_patch");
-    router.delete("/api/data/feature", feature_del, "feature_del");
+    router.post("/api/data/feature", feature_create, "feature_create");
+    router.patch("/api/data/feature", feature_modify, "feature_modify");
+    router.delete("/api/data/feature", feature_delete, "feature_delete");
 
     // Create Edit Modify Feature
-    router.post("/api/data/features", features_post, "features_post");
+    router.post("/api/data/features", features_action, "features_action");
 
     // Get Features
     router.get("/api/data/feature/:feature", feature_get, "feature_get");
@@ -120,8 +120,8 @@ fn features_get(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-fn features_post(req: &mut Request) -> IronResult<Response> {
-    let fc = match get_geojson(req) {
+fn features_action(req: &mut Request) -> IronResult<Response> {
+    let mut fc = match get_geojson(req) {
         Ok(GeoJson::FeatureCollection(fc)) => fc,
         Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON FeatureCollection"))); }
         Err(err) => { return Ok(err); }
@@ -132,23 +132,35 @@ fn features_post(req: &mut Request) -> IronResult<Response> {
 
     let map: HashMap<String, Option<String>> = HashMap::new();
 
-    if changeset::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
-    }
+    let changeset_id = match changeset::open(&trans, &map, &1) {
+        Ok(id) => id,
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create changeset"))); }
+    };
 
-    for feat in fc.features {
-        match feature::action(&trans, feat, &None) {
+    for feat in &mut fc.features {
+        match feature::action(&trans, &feat, &None) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
                 return Ok(Response::with((status::ExpectationFailed, err.to_string())));
             },
-            Ok(_) => ()
+            Ok(res) => {
+                //If res.old is 0 then the feature is being created - assign it the id
+                //so that the changeset can enter it into the affected array
+                if res.old == 0 {
+                    feat.id = Some(json!(res.new));
+                }
+            }
         }
     }
 
-    trans.commit().unwrap();
-    Ok(Response::with((status::Ok, "true")))
+    match changeset::modify(&changeset_id, &trans, &fc, &map, &1) {
+        Ok (_) => {
+            trans.commit().unwrap();
+            Ok(Response::with((status::Ok, "true")))
+        },
+        Err(_) => Ok(Response::with((status::InternalServerError, "Could not create changeset")))
+    }
 }
 
 fn xml_map(req: &mut Request) -> IronResult<Response> {
@@ -214,7 +226,7 @@ fn xml_changeset_create(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, id.to_string())))
 }
 
-fn xml_changeset_close(req: &mut Request) -> IronResult<Response> {
+fn xml_changeset_close(_req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, String::from("true"))))
 }
 
@@ -277,7 +289,7 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     let mut ids: HashMap<i64, feature::Response> = HashMap::new();
 
     for feat in fc.features {
-        let feat_res = match feature::action(&trans, feat, &Some(changeset_id)) {
+        let feat_res = match feature::action(&trans, &feat, &Some(changeset_id)) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
@@ -329,37 +341,44 @@ fn xml_user(_req: &mut Request) -> IronResult<Response> {
     ")))
 }
 
-fn feature_post(req: &mut Request) -> IronResult<Response> {
-    let feat = match get_geojson(req) {
+fn feature_create(req: &mut Request) -> IronResult<Response> {
+    let mut feat = match get_geojson(req) {
         Ok(GeoJson::Feature(feat)) => feat,
         Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
         Err(err) => { return Ok(err); }
-    };
-
-    let fc = geojson::FeatureCollection {
-        bbox: None,
-        features: vec![ feat.clone() ],
-        foreign_members: None,
     };
 
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    if changeset::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
-    }
+
+    let changeset_id = match changeset::open(&trans, &map, &1) {
+        Ok(id) => id,
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create changeset"))); }
+    };
 
     match feature::create(&trans, &feat, &None) {
-        Ok(_) => {
+        Ok(res) => { feat.id = Some(json!(res.new)) },
+        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); }
+    }
+
+    let fc = geojson::FeatureCollection {
+        bbox: None,
+        features: vec![ feat ],
+        foreign_members: None,
+    };
+
+    match changeset::modify(&changeset_id, &trans, &fc, &map, &1) {
+        Ok (_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
         },
-        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+        Err(_) => Ok(Response::with((status::InternalServerError, "Could not create changeset")))
     }
 }
 
-fn feature_patch(req: &mut Request) -> IronResult<Response> {
+fn feature_modify(req: &mut Request) -> IronResult<Response> {
     let feat = match get_geojson(req) {
         Ok(GeoJson::Feature(feat)) => feat,
         Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
@@ -406,7 +425,7 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-fn feature_del(req: &mut Request) -> IronResult<Response> {
+fn feature_delete(req: &mut Request) -> IronResult<Response> {
     let feat = match get_geojson(req) {
         Ok(GeoJson::Feature(feat)) => feat,
         Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }

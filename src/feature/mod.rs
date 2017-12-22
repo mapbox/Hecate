@@ -99,7 +99,7 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     }
 }
 
-pub fn action(trans: &postgres::transaction::Transaction, feat: geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+pub fn action(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let action = get_action(&feat)?;
 
     let res = match action {
