@@ -4,8 +4,7 @@ extern crate geojson;
 extern crate postgres;
 extern crate serde_json;
 
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum FeatureError {
     NotFound,
     NoProps,
@@ -23,8 +22,7 @@ pub enum FeatureError {
     InvalidFeature
 }
 
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum Action {
     Create,
     Modify,

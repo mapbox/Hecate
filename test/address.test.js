@@ -68,7 +68,7 @@ test('address', (t) => {
             });
         });
 
-        q.test('features - basic create - database', (r) => {
+        q.test('address - basic create - geo database', (r) => {
             pool.query('SELECT id, version, ST_AsGeoJSON(geom)::JSON AS geometry, props AS properties, deltas FROM geo ORDER BY id', (err, res) => {
                 r.error(err, 'no errors');
                 r.equals(res.rows.length, 999);
@@ -81,6 +81,21 @@ test('address', (t) => {
                     r.ok(row.properties.source.length > 0, 'feature retained source');
                     r.ok(row.geometry.type === 'Point', 'feature is a point');
                 }
+                r.end();
+            });
+        });
+
+        q.test('address - basic create - deltas database', (r) => {
+            pool.query('SELECT id, features, affected, props, uid FROM deltas ORDER BY id', (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.rows.length, 1);
+                res = res.rows[0];
+
+                t.equals(res.id, '1');
+                t.deepEquals(res.affected, null);
+                t.deepEquals(res.props, {});
+                t.equals(res.uid, '1');
+
                 r.end();
             });
         });
