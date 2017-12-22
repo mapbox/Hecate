@@ -92,8 +92,9 @@ test('address', (t) => {
                 res = res.rows[0];
 
                 t.equals(res.id, '1');
-                t.deepEquals(res.affected, null);
+                t.deepEquals(res.affected, []);
                 t.deepEquals(res.props, {});
+                t.deepEquals(res.features, require('./fixtures/us_dc_pts.json'));
                 t.equals(res.uid, '1');
 
                 r.end();

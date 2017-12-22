@@ -25,15 +25,29 @@ impl ChangesetError {
 pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, ChangesetError> {
     let fc_str = serde_json::to_string(&fc).unwrap();
 
+    let mut affected: Vec<i64> = Vec::new();
+    for feat in &fc.features {
+        match feat.id {
+            Some(ref id) => {
+                match id.as_i64() {
+                    Some(id) => affected.push(id),
+                    None => ()
+                }
+            },
+            None => ()
+        }
+    }
+
     match trans.query("
-        INSERT INTO deltas (id, created, features, uid, props) VALUES (
+        INSERT INTO deltas (id, created, features, uid, props, affected) VALUES (
             nextval('deltas_id_seq'),
             current_timestamp,
             $1::TEXT::JSON,
             $2,
-            to_json($3::HSTORE)
+            to_json($3::HSTORE),
+            $4
         ) RETURNING id;
-    ", &[&fc_str, &uid, &props]) {
+    ", &[&fc_str, &uid, &props, &affected]) {
         Err(err) => {
             match err.as_db() {
                 Some(_e) => { Err(ChangesetError::CreationFail) },
