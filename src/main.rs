@@ -1,9 +1,9 @@
+extern crate hecate;
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
 extern crate iron;
 extern crate router;
 extern crate geojson;
-extern crate hecate;
 extern crate postgres;
 extern crate mount;
 extern crate persistent;
@@ -45,6 +45,7 @@ fn main() {
 
     env_logger::init().unwrap();
 
+    //Create Postgres Connection Pool
     let cn_str = String::from("postgres://postgres@localhost:5432/hecate");
     let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, TlsMode::None).unwrap();
     let config = ::r2d2::Config::builder().pool_size(6).build();
@@ -56,19 +57,21 @@ fn main() {
 
     router.get("/", index, "index");
 
-    // Create Edit Modify Feature
+    // Create Modify Delete Individual Features
+    // Each must have a valid GeoJSON Feature in the body
     router.post("/api/data/feature", feature_create, "feature_create");
     router.patch("/api/data/feature", feature_modify, "feature_modify");
     router.delete("/api/data/feature", feature_delete, "feature_delete");
 
-    // Create Edit Modify Feature
+    // Create Edit Modify Batch Features
+    // Must have a valid GeoJSON FeatureCollection in the body
     router.post("/api/data/features", features_action, "features_action");
 
     // Get Features
-    router.get("/api/data/feature/:feature", feature_get, "feature_get");
-    router.get("/api/data/features", features_get, "features_get");
+    router.get("/api/data/feature/:feature", feature_get, "feature_get"); //Get by id
+    router.get("/api/data/features", features_get, "features_get"); //Get by bounding box
 
-    //OSM XML Compat. Shim
+    //OSM XML Compat. Shim & Obviously incomplete as the OSM data model can't translate 1:1
     router.get("/api/capabilities", xml_capabilities, "xml_capabilities");
     router.get("/api/0.6/capabilities", xml_capabilities, "xml_06capabilities");
     router.get("/api/0.6/user/details", xml_user, "xml_06user");

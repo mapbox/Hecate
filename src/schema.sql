@@ -10,7 +10,17 @@ CREATE TABLE users (
     meta        JSONB
 );
 
+DROP TABLE IF EXISTS users_tokens;
+CREATE TABLE users_tokens (
+    token       TEXT,
+    uid         BIGINT,
+    scope       JSONB,
+    expiration  TIMESTAMP
+)
+
 DROP TABLE IF EXISTS geo;
+DROP INDEX IF EXISTS geo_gist;
+DROP INDEX IF EXISTS geo_idx;
 CREATE TABLE geo (
     id          BIGSERIAL,
     version     BIGINT,
@@ -18,6 +28,8 @@ CREATE TABLE geo (
     props       JSONB,
     deltas      BIGINT[]
 );
+CREATE INDEX geo_gist ON geo USING GIST(geom);
+CREATE INDEX geo_idx ON geo(id);
 
 DROP TABLE IF EXISTS deltas;
 CREATE TABLE deltas (
@@ -28,6 +40,7 @@ CREATE TABLE deltas (
     props       JSONB,
     uid         BIGINT
 );
+CREATE INDEX deltas_idx ON deltas(id);
 
 -- delete_geo( id, version )
 CREATE OR REPLACE FUNCTION delete_geo(BIGINT, BIGINT)
