@@ -142,13 +142,61 @@ test('address', (q) => {
         });
     });
 
-    q.test('address - basic create - deltas database', (r) => {
+    q.test('address - basic modify - deltas database', (r) => {
         pool.query('SELECT id, features, affected, props, uid FROM deltas ORDER BY id', (err, res) => {
             r.error(err, 'no errors');
             r.equals(res.rows.length, 2);
             res = res.rows[1];
 
             r.equals(res.id, '2');
+          
+            let affected = [];
+            for (let i = 1; i < 1000; i++) affected.push(String(i));
+            r.deepEquals(res.affected, affected);
+            r.deepEquals(res.props, {});
+            r.equals(res.uid, '1');
+
+            r.end();
+        });
+    });
+
+    q.test('features - basic delete - endpoint', (r) => {
+        let id = 0;
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/features',
+            body: JSON.stringify({
+                type: 'FeatureCollection',
+                features: require('./fixtures/us_dc_pts.json').features.map((feat) => {
+                    feat.id = ++id;
+                    feat.action = 'delete';
+                    feat.version = 2;
+                    return feat;
+                })
+            })
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.statusCode, 200);
+            r.equals(res.body, 'true');
+            r.end();
+        });
+    });
+
+    q.test('address - basic modify - geo database', (r) => {
+        pool.query('SELECT id, version, ST_AsGeoJSON(geom)::JSON AS geometry, props AS properties, deltas FROM geo ORDER BY id', (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.rows.length, 0);
+            r.end();
+        });
+    });
+
+    q.test('address - basic modify - deltas database', (r) => {
+        pool.query('SELECT id, features, affected, props, uid FROM deltas ORDER BY id', (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.rows.length, 3);
+            res = res.rows[2];
+
+            r.equals(res.id, '3');
           
             let affected = [];
             for (let i = 1; i < 1000; i++) affected.push(String(i));
