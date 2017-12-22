@@ -53,56 +53,113 @@ if (!process.env.DEBUG) {
     });
 }
 
-test('address', (t) => {
-    t.test('address - import', (q) => {
-        q.test('features - basic create - endpoint', (r) => {
-            request.post({
-                headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/features',
-                body: JSON.stringify(require('./fixtures/us_dc_pts.json'))
-            }, (err, res) => {
-                r.error(err, 'no errors');
-                r.equals(res.statusCode, 200);
-                r.equals(res.body, 'true');
-                r.end();
-            });
+test('address', (q) => {
+    q.test('features - basic create - endpoint', (r) => {
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/features',
+            body: JSON.stringify(require('./fixtures/us_dc_pts.json'))
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.statusCode, 200);
+            r.equals(res.body, 'true');
+            r.end();
         });
-
-        q.test('address - basic create - geo database', (r) => {
-            pool.query('SELECT id, version, ST_AsGeoJSON(geom)::JSON AS geometry, props AS properties, deltas FROM geo ORDER BY id', (err, res) => {
-                r.error(err, 'no errors');
-                r.equals(res.rows.length, 999);
-
-                for (let row of res.rows) {
-                    r.ok(row.id > 0, 'feature assigned id');
-                    r.ok(row.version == 1, 'feature is version 1');
-                    r.ok(row.properties.street.length > 0, 'feature retained street');
-                    r.ok(row.properties.number.length > 0, 'feature retained number');
-                    r.ok(row.properties.source.length > 0, 'feature retained source');
-                    r.ok(row.geometry.type === 'Point', 'feature is a point');
-                }
-                r.end();
-            });
-        });
-
-        q.test('address - basic create - deltas database', (r) => {
-            pool.query('SELECT id, features, affected, props, uid FROM deltas ORDER BY id', (err, res) => {
-                r.error(err, 'no errors');
-                r.equals(res.rows.length, 1);
-                res = res.rows[0];
-
-                t.equals(res.id, '1');
-                t.deepEquals(res.affected, []);
-                t.deepEquals(res.props, {});
-                t.deepEquals(res.features, require('./fixtures/us_dc_pts.json'));
-                t.equals(res.uid, '1');
-
-                r.end();
-            });
-        });
-        q.end();
     });
-    t.end();
+
+    q.test('address - basic create - geo database', (r) => {
+        pool.query('SELECT id, version, ST_AsGeoJSON(geom)::JSON AS geometry, props AS properties, deltas FROM geo ORDER BY id', (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.rows.length, 999);
+
+            for (let row of res.rows) {
+                r.ok(row.id > 0, 'feature assigned id');
+                r.ok(row.version == 1, 'feature is version 1');
+                r.ok(row.properties.street.length > 0, 'feature retained street');
+                r.ok(row.properties.number.length > 0, 'feature retained number');
+                r.ok(row.properties.source.length > 0, 'feature retained source');
+                r.ok(row.geometry.type === 'Point', 'feature is a point');
+            }
+            r.end();
+        });
+    });
+
+    q.test('address - basic create - deltas database', (r) => {
+        pool.query('SELECT id, features, affected, props, uid FROM deltas ORDER BY id', (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.rows.length, 1);
+            res = res.rows[0];
+
+            r.equals(res.id, '1');
+            r.deepEquals(res.affected, []);
+            r.deepEquals(res.props, {});
+            r.deepEquals(res.features, require('./fixtures/us_dc_pts.json'));
+            r.equals(res.uid, '1');
+
+            r.end();
+        });
+    });
+
+    q.test('features - basic modify - endpoint', (r) => {
+        let id = 0;
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:3000/api/data/features',
+            body: JSON.stringify({
+                type: 'FeatureCollection',
+                features: require('./fixtures/us_dc_pts.json').features.map((feat) => {
+                    feat.id = ++id;
+                    feat.action = 'modify';
+                    feat.version = 1;
+                    feat.properties = {
+                        orange: 'is the new',
+                        black: true
+                    }
+                    return feat;
+                })
+            })
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.statusCode, 200);
+            r.equals(res.body, 'true');
+            r.end();
+        });
+    });
+
+    q.test('address - basic modify - geo database', (r) => {
+        pool.query('SELECT id, version, ST_AsGeoJSON(geom)::JSON AS geometry, props AS properties, deltas FROM geo ORDER BY id', (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.rows.length, 999);
+
+            for (let row of res.rows) {
+                r.ok(row.id > 0, 'feature assigned id');
+                r.ok(row.version == 2, 'feature is version 1');
+                r.ok(row.properties.black === true, 'feature retained street');
+                r.ok(row.properties.orange.length > 0, 'feature retained number');
+                r.ok(row.geometry.type === 'Point', 'feature is a point');
+            }
+            r.end();
+        });
+    });
+
+    q.test('address - basic create - deltas database', (r) => {
+        pool.query('SELECT id, features, affected, props, uid FROM deltas ORDER BY id', (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.rows.length, 2);
+            res = res.rows[1];
+
+            r.equals(res.id, '2');
+          
+            let affected = [];
+            for (let i = 1; i < 1000; i++) affected.push(String(i));
+            r.deepEquals(res.affected, affected);
+            r.deepEquals(res.props, {});
+            r.equals(res.uid, '1');
+
+            r.end();
+        });
+    });
+    q.end();
 });
 
 test('Disconnect', (t) => {
