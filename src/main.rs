@@ -56,6 +56,9 @@ fn main() {
 
     router.get("/", index, "index");
 
+    //router.post("/api/user/create", user_create), "user_create");
+    //router.get("/api/user/token", user_token), "user_token");
+
     // Create Edit Modify Feature
     router.post("/api/data/feature", feature_create, "feature_create");
     router.patch("/api/data/feature", feature_modify, "feature_modify");
