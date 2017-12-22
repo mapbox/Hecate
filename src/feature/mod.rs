@@ -134,9 +134,9 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
                 array[COALESCE($3, currval('deltas_id_seq')::BIGINT)]
             ) RETURNING id;
     ", &[&geom_str, &props_str, &delta]) {
-        Ok(_) => Ok(Response {
-            old: 1,
-            new: 1,
+        Ok(res) => Ok(Response {
+            old: 0,
+            new: res.get(0).get(0),
             version: 1
         }),
         Err(err) => {
