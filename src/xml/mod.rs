@@ -558,13 +558,13 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
 
     writer.write_event(XMLEvents::Event::Start(xml_way)).unwrap();
 
-    let mut dedupe: HashMap<geojson::PointType, Node> = HashMap::new();
+    let mut n_refs: Vec<i64> = Vec::new();
 
     for nd in coords {
         let n_ref: i64;
 
-        if dedupe.has(nd) {
-            n_ref = dedupe.get(nd).unwrap().id;
+        if n_refs.len() > 1 && *nd == coords[0] {
+            n_ref = n_refs[0];
         } else {
             let node = match add_node(&nd, osm) {
                 Ok(node) => node,
@@ -576,6 +576,10 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
             n_ref = node.1;
         }
 
+        n_refs.push(n_ref);
+    }
+
+    for n_ref in n_refs {
         let mut xml_nd = XMLEvents::BytesStart::owned(b"nd".to_vec(), 2);
         xml_nd.push_attribute(("ref", &*n_ref.to_string()));
         writer.write_event(XMLEvents::Event::Empty(xml_nd)).unwrap();
