@@ -12,6 +12,7 @@ extern crate urlencoded;
 extern crate r2d2_postgres;
 extern crate logger;
 extern crate env_logger;
+extern crate staticfile;
 
 use iron::typemap::Key;
 
@@ -26,6 +27,8 @@ use urlencoded::UrlEncodedQuery;
 use clap::App;
 use iron::prelude::*;
 use iron::status;
+use std::path::Path;
+use staticfile::Static;
 use router::Router;
 use std::io::Read;
 use std::collections::HashMap;
@@ -55,38 +58,38 @@ fn main() {
 
     let mut router = Router::new();
 
-    router.get("/", index, "index");
-
     //router.post("/api/user/create", user_create), "user_create");
     //router.get("/api/user/token", user_token), "user_token");
 
     // Create Modify Delete Individual Features
     // Each must have a valid GeoJSON Feature in the body
-    router.post("/api/data/feature", feature_create, "feature_create");
-    router.patch("/api/data/feature", feature_modify, "feature_modify");
-    router.delete("/api/data/feature", feature_delete, "feature_delete");
+    router.post("/data/feature", feature_create, "feature_create");
+    router.patch("/data/feature", feature_modify, "feature_modify");
+    router.delete("/data/feature", feature_delete, "feature_delete");
 
     // Create Edit Modify Batch Features
     // Must have a valid GeoJSON FeatureCollection in the body
-    router.post("/api/data/features", features_action, "features_action");
+    router.post("/data/features", features_action, "features_action");
 
     // Get Features
-    router.get("/api/data/feature/:feature", feature_get, "feature_get"); //Get by id
-    router.get("/api/data/features", features_get, "features_get"); //Get by bounding box
+    router.get("/data/feature/:feature", feature_get, "feature_get"); //Get by id
+    router.get("/data/features", features_get, "features_get"); //Get by bounding box
 
     //OSM XML Compat. Shim & Obviously incomplete as the OSM data model can't translate 1:1
-    router.get("/api/capabilities", xml_capabilities, "xml_capabilities");
-    router.get("/api/0.6/capabilities", xml_capabilities, "xml_06capabilities");
-    router.get("/api/0.6/user/details", xml_user, "xml_06user");
-    router.get("http://localhost:3000/api/0.6", index, "xml");
-    router.get("/api/0.6/map", xml_map, "xml_map");
-    router.put("/api/0.6/changeset/create", xml_changeset_create, "xml_createChangeset");
-    router.put("/api/0.6/changeset/:id", xml_changeset_modify, "xml_modifyChangeset");
-    router.post("/api/0.6/changeset/:id/upload", xml_changeset_upload, "xml_putChangeset");
-    router.put("/api/0.6/changeset/:id/close", xml_changeset_close, "xml_closeChangeset");
+    router.get("/capabilities", xml_capabilities, "xml_capabilities");
+    router.get("/0.6/capabilities", xml_capabilities, "xml_06capabilities");
+    router.get("/0.6/user/details", xml_user, "xml_06user");
+    router.get("/0.6", index, "xml");
+    router.get("/0.6/map", xml_map, "xml_map");
+    router.put("/0.6/changeset/create", xml_changeset_create, "xml_createChangeset");
+    router.put("/0.6/changeset/:id", xml_changeset_modify, "xml_modifyChangeset");
+    router.post("/0.6/changeset/:id/upload", xml_changeset_upload, "xml_putChangeset");
+    router.put("/0.6/changeset/:id/close", xml_changeset_close, "xml_closeChangeset");
 
     let mut mount = Mount::new();
-    mount.mount("/", router);
+
+    mount.mount("/", Static::new(Path::new("./web/")));
+    mount.mount("/api", router);
 
     let mut chain = Chain::new(mount);
     chain.link_before(logger_before);

@@ -1,0 +1,4 @@
+/* Global Styling */
+html, body, #app, #map {
+    height: 100%;
+}

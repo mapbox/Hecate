@@ -4,6 +4,7 @@ version = "0.1.2"
 authors = ["ingalls <ingalls@protonmail.com>"]
 
 [dependencies]
+staticfile = "0.5.0"
 geo = "0.6.3"
 iron = "0.5.1"
 router = "0.5.1"
