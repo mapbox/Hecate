@@ -1,6 +1,6 @@
 {
   "name": "Hecate",
-  "version": "1.0.0",
+  "version": "0.1.2",
   "description": "Test Runner for Hecate Server",
   "scripts": {
     "test": "tape test/*.test.js"
