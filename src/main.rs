@@ -227,7 +227,7 @@ fn xml_changeset_create(req: &mut Request) -> IronResult<Response> {
 }
 
 fn xml_changeset_close(_req: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, String::from("true"))))
+    Ok(Response::with((status::Ok)))
 }
 
 fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
@@ -329,11 +329,16 @@ fn xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     };
 
     match delta::modify(&delta_id, &trans, &fc, &1) {
+        Ok (_) => (),
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); }
+    }
+
+    match delta::finalize(&delta_id, &trans) {
         Ok (_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, diffres)))
         },
-        Err(_) => Ok(Response::with((status::InternalServerError, "Could not create delta")))
+        Err(_) => Ok(Response::with((status::InternalServerError, "Could not close delta")))
     }
 }
 

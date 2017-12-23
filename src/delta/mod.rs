@@ -71,7 +71,7 @@ pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props:
     match trans.query("
         UPDATE deltas
             SET
-                props = to_json($4::HSTORE)
+                props = to_json($3::HSTORE)
             WHERE
                 id = $1
                 AND uid = $2
