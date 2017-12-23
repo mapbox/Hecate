@@ -15,7 +15,6 @@
 - Authentication via http basic & scoped tokens
 
 - Ways
-- Way
     - [x] Ways can be created
     - [x] Ways can be downloaded
     - [x] Ways tags can be modified
