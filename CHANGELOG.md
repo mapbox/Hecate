@@ -14,6 +14,18 @@
 
 - Authentication via http basic & scoped tokens
 
+- Ways
+- Way
+    - [x] Ways can be created
+    - [x] Ways can be downloaded
+    - [x] Ways tags can be modified
+    - [ ] Ways can be moved
+        - moves only have the individual nodes uploaded in the delta
+        - resulting in the changes not actually affecting the way as the nodeids aren't tracked
+- Relations
+    - [ ] Everything...
+
+
 ## v0.1.2
 
 - :bug: Track package.json & Cargo.toml
