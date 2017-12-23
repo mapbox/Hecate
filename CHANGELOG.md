@@ -14,6 +14,10 @@
 
 - Authentication via http basic & scoped tokens
 
+## v0.1.1
+
+- :tada: `409 CONFLICT` errors are now thrown when a changeset is closed that the caller tries to access/append to
+
 ## v0.1.0
 
 - :rocket: The first general release
