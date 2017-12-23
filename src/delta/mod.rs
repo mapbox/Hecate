@@ -126,6 +126,23 @@ pub fn finalize(id: &i64, trans: &postgres::transaction::Transaction) -> Result<
     }
 }
 
+pub fn is_open(id: &i64, trans: &postgres::transaction::Transaction) -> Result<bool, DeltaError> {
+    match trans.query("
+        SELECT NOT finalized FROM deltas WHERE id = $1
+    ", &[&id]) {
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => { Err(DeltaError::FinalizeFail) },
+                _ => Err(DeltaError::FinalizeFail)
+            }
+        },
+        Ok(row) => {
+            if row.is_empty() { return Ok(false); }
+            Ok(row.get(0).get(0))
+        }
+    }
+}
+
 pub fn affected(fc: &geojson::FeatureCollection) -> Vec<i64> {
     let mut affected: Vec<i64> = Vec::new();
     for feat in &fc.features {

@@ -239,6 +239,18 @@ fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
         None =>  { return Ok(Response::with((status::ExpectationFailed, "Changeset ID Must be provided"))); }
     };
 
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    let trans = conn.transaction().unwrap();
+
+    let mut conflict_resp = Response::with((status::Conflict, format!("The changeset {} was closed at previously", &delta_id)));
+    conflict_resp.headers.append_raw("Error", (&*format!("The changeset {} was closed at previously", &delta_id)).as_bytes().to_vec());
+
+    match delta::is_open(&delta_id, &trans) {
+        Err(_err) => { return Ok(conflict_resp); },
+        Ok(false) => { return Ok(conflict_resp); },
+        Ok(true) => ()
+    }
+
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
@@ -246,9 +258,6 @@ fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
         Ok(map) => map,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
-
-    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
-    let trans = conn.transaction().unwrap();
 
     let delta_id = match delta::modify_props(&delta_id, &trans, &map, &1) {
         Ok(id) => id,
@@ -276,13 +285,22 @@ fn xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
         None =>  { return Ok(Response::with((status::ExpectationFailed, "Changeset ID Must be provided"))); }
     };
 
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    let trans = conn.transaction().unwrap();
+
+    let mut conflict_resp = Response::with((status::Conflict, format!("The changeset {} was closed at previously", &delta_id)));
+    conflict_resp.headers.append_raw("Error", (&*format!("The changeset {} was closed at previously", &delta_id)).as_bytes().to_vec());
+
+    match delta::is_open(&delta_id, &trans) {
+        Err(_) => { return Ok(conflict_resp); },
+        Ok(false) => { return Ok(conflict_resp); },
+        Ok(true) => ()
+    }
+
     let (mut fc, tree) = match xml::to_features(&body_str) {
         Ok(fctree) => fctree,
         Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); }
     };
-
-    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
-    let trans = conn.transaction().unwrap();
 
     let mut ids: HashMap<i64, feature::Response> = HashMap::new();
 
