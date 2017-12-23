@@ -422,7 +422,6 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                 match e.name() {
                     b"node" => {
                         if current_value != Value::Node { return Err(XMLError::InternalError(String::from("node close outside of node"))); }
-
                         tree.add_node(n)?;
                         n = Node::new();
                         current_value = Value::None;
