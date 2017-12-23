@@ -67,13 +67,13 @@ impl XMLError {
 }
 
 impl From<string::FromUtf8Error> for XMLError {
-    fn from(error: string::FromUtf8Error) -> XMLError {
+    fn from(_error: string::FromUtf8Error) -> XMLError {
         XMLError::ParsingError
     }
 }
 
 impl From<quick_xml::errors::Error> for XMLError {
-    fn from(error: quick_xml::errors::Error) -> XMLError {
+    fn from(_error: quick_xml::errors::Error) -> XMLError {
         XMLError::InvalidXML
     }
 }
@@ -171,11 +171,11 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
         }
     }
 
-    for (_i, w) in tree.get_ways() {
+    for (_i, _w) in tree.get_ways() {
 
     }
 
-    for (_i, r) in tree.get_rels() {
+    for (_i, _r) in tree.get_rels() {
 
     }
 
@@ -439,11 +439,11 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         current_action = Action::None;
                     },
                     b"modify" => {
-                        if current_action != Action::Create { return Err(XMLError::InternalError(String::from("modify close outside of create"))); }
+                        if current_action != Action::Modify { return Err(XMLError::InternalError(String::from("modify close outside of modify"))); }
                         current_action = Action::None;
                     },
                     b"delete" => {
-                        if current_action != Action::Create { return Err(XMLError::InternalError(String::from("delete close outside of create"))); }
+                        if current_action != Action::Delete { return Err(XMLError::InternalError(String::from("delete close outside of delete"))); }
                         current_action = Action::None;
                     },
                     b"osmChange" => {

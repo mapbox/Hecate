@@ -20,7 +20,7 @@ pub struct RelMem {
 }
 
 impl Rel {
-    pub fn set_member(&mut self, rtype: Option<Value>, rref: Option<i64>, rrole: Option<String>) {
+    pub fn set_member(&mut self, _rtype: Option<Value>, _rref: Option<i64>, _rrole: Option<String>) {
 
     }
 
@@ -53,7 +53,7 @@ impl Generic for Rel {
         !self.tags.is_empty()
     }
 
-    fn to_feat(&self, tree: &OSMTree) -> Result<geojson::Feature, XMLError> {
+    fn to_feat(&self, _tree: &OSMTree) -> Result<geojson::Feature, XMLError> {
         Ok(geojson::Feature {
             bbox: None,
             geometry: None,

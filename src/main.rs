@@ -134,7 +134,6 @@ fn features_action(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-
     let changeset_id = match changeset::open(&trans, &map, &1) {
         Ok(id) => id,
         Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create changeset"))); }
@@ -157,7 +156,7 @@ fn features_action(req: &mut Request) -> IronResult<Response> {
         }
     }
 
-    match changeset::modify(&changeset_id, &trans, &fc, &map, &1) {
+    match changeset::modify(&changeset_id, &trans, &fc, &1) {
         Ok (_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
@@ -212,14 +211,7 @@ fn xml_changeset_create(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    let fc = geojson::FeatureCollection {
-        bbox: None,
-        features: vec![ ],
-        foreign_members: None,
-    };
-
-
-    let id = match changeset::create(&trans, &fc, &map, &1) {
+    let id = match changeset::open(&trans, &map, &1) {
         Ok(id) => id,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
@@ -253,13 +245,7 @@ fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    let fc = geojson::FeatureCollection {
-        bbox: None,
-        features: vec![ ],
-        foreign_members: None,
-    };
-
-    let id = match changeset::modify(&changeset_id, &trans, &fc, &map, &1) {
+    let id = match changeset::modify_props(&changeset_id, &trans, &map, &1) {
         Ok(id) => id,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
@@ -281,7 +267,7 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
         None =>  { return Ok(Response::with((status::ExpectationFailed, "Changeset ID Must be provided"))); }
     };
 
-    let (fc, tree) = match xml::to_features(&body_str) {
+    let (mut fc, tree) = match xml::to_features(&body_str) {
         Ok(fctree) => fctree,
         Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); }
     };
@@ -291,14 +277,22 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
 
     let mut ids: HashMap<i64, feature::Response> = HashMap::new();
 
-    for feat in fc.features {
+    for feat in &mut fc.features {
         let feat_res = match feature::action(&trans, &feat, &Some(changeset_id)) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
                 return Ok(Response::with((status::ExpectationFailed, err.to_string())));
             },
-            Ok(feat_res) => feat_res
+            Ok(feat_res) => {
+                //If res.old is 0 then the feature is being created - assign it the id
+                //so that the changeset can enter it into the affected array
+                if feat_res.old == 0 {
+                    feat.id = Some(json!(feat_res.new));
+                }
+
+                feat_res
+            }
         };
 
         ids.insert(feat_res.old, feat_res);
@@ -309,9 +303,13 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
         Ok(diffres) => diffres
     };
 
-    trans.commit().unwrap();
-
-    Ok(Response::with((status::Ok, diffres)))
+    match changeset::modify(&changeset_id, &trans, &fc, &1) {
+        Ok (_) => {
+            trans.commit().unwrap();
+            Ok(Response::with((status::Ok, diffres)))
+        },
+        Err(_) => Ok(Response::with((status::InternalServerError, "Could not create changeset")))
+    }
 }
 
 fn xml_capabilities(_req: &mut Request) -> IronResult<Response> {
@@ -355,7 +353,6 @@ fn feature_create(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-
     let changeset_id = match changeset::open(&trans, &map, &1) {
         Ok(id) => id,
         Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create changeset"))); }
@@ -372,7 +369,7 @@ fn feature_create(req: &mut Request) -> IronResult<Response> {
         foreign_members: None,
     };
 
-    match changeset::modify(&changeset_id, &trans, &fc, &map, &1) {
+    match changeset::modify(&changeset_id, &trans, &fc, &1) {
         Ok (_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))

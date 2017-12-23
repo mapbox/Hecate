@@ -65,22 +65,43 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
     }
 }
 
-pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, ChangesetError> {
+
+pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, ChangesetError> {
+    match trans.query("
+        UPDATE deltas
+            SET
+                props = to_json($4::HSTORE)
+            WHERE
+                id = $1
+                AND uid = $2
+    ", &[&id, &uid, &props]) {
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => { Err(ChangesetError::CreationFail) },
+                _ => Err(ChangesetError::CreationFail)
+            }
+        },
+        _ => { Ok(*id) }
+    }
+}
+
+pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, uid: &i64) -> Result<i64, ChangesetError> {
     let fc_str = serde_json::to_string(&fc).unwrap();
 
     match trans.query("
         UPDATE deltas
             SET
                 features = $2::TEXT::JSON,
-                props = to_json($4::HSTORE),
-                affected = $5
+                affected = $4
             WHERE
                 id = $1
                 AND uid = $3
-    ", &[&id, &fc_str, &uid, &props, &affected(&fc)]) {
+    ", &[&id, &fc_str, &uid, &affected(&fc)]) {
         Err(err) => {
             match err.as_db() {
-                Some(_e) => { Err(ChangesetError::CreationFail) },
+                Some(e) => {
+                    println!("{}", e);
+                    Err(ChangesetError::CreationFail) },
                 _ => Err(ChangesetError::CreationFail)
             }
         },

@@ -43,7 +43,7 @@ impl Generic for Node {
         !self.tags.is_empty()
     }
 
-    fn to_feat(&self, tree: &OSMTree) -> Result<geojson::Feature, XMLError> {
+    fn to_feat(&self, _tree: &OSMTree) -> Result<geojson::Feature, XMLError> {
         let mut foreign = serde_json::Map::new();
 
         match self.is_valid() {
