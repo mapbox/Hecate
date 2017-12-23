@@ -78,10 +78,7 @@ test('xml#changeset#create', (t) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
                     id: '1',
-                    features: {
-                        type: 'FeatureCollection',
-                        features: []
-                    },
+                    features: null,
                     affected: null,
                     props: {
                         comment: 'Buncho Random Text',
