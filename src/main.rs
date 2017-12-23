@@ -31,7 +31,7 @@ use std::io::Read;
 use std::collections::HashMap;
 use geojson::GeoJson;
 use hecate::feature;
-use hecate::changeset;
+use hecate::delta;
 use hecate::xml;
 use mount::Mount;
 use logger::Logger;
@@ -56,6 +56,9 @@ fn main() {
     let mut router = Router::new();
 
     router.get("/", index, "index");
+
+    //router.post("/api/user/create", user_create), "user_create");
+    //router.get("/api/user/token", user_token), "user_token");
 
     // Create Modify Delete Individual Features
     // Each must have a valid GeoJSON Feature in the body
@@ -134,9 +137,9 @@ fn features_action(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    let changeset_id = match changeset::open(&trans, &map, &1) {
+    let delta_id = match delta::open(&trans, &map, &1) {
         Ok(id) => id,
-        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create changeset"))); }
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); }
     };
 
     for feat in &mut fc.features {
@@ -147,21 +150,23 @@ fn features_action(req: &mut Request) -> IronResult<Response> {
                 return Ok(Response::with((status::ExpectationFailed, err.to_string())));
             },
             Ok(res) => {
-                //If res.old is 0 then the feature is being created - assign it the id
-                //so that the changeset can enter it into the affected array
-                if res.old == 0 {
+                if res.old == None {
                     feat.id = Some(json!(res.new));
                 }
             }
         }
     }
 
-    match changeset::modify(&changeset_id, &trans, &fc, &1) {
-        Ok (_) => {
+    if delta::modify(&delta_id, &trans, &fc, &1).is_err() {
+        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
+    }
+
+    match delta::finalize(&delta_id, &trans) {
+        Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
         },
-        Err(_) => Ok(Response::with((status::InternalServerError, "Could not create changeset")))
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     }
 }
 
@@ -203,7 +208,7 @@ fn xml_changeset_create(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
-    let map = match xml::to_changeset(&body_str) {
+    let map = match xml::to_delta(&body_str) {
         Ok(map) => map,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
@@ -211,14 +216,14 @@ fn xml_changeset_create(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    let id = match changeset::open(&trans, &map, &1) {
+    let delta_id = match delta::open(&trans, &map, &1) {
         Ok(id) => id,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
 
     trans.commit().unwrap();
 
-    Ok(Response::with((status::Ok, id.to_string())))
+    Ok(Response::with((status::Ok, delta_id.to_string())))
 }
 
 fn xml_changeset_close(_req: &mut Request) -> IronResult<Response> {
@@ -226,7 +231,7 @@ fn xml_changeset_close(_req: &mut Request) -> IronResult<Response> {
 }
 
 fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
-    let changeset_id: i64 = match req.extensions.get::<Router>().unwrap().find("id") {
+    let delta_id: i64 = match req.extensions.get::<Router>().unwrap().find("id") {
         Some(id) => match id.parse() {
             Ok(id) => id,
             Err(_) =>  { return Ok(Response::with((status::ExpectationFailed, "Changeset ID Must be numeric"))); }
@@ -237,7 +242,7 @@ fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
-    let map = match xml::to_changeset(&body_str) {
+    let map = match xml::to_delta(&body_str) {
         Ok(map) => map,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
@@ -245,21 +250,25 @@ fn xml_changeset_modify(req: &mut Request) -> IronResult<Response> {
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
     let trans = conn.transaction().unwrap();
 
-    let id = match changeset::modify_props(&changeset_id, &trans, &map, &1) {
+    let delta_id = match delta::modify_props(&delta_id, &trans, &map, &1) {
         Ok(id) => id,
         Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     };
 
     trans.commit().unwrap();
 
-    Ok(Response::with((status::Ok, id.to_string())))
+    Ok(Response::with((status::Ok, delta_id.to_string())))
 }
 
-fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
+//TODO
+// - INSERT FEAT INTO CHANGESET
+// - CHECK THAT CHANGESET EXISTS
+// - CHECK THAT CHANGESET IS NOT FINALIZED
+fn xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     let mut body_str = String::new();
     req.body.read_to_string(&mut body_str).unwrap();
 
-    let changeset_id: i64 = match req.extensions.get::<Router>().unwrap().find("id") {
+    let delta_id: i64 = match req.extensions.get::<Router>().unwrap().find("id") {
         Some(id) => match id.parse() {
             Ok(id) => id,
             Err(_) =>  { return Ok(Response::with((status::ExpectationFailed, "Changeset ID Must be numeric"))); }
@@ -278,16 +287,14 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
     let mut ids: HashMap<i64, feature::Response> = HashMap::new();
 
     for feat in &mut fc.features {
-        let feat_res = match feature::action(&trans, &feat, &Some(changeset_id)) {
+        let feat_res = match feature::action(&trans, &feat, &Some(delta_id)) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
                 return Ok(Response::with((status::ExpectationFailed, err.to_string())));
             },
             Ok(feat_res) => {
-                //If res.old is 0 then the feature is being created - assign it the id
-                //so that the changeset can enter it into the affected array
-                if feat_res.old == 0 {
+                if feat_res.old == None {
                     feat.id = Some(json!(feat_res.new));
                 }
 
@@ -295,7 +302,7 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
             }
         };
 
-        ids.insert(feat_res.old, feat_res);
+        ids.insert(feat_res.old.unwrap(), feat_res);
     }
 
     let diffres = match xml::to_diffresult(ids, tree) {
@@ -303,12 +310,12 @@ fn  xml_changeset_upload(req: &mut Request) -> IronResult<Response> {
         Ok(diffres) => diffres
     };
 
-    match changeset::modify(&changeset_id, &trans, &fc, &1) {
+    match delta::modify(&delta_id, &trans, &fc, &1) {
         Ok (_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, diffres)))
         },
-        Err(_) => Ok(Response::with((status::InternalServerError, "Could not create changeset")))
+        Err(_) => Ok(Response::with((status::InternalServerError, "Could not create delta")))
     }
 }
 
@@ -353,9 +360,9 @@ fn feature_create(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    let changeset_id = match changeset::open(&trans, &map, &1) {
+    let delta_id = match delta::open(&trans, &map, &1) {
         Ok(id) => id,
-        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create changeset"))); }
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); }
     };
 
     match feature::create(&trans, &feat, &None) {
@@ -369,12 +376,16 @@ fn feature_create(req: &mut Request) -> IronResult<Response> {
         foreign_members: None,
     };
 
-    match changeset::modify(&changeset_id, &trans, &fc, &1) {
-        Ok (_) => {
+    if delta::modify(&delta_id, &trans, &fc, &1).is_err() {
+        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
+    }
+
+    match delta::finalize(&delta_id, &trans) {
+        Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
         },
-        Err(_) => Ok(Response::with((status::InternalServerError, "Could not create changeset")))
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     }
 }
 
@@ -395,16 +406,23 @@ fn feature_modify(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    if changeset::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
-    }
+
+    let delta_id = match delta::create(&trans, &fc, &map, &1) {
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); },
+        Ok(id) => id
+    };
 
     match feature::modify(&trans, &feat, &None) {
+        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); },
+        _ => ()
+    }
+
+    match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
         },
-        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     }
 }
 
@@ -416,7 +434,7 @@ fn feature_get(req: &mut Request) -> IronResult<Response> {
         },
         None =>  { return Ok(Response::with((status::ExpectationFailed, "Feature ID Must be provided"))); }
     };
-    
+
     let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
 
     match feature::get(&conn, &feature_id) {
@@ -442,16 +460,23 @@ fn feature_delete(req: &mut Request) -> IronResult<Response> {
     let trans = conn.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    if changeset::create(&trans, &fc, &map, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create changeset")));
-    }
+
+    let delta_id = match delta::create(&trans, &fc, &map, &1) {
+        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); },
+        Ok(id) => id
+    };
 
     match feature::delete(&trans, &feat) {
+        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); },
+        _ => ()
+    }
+
+    match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
             trans.commit().unwrap();
             Ok(Response::with((status::Ok, "true")))
         },
-        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
     }
 }
 

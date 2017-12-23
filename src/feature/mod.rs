@@ -30,9 +30,9 @@ pub enum Action {
 }
 
 pub struct Response {
-    pub old: i64,
-    pub new: i64,
-    pub version: i64
+    pub old: Option<i64>,
+    pub new: Option<i64>,
+    pub version: Option<i64>
 }
 
 impl FeatureError {
@@ -135,9 +135,12 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
             ) RETURNING id;
     ", &[&geom_str, &props_str, &delta]) {
         Ok(res) => Ok(Response {
-            old: 0,
-            new: res.get(0).get(0),
-            version: 1
+            old: match feat.id {
+                Some(ref id) => id.as_i64(),
+                _ => None
+            },
+            new: Some(res.get(0).get(0)),
+            version: Some(1)
         }),
         Err(err) => {
             match err.as_db() {
@@ -167,9 +170,9 @@ pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
 
     match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4);", &[&geom_str, &props_str, &id, &version, &delta]) {
         Ok(_) => Ok(Response {
-            old: id,
-            new: id,
-            version: version
+            old: Some(id),
+            new: Some(id),
+            version: Some(version + 1)
         }),
         Err(err) => {
             match err.as_db() {
@@ -192,9 +195,9 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
 
     match trans.query("SELECT delete_geo($1, $2);", &[&id, &version]) {
         Ok(_) => Ok(Response {
-            old: id,
-            new: id,
-            version: version
+            old: Some(id),
+            new: None,
+            version: None
         }),
         Err(err) => {
             match err.as_db() {

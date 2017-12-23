@@ -38,7 +38,8 @@ CREATE TABLE deltas (
     features    JSONB,
     affected    BIGINT[],
     props       JSONB,
-    uid         BIGINT
+    uid         BIGINT,
+    finalized   BOOLEAN DEFAULT FALSE
 );
 CREATE INDEX deltas_idx ON deltas(id);
 

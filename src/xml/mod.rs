@@ -131,7 +131,7 @@ pub struct OSMTypes {
 impl OSMTypes {
     pub fn new() -> OSMTypes {
         OSMTypes {
-            node_it: 9000000000000000000,
+            node_it: 8000000000000000000,
             nodes: String::from(""),
             ways: String::from(""),
             rels: String::from("")
@@ -142,37 +142,42 @@ impl OSMTypes {
 pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Result<String, XMLError> {
     let mut diffres = String::from(r#"<diffResult generator="Hecate Server" version="0.6">"#);
 
-    //There had to be one horrible thing in the codebase :(
-    //JOSM requires a + int back for every node which Hecate of course
-    //couldn't care less about as it joins them with the Way/Poly
-    let tmpid: i64 = 8000000000000000000;
-
     for (_i, n) in tree.get_nodes() {
         if n.action == Some(Action::Create) {
             match ids.get(&n.id.unwrap()) {
-                None => {
-                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="1"/>"#, n.id.unwrap(), tmpid + (n.id.unwrap() * -1)));
-                },
-                Some(diffid) => {
-                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old, diffid.new, diffid.version));
-                }
+                Some(diffid) => { diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old.unwrap(), diffid.new.unwrap(), diffid.version.unwrap())); },
+                _ => ()
             }
         } else if n.action == Some(Action::Modify) {
             match ids.get(&n.id.unwrap()) {
-                None => {
-                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="1"/>"#, n.id.unwrap(), n.id.unwrap()));
-                },
-                Some(diffid) => {
-                    diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, n.id.unwrap(), n.id.unwrap(), diffid.version));
-                }
+                Some(diffid) => { diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, n.id.unwrap(), n.id.unwrap(), diffid.version.unwrap())); },
+                _ => ()
             }
         } else if n.action == Some(Action::Delete) {
-            diffres.push_str(&*format!(r#"<node old_id="{}"/>"#, n.id.unwrap()));
+            match ids.get(&n.id.unwrap()) {
+                Some(_) => { diffres.push_str(&*format!(r#"<node old_id="{}"/>"#, n.id.unwrap())); },
+                _ => ()
+            }
         }
     }
 
-    for (_i, _w) in tree.get_ways() {
-
+    for (_i, w) in tree.get_ways() {
+        if w.action == Some(Action::Create) {
+            match ids.get(&w.id.unwrap()) {
+                Some(diffid) => { diffres.push_str(&*format!(r#"<way old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old.unwrap(), diffid.new.unwrap(), diffid.version.unwrap())); },
+                _ => ()
+            }
+        } else if w.action == Some(Action::Modify) {
+            match ids.get(&w.id.unwrap()) {
+                Some(diffid) => { diffres.push_str(&*format!(r#"<way old_id="{}" new_id="{}" new_version="{}"/>"#, w.id.unwrap(), w.id.unwrap(), diffid.version.unwrap())); },
+                _ => ()
+            }
+        } else if w.action == Some(Action::Delete) {
+            match ids.get(&w.id.unwrap()) {
+                Some(_) => { diffres.push_str(&*format!(r#"<way old_id="{}"/>"#, w.id.unwrap())); },
+                _ => ()
+            }
+        }
     }
 
     for (_i, _r) in tree.get_rels() {
@@ -184,7 +189,7 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
     Ok(diffres)
 }
 
-pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, Option<String>>) { let mut kv: (Option<String>, Option<String>) = (None, None);
+pub fn to_delta_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<String, Option<String>>) { let mut kv: (Option<String>, Option<String>) = (None, None);
     for attr in xml_node.attributes() {
         let attr = attr.unwrap();
 
@@ -198,7 +203,7 @@ pub fn to_changeset_tag(xml_node: &quick_xml::events::BytesStart, map: &mut Hash
     map.insert(kv.0.unwrap(), kv.1);
 }
 
-pub fn to_changeset(body: &String) -> Result<HashMap<String, Option<String>>, XMLError> {
+pub fn to_delta(body: &String) -> Result<HashMap<String, Option<String>>, XMLError> {
     let mut reader = quick_xml::reader::Reader::from_str(body);
     let mut buf = Vec::new();
 
@@ -208,13 +213,13 @@ pub fn to_changeset(body: &String) -> Result<HashMap<String, Option<String>>, XM
         match reader.read_event(&mut buf) {
             Ok(XMLEvents::Event::Start(ref e)) => {
                 match e.name() {
-                    b"tag" => { to_changeset_tag(&e, &mut map) },
+                    b"tag" => { to_delta_tag(&e, &mut map) },
                     _ => (),
                 }
             },
             Ok(XMLEvents::Event::Empty(ref e)) => {
                 match e.name() {
-                    b"tag" => { to_changeset_tag(&e, &mut map) },
+                    b"tag" => { to_delta_tag(&e, &mut map) },
                     _ => (),
                 }
             },
@@ -239,19 +244,19 @@ pub fn to_features(body: &String) -> Result<(geojson::FeatureCollection, OSMTree
     };
 
     for (_i, rel) in tree.get_rels() {
-        if !rel.has_tags() { continue; }
+        if rel.action != Some(Action::Delete) && !rel.has_tags() { continue; }
 
         fc.features.push(rel.to_feat(&tree)?);
     }
 
     for (_i, way) in tree.get_ways() {
-        if !way.has_tags() { continue; }
+        if way.action != Some(Action::Delete) && !way.has_tags() { continue; }
 
         fc.features.push(way.to_feat(&tree)?);
     }
 
     for (_i, node) in tree.get_nodes() {
-        if !node.has_tags() { continue; }
+        if node.action != Some(Action::Delete) && !node.has_tags() { continue; }
 
         let n = node.to_feat(&tree)?;
 
@@ -423,13 +428,13 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         current_value = Value::None;
                     },
                     b"way" => {
-                        if current_value != Value::Node { return Err(XMLError::InternalError(String::from("way close outside of node"))); }
+                        if current_value != Value::Way { return Err(XMLError::InternalError(String::from("way close outside of node"))); }
                         tree.add_way(w)?;
                         w = Way::new();
                         current_value = Value::None;
                     },
                     b"relation" => {
-                        if current_value != Value::Node { return Err(XMLError::InternalError(String::from("rel close outside of node"))); }
+                        if current_value != Value::Rel { return Err(XMLError::InternalError(String::from("rel close outside of node"))); }
                         tree.add_rel(r)?;
                         r = Rel::new();
                         current_value = Value::None;
@@ -439,11 +444,11 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         current_action = Action::None;
                     },
                     b"modify" => {
-                        if current_action != Action::Modify { return Err(XMLError::InternalError(String::from("modify close outside of modify"))); }
+                        if current_action != Action::Modify { return Err(XMLError::InternalError(String::from("modify close outside of create"))); }
                         current_action = Action::None;
                     },
                     b"delete" => {
-                        if current_action != Action::Delete { return Err(XMLError::InternalError(String::from("delete close outside of delete"))); }
+                        if current_action != Action::Delete { return Err(XMLError::InternalError(String::from("delete close outside of create"))); }
                         current_action = Action::None;
                     },
                     b"osmChange" => {
@@ -552,16 +557,30 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
 
     writer.write_event(XMLEvents::Event::Start(xml_way)).unwrap();
 
+    let mut n_refs: Vec<i64> = Vec::new();
+
     for nd in coords {
-        let node = match add_node(&nd, osm) {
-            Ok(node) => node,
-            Err(_) => { return Err(XMLError::EncodingFailed); }
-        };
+        let n_ref: i64;
 
-        osm.nodes.push_str(&*node.0);
+        if n_refs.len() > 1 && *nd == coords[0] {
+            n_ref = n_refs[0];
+        } else {
+            let node = match add_node(&nd, osm) {
+                Ok(node) => node,
+                Err(_) => { return Err(XMLError::EncodingFailed); }
+            };
 
+            osm.nodes.push_str(&*node.0);
+
+            n_ref = node.1;
+        }
+
+        n_refs.push(n_ref);
+    }
+
+    for n_ref in n_refs {
         let mut xml_nd = XMLEvents::BytesStart::owned(b"nd".to_vec(), 2);
-        xml_nd.push_attribute(("ref", &*node.1.to_string()));
+        xml_nd.push_attribute(("ref", &*n_ref.to_string()));
         writer.write_event(XMLEvents::Event::Empty(xml_nd)).unwrap();
     }
 

@@ -8,21 +8,23 @@ use std::collections::HashMap;
 
 #[derive(PartialEq)]
 #[derive(Debug)]
-pub enum ChangesetError {
+pub enum DeltaError {
     CreationFail,
+    FinalizeFail,
     NotFound
 }
 
-impl ChangesetError {
+impl DeltaError {
     pub fn to_string(&self) -> &str {
         match *self {
-            ChangesetError::CreationFail => { "Changeset Creation Failure" },
-            ChangesetError::NotFound => { "Changeset not found" }
+            DeltaError::CreationFail => { "Delta Creation Failure" },
+            DeltaError::FinalizeFail => { "Finalization Failure" },
+            DeltaError::NotFound => { "Delta not found" }
         }
     }
 }
 
-pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, ChangesetError> {
+pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, DeltaError> {
     match trans.query("
         INSERT INTO deltas (id, created, props, uid) VALUES (
             nextval('deltas_id_seq'),
@@ -33,8 +35,8 @@ pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, 
     ", &[&props, &uid]) {
         Err(err) => {
             match err.as_db() {
-                Some(_e) => { Err(ChangesetError::CreationFail) },
-                _ => Err(ChangesetError::CreationFail)
+                Some(_e) => { Err(DeltaError::CreationFail) },
+                _ => Err(DeltaError::CreationFail)
             }
         },
         Ok(res) => { Ok(res.get(0).get(0)) }
@@ -42,7 +44,7 @@ pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, 
 
 }
 
-pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, ChangesetError> {
+pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, DeltaError> {
     let fc_str = serde_json::to_string(&fc).unwrap();
 
     match trans.query("
@@ -57,16 +59,15 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
     ", &[&fc_str, &uid, &props, &affected(&fc)]) {
         Err(err) => {
             match err.as_db() {
-                Some(_e) => { Err(ChangesetError::CreationFail) },
-                _ => Err(ChangesetError::CreationFail)
+                Some(_e) => { Err(DeltaError::CreationFail) },
+                _ => Err(DeltaError::CreationFail)
             }
         },
         Ok(res) => { Ok(res.get(0).get(0)) }
     }
 }
 
-
-pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, ChangesetError> {
+pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, DeltaError> {
     match trans.query("
         UPDATE deltas
             SET
@@ -74,18 +75,19 @@ pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props:
             WHERE
                 id = $1
                 AND uid = $2
+                AND finalized = false;
     ", &[&id, &uid, &props]) {
         Err(err) => {
             match err.as_db() {
-                Some(_e) => { Err(ChangesetError::CreationFail) },
-                _ => Err(ChangesetError::CreationFail)
+                Some(_e) => { Err(DeltaError::CreationFail) },
+                _ => Err(DeltaError::CreationFail)
             }
         },
         _ => { Ok(*id) }
     }
 }
 
-pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, uid: &i64) -> Result<i64, ChangesetError> {
+pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, uid: &i64) -> Result<i64, DeltaError> {
     let fc_str = serde_json::to_string(&fc).unwrap();
 
     match trans.query("
@@ -96,16 +98,31 @@ pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson
             WHERE
                 id = $1
                 AND uid = $3
+                AND finalized = false;
     ", &[&id, &fc_str, &uid, &affected(&fc)]) {
         Err(err) => {
             match err.as_db() {
-                Some(e) => {
-                    println!("{}", e);
-                    Err(ChangesetError::CreationFail) },
-                _ => Err(ChangesetError::CreationFail)
+                Some(_e) => { Err(DeltaError::CreationFail) },
+                _ => Err(DeltaError::CreationFail)
             }
         },
         _ => { Ok(*id) }
+    }
+}
+
+pub fn finalize(id: &i64, trans: &postgres::transaction::Transaction) -> Result<i64, DeltaError> {
+    match trans.query("
+        UPDATE deltas
+            SET finalized = true
+            WHERE id = $1
+    ", &[&id]) {
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => { Err(DeltaError::FinalizeFail) },
+                _ => Err(DeltaError::FinalizeFail)
+            }
+        },
+        _ => Ok(*id)
     }
 }
 
@@ -125,3 +142,4 @@ pub fn affected(fc: &geojson::FeatureCollection) -> Vec<i64> {
 
     return affected;
 }
+

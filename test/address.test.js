@@ -90,7 +90,7 @@ test('address', (q) => {
     });
 
     q.test('address - basic create - deltas database', (r) => {
-        pool.query('SELECT id, features::JSON, affected, props, uid FROM deltas ORDER BY id', (err, res) => {
+        pool.query('SELECT id, features::JSON, affected, props, uid, finalized FROM deltas ORDER BY id', (err, res) => {
             r.error(err, 'no errors');
             r.equals(res.rows.length, 1);
             res = res.rows[0];
@@ -103,6 +103,7 @@ test('address', (q) => {
                 r.ok(row.id > 0, 'feature assigned id');
             }
             r.equals(res.uid, '1');
+            r.equals(res.finalized, true);
 
             r.end();
         });
@@ -151,7 +152,7 @@ test('address', (q) => {
     });
 
     q.test('address - basic modify - deltas database', (r) => {
-        pool.query('SELECT id, features, affected, props, uid FROM deltas ORDER BY id', (err, res) => {
+        pool.query('SELECT id, features, affected, props, uid, finalized FROM deltas ORDER BY id', (err, res) => {
             r.error(err, 'no errors');
             r.equals(res.rows.length, 2);
             res = res.rows[1];
@@ -160,6 +161,7 @@ test('address', (q) => {
             r.deepEquals(res.affected, affected);
             r.deepEquals(res.props, {});
             r.equals(res.uid, '1');
+            r.equals(res.finalized, true);
 
             r.end();
         });
@@ -196,7 +198,7 @@ test('address', (q) => {
     });
 
     q.test('address - basic modify - deltas database', (r) => {
-        pool.query('SELECT id, features, affected, props, uid FROM deltas ORDER BY id', (err, res) => {
+        pool.query('SELECT id, features, affected, props, uid, finalized FROM deltas ORDER BY id', (err, res) => {
             r.error(err, 'no errors');
             r.equals(res.rows.length, 3);
             res = res.rows[2];
@@ -205,6 +207,7 @@ test('address', (q) => {
             r.deepEquals(res.affected, affected);
             r.deepEquals(res.props, {});
             r.equals(res.uid, '1');
+            r.equals(res.finalized, true);
 
             r.end();
         });

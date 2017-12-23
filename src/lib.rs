@@ -1,6 +1,6 @@
 extern crate clap;
 #[macro_use] extern crate serde_json;
 
-pub mod changeset;
+pub mod delta;
 pub mod feature;
 pub mod xml;

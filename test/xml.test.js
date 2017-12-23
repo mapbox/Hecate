@@ -2,8 +2,6 @@ const test = require('tape');
 const request = require('request');
 const exec = require('child_process').exec;
 const Pool = require('pg-pool');
-const path = require('path');
-const fs = require('fs');
 
 const pool = new Pool({
     database: 'hecate',
@@ -110,7 +108,7 @@ test('xml#changeset#upload', (t) => {
                 body: `
                     <osmChange version="0.6" generator="Hecate Server">
                         <create>
-                            <node id='1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
+                            <node id='-1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
                                 <tag k='amenity' v='shop' />
                                 <tag k='building' v='yes' />
                             </node>
@@ -121,25 +119,25 @@ test('xml#changeset#upload', (t) => {
                 r.error(err, 'no errors');
                 r.equals(res.statusCode, 200);
 
-
-                let fixture = String(fs.readFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#node')));
-                r.equals(res.body, fixture);
-                if (res.body != fixture && process.env.UPDATE) {
-                    t.fail('Updated Fixture');
-                    fs.writeFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#node'), res.body);
-                }
-
+                r.equals(XML(res.body), XML`
+                    <diffResult generator="Hecate Server" version="0.6">
+                        <node old_id="-1" new_id="1" new_version="1"/>
+                    </diffResult>
+                `);
                 r.end();
             });
         });
 
         q.test('xml#changeset#upload - create - node - database', (r) => {
-            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom)::JSON AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
                     id: '1',
                     version: '1',
-                    geom: '{"type":"Point","coordinates":[3.59219694137573,-0.661809384822845]}',
+                    geom: {
+                        type: "Point",
+                        coordinates: [3.59219694137573,-0.661809384822845]
+                    },
                     props: {
                         amenity: 'shop',
                         building: 'yes'
@@ -154,44 +152,14 @@ test('xml#changeset#upload', (t) => {
     });
 
     t.test('xml#changeset#upload - modify - node', (q) => {
-        q.test('xml#changeset#upload - modify - node - endpoint (version mismatch)', (r) => {
-            request.post({
-                headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/0.6/changeset/1/upload',
-                body: `
-                    <osmChange version="0.6" generator="Hecate Server">
-                        <modify>
-                            <node id='1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
-                                <tag k='amenity' v='shop' />
-                                <tag k='building' v='yes' />
-                            </node>
-                        </modify>
-                    </osmChange>
-                `
-            }, (err, res) => {
-                r.error(err, 'no errors');
-                r.equals(res.statusCode, 200);
-
-
-                let fixture = String(fs.readFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#node')));
-                r.equals(res.body, fixture);
-                if (res.body != fixture && process.env.UPDATE) {
-                    t.fail('Updated Fixture');
-                    fs.writeFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#node'), res.body);
-                }
-
-                r.end();
-            });
-        });
-
         q.test('xml#changeset#upload - modify - node - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/0.6/changeset/1/upload',
+                url: 'http://localhost:3000/api/0.6/changeset/2/upload',
                 body: `
                     <osmChange version="0.6" generator="Hecate Server">
                         <modify>
-                            <node id='1' version='2' changeset='1' lat='1.1' lon='1.1'>
+                            <node id='1' version='1' changeset='1' lat='1.1' lon='1.1'>
                                 <tag k='building' v='house' />
                             </node>
                         </modify>
@@ -201,25 +169,26 @@ test('xml#changeset#upload', (t) => {
                 r.error(err, 'no errors');
                 r.equals(res.statusCode, 200);
 
-
-                let fixture = String(fs.readFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#modifynode')));
-                r.equals(res.body, fixture);
-                if (res.body != fixture && process.env.UPDATE) {
-                    t.fail('Updated Fixture');
-                    fs.writeFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#modifynode'), res.body);
-                }
+                r.equals(XML(res.body), XML`
+                    <diffResult generator="Hecate Server" version="0.6">
+                        <node old_id="1" new_id="1" new_version="2"/>
+                    </diffResult>
+                `);
 
                 r.end();
             });
         });
 
-        q.test('xml#changeset#upload - create - node - database', (r) => {
-            pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
+        q.test('xml#changeset#upload - modify - node - database', (r) => {
+            pool.query('SELECT id, version, ST_AsGeoJSON(geom)::JSON AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
                     id: '1',
-                    version: '1',
-                    geom: '{"type":"Point","coordinates":[1.1, 1,1]}',
+                    version: '2',
+                    geom: {
+                        type: "Point",
+                        coordinates: [1.10000002384186,1.10000002384186]
+                    },
                     props: {
                         building: 'house'
                     },
@@ -232,7 +201,44 @@ test('xml#changeset#upload', (t) => {
         q.end();
     });
 
-    t.test('xml#changeset#upload - create - way', (q) => {
+    t.test('xml#changeset#upload - delete - node', (q) => {
+        q.test('xml#changeset#upload - delete - node - endpoint', (r) => {
+            request.post({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://localhost:3000/api/0.6/changeset/3/upload',
+                body: `
+                    <osmChange version="0.6" generator="Hecate Server">
+                        <delete>
+                            <node id='1' version='2'/>
+                        </delete>
+                    </osmChange>
+                `
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+
+                r.equals(XML(res.body), XML`
+                    <diffResult generator="Hecate Server" version="0.6">
+                        <node old_id="1"/>
+                    </diffResult>
+                `);
+
+                r.end();
+            });
+        });
+
+        q.test('xml#changeset#upload - delete - node - database', (r) => {
+            pool.query('SELECT * FROM geo WHERE id = 1;', (err, res) => {
+                r.error(err, 'no errors');
+                r.deepEquals(res.rows.length, 0);
+                r.end();
+            });
+        });
+
+        q.end();
+    });
+
+    t.skip('xml#changeset#upload - create - way', (q) => {
         q.test('xml#changeset#upload - way - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
@@ -263,12 +269,11 @@ test('xml#changeset#upload', (t) => {
                 r.error(err, 'no errors');
                 r.equals(res.statusCode, 200);
 
-                let fixture = String(fs.readFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#way')));
-                r.equals(res.body, fixture);
-                if (res.body != fixture && process.env.UPDATE) {
-                    t.fail('Updated Fixture');
-                    fs.writeFileSync(path.resolve(__dirname, 'fixtures/xml#changeset#upload#way'), res.body);
-                }
+                r.equals(XML(res.body), XML`
+                    <diffResult generator="Hecate Server" version="0.6">
+                        <node old_id="1" new_id="1" new_version="2"/>
+                    </diffResult>
+                `);
 
                 r.end();
             });
@@ -319,4 +324,9 @@ if (!process.env.DEBUG) {
             t.end();
         });
     });
+}
+
+function XML(xml) {
+    if (Array.isArray(xml)) xml = xml[0];
+    return xml.replace(/[\n\s]/g, '')
 }
