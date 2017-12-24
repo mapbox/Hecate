@@ -194,8 +194,8 @@ pub fn to_delta_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<
         let attr = attr.unwrap();
 
         match attr.key {
-            b"k"  => kv.0 = Some(String::from_utf8_lossy(attr.value).parse().unwrap()),
-            b"v"  => kv.1 = Some(String::from_utf8_lossy(attr.value).parse().unwrap()),
+            b"k"  => kv.0 = Some(String::from_utf8(attr.value.into_owned()).unwrap()),
+            b"v"  => kv.1 = Some(String::from_utf8(attr.value.into_owned()).unwrap()),
             _ => ()
         }
     }
@@ -695,7 +695,7 @@ pub fn parse_osm(xml_node: &XMLEvents::BytesStart, meta: &mut HashMap<String, St
         let attr = attr?;
 
         let key = String::from_utf8_lossy(attr.key);
-        let val = String::from_utf8_lossy(attr.value);
+        let val = String::from_utf8(attr.value.into_owned()).unwrap();
 
         meta.insert(key.to_string(), val.to_string());
     }
@@ -719,12 +719,12 @@ pub fn parse_node(xml_node: &XMLEvents::BytesStart) -> Result<Node, XMLError> {
         let attr = attr?;
 
         match attr.key {
-            b"id" => node.id = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"lat" => node.lat = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"lon" => node.lon = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"user" => node.user = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"uid" => node.uid = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"version" => node.version = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"id" => node.id = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"lat" => node.lat = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"lon" => node.lon = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"user" => node.user = Some(String::from_utf8(attr.value.into_owned()).unwrap()),
+            b"uid" => node.uid = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"version" => node.version = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
             _ => ()
         }
     }
@@ -739,10 +739,10 @@ pub fn parse_way(xml_node: &XMLEvents::BytesStart) -> Result<Way, XMLError> {
         let attr = attr?;
 
         match attr.key {
-            b"id" => way.id = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"version"  => way.version = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"user" => way.user = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"uid" => way.uid = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"id" => way.id = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"version"  => way.version = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"user" => way.user = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"uid" => way.uid = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
             _ => ()
         }
     }
@@ -757,10 +757,10 @@ pub fn parse_rel(xml_node: &XMLEvents::BytesStart) -> Result<Rel, XMLError> {
         let attr = attr?;
 
         match attr.key {
-            b"id" => rel.id = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"version"  => rel.version = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"user" => rel.user = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"uid" => rel.uid = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"id" => rel.id = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"version"  => rel.version = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"user" => rel.user = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"uid" => rel.uid = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
             _ => ()
         }
     }
@@ -775,7 +775,7 @@ pub fn parse_nd(xml_node: &XMLEvents::BytesStart) -> Result<i64, XMLError> {
         let attr = attr?;
 
         match attr.key {
-            b"ref" => ndref = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"ref" => ndref = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
             _ => ()
         }
     }
@@ -794,8 +794,8 @@ pub fn parse_tag(xml_node: &XMLEvents::BytesStart) -> Result<(String, String), X
         let attr = attr?;
 
         match attr.key {
-            b"k" => k = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"v" => v = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"k" => k = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"v" => v = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
             _ => ()
         }
     }
@@ -818,7 +818,7 @@ pub fn parse_member(xml_node: &XMLEvents::BytesStart) -> Result<(Option<Value>, 
         let attr = attr?;
 
         match attr.key {
-            b"type" => rtype = Some(match attr.value {
+            b"type" => rtype = Some(match *attr.value {
                 b"node" => Value::Node,
                 b"way" => Value::Way,
                 b"relation" => Value::Rel,
