@@ -51,8 +51,7 @@ fn main() {
     //Create Postgres Connection Pool
     let cn_str = String::from("postgres://postgres@localhost:5432/hecate");
     let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, TlsMode::None).unwrap();
-    let config = ::r2d2::Config::builder().pool_size(6).build();
-    let pool = ::r2d2::Pool::new(config, manager).unwrap();
+    let pool = r2d2::Pool::builder().max_size(15).build(manager).unwrap();
 
     let (logger_before, logger_after) = Logger::new(None);
 

@@ -818,14 +818,14 @@ pub fn parse_member(xml_node: &XMLEvents::BytesStart) -> Result<(Option<Value>, 
         let attr = attr?;
 
         match attr.key {
-            b"type" => rtype = Some(match *attr.value {
-                b"node" => Value::Node,
-                b"way" => Value::Way,
-                b"relation" => Value::Rel,
+            b"type" => rtype = Some(match &*String::from_utf8(attr.value.into_owned()).unwrap() {
+                "node" => Value::Node,
+                "way" => Value::Way,
+                "relation" => Value::Rel,
                 _ => { return Err(XMLError::InternalError(String::from("invalid type"))); }
             }),
-            b"rref" => rref = Some(String::from_utf8_lossy(attr.value).parse()?),
-            b"rrole" => rrole = Some(String::from_utf8_lossy(attr.value).parse()?),
+            b"rref" => rref = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
+            b"rrole" => rrole = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
             _ => ()
         }
     }
