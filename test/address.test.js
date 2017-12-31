@@ -196,14 +196,3 @@ test('address', (q) => {
 test('Disconnect', (t) => {
     pool.end(t.end);
 });
-
-if (!process.env.DEBUG) {
-    test('Stop Server', (t) => {
-        exec(`
-            pkill hecate || true
-        `, (err, stdout, stderr) => {
-            t.error(err, 'no errors');
-            t.end();
-        });
-    });
-}

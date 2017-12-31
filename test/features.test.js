@@ -247,27 +247,3 @@ test('features', (t) => {
 test('Disconnect', (t) => {
     pool.end(t.end);
 });
-
-if (!process.env.DEBUG) {
-    test('Stop Server', (t) => {
-        exec(`
-            pkill hecate || true
-        `, (err, stdout, stderr) => {
-            t.error(err, 'no errors');
-            t.end();
-        });
-    });
-}
-
-/**
-echo -e "\n# XML Map"
-    echo $(curl -s -X GET 'localhost:3000/api/0.6/map?bbox=-1,-1,1,1')
-    echo ""
-
-echo -e "\n# XML Changeset Create"
-    DATA='<osm><changeset><tag k="created_by" v="JOSM 1.61"/><tag k="comment" v="Just adding some streetnames"/></changeset></osm>'
-
-    curl -s -X PUT --data "$DATA" 'localhost:3000/api/0.6/changeset/create'
-    echo ""
-    echo "SELECT id, props FROM deltas" | psql -U postgres hecate
-**/

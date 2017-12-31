@@ -291,17 +291,6 @@ test('Disconnect', (t) => {
     pool.end(t.end);
 });
 
-if (!process.env.DEBUG) {
-    test('Stop Server', (t) => {
-        exec(`
-            pkill hecate || true
-        `, (err, stdout, stderr) => {
-            t.error(err, 'no errors');
-            t.end();
-        });
-    });
-}
-
 function XML(xml) {
     if (Array.isArray(xml)) xml = xml[0];
     return xml.replace(/[\n\s]/g, '')
