@@ -4,19 +4,11 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id          BIGSERIAL,
-    username    TEXT,
+    username    TEXT DISTINCT,
     password    TEXT,
-    email       TEXT,
+    email       TEXT DISTINCT,
     meta        JSONB
 );
-
-DROP TABLE IF EXISTS users_tokens;
-CREATE TABLE users_tokens (
-    token       TEXT,
-    uid         BIGINT,
-    scope       JSONB,
-    expiration  TIMESTAMP
-)
 
 DROP TABLE IF EXISTS geo;
 DROP INDEX IF EXISTS geo_gist;

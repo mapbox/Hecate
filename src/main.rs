@@ -34,6 +34,7 @@ use std::io::Read;
 use std::collections::HashMap;
 use geojson::GeoJson;
 use hecate::feature;
+use hecate::user;
 use hecate::delta;
 use hecate::xml;
 use mount::Mount;
@@ -62,8 +63,7 @@ fn main() {
 
     let mut router = Router::new();
 
-    //router.post("/api/user/create", user_create), "user_create");
-    //router.get("/api/user/token", user_token), "user_token");
+    router.post("/api/user/create", user_create, "user_create");
 
     // Create Modify Delete Individual Features
     // Each must have a valid GeoJSON Feature in the body
@@ -106,6 +106,38 @@ fn main() {
 
 fn index(_req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok)))
+}
+
+fn user_create(req: &mut Request) -> IronResult<Response> {
+    let username: String = String::new();
+    let password: String = String::new();
+    let email: String = String::new();
+
+    let queries = match req.get_ref::<UrlEncodedQuery>() {
+        Ok(queries) => {
+            let username = String::from(match queries.get("username") {
+                Some(ref username) => &*username[0],
+                None => { return Ok(Response::with((status::BadRequest, "username required"))); }
+            });
+
+            let password = String::from(match queries.get("password") {
+                Some(ref password) => &*password[0],
+                None => { return Ok(Response::with((status::BadRequest, "password required"))); }
+            });
+
+            let email = String::from(match queries.get("email") {
+                Some(ref email) => &*email[0],
+                None => { return Ok(Response::with((status::BadRequest, "email required"))); }
+            });
+        },
+        Err(_) => { return Ok(Response::with((status::BadRequest, "Could not parse parameters"))); }
+    };
+
+    let conn = req.get::<persistent::Read<DB>>().unwrap().get().unwrap();
+    
+    user::create(&conn, &username, &password, &email);
+
+    Ok(Response::with((status::Ok, "User Created")))
 }
 
 fn features_get(req: &mut Request) -> IronResult<Response> {
