@@ -32,27 +32,6 @@ test('Reset Database', (t) => {
 
 });
 
-if (!process.env.DEBUG) {
-    test('Compile & Run', (t) => {
-        exec(`
-            pkill hecate || true
-
-            cargo build
-        `, (err, stdout, stderr) => {
-            t.error(err, 'no errors');
-            t.end();
-        });
-    });
-
-    test('Start Server', (t) => {
-        exec('cargo run');
-        exec('sleep 2', (err, stdout, stderr) => {
-            t.error(err, 'no errors');
-            t.end();
-        });
-    });
-}
-
 test('xml#changeset#create', (t) => {
     t.test('xml#changeset#create - basic', (q) => {
         q.test('xml#changeset#create - basic - endpoint', (r) => {

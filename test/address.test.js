@@ -32,29 +32,7 @@ test('Reset Database', (t) => {
 
 });
 
-if (!process.env.DEBUG) {
-    test('Compile & Run', (t) => {
-        exec(`
-            pkill hecate || true
-
-            cargo build
-        `, (err, stdout, stderr) => {
-            t.error(err, 'no errors');
-            t.end();
-        });
-    });
-
-    test('Start Server', (t) => {
-        exec('cargo run');
-        exec('sleep 2', (err, stdout, stderr) => {
-            t.error(err, 'no errors');
-            t.end();
-        });
-    });
-}
-
 test('address', (q) => {
-
     //every test should have the delta affect all 999 features
     let affected = [];
     for (let i = 1; i < 1000; i++) affected.push(String(i));

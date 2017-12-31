@@ -32,27 +32,6 @@ test('Reset Database', (t) => {
 
 });
 
-if (!process.env.DEBUG) {
-    test('Compile & Run', (t) => {
-        exec(`
-            pkill hecate || true
-
-            cargo build
-        `, (err, stdout, stderr) => {
-            t.error(err, 'no errors');
-            t.end();
-        });
-    });
-
-    test('Start Server', (t) => {
-        exec('cargo run');
-        exec('sleep 2', (err, stdout, stderr) => {
-            t.error(err, 'no errors');
-            t.end();
-        });
-    });
-}
-
 test('feature#create', (t) => {
     t.test('feature#create - no geometry/props', (q) => {
         request.post({
