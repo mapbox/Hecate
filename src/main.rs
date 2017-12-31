@@ -44,13 +44,15 @@ pub type PostgresPooledConnection = PooledConnection<PostgresConnectionManager>;
 
 fn main() {
     let cli_cnf = load_yaml!("cli.yml");
-    let _matched = App::from_yaml(cli_cnf).get_matches();
+    let matched = App::from_yaml(cli_cnf).get_matches();
+
+    let database = matched.value_of("database").unwrap_or("postgres@localhost:5432/hecate");
+    let port = matched.value_of("port").unwrap_or("3000");
 
     env_logger::init().unwrap();
 
     //Create Postgres Connection Pool
-    let cn_str = String::from("postgres://postgres@localhost:5432/hecate");
-    let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, TlsMode::None).unwrap();
+    let manager = ::r2d2_postgres::PostgresConnectionManager::new(format!("postgres://{}", database), TlsMode::None).unwrap();
     let pool = r2d2::Pool::builder().max_size(15).build(manager).unwrap();
 
     let (logger_before, logger_after) = Logger::new(None);
@@ -94,7 +96,9 @@ fn main() {
     chain.link_before(logger_before);
     chain.link_after(logger_after);
     chain.link(persistent::Read::<DB>::both(pool));
-    Iron::new(chain).http("localhost:3000").unwrap();
+
+    println!("Started Server: localhost:{} Backend: {}", port, database);
+    Iron::new(chain).http(format!("localhost:{}", port)).unwrap();
 }
 
 fn index(_req: &mut Request) -> IronResult<Response> {

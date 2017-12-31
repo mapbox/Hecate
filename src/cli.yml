@@ -7,7 +7,14 @@ args:
         short: db
         long: database
         value_name: DATABASE
-        help: Specify an alternate database
+        help: Specify an alternate database in format USER@HOST:PORT/DATABASE
+        takes_value: true
+
+    - port:
+        short: p
+        long: port
+        value_name: PORT
+        help: Specify the port on which to run the server
         takes_value: true
 
     - init:
