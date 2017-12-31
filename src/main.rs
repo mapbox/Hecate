@@ -53,7 +53,10 @@ fn main() {
 
     //Create Postgres Connection Pool
     let manager = ::r2d2_postgres::PostgresConnectionManager::new(format!("postgres://{}", database), TlsMode::None).unwrap();
-    let pool = r2d2::Pool::builder().max_size(15).build(manager).unwrap();
+    let pool = match r2d2::Pool::builder().max_size(15).build(manager) {
+        Ok(pool) => pool,
+        Err(_) => { panic!("Failed to connect to database"); }
+    };
 
     let (logger_before, logger_after) = Logger::new(None);
 
