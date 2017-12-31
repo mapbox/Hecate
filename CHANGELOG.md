@@ -24,6 +24,9 @@
 - Relations
     - [ ] Everything...
 
+## v0.1.3
+
+- :rocket: Add CLI Options
 
 ## v0.1.2
 
