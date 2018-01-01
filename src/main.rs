@@ -21,8 +21,10 @@ use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 
 use rocket_contrib::Json as Json;
 use rocket::response::status;
+use std::io::Cursor;
 use rocket::http::Status as HTTPStatus;
 use rocket::{Request, State, Outcome};
+use rocket::response::Response;
 use rocket::request::{self, FromRequest};
 use clap::App;
 use std::path::Path;
@@ -75,18 +77,18 @@ fn main() {
         .mount("/", routes![index])
         .mount("/api", routes![
             user_create,
-            //feature_action,
+            feature_action,
             features_action,
-            //feature_get,
+            feature_get,
             features_get,
-            //xml_capabilities,
-            //xml_06capabilities,
-            //xml_user,
-            //xml_map,
-            //xml_changeset_create,
-            //xml_changeset_modify,
-            //xml_changeset_upload,
-            //xml_changeset_close
+            xml_capabilities,
+            xml_06capabilities,
+            xml_user,
+            xml_map,
+            xml_changeset_create,
+            xml_changeset_modify,
+            xml_changeset_upload,
+            xml_changeset_close
         ])
         .catch(errors![not_found])
         .launch();
@@ -187,92 +189,113 @@ fn features_action(conn: DbConn, body: String) -> Result<Json, status::Custom<St
     }
 }
 
-/*
-#[get("/0.6/map?<bbox>")]
-fn xml_map(conn: DbConn, bbox: String) -> Result<String, Status> {
-    let query: Vec<f64> = bbox[0].split(',').map(|s| s.parse().unwrap()).collect();
+#[get("/0.6/map?<map>")]
+fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
+    let query: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
 
-    let fc = match feature::get_bbox(&conn, query) {
+    let fc = match feature::get_bbox(&conn.0, query) {
         Ok(features) => features,
-        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))) }
+        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())) }
     };
 
     let xml_str = match xml::from_features(&fc) {
         Ok(xml_str) => xml_str,
-        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))) }
+        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())) }
     };
 
-    Ok(Response::with((status::Ok, xml_str)))
+    Ok(xml_str)
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(conn: DbConn, body: String) -> Result<String, Status> {
+fn xml_changeset_create(conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
     let map = match xml::to_delta(&body) {
         Ok(map) => map,
-        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+        Err(err) => { return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); }
     };
 
-    let trans = conn.transaction().unwrap();
+    let trans = conn.0.transaction().unwrap();
 
     let delta_id = match delta::open(&trans, &map, &1) {
         Ok(id) => id,
-        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+        Err(err) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); 
+        }
     };
 
     trans.commit().unwrap();
 
-    Ok(Response::with((status::Ok, delta_id.to_string())))
+    Ok(delta_id.to_string())
 }
 
 #[put("/0.6/changeset/<id>/close")]
-fn xml_changeset_close(id: i64) -> Result<String, Status> {
-    Ok(Response::with((status::Ok)))
+fn xml_changeset_close(id: i64) -> String {
+    id.to_string()
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(conn: DbConn, delta_id: i64, body: String) -> Result<String, Status> {
-    let trans = conn.transaction().unwrap();
-
-    let mut conflict_resp = Response::with((status::Conflict, format!("The changeset {} was closed at previously", &delta_id)));
-    conflict_resp.headers.append_raw("Error", (&*format!("The changeset {} was closed at previously", &delta_id)).as_bytes().to_vec());
+fn xml_changeset_modify(conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+    let trans = conn.0.transaction().unwrap();
 
     match delta::is_open(&delta_id, &trans) {
-        Err(_err) => { return Ok(conflict_resp); },
-        Ok(false) => { return Ok(conflict_resp); },
-        Ok(true) => ()
+        Ok(true) => (),
+        _ => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+
+            let mut conflict_response = Response::new();
+            conflict_response.set_status(HTTPStatus::Conflict);
+            conflict_response.set_sized_body(Cursor::new(format!("The changeset {} was closed at previously", &delta_id)));
+            conflict_response.set_raw_header("Error", format!("The changeset {} was closed at previously", &delta_id));
+            return Err(conflict_response);
+        }
     }
 
     let map = match xml::to_delta(&body) {
         Ok(map) => map,
-        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+        Err(err) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Ok(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+        }
     };
 
     let delta_id = match delta::modify_props(&delta_id, &trans, &map, &1) {
         Ok(id) => id,
-        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+        Err(err) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Ok(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+        }
     };
 
     trans.commit().unwrap();
 
-    Ok(Response::with((status::Ok, delta_id.to_string())))
+    Ok(status::Custom(HTTPStatus::Ok, delta_id.to_string()))
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(conn: DbConn, delta_id: i64, body: String) -> Result<String, Status> {
-    let trans = conn.transaction().unwrap();
-
-    let mut conflict_resp = Response::with((status::Conflict, format!("The changeset {} was closed at previously", &delta_id)));
-    conflict_resp.headers.append_raw("Error", (&*format!("The changeset {} was closed at previously", &delta_id)).as_bytes().to_vec());
+fn xml_changeset_upload(conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+    let trans = conn.0.transaction().unwrap();
 
     match delta::is_open(&delta_id, &trans) {
-        Err(_) => { return Ok(conflict_resp); },
-        Ok(false) => { return Ok(conflict_resp); },
-        Ok(true) => ()
+        Ok(true) => (),
+        _ => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+
+            let mut conflict_response = Response::new();
+            conflict_response.set_status(HTTPStatus::Conflict);
+            conflict_response.set_sized_body(Cursor::new(format!("The changeset {} was closed at previously", &delta_id)));
+            conflict_response.set_raw_header("Error", format!("The changeset {} was closed at previously", &delta_id));
+            return Err(conflict_response);
+        }
     }
 
     let (mut fc, tree) = match xml::to_features(&body) {
         Ok(fctree) => fctree,
-        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); }
+        Err(err) => { return Ok(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())); }
     };
 
     let mut ids: HashMap<i64, feature::Response> = HashMap::new();
@@ -282,7 +305,7 @@ fn xml_changeset_upload(conn: DbConn, delta_id: i64, body: String) -> Result<Str
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
-                return Ok(Response::with((status::ExpectationFailed, err.to_string())));
+                return Ok(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
             },
             Ok(feat_res) => {
                 if feat_res.old == None {
@@ -297,21 +320,33 @@ fn xml_changeset_upload(conn: DbConn, delta_id: i64, body: String) -> Result<Str
     }
 
     let diffres = match xml::to_diffresult(ids, tree) {
-        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not format diffResult XML"))); },
+        Err(_) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Ok(status::Custom(HTTPStatus::InternalServerError, String::from("Could not format diffResult XML")));
+        },
         Ok(diffres) => diffres
     };
 
     match delta::modify(&delta_id, &trans, &fc, &1) {
         Ok (_) => (),
-        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); }
+        Err(_) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Ok(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
+        }
     }
 
     match delta::finalize(&delta_id, &trans) {
         Ok (_) => {
             trans.commit().unwrap();
-            Ok(Response::with((status::Ok, diffres)))
+            Ok(status::Custom(HTTPStatus::Ok, diffres))
         },
-        Err(_) => Ok(Response::with((status::InternalServerError, "Could not close delta")))
+        Err(_) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            Ok(status::Custom(HTTPStatus::InternalServerError, String::from("Could not close delta")))
+        }
     }
 }
 
@@ -363,25 +398,35 @@ fn xml_user() -> String {
     ")
 }
 
-#[post("/data/feature", format="application/json", data="<feature>")]
-fn feature_action(conn: DbConn, feature: String) -> Result<Json, Status> {
-    let mut feat = match get_geojson(feature) {
-        Ok(GeoJson::Feature(feat)) => feat,
-        Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
-        Err(err) => { return Ok(err); }
+#[post("/data/feature", format="application/json", data="<body>")]
+fn feature_action(conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+    let mut feat = match body.parse::<GeoJson>() {
+        Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
+        Ok(geo) => match geo {
+            GeoJson::Feature(feat) => feat,
+            _ => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); }
+        }
     };
 
-    let trans = conn.transaction().unwrap();
+    let trans = conn.0.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
     let delta_id = match delta::open(&trans, &map, &1) {
         Ok(id) => id,
-        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); }
+        Err(_) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
+        }
     };
 
     match feature::create(&trans, &feat, &None) {
         Ok(res) => { feat.id = Some(json!(res.new)) },
-        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); }
+        Err(err) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
+        }
     }
 
     let fc = geojson::FeatureCollection {
@@ -391,23 +436,28 @@ fn feature_action(conn: DbConn, feature: String) -> Result<Json, Status> {
     };
 
     if delta::modify(&delta_id, &trans, &fc, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
+        trans.set_rollback();
+        trans.finish().unwrap();
+        return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
     }
 
     match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
             trans.commit().unwrap();
-            Ok(Response::with((status::Ok, "true")))
+            Ok(Json(json!(true)))
         },
-        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+        Err(err) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
+        }
     }
 }
 
 #[get("/data/feature/<id>")]
-fn feature_get(conn: DbConn, id: &i64) -> Result<String, Status> {
-    match feature::get(&conn, &id) {
+fn feature_get(conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
+    match feature::get(&conn.0, &id) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
-        Err(err) => Err(Status::BadRequest(Some(err.to_string()))
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
-*/
