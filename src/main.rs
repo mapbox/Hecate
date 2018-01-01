@@ -68,7 +68,6 @@ fn main() {
     let matched = App::from_yaml(cli_cnf).get_matches();
 
     let database = matched.value_of("database").unwrap_or("postgres@localhost:5432/hecate");
-    let port = matched.value_of("port").unwrap_or("3000");
 
     env_logger::init().unwrap();
 
