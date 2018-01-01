@@ -37,7 +37,7 @@ test('features', (t) => {
         q.test('features - basic create - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/features',
+                url: 'http://localhost:8000/api/data/features',
                 body: JSON.stringify({
                     type: 'FeatureCollection',
                     features: [{
@@ -114,7 +114,7 @@ test('features', (t) => {
         q.test('features - basic modify - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/features',
+                url: 'http://localhost:8000/api/data/features',
                 body: JSON.stringify({
                     type: 'FeatureCollection',
                     features: [{
@@ -199,7 +199,7 @@ test('features', (t) => {
         q.test('features - basic delete - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/features',
+                url: 'http://localhost:8000/api/data/features',
                 body: JSON.stringify({
                     type: 'FeatureCollection',
                     features: [{

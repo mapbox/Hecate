@@ -40,7 +40,7 @@ test('address', (q) => {
     q.test('features - basic create - endpoint', (r) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/features',
+            url: 'http://localhost:8000/api/data/features',
             body: JSON.stringify(require('./fixtures/us_dc_pts.json'))
         }, (err, res) => {
             r.error(err, 'no errors');
@@ -91,7 +91,7 @@ test('address', (q) => {
         let id = 0;
         request.post({
             headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/features',
+            url: 'http://localhost:8000/api/data/features',
             body: JSON.stringify({
                 type: 'FeatureCollection',
                 features: require('./fixtures/us_dc_pts.json').features.map((feat) => {
@@ -149,7 +149,7 @@ test('address', (q) => {
         let id = 0;
         request.post({
             headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/features',
+            url: 'http://localhost:8000/api/data/features',
             body: JSON.stringify({
                 type: 'FeatureCollection',
                 features: require('./fixtures/us_dc_pts.json').features.map((feat) => {

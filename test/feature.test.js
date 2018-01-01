@@ -36,7 +36,7 @@ test('feature#create', (t) => {
     t.test('feature#create - no geometry/props', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/feature',
+            url: 'http://localhost:8000/api/data/feature',
             body: JSON.stringify({
                 type: 'Feature'
             })
@@ -52,7 +52,7 @@ test('feature#create', (t) => {
     t.test('feature#create - no geometry', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/feature',
+            url: 'http://localhost:8000/api/data/feature',
             body: JSON.stringify({
                 type: 'Feature',
                 properties: {
@@ -71,7 +71,7 @@ test('feature#create', (t) => {
     t.test('feature#create - no props', (q) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/feature',
+            url: 'http://localhost:8000/api/data/feature',
             body: JSON.stringify({
                 type: 'Feature',
                 geometry: {
@@ -92,7 +92,7 @@ test('feature#create', (t) => {
         q.test('feature#create - Point - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     type: 'Feature',
                     properties: {
@@ -131,7 +131,7 @@ test('feature#create', (t) => {
         q.test('feature#create - MultiPoint - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     type: 'Feature',
                     properties: {
@@ -170,7 +170,7 @@ test('feature#create', (t) => {
         q.test('feature#create - LineString - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     type: 'Feature',
                     properties: {
@@ -209,7 +209,7 @@ test('feature#create', (t) => {
         q.test('feature#create - MultiLineString - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     type: 'Feature',
                     properties: {
@@ -252,7 +252,7 @@ test('feature#patch', (t) => {
         q.test('feature#patch - Point - endpoint', (r) => {
             request.patch({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 1,
                     version: 1,
@@ -293,7 +293,7 @@ test('feature#patch', (t) => {
         q.test('feature#patch - MultiPoint - endpoint', (r) => {
             request.patch({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 2,
                     version: 1,
@@ -334,7 +334,7 @@ test('feature#patch', (t) => {
         q.test('feature#patch - Linestring - endpoint', (r) => {
             request.patch({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 3,
                     version: 1,
@@ -375,7 +375,7 @@ test('feature#patch', (t) => {
         q.test('feature#patch - MultiLineString - endpoint', (r) => {
             request.patch({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 4,
                     version: 1,
@@ -419,7 +419,7 @@ test('feature#delete', (t) => {
     t.test('feature#delete - version mismatch', (q) => {
         request.delete({
             headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:3000/api/data/feature',
+            url: 'http://localhost:8000/api/data/feature',
             body: JSON.stringify({
                 id: 1,
                 type: 'Feature',
@@ -440,7 +440,7 @@ test('feature#delete', (t) => {
         q.test('feature#delete - Point - endpoint', (r) => {
             request.delete({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 1,
                     type: 'Feature',
@@ -470,7 +470,7 @@ test('feature#delete', (t) => {
         q.test('feature#delete - MultiPoint - endpoint', (r) => {
             request.delete({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 2,
                     type: 'Feature',
@@ -499,7 +499,7 @@ test('feature#delete', (t) => {
         q.test('feature#delete - LineString - endpoint', (r) => {
             request.delete({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 3,
                     type: 'Feature',
@@ -528,7 +528,7 @@ test('feature#delete', (t) => {
         q.test('feature#delete - MultiLineString - endpoint', (r) => {
             request.delete({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:3000/api/data/feature',
+                url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 4,
                     type: 'Feature',
