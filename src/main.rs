@@ -20,7 +20,6 @@ use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 
 use rocket_contrib::Json as Json;
-use rocket_contrib::Value as JsonValue;
 use rocket::response::status;
 use rocket::http::Status as HTTPStatus;
 use rocket::{Request, State, Outcome};
@@ -133,12 +132,14 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::BadRequest<Str
     }
 }
 
-#[post("/data/features", data="<feature>")]
-fn features_action(conn: DbConn, feature: String) -> Result<Json, status::BadRequest<String>> {
-    let mut fc = match get_geojson(feature) {
-        Ok(GeoJson::FeatureCollection(fc)) => fc,
-        Ok(_) => { return Err(status::BadRequest("Body must be valid GeoJSON FeatureCollection")); }
-        Err(err) => { return Ok(err); }
+#[post("/data/features", data="<body>")]
+fn features_action(conn: DbConn, body: String) -> Result<Json, HTTPStatus> {
+    let fc = match body.parse::<GeoJson>() {
+        Err(_) => { return Err(HTTPStatus::new(400, "Body must be valid GeoJSON Feature")); },
+        Ok(geo) => match geo {
+            GeoJson::FeatureCollection(fc) => fc,
+            _ => { return Err(HTTPStatus::new(400, "Body must be valid GeoJSON FeatureCollection")); }
+        }
     };
 
     let trans = conn.0.transaction().unwrap();
@@ -146,7 +147,10 @@ fn features_action(conn: DbConn, feature: String) -> Result<Json, status::BadReq
     let map: HashMap<String, Option<String>> = HashMap::new();
     let delta_id = match delta::open(&trans, &map, &1) {
         Ok(id) => id,
-        Err(_) => { return Ok(((status::InternalServerError, "Could not create delta"))); }
+        Err(_) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Err(HTTPStatus::new(500, "Could not create delta")); }
     };
 
     for feat in &mut fc.features {
@@ -154,7 +158,7 @@ fn features_action(conn: DbConn, feature: String) -> Result<Json, status::BadReq
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
-                return Ok(Response::with((status::ExpectationFailed, err.to_string())));
+                return Err(HTTPStatus::new(417, &err.to_string()));
             },
             Ok(res) => {
                 if res.old == None {
@@ -165,15 +169,21 @@ fn features_action(conn: DbConn, feature: String) -> Result<Json, status::BadReq
     }
 
     if delta::modify(&delta_id, &trans, &fc, &1).is_err() {
-        return Ok(Response::with((status::InternalServerError, "Could not create delta")));
+        trans.set_rollback();
+        trans.finish().unwrap();
+        return Err(HTTPStatus::new(500, "Could not create delta"));
     }
 
     match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
             trans.commit().unwrap();
-            Ok(Response::with((status::Ok, "true")))
+            Ok(Json(json!(true)))
         },
-        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
+        Err(err) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            Err(HTTPStatus::new(500, err.to_string()))
+        }
     }
 }
 
@@ -400,12 +410,4 @@ fn feature_get(conn: DbConn, id: &i64) -> Result<String, Status> {
         Err(err) => Err(Status::BadRequest(Some(err.to_string()))
     }
 }
-
-fn get_geojson(body: String) -> Result<geojson::GeoJson, Status> {
-    match body.parse::<GeoJson>() {
-        Err(_) => Status::BadRequest(Some("Body must be valid GeoJSON Feature")),
-        Ok(geo) => Ok(geo)
-    }
-}
 */
-
