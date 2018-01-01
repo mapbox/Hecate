@@ -1,8 +1,12 @@
 #![feature(plugin)]
+#![feature(custom_derive)]
+#![feature(custom_attribute)]
+#![feature(attr_literals)]
 #![plugin(rocket_codegen)]
 
 extern crate hecate;
 extern crate rocket;
+extern crate rocket_contrib;
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
 extern crate geojson;
@@ -15,11 +19,12 @@ extern crate env_logger;
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 
-pub struct DB;
-impl Key for DB { type Value = PostgresPool; }
-
-use rocket_contrib::{Json, JsonValue};
-use rocket::http::Status;
+use rocket_contrib::Json as Json;
+use rocket_contrib::Value as JsonValue;
+use rocket::response::status;
+use rocket::http::Status as HTTPStatus;
+use rocket::{Request, State, Outcome};
+use rocket::request::{self, FromRequest};
 use clap::App;
 use std::path::Path;
 use std::io::Read;
@@ -33,7 +38,7 @@ use hecate::xml;
 pub type PostgresPool = Pool<PostgresConnectionManager>;
 pub type PostgresPooledConnection = PooledConnection<PostgresConnectionManager>;
 
-fn init_pool(database: &str) -> Pool {
+fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionManager> {
     //Create Postgres Connection Pool
     let manager = ::r2d2_postgres::PostgresConnectionManager::new(format!("postgres://{}", database), TlsMode::None).unwrap();
     match r2d2::Pool::builder().max_size(15).build(manager) {
@@ -45,14 +50,14 @@ fn init_pool(database: &str) -> Pool {
 /// Attempts to retrieve a single connection from the managed database pool. If
 /// no pool is currently managed, fails with an `InternalServerError` status. If
 /// no connections are available, fails with a `ServiceUnavailable` status.
-pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<SqliteConnection>>);
+pub struct DbConn(pub r2d2::PooledConnection<PostgresConnectionManager>);
 impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
     type Error = ();
     fn from_request(request: &'a Request<'r>) -> request::Outcome<DbConn, ()> {
-        let pool = request.guard::<State<Pool>>()?;
+        let pool = request.guard::<State<PostgresPool>>()?;
         match pool.get() {
             Ok(conn) => Outcome::Success(DbConn(conn)),
-            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ()))
+            Err(_) => Outcome::Failure((HTTPStatus::ServiceUnavailable, ()))
         }
     }
 }
@@ -66,118 +71,82 @@ fn main() {
 
     env_logger::init().unwrap();
 
-    println!("Started Server: localhost:{} Backend: {}", port, database);
-
     rocket::ignite()
         .manage(init_pool(&database))
         .mount("/", routes![index])
         .mount("/api", routes![
             user_create,
-            feature_create,
-            feature_modify,
-            feature_delete,
+            //feature_action,
             features_action,
-            feature_get,
+            //feature_get,
             features_get,
-            xml_capabilities,
-            xml_06capabilities,
-            xml_user,
-            xml_map,
-            xml_changeset_create,
-            xml_changeset_modify,
-            xml_changeset_upload,
-            xml_changeset_close
+            //xml_capabilities,
+            //xml_06capabilities,
+            //xml_user,
+            //xml_map,
+            //xml_changeset_create,
+            //xml_changeset_modify,
+            //xml_changeset_upload,
+            //xml_changeset_close
         ])
-        .catch(catchers![not_found])
-        .manage(Mutex::new(HashMap::<ID, String>::new()))
+        .catch(errors![not_found])
         .launch();
 }
 
 #[get("/")]
-fn index(_req: &mut Request) -> &'static str {
+fn index() -> &'static str {
     "Hello World!"
 }
 
-#[catch(404)]
-fn not_found() -> JsonValue {
-    json!({
+#[error(404)]
+fn not_found() -> Json {
+    Json(json!({
         "status": "error",
         "reason": "Resource was not found."
-    })
+    }))
 }
 
-#[get("/user/create")]
-fn user_create(conn: DbConn) -> Result<Json, Status> {
-    let username: String = String::new();
-    let password: String = String::new();
-    let email: String = String::new();
-
-    let queries = match req.get_ref::<UrlEncodedQuery>() {
-        Ok(queries) => {
-            let username = String::from(match queries.get("username") {
-                Some(ref username) => &*username[0],
-                None => { return Ok(Response::with((status::BadRequest, "username required"))); }
-            });
-
-            let password = String::from(match queries.get("password") {
-                Some(ref password) => &*password[0],
-                None => { return Ok(Response::with((status::BadRequest, "password required"))); }
-            });
-
-            let email = String::from(match queries.get("email") {
-                Some(ref email) => &*email[0],
-                None => { return Ok(Response::with((status::BadRequest, "email required"))); }
-            });
-        },
-        Err(_) => { return Ok(Response::with((status::BadRequest, "Could not parse parameters"))); }
-    };
-
-    user::create(&conn, &username, &password, &email);
-
-    Ok(Response::with((status::Ok, "User Created")))
+#[derive(FromForm)]
+struct User {
+    username: String,
+    password: String,
+    email: String
 }
 
-#[get("/data/features")]
-fn features_get(conn: DbConn) -> Json {
-    let bbox_error = Response::with((status::BadRequest, "single bbox query param required"));
+#[derive(FromForm)]
+struct Map {
+    bbox: String
+}
 
-    let query = match req.get_ref::<UrlEncodedQuery>() {
-        Ok(hashmap) => {
-            match hashmap.get("bbox") {
-                Some(bbox) => {
-                    if bbox.len() != 1 { return Ok(bbox_error); }
+#[get("/user/create?<user>")]
+fn user_create(conn: DbConn, user: User) -> Result<Json, status::BadRequest<String>> {
+    user::create(&conn.0, &user.username, &user.password, &user.email);
+    Ok(Json(json!(true)))
+}
 
-                    let split: Vec<f64> = bbox[0].split(',').map(|s| s.parse().unwrap()).collect();
-
-                    split
-                },
-                None => { return Ok(bbox_error); }
-            }
-        },
-        Err(_) => { return Ok(bbox_error); }
-    };
-
-    match feature::get_bbox(&conn, query) {
-        Ok(features) => Ok(Response::with((status::Ok, geojson::GeoJson::from(features).to_string()))),
-        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+#[get("/data/features?<map>")]
+fn features_get(conn: DbConn, map: Map) -> Result<String, status::BadRequest<String>> {
+    let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
+    match feature::get_bbox(&conn.0, bbox) {
+        Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
+        Err(err) => Err(status::BadRequest(Some(err.to_string())))
     }
 }
 
-
-#[get("/data/features", data="<feature>")]
-fn features_action(conn: DbConn, feature: String) -> Result<Json, Status> {
+#[post("/data/features", data="<feature>")]
+fn features_action(conn: DbConn, feature: String) -> Result<Json, status::BadRequest<String>> {
     let mut fc = match get_geojson(feature) {
         Ok(GeoJson::FeatureCollection(fc)) => fc,
-        Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON FeatureCollection"))); }
+        Ok(_) => { return Err(status::BadRequest("Body must be valid GeoJSON FeatureCollection")); }
         Err(err) => { return Ok(err); }
     };
 
-    let trans = conn.transaction().unwrap();
+    let trans = conn.0.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
     let delta_id = match delta::open(&trans, &map, &1) {
         Ok(id) => id,
-        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); }
+        Err(_) => { return Ok(((status::InternalServerError, "Could not create delta"))); }
     };
 
     for feat in &mut fc.features {
@@ -208,6 +177,7 @@ fn features_action(conn: DbConn, feature: String) -> Result<Json, Status> {
     }
 }
 
+/*
 #[get("/0.6/map?<bbox>")]
 fn xml_map(conn: DbConn, bbox: String) -> Result<String, Status> {
     let query: Vec<f64> = bbox[0].split(',').map(|s| s.parse().unwrap()).collect();
@@ -384,7 +354,7 @@ fn xml_user() -> String {
 }
 
 #[post("/data/feature", format="application/json", data="<feature>")]
-fn feature_create(conn: DbConn, feature: String) -> Result<Json, Status> {
+fn feature_action(conn: DbConn, feature: String) -> Result<Json, Status> {
     let mut feat = match get_geojson(feature) {
         Ok(GeoJson::Feature(feat)) => feat,
         Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
@@ -423,91 +393,19 @@ fn feature_create(conn: DbConn, feature: String) -> Result<Json, Status> {
     }
 }
 
-#[patch("/data/feature", format="application/json", data="<feature>")]
-fn feature_modify(conn: DbConn, feature: String) -> Result<Json, Status> {
-    let feat = match get_geojson(feature) {
-        Ok(GeoJson::Feature(feat)) => feat,
-        Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
-        Err(err) => { return Ok(err); }
-    };
-
-    let fc = geojson::FeatureCollection {
-        bbox: None,
-        features: vec![ feat.clone() ],
-        foreign_members: None,
-    };
-
-    let trans = conn.transaction().unwrap();
-
-    let map: HashMap<String, Option<String>> = HashMap::new();
-
-    let delta_id = match delta::create(&trans, &fc, &map, &1) {
-        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); },
-        Ok(id) => id
-    };
-
-    match feature::modify(&trans, &feat, &None) {
-        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); },
-        _ => ()
-    }
-
-    match delta::finalize(&delta_id, &trans) {
-        Ok(_) => {
-            trans.commit().unwrap();
-            Ok(Response::with((status::Ok, "true")))
-        },
-        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
-    }
-}
-
 #[get("/data/feature/<id>")]
-fn feature_get(conn: DbConn, id: &i64) -> Result<Json, Status> {
+fn feature_get(conn: DbConn, id: &i64) -> Result<String, Status> {
     match feature::get(&conn, &id) {
-        Ok(features) => Ok(Response::with((status::Ok, geojson::GeoJson::from(features).to_string()))),
-        Err(err) => Ok(Response::with((status::ExpectationFailed, err.to_string())))
+        Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
+        Err(err) => Err(Status::BadRequest(Some(err.to_string()))
     }
 }
 
-#[delete("/data/feature", format="application/json", data="<feature>")]
-fn feature_delete(conn: DbConn, feature: String) -> Result<Json, Status> {
-    let feat = match get_geojson(feature) {
-        Ok(GeoJson::Feature(feat)) => feat,
-        Ok(_) => { return Ok(Response::with((status::UnsupportedMediaType, "Body must be valid GeoJSON Feature"))); }
-        Err(err) => { return Ok(err); }
-    };
-
-    let fc = geojson::FeatureCollection {
-        bbox: None,
-        features: vec![ feat.clone() ],
-        foreign_members: None,
-    };
-
-    let trans = conn.transaction().unwrap();
-
-    let map: HashMap<String, Option<String>> = HashMap::new();
-
-    let delta_id = match delta::create(&trans, &fc, &map, &1) {
-        Err(_) => { return Ok(Response::with((status::InternalServerError, "Could not create delta"))); },
-        Ok(id) => id
-    };
-
-    match feature::delete(&trans, &feat) {
-        Err(err) => { return Ok(Response::with((status::ExpectationFailed, err.to_string()))); },
-        _ => ()
-    }
-
-    match delta::finalize(&delta_id, &trans) {
-        Ok(_) => {
-            trans.commit().unwrap();
-            Ok(Response::with((status::Ok, "true")))
-        },
-        Err(err) => { return Ok(Response::with((status::InternalServerError, err.to_string()))); }
-    }
-}
-
-fn get_geojson(body_str: String) -> Result<geojson::GeoJson, Status> {
-    match body_str.parse::<GeoJson>() {
-        Err(_) => Err(status::BadRequest(Some("Body must be valid GeoJSON Feature"))),
+fn get_geojson(body: String) -> Result<geojson::GeoJson, Status> {
+    match body.parse::<GeoJson>() {
+        Err(_) => Status::BadRequest(Some("Body must be valid GeoJSON Feature")),
         Ok(geo) => Ok(geo)
     }
 }
+*/
+
