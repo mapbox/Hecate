@@ -118,27 +118,27 @@ struct Map {
 }
 
 #[get("/user/create?<user>")]
-fn user_create(conn: DbConn, user: User) -> Result<Json, status::BadRequest<String>> {
+fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>> {
     user::create(&conn.0, &user.username, &user.password, &user.email);
     Ok(Json(json!(true)))
 }
 
 #[get("/data/features?<map>")]
-fn features_get(conn: DbConn, map: Map) -> Result<String, status::BadRequest<String>> {
+fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
     match feature::get_bbox(&conn.0, bbox) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
-        Err(err) => Err(status::BadRequest(Some(err.to_string())))
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
 
 #[post("/data/features", data="<body>")]
-fn features_action(conn: DbConn, body: String) -> Result<Json, HTTPStatus> {
-    let fc = match body.parse::<GeoJson>() {
-        Err(_) => { return Err(HTTPStatus::new(400, "Body must be valid GeoJSON Feature")); },
+fn features_action(conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+    let mut fc = match body.parse::<GeoJson>() {
+        Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
         Ok(geo) => match geo {
             GeoJson::FeatureCollection(fc) => fc,
-            _ => { return Err(HTTPStatus::new(400, "Body must be valid GeoJSON FeatureCollection")); }
+            _ => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON FeatureCollection"))); }
         }
     };
 
@@ -150,7 +150,7 @@ fn features_action(conn: DbConn, body: String) -> Result<Json, HTTPStatus> {
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(HTTPStatus::new(500, "Could not create delta")); }
+            return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta"))); }
     };
 
     for feat in &mut fc.features {
@@ -158,7 +158,7 @@ fn features_action(conn: DbConn, body: String) -> Result<Json, HTTPStatus> {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
-                return Err(HTTPStatus::new(417, &err.to_string()));
+                return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
             },
             Ok(res) => {
                 if res.old == None {
@@ -171,7 +171,7 @@ fn features_action(conn: DbConn, body: String) -> Result<Json, HTTPStatus> {
     if delta::modify(&delta_id, &trans, &fc, &1).is_err() {
         trans.set_rollback();
         trans.finish().unwrap();
-        return Err(HTTPStatus::new(500, "Could not create delta"));
+        return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
     }
 
     match delta::finalize(&delta_id, &trans) {
@@ -182,7 +182,7 @@ fn features_action(conn: DbConn, body: String) -> Result<Json, HTTPStatus> {
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            Err(HTTPStatus::new(500, err.to_string()))
+            Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
         }
     }
 }

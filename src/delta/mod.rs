@@ -15,11 +15,11 @@ pub enum DeltaError {
 }
 
 impl DeltaError {
-    pub fn to_string(&self) -> &str {
+    pub fn to_string(&self) -> String {
         match *self {
-            DeltaError::CreationFail => { "Delta Creation Failure" },
-            DeltaError::FinalizeFail => { "Finalization Failure" },
-            DeltaError::NotFound => { "Delta not found" }
+            DeltaError::CreationFail => { String::from("Delta Creation Failure") },
+            DeltaError::FinalizeFail => { String::from("Finalization Failure") },
+            DeltaError::NotFound => { String::from("Delta not found") }
         }
     }
 }
