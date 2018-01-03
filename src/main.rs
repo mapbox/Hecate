@@ -27,8 +27,6 @@ use rocket::{Request, State, Outcome};
 use rocket::response::Response;
 use rocket::request::{self, FromRequest};
 use clap::App;
-use std::path::Path;
-use std::io::Read;
 use std::collections::HashMap;
 use geojson::GeoJson;
 use hecate::feature;
@@ -48,9 +46,6 @@ fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionMana
     }
 }
 
-/// Attempts to retrieve a single connection from the managed database pool. If
-/// no pool is currently managed, fails with an `InternalServerError` status. If
-/// no connections are available, fails with a `ServiceUnavailable` status.
 pub struct DbConn(pub r2d2::PooledConnection<PostgresConnectionManager>);
 impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
     type Error = ();
