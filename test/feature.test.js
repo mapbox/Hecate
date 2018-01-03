@@ -95,6 +95,7 @@ test('feature#create', (t) => {
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     type: 'Feature',
+                    action: 'create',
                     properties: {
                         number: '123'
                     },
@@ -134,6 +135,7 @@ test('feature#create', (t) => {
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     type: 'Feature',
+                    action: 'create',
                     properties: {
                         number: '123'
                     },
@@ -173,6 +175,7 @@ test('feature#create', (t) => {
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     type: 'Feature',
+                    action: 'create',
                     properties: {
                         building: true
                     },
@@ -212,6 +215,7 @@ test('feature#create', (t) => {
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     type: 'Feature',
+                    action: 'create',
                     properties: {
                         building: true
                     },
@@ -247,15 +251,16 @@ test('feature#create', (t) => {
     t.end();
 });
 
-test('feature#patch', (t) => {
-    t.test('feature#patch - Point', (q) => {
-        q.test('feature#patch - Point - endpoint', (r) => {
-            request.patch({
+test('feature#modify', (t) => {
+    t.test('feature#modify - Point', (q) => {
+        q.test('feature#modify - Point - endpoint', (r) => {
+            request.post({
                 headers: { 'content-type' : 'application/json' },
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 1,
                     version: 1,
+                    action: 'modify',
                     type: 'Feature',
                     properties: {
                         number: '321'
@@ -273,7 +278,7 @@ test('feature#patch', (t) => {
             });
         });
 
-        q.test('feature#patch - Point - database', (r) => {
+        q.test('feature#modify - Point - database', (r) => {
             pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 1;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
@@ -289,14 +294,15 @@ test('feature#patch', (t) => {
         q.end();
     });
 
-    t.test('feature#patch - MultiPoint', (q) => {
-        q.test('feature#patch - MultiPoint - endpoint', (r) => {
-            request.patch({
+    t.test('feature#modify - MultiPoint', (q) => {
+        q.test('feature#modify - MultiPoint - endpoint', (r) => {
+            request.post({
                 headers: { 'content-type' : 'application/json' },
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 2,
                     version: 1,
+                    action: 'modify',
                     type: 'Feature',
                     properties: {
                         number: '321'
@@ -314,7 +320,7 @@ test('feature#patch', (t) => {
             });
         });
 
-        q.test('feature#patch - MultiPoint - database', (r) => {
+        q.test('feature#modify - MultiPoint - database', (r) => {
             pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 2;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
@@ -330,14 +336,15 @@ test('feature#patch', (t) => {
         q.end();
     });
 
-    t.test('feature#patch - LineString', (q) => {
-        q.test('feature#patch - Linestring - endpoint', (r) => {
-            request.patch({
+    t.test('feature#modify - LineString', (q) => {
+        q.test('feature#modify - Linestring - endpoint', (r) => {
+            request.post({
                 headers: { 'content-type' : 'application/json' },
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 3,
                     version: 1,
+                    action: 'modify',
                     type: 'Feature',
                     properties: {
                         building: false
@@ -355,7 +362,7 @@ test('feature#patch', (t) => {
             });
         });
 
-        q.test('feature#patch - LineString - database', (r) => {
+        q.test('feature#modify - LineString - database', (r) => {
             pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 3;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
@@ -371,14 +378,15 @@ test('feature#patch', (t) => {
         q.end();
     });
 
-    t.test('feature#patch - MultiLineString', (q) => {
-        q.test('feature#patch - MultiLineString - endpoint', (r) => {
-            request.patch({
+    t.test('feature#modify - MultiLineString', (q) => {
+        q.test('feature#modify - MultiLineString - endpoint', (r) => {
+            request.post({
                 headers: { 'content-type' : 'application/json' },
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 4,
                     version: 1,
+                    action: 'modify',
                     type: 'Feature',
                     properties: {
                         building: false
@@ -396,7 +404,7 @@ test('feature#patch', (t) => {
             });
         });
 
-        q.test('feature#patch - LineString - database', (r) => {
+        q.test('feature#modify - LineString - database', (r) => {
             pool.query('SELECT id, version, ST_AsGeoJSON(geom) AS geom, props, deltas FROM geo WHERE id = 4;', (err, res) => {
                 r.error(err, 'no errors');
                 r.deepEquals(res.rows[0], {
@@ -417,12 +425,13 @@ test('feature#patch', (t) => {
 
 test('feature#delete', (t) => {
     t.test('feature#delete - version mismatch', (q) => {
-        request.delete({
+        request.post({
             headers: { 'content-type' : 'application/json' },
             url: 'http://localhost:8000/api/data/feature',
             body: JSON.stringify({
                 id: 1,
                 type: 'Feature',
+                action: 'delete',
                 version: 1,
                 properties: null,
                 geometry: null
@@ -438,12 +447,13 @@ test('feature#delete', (t) => {
 
     t.test('feature#delete - Point', (q) => {
         q.test('feature#delete - Point - endpoint', (r) => {
-            request.delete({
+            request.post({
                 headers: { 'content-type' : 'application/json' },
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 1,
                     type: 'Feature',
+                    action: 'delete',
                     version: 2,
                     properties: null,
                     geometry: null
@@ -468,12 +478,13 @@ test('feature#delete', (t) => {
 
     t.test('feature#delete - MultiPoint', (q) => {
         q.test('feature#delete - MultiPoint - endpoint', (r) => {
-            request.delete({
+            request.post({
                 headers: { 'content-type' : 'application/json' },
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 2,
                     type: 'Feature',
+                    action: 'delete',
                     version: 2,
                     properties: null,
                     geometry: null
@@ -497,12 +508,13 @@ test('feature#delete', (t) => {
 
     t.test('feature#delete - LineString', (q) => {
         q.test('feature#delete - LineString - endpoint', (r) => {
-            request.delete({
+            request.post({
                 headers: { 'content-type' : 'application/json' },
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 3,
                     type: 'Feature',
+                    action: 'delete',
                     version: 2,
                     properties: null,
                     geometry: null
@@ -526,12 +538,13 @@ test('feature#delete', (t) => {
 
     t.test('feature#delete - MultiLineString', (q) => {
         q.test('feature#delete - MultiLineString - endpoint', (r) => {
-            request.delete({
+            request.post({
                 headers: { 'content-type' : 'application/json' },
                 url: 'http://localhost:8000/api/data/feature',
                 body: JSON.stringify({
                     id: 4,
                     type: 'Feature',
+                    action: 'delete',
                     version: 2,
                     properties: null,
                     geometry: null
