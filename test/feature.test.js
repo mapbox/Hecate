@@ -43,7 +43,7 @@ test('feature#create', (t) => {
         }, (err, res) => {
             t.error(err, 'no errors');
 
-            q.equals(res.statusCode, 415);
+            q.equals(res.statusCode, 400);
             q.equals(res.body, 'Body must be valid GeoJSON Feature');
             q.end();
         });
@@ -62,7 +62,7 @@ test('feature#create', (t) => {
         }, (err, res) => {
             t.error(err, 'no errors');
 
-            q.equals(res.statusCode, 415);
+            q.equals(res.statusCode, 400);
             q.equals(res.body, 'Body must be valid GeoJSON Feature');
             q.end();
         });
@@ -82,7 +82,7 @@ test('feature#create', (t) => {
         }, (err, res) => {
             q.error(err, 'no errors');
 
-            q.equals(res.statusCode, 415);
+            q.equals(res.statusCode, 400);
             q.equals(res.body, 'Body must be valid GeoJSON Feature');
             q.end();
         });
