@@ -9,8 +9,3 @@ args:
         value_name: DATABASE
         help: Specify an alternate database in format USER@HOST:PORT/DATABASE
         takes_value: true
-
-    - init:
-        value_name: INIT
-        help: Initialize an empty database schema
-
