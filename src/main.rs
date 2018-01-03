@@ -414,7 +414,7 @@ fn feature_action(conn: DbConn, body: String) -> Result<Json, status::Custom<Str
         }
     };
 
-    match feature::create(&trans, &feat, &None) {
+    match feature::action(&trans, &feat, &None) {
         Ok(res) => { feat.id = Some(json!(res.new)) },
         Err(err) => {
             trans.set_rollback();
