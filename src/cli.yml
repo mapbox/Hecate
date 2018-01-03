@@ -4,7 +4,7 @@ author: Nicholas Ingalls <ingalls@protonmail.com>
 about: Data Storage Backend Focused on Speed and GeoJSON Interchange
 args:
     - database:
-        short: db
+        short: d
         long: database
         value_name: DATABASE
         help: Specify an alternate database in format USER@HOST:PORT/DATABASE

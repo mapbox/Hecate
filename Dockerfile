@@ -32,5 +32,3 @@ WORKDIR /usr/local/src/hecate
 ADD . /usr/local/src/hecate
 
 CMD cargo kcov
-
-
