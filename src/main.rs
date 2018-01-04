@@ -61,7 +61,6 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
 struct HTTPAuth(i64);
 impl<'a, 'r> FromRequest<'a, 'r> for HTTPAuth {
     type Error = ();
-
     fn from_request(request: &'a Request<'r>) -> request::Outcome<HTTPAuth, ()> {
         let keys: Vec<_> = request.headers().get("Authorization").collect();
 
@@ -104,19 +103,31 @@ fn main() {
             xml_changeset_upload,
             xml_changeset_close
         ])
-        .catch(errors![not_found])
-        .launch();
+        .catch(errors![
+           not_authorized,
+           not_found,
+        ]).launch();
 }
 
 #[get("/")]
-fn index() -> &'static str {
-    "Hello World!"
+fn index() -> &'static str { "Hello World!" }
+
+#[error(401)]
+fn not_authorized() -> status::Custom<Json> {
+    println!("I AM NOT AUTHED");
+
+    status::Custom(HTTPStatus::Unauthorized, Json(json!({
+        "code": 401,
+        "status": "Not Authorizaed",
+        "reason": "You must be logged into the access this resource"
+    })))
 }
 
 #[error(404)]
 fn not_found() -> Json {
     Json(json!({
-        "status": "error",
+        "code": 404,
+        "status": "Not Found",
         "reason": "Resource was not found."
     }))
 }
@@ -151,7 +162,7 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
 }
 
 #[post("/data/features", data="<body>")]
-fn features_action(conn: DbConn, body: String, uid: HTTPAuth) -> Result<Json, status::Custom<String>> {
+fn features_action(uid: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
     let mut fc = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
         Ok(geo) => match geo {
@@ -415,7 +426,7 @@ fn xml_user() -> String {
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(conn: DbConn, body: String, uid: HTTPAuth) -> Result<Json, status::Custom<String>> {
+fn feature_action(uid: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
     let mut feat = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
         Ok(geo) => match geo {
