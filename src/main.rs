@@ -65,10 +65,14 @@ impl<'a, 'r> FromRequest<'a, 'r> for HTTPAuth {
     fn from_request(request: &'a Request<'r>) -> request::Outcome<HTTPAuth, ()> {
         let keys: Vec<_> = request.headers().get("Authorization").collect();
 
-        if keys.len() != 1 {
-            return Outcome::Failure((HTTPStatus::Unauthorized, ()));
-        }
-        let key = keys[0];
+        if keys.len() != 1 || keys[0].len() < 7 { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
+
+        let mut authtype = String::from(keys[0]);
+        let auth = authtype.split_off(6);
+
+        if authtype != "Basic " { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
+
+        //TODO CALL user::auth
 
         return Outcome::Success(HTTPAuth(1));
     }
@@ -147,7 +151,7 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
 }
 
 #[post("/data/features", data="<body>")]
-fn features_action(conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+fn features_action(conn: DbConn, body: String, uid: HTTPAuth) -> Result<Json, status::Custom<String>> {
     let mut fc = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
         Ok(geo) => match geo {
@@ -159,7 +163,7 @@ fn features_action(conn: DbConn, body: String) -> Result<Json, status::Custom<St
     let trans = conn.0.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    let delta_id = match delta::open(&trans, &map, &1) {
+    let delta_id = match delta::open(&trans, &map, &uid.0) {
         Ok(id) => id,
         Err(_) => {
             trans.set_rollback();
@@ -182,7 +186,7 @@ fn features_action(conn: DbConn, body: String) -> Result<Json, status::Custom<St
         }
     }
 
-    if delta::modify(&delta_id, &trans, &fc, &1).is_err() {
+    if delta::modify(&delta_id, &trans, &fc, &uid.0).is_err() {
         trans.set_rollback();
         trans.finish().unwrap();
         return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
@@ -411,7 +415,7 @@ fn xml_user() -> String {
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(conn: DbConn, body: String, auth: HTTPAuth) -> Result<Json, status::Custom<String>> {
+fn feature_action(conn: DbConn, body: String, uid: HTTPAuth) -> Result<Json, status::Custom<String>> {
     let mut feat = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
         Ok(geo) => match geo {
@@ -423,7 +427,7 @@ fn feature_action(conn: DbConn, body: String, auth: HTTPAuth) -> Result<Json, st
     let trans = conn.0.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    let delta_id = match delta::open(&trans, &map, &1) {
+    let delta_id = match delta::open(&trans, &map, &uid.0) {
         Ok(id) => id,
         Err(_) => {
             trans.set_rollback();
@@ -447,7 +451,7 @@ fn feature_action(conn: DbConn, body: String, auth: HTTPAuth) -> Result<Json, st
         foreign_members: None,
     };
 
-    if delta::modify(&delta_id, &trans, &fc, &1).is_err() {
+    if delta::modify(&delta_id, &trans, &fc, &uid.0).is_err() {
         trans.set_rollback();
         trans.finish().unwrap();
         return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
