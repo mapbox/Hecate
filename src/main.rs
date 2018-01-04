@@ -115,8 +115,10 @@ struct Map {
 
 #[get("/user/create?<user>")]
 fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>> {
-    user::create(&conn.0, &user.username, &user.password, &user.email);
-    Ok(Json(json!(true)))
+    match user::create(&conn.0, &user.username, &user.password, &user.email) {
+        Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
 }
 
 #[get("/data/features?<map>")]
