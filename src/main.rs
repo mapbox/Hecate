@@ -58,6 +58,22 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
     }
 }
 
+struct HTTPAuth(i64);
+impl<'a, 'r> FromRequest<'a, 'r> for HTTPAuth {
+    type Error = ();
+
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<HTTPAuth, ()> {
+        let keys: Vec<_> = request.headers().get("Authorization").collect();
+
+        if keys.len() != 1 {
+            return Outcome::Failure((HTTPStatus::Unauthorized, ()));
+        }
+        let key = keys[0];
+
+        return Outcome::Success(HTTPAuth(1));
+    }
+}
+
 fn main() {
     let cli_cnf = load_yaml!("cli.yml");
     let matched = App::from_yaml(cli_cnf).get_matches();
@@ -216,7 +232,7 @@ fn xml_changeset_create(conn: DbConn, body: String) -> Result<String, status::Cu
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); 
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
@@ -395,7 +411,7 @@ fn xml_user() -> String {
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+fn feature_action(conn: DbConn, body: String, auth: HTTPAuth) -> Result<Json, status::Custom<String>> {
     let mut feat = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
         Ok(geo) => match geo {
