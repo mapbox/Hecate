@@ -1,6 +1,9 @@
 extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate postgres;
+extern crate bcrypt;
+
+use self::bcrypt::{hash, verify};
 
 #[derive(PartialEq, Debug)]
 pub enum UserError {
@@ -18,11 +21,14 @@ impl UserError {
 }
 
 pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String, email: &String) -> Result<bool, UserError> {
-    //TODO BCRYPT PASSWORD
+    let hashed = match hash(&password, 12) {
+        Ok(hash) => hash,
+        Err(_) => { return Err(UserError::CreateError(String::from("Failed to hash password"))); }
+    };
 
     match conn.query("
         INSERT INTO users (username, password, email, meta) VALUES ($1, $2, $3, '{}'::JSONB);
-    ", &[ &username, &password, &email ]) {
+    ", &[ &username, &hashed, &email ]) {
         Ok(_) => Ok(true),
         Err(err) => {
             match err.as_db() {
@@ -33,18 +39,18 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String) -> Result<bool, UserError> {
+pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String) -> Result<Option<i64>, UserError> {
     match conn.query("
-        SELECT password FROM users WHERE username = $1;
+        SELECT id, password FROM users WHERE username = $1;
     ", &[ &username ]) {
         Ok(res) => {
-            let stored: String = res.get(0).get(0);
+            let uid: i64 = res.get(0).get(0);
+            let stored: String = res.get(0).get(1);
 
-            if stored == *password {
-                return Ok(true);
+            match verify(&password, &stored) {
+                Ok(_) => Ok(Some(uid)),
+                Err(_) => Ok(None)
             }
-
-            return Ok(false);
         },
         Err(_) => Err(UserError::NotFound)
     }

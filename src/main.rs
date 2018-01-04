@@ -10,6 +10,7 @@ extern crate rocket_contrib;
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
 extern crate geojson;
+extern crate base64;
 extern crate postgres;
 extern crate r2d2;
 extern crate r2d2_postgres;
@@ -58,7 +59,10 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
     }
 }
 
-struct HTTPAuth(i64);
+struct HTTPAuth {
+    username: String,
+    password: String
+}
 impl<'a, 'r> FromRequest<'a, 'r> for HTTPAuth {
     type Error = ();
     fn from_request(request: &'a Request<'r>) -> request::Outcome<HTTPAuth, ()> {
@@ -71,9 +75,22 @@ impl<'a, 'r> FromRequest<'a, 'r> for HTTPAuth {
 
         if authtype != "Basic " { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
 
-        //TODO CALL user::auth
+        match base64::decode(&auth) {
+            Ok(decoded) => match String::from_utf8(decoded) {
+                Ok(decoded_str) => {
+                    let split = decoded_str.split(":").collect::<Vec<&str>>();
 
-        return Outcome::Success(HTTPAuth(1));
+                    if split.len() != 2 { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
+
+                    Outcome::Success(HTTPAuth {
+                        username: String::from(split[0]),
+                        password: String::from(split[1])
+                    })
+                },
+                Err(_) => Outcome::Failure((HTTPStatus::Unauthorized, ()))
+            },
+            Err(_) => Outcome::Failure((HTTPStatus::Unauthorized, ()))
+        }
     }
 }
 
@@ -162,7 +179,12 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
 }
 
 #[post("/data/features", data="<body>")]
-fn features_action(uid: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+fn features_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     let mut fc = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
         Ok(geo) => match geo {
@@ -174,7 +196,7 @@ fn features_action(uid: HTTPAuth, conn: DbConn, body: String) -> Result<Json, st
     let trans = conn.0.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    let delta_id = match delta::open(&trans, &map, &uid.0) {
+    let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
         Err(_) => {
             trans.set_rollback();
@@ -197,7 +219,7 @@ fn features_action(uid: HTTPAuth, conn: DbConn, body: String) -> Result<Json, st
         }
     }
 
-    if delta::modify(&delta_id, &trans, &fc, &uid.0).is_err() {
+    if delta::modify(&delta_id, &trans, &fc, &uid).is_err() {
         trans.set_rollback();
         trans.finish().unwrap();
         return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
@@ -426,7 +448,12 @@ fn xml_user() -> String {
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(uid: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+fn feature_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     let mut feat = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
         Ok(geo) => match geo {
@@ -438,7 +465,7 @@ fn feature_action(uid: HTTPAuth, conn: DbConn, body: String) -> Result<Json, sta
     let trans = conn.0.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    let delta_id = match delta::open(&trans, &map, &uid.0) {
+    let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
         Err(_) => {
             trans.set_rollback();
@@ -462,7 +489,7 @@ fn feature_action(uid: HTTPAuth, conn: DbConn, body: String) -> Result<Json, sta
         foreign_members: None,
     };
 
-    if delta::modify(&delta_id, &trans, &fc, &uid.0).is_err() {
+    if delta::modify(&delta_id, &trans, &fc, &uid).is_err() {
         trans.set_rollback();
         trans.finish().unwrap();
         return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
