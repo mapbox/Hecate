@@ -18,6 +18,8 @@ impl UserError {
 }
 
 pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String, email: &String) -> Result<bool, UserError> {
+    //TODO BCRYPT PASSWORD
+
     match conn.query("
         INSERT INTO users (username, password, email, meta) VALUES ($1, $2, $3, '{}'::JSONB);
     ", &[ &username, &password, &email ]) {
@@ -31,3 +33,19 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
+pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String) -> Result<bool, UserError> {
+    match conn.query("
+        SELECT password FROM users WHERE username = $1;
+    ", &[ &username ]) {
+        Ok(res) => {
+            let stored: String = res.get(0).get(0);
+
+            if stored == *password {
+                return Ok(true);
+            }
+
+            return Ok(false);
+        },
+        Err(_) => Err(UserError::NotFound)
+    }
+}
