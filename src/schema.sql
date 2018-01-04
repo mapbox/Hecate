@@ -4,9 +4,9 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id          BIGSERIAL,
-    username    TEXT DISTINCT,
+    username    TEXT,
     password    TEXT,
-    email       TEXT DISTINCT,
+    email       TEXT,
     meta        JSONB
 );
 
