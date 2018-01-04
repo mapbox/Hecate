@@ -1,0 +1,19 @@
+#! /bin/bash
+
+cargo build
+
+killall -9 hecate || true
+
+function startsrv() {
+    cargo run&
+
+    sleep 2
+
+    if ! curl '127.0.0.1:8000'; then
+        startsrv
+    else
+        wait
+    fi
+}
+
+startsrv
