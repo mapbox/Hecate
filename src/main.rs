@@ -10,6 +10,7 @@ extern crate rocket_contrib;
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
 extern crate geojson;
+extern crate base64;
 extern crate postgres;
 extern crate r2d2;
 extern crate r2d2_postgres;
@@ -58,6 +59,41 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
     }
 }
 
+struct HTTPAuth {
+    username: String,
+    password: String
+}
+impl<'a, 'r> FromRequest<'a, 'r> for HTTPAuth {
+    type Error = ();
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<HTTPAuth, ()> {
+        let keys: Vec<_> = request.headers().get("Authorization").collect();
+
+        if keys.len() != 1 || keys[0].len() < 7 { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
+
+        let mut authtype = String::from(keys[0]);
+        let auth = authtype.split_off(6);
+
+        if authtype != "Basic " { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
+
+        match base64::decode(&auth) {
+            Ok(decoded) => match String::from_utf8(decoded) {
+                Ok(decoded_str) => {
+                    let split = decoded_str.split(":").collect::<Vec<&str>>();
+
+                    if split.len() != 2 { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
+
+                    Outcome::Success(HTTPAuth {
+                        username: String::from(split[0]),
+                        password: String::from(split[1])
+                    })
+                },
+                Err(_) => Outcome::Failure((HTTPStatus::Unauthorized, ()))
+            },
+            Err(_) => Outcome::Failure((HTTPStatus::Unauthorized, ()))
+        }
+    }
+}
+
 fn main() {
     let cli_cnf = load_yaml!("cli.yml");
     let matched = App::from_yaml(cli_cnf).get_matches();
@@ -84,19 +120,29 @@ fn main() {
             xml_changeset_upload,
             xml_changeset_close
         ])
-        .catch(errors![not_found])
-        .launch();
+        .catch(errors![
+           not_authorized,
+           not_found,
+        ]).launch();
 }
 
 #[get("/")]
-fn index() -> &'static str {
-    "Hello World!"
+fn index() -> &'static str { "Hello World!" }
+
+#[error(401)]
+fn not_authorized() -> status::Custom<Json> {
+    status::Custom(HTTPStatus::Unauthorized, Json(json!({
+        "code": 401,
+        "status": "Not Authorized",
+        "reason": "You must be logged in to access this resource"
+    })))
 }
 
 #[error(404)]
 fn not_found() -> Json {
     Json(json!({
-        "status": "error",
+        "code": 404,
+        "status": "Not Found",
         "reason": "Resource was not found."
     }))
 }
@@ -115,8 +161,10 @@ struct Map {
 
 #[get("/user/create?<user>")]
 fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>> {
-    user::create(&conn.0, &user.username, &user.password, &user.email);
-    Ok(Json(json!(true)))
+    match user::create(&conn.0, &user.username, &user.password, &user.email) {
+        Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
 }
 
 #[get("/data/features?<map>")]
@@ -129,7 +177,12 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
 }
 
 #[post("/data/features", data="<body>")]
-fn features_action(conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+fn features_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     let mut fc = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
         Ok(geo) => match geo {
@@ -141,7 +194,7 @@ fn features_action(conn: DbConn, body: String) -> Result<Json, status::Custom<St
     let trans = conn.0.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    let delta_id = match delta::open(&trans, &map, &1) {
+    let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
         Err(_) => {
             trans.set_rollback();
@@ -164,7 +217,7 @@ fn features_action(conn: DbConn, body: String) -> Result<Json, status::Custom<St
         }
     }
 
-    if delta::modify(&delta_id, &trans, &fc, &1).is_err() {
+    if delta::modify(&delta_id, &trans, &fc, &uid).is_err() {
         trans.set_rollback();
         trans.finish().unwrap();
         return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
@@ -201,7 +254,12 @@ fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
+fn xml_changeset_create(auth: HTTPAuth, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     let map = match xml::to_delta(&body) {
         Ok(map) => map,
         Err(err) => { return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); }
@@ -209,12 +267,12 @@ fn xml_changeset_create(conn: DbConn, body: String) -> Result<String, status::Cu
 
     let trans = conn.0.transaction().unwrap();
 
-    let delta_id = match delta::open(&trans, &map, &1) {
+    let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); 
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
@@ -224,12 +282,22 @@ fn xml_changeset_create(conn: DbConn, body: String) -> Result<String, status::Cu
 }
 
 #[put("/0.6/changeset/<id>/close")]
-fn xml_changeset_close(id: i64) -> String {
-    id.to_string()
+fn xml_changeset_close(auth: HTTPAuth, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
+    match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => (),
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    Ok(id.to_string())
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+fn xml_changeset_modify(auth: HTTPAuth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     let trans = conn.0.transaction().unwrap();
 
     match delta::is_open(&delta_id, &trans) {
@@ -255,7 +323,7 @@ fn xml_changeset_modify(conn: DbConn, delta_id: i64, body: String) -> Result<sta
         }
     };
 
-    let delta_id = match delta::modify_props(&delta_id, &trans, &map, &1) {
+    let delta_id = match delta::modify_props(&delta_id, &trans, &map, &uid) {
         Ok(id) => id,
         Err(err) => {
             trans.set_rollback();
@@ -270,7 +338,12 @@ fn xml_changeset_modify(conn: DbConn, delta_id: i64, body: String) -> Result<sta
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+fn xml_changeset_upload(auth: HTTPAuth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     let trans = conn.0.transaction().unwrap();
 
     match delta::is_open(&delta_id, &trans) {
@@ -322,7 +395,7 @@ fn xml_changeset_upload(conn: DbConn, delta_id: i64, body: String) -> Result<sta
         Ok(diffres) => diffres
     };
 
-    match delta::modify(&delta_id, &trans, &fc, &1) {
+    match delta::modify(&delta_id, &trans, &fc, &uid) {
         Ok (_) => (),
         Err(_) => {
             trans.set_rollback();
@@ -393,7 +466,12 @@ fn xml_user() -> String {
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+fn feature_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     let mut feat = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
         Ok(geo) => match geo {
@@ -405,7 +483,7 @@ fn feature_action(conn: DbConn, body: String) -> Result<Json, status::Custom<Str
     let trans = conn.0.transaction().unwrap();
 
     let map: HashMap<String, Option<String>> = HashMap::new();
-    let delta_id = match delta::open(&trans, &map, &1) {
+    let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
         Err(_) => {
             trans.set_rollback();
@@ -429,7 +507,7 @@ fn feature_action(conn: DbConn, body: String) -> Result<Json, status::Custom<Str
         foreign_members: None,
     };
 
-    if delta::modify(&delta_id, &trans, &fc, &1).is_err() {
+    if delta::modify(&delta_id, &trans, &fc, &uid).is_err() {
         trans.set_rollback();
         trans.finish().unwrap();
         return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));

@@ -33,14 +33,23 @@ test('Reset Database', (t) => {
 });
 
 test('address', (q) => {
+    q.test('address - create user', (r) => {
+        request.get({
+            url: 'http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com'
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.end();
+        });
+    });
+
     //every test should have the delta affect all 999 features
     let affected = [];
     for (let i = 1; i < 1000; i++) affected.push(String(i));
 
-    q.test('features - basic create - endpoint', (r) => {
+    q.test('address - basic create - endpoint', (r) => {
         request.post({
             headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:8000/api/data/features',
+            url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
             body: JSON.stringify(require('./fixtures/us_dc_pts.json'))
         }, (err, res) => {
             r.error(err, 'no errors');
@@ -91,7 +100,7 @@ test('address', (q) => {
         let id = 0;
         request.post({
             headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:8000/api/data/features',
+            url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
             body: JSON.stringify({
                 type: 'FeatureCollection',
                 features: require('./fixtures/us_dc_pts.json').features.map((feat) => {
@@ -149,7 +158,7 @@ test('address', (q) => {
         let id = 0;
         request.post({
             headers: { 'content-type' : 'application/json' },
-            url: 'http://localhost:8000/api/data/features',
+            url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
             body: JSON.stringify({
                 type: 'FeatureCollection',
                 features: require('./fixtures/us_dc_pts.json').features.map((feat) => {

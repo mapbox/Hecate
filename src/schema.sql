@@ -1,12 +1,13 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS hstore;
 
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id          BIGSERIAL,
-    username    TEXT,
+    username    TEXT UNIQUE,
     password    TEXT,
-    email       TEXT,
+    email       TEXT UNIQUE,
     meta        JSONB
 );
 

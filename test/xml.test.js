@@ -32,12 +32,21 @@ test('Reset Database', (t) => {
 
 });
 
+test('xml - create user', t => {
+    request.get({
+        url: 'http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com'
+    }, (err, res) => {
+        t.error(err, 'no errrors');
+        t.end();
+    });
+});
+
 test('xml#changeset#create', (t) => {
     t.test('xml#changeset#create - basic', (q) => {
         q.test('xml#changeset#create - basic - endpoint', (r) => {
             request.put({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:8000/api/0.6/changeset/create',
+                url: 'http://ingalls:yeaheh@localhost:8000/api/0.6/changeset/create',
                 body: `
                     <osm><changeset>
                         <tag k="created_by" v="Hecate Server"/>
@@ -80,7 +89,7 @@ test('xml#changeset#upload', (t) => {
         q.test('xml#changeset#upload - create - node - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:8000/api/0.6/changeset/1/upload',
+                url: 'http://ingalls:yeaheh@localhost:8000/api/0.6/changeset/1/upload',
                 body: `
                     <osmChange version="0.6" generator="Hecate Server">
                         <create>
@@ -128,10 +137,28 @@ test('xml#changeset#upload', (t) => {
     });
 
     t.test('xml#changeset#upload - modify - node', (q) => {
+        q.test('xml#changeset#upload - modift - node - changeset - endpoint', (r) => {
+            request.put({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://ingalls:yeaheh@localhost:8000/api/0.6/changeset/create',
+                body: `
+                    <osm><changeset>
+                        <tag k="created_by" v="Hecate Server"/>
+                        <tag k="comment" v="Buncho Random Text"/>
+                    </changeset></osm>
+                `
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, '2');
+                r.end();
+            });
+        });
+
         q.test('xml#changeset#upload - modify - node - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:8000/api/0.6/changeset/2/upload',
+                url: 'http://ingalls:yeaheh@localhost:8000/api/0.6/changeset/2/upload',
                 body: `
                     <osmChange version="0.6" generator="Hecate Server">
                         <modify>
@@ -178,10 +205,28 @@ test('xml#changeset#upload', (t) => {
     });
 
     t.test('xml#changeset#upload - delete - node', (q) => {
+        q.test('xml#changeset#upload - delete - node - changeset - endpoint', (r) => {
+            request.put({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://ingalls:yeaheh@localhost:8000/api/0.6/changeset/create',
+                body: `
+                    <osm><changeset>
+                        <tag k="created_by" v="Hecate Server"/>
+                        <tag k="comment" v="Buncho Random Text"/>
+                    </changeset></osm>
+                `
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, '3');
+                r.end();
+            });
+        });
+
         q.test('xml#changeset#upload - delete - node - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:8000/api/0.6/changeset/3/upload',
+                url: 'http://ingalls:yeaheh@localhost:8000/api/0.6/changeset/3/upload',
                 body: `
                     <osmChange version="0.6" generator="Hecate Server">
                         <delete>
@@ -215,10 +260,45 @@ test('xml#changeset#upload', (t) => {
     });
 
     t.skip('xml#changeset#upload - create - way', (q) => {
+        q.test('xml#changeset#upload - create - way - changeset - endpoint', (r) => {
+            request.put({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://ingalls:yeaheh@localhost:8000/api/0.6/changeset/create',
+                body: `
+                    <osm><changeset>
+                        <tag k="created_by" v="Hecate Server"/>
+                        <tag k="comment" v="Buncho Random Text"/>
+                    </changeset></osm>
+                `
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, '1');
+                r.end();
+            });
+        });
+        
+        q.test('xml#changeset#upload - delete - node - changeset - endpoint', (r) => {
+            request.put({
+                headers: { 'content-type' : 'application/json' },
+                url: 'http://ingalls:yeaheh@localhost:8000/api/0.6/changeset/create',
+                body: `
+                    <osm><changeset>
+                        <tag k="created_by" v="Hecate Server"/>
+                        <tag k="comment" v="Buncho Random Text"/>
+                    </changeset></osm>
+                `
+            }, (err, res) => {
+                r.error(err, 'no errors');
+                r.equals(res.statusCode, 200);
+                r.equals(res.body, '1');
+                r.end();
+            });
+        });
         q.test('xml#changeset#upload - way - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:8000/api/0.6/changeset/1/upload',
+                url: 'http://ingalls:yeaheh@localhost:8000/api/0.6/changeset/1/upload',
                 body: `
                     <osmChange version="0.6" generator="Hecate Server">
                         <create>
