@@ -8,7 +8,7 @@
   "repository": "git@github.com:ingalls/Hecate",
   "author": "ingalls <ingalls@protonmail.com>",
   "license": "MIT",
-  "private": false,
+  "private": true,
   "dependencies": {
     "pg": "^7.4.0",
     "pg-pool": "^2.0.3",
