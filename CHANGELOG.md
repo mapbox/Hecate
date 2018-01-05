@@ -12,8 +12,6 @@
 
 ## Future Releases
 
-- Authentication via http basic & scoped tokens
-
 - Ways
     - [x] Ways can be created
     - [x] Ways can be downloaded
@@ -23,6 +21,10 @@
         - resulting in the changes not actually affecting the way as the nodeids aren't tracked
 - Relations
     - [ ] Everything...
+
+## v0.2.0
+
+- :tada: Authentication on all endpoints!
 
 ## v0.1.3
 
