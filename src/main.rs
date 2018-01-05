@@ -131,12 +131,10 @@ fn index() -> &'static str { "Hello World!" }
 
 #[error(401)]
 fn not_authorized() -> status::Custom<Json> {
-    println!("I AM NOT AUTHED");
-
     status::Custom(HTTPStatus::Unauthorized, Json(json!({
         "code": 401,
-        "status": "Not Authorizaed",
-        "reason": "You must be logged into the access this resource"
+        "status": "Not Authorized",
+        "reason": "You must be logged in to access this resource"
     })))
 }
 

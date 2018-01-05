@@ -70,6 +70,90 @@ test('users - create user', (q) => {
             r.end();
         });
     });
+
+    q.test('users - create user - endpoint - no auth', (r) => {
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://localhost:8000/api/data/feature',
+            body: JSON.stringify({
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                    type: 'Point',
+                    coordinates: [0,0]
+                }
+            })
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.statusCode, 401);
+            r.deepEquals(JSON.parse(res.body), {
+                code: 401,
+                reason: 'You must be logged in to access this resource',
+                status: 'Not Authorized'
+            });
+            r.end();
+        });
+    });
+
+    q.test('users - create user - endpoint - bad username', (r) => {
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://fakeuser:123@localhost:8000/api/data/feature',
+            body: JSON.stringify({
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                    type: 'Point',
+                    coordinates: [0,0]
+                }
+            })
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.statusCode, 401);
+            r.deepEquals(res.body, 'Not Authorized!');
+            r.end();
+        });
+    });
+
+    q.test('users - create user - endpoint - bad password', (r) => {
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://ingalls:321@localhost:8000/api/data/feature',
+            body: JSON.stringify({
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                    type: 'Point',
+                    coordinates: [0,0]
+                }
+            })
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.statusCode, 401);
+            r.deepEquals(res.body, 'Not Authorized!');
+            r.end();
+        });
+    });
+
+    q.test('users - create user - endpoint - correct password', (r) => {
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://ingalls:test123@localhost:8000/api/data/feature',
+            body: JSON.stringify({
+                type: 'Feature',
+                action: 'create',
+                properties: {},
+                geometry: {
+                    type: 'Point',
+                    coordinates: [0,0]
+                }
+            })
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.statusCode, 200);
+            r.end();
+        });
+    });
 });
 
 test('Disconnect', (t) => {
