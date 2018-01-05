@@ -254,7 +254,12 @@ fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
+fn xml_changeset_create(auth: HTTPAuth, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     let map = match xml::to_delta(&body) {
         Ok(map) => map,
         Err(err) => { return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); }
@@ -262,7 +267,7 @@ fn xml_changeset_create(conn: DbConn, body: String) -> Result<String, status::Cu
 
     let trans = conn.0.transaction().unwrap();
 
-    let delta_id = match delta::open(&trans, &map, &1) {
+    let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
         Err(err) => {
             trans.set_rollback();
@@ -277,12 +282,22 @@ fn xml_changeset_create(conn: DbConn, body: String) -> Result<String, status::Cu
 }
 
 #[put("/0.6/changeset/<id>/close")]
-fn xml_changeset_close(id: i64) -> String {
+fn xml_changeset_close(auth: HTTPAuth, id: i64) -> Result<String, status::Custom> {
+    match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => (),
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     id.to_string()
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+fn xml_changeset_modify(auth: HTTPAuth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     let trans = conn.0.transaction().unwrap();
 
     match delta::is_open(&delta_id, &trans) {
@@ -308,7 +323,7 @@ fn xml_changeset_modify(conn: DbConn, delta_id: i64, body: String) -> Result<sta
         }
     };
 
-    let delta_id = match delta::modify_props(&delta_id, &trans, &map, &1) {
+    let delta_id = match delta::modify_props(&delta_id, &trans, &map, &uid) {
         Ok(id) => id,
         Err(err) => {
             trans.set_rollback();
@@ -323,7 +338,12 @@ fn xml_changeset_modify(conn: DbConn, delta_id: i64, body: String) -> Result<sta
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+fn xml_changeset_upload(auth: HTTPAuth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
     let trans = conn.0.transaction().unwrap();
 
     match delta::is_open(&delta_id, &trans) {
@@ -375,7 +395,7 @@ fn xml_changeset_upload(conn: DbConn, delta_id: i64, body: String) -> Result<sta
         Ok(diffres) => diffres
     };
 
-    match delta::modify(&delta_id, &trans, &fc, &1) {
+    match delta::modify(&delta_id, &trans, &fc, &uid) {
         Ok (_) => (),
         Err(_) => {
             trans.set_rollback();
