@@ -24,9 +24,7 @@ test('Reset Database', (t) => {
             CREATE DATABASE hecate;
         " | psql -U postgres -q
 
-        psql -q -U postgres -f src/schema.sql hecate
-
-        echo "INSERT INTO bounds (geom, name) VALUES ( ST_SetSRID(ST_GeomFromGeoJSON('{ \"type\": \"Polygon\", \"coordinates\": [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] }'), 4326), 'dc');" | psql -U postgres hecate
+        psql -v ON_ERROR_STOP=1 -q -U postgres -f src/schema.sql hecate
     `, (err, stdout, stderr) => {
         t.error(err, 'no errors');
         t.end();
@@ -35,6 +33,18 @@ test('Reset Database', (t) => {
 });
 
 test('bounds', (q) => {
+    q.test('bounds - insert bounds data', (r) => {
+        pool.query(`
+            INSERT INTO bounds(geom, name) VALUES (
+                ST_SetSRID(ST_GeomFromGeoJSON('{ "type": "Polygon", "coordinates": [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] }'), 4326),
+                'dc'
+            );
+        `, (err, res) => {
+            r.error(err, 'no errors');
+            r.end();
+        });
+    });
+
     q.test('bounds - create user', (r) => {
         request.get({
             url: 'http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com'
