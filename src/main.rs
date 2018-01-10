@@ -112,6 +112,8 @@ fn main() {
             features_action,
             feature_get,
             features_get,
+            bounds_list,
+            bounds_get,
             xml_capabilities,
             xml_06capabilities,
             xml_user,
@@ -168,15 +170,15 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
     }
 }
 
-#[get("/data/features/bounds")]
+#[get("/data/bounds")]
 fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
     match bounds::list(&conn.0) {
-        Ok(bounds) => Ok(Json(json!(true))),
+        Ok(bounds) => Ok(Json(json!(bounds))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
 
-#[get("/data/features/bounds/<bounds>")]
+#[get("/data/bounds/<bounds>")]
 fn bounds_get(conn: DbConn, bounds: String) -> Result<Json, status::Custom<String>> {
     match bounds::get(&conn.0, bounds) {
         Ok(bounds) => Ok(Json(json!(true))),

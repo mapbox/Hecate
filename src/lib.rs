@@ -3,5 +3,6 @@ extern crate clap;
 
 pub mod delta;
 pub mod feature;
+pub mod bounds;
 pub mod xml;
 pub mod user;
