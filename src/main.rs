@@ -32,6 +32,7 @@ use std::collections::HashMap;
 use geojson::GeoJson;
 use hecate::feature;
 use hecate::user;
+use hecate::bounds;
 use hecate::delta;
 use hecate::xml;
 
@@ -165,6 +166,23 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
         Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
+}
+
+#[get("/data/features/bounds")]
+fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
+    match bounds::list(&conn.0) {
+        Ok(bounds) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/data/features/bounds/<bounds>")]
+fn bounds_get(conn: DbConn, bounds: String) -> Result<Json, status::Custom<String>> {
+    match bounds::get(&conn.0, bounds) {
+        Ok(bounds) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+
 }
 
 #[get("/data/features?<map>")]
