@@ -26,10 +26,7 @@ test('Reset Database', (t) => {
 
         psql -q -U postgres -f src/schema.sql hecate
 
-        echo "INSERT INTO bounds (geom, name) VALUES (
-            'dc',
-            ST_GeomFromGeoJSON('{ "type": "Polygon", "coordinates": [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] }')
-        );" | psql -U postgres hecate
+        echo "INSERT INTO bounds (geom, name) VALUES ( ST_SetSRID(ST_GeomFromGeoJSON('{ \"type\": \"Polygon\", \"coordinates\": [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] }'), 4326), 'dc');" | psql -U postgres hecate
     `, (err, stdout, stderr) => {
         t.error(err, 'no errors');
         t.end();
@@ -90,6 +87,17 @@ test('bounds', (q) => {
             r.error(err, 'no errors');
             r.equals(res.statusCode, 200);
             r.equals(res.body, 'true');
+            r.end();
+        });
+    });
+
+    q.test('bounds - list all', (r) => {
+        request.get({
+            url: 'http://localhost:8000/api/data/bounds',
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.statusCode, 200);
+            r.deepEquals(JSON.parse(res.body), [ 'dc' ]);
             r.end();
         });
     });

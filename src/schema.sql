@@ -5,8 +5,9 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 DROP TABLE IF EXISTS bounds;
 CREATE TABLE bounds (
     id          BIGSERIAL,
+    geom        GEOMETRY(POLYGON, 4326),
     name        TEXT UNIQUE,
-    meta        JSONB
+    props        JSONB
 );
 CREATE INDEX bounds_gist ON bounds USING GIST(geom);
 CREATE INDEX bounds_idx ON bounds(name);
