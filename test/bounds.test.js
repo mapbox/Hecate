@@ -40,7 +40,7 @@ test('Reset Database', (t) => {
 test('bounds', (q) => {
     q.test('bounds - create user', (r) => {
         request.get({
-            url: 'http://localhost:8000/api/user/create?username=ingalls&passwhrd=yeaheh&email=ingalls@protonmail.com'
+            url: 'http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com'
         }, (err, res) => {
             r.error(err, 'no errors');
             r.equals(res.statusCode, 200);
@@ -54,8 +54,32 @@ test('bounds', (q) => {
             url: 'http://ingalls:yeaheh@localhost:8000/api/data/feature',
             body: JSON.stringify({
                 type: 'Feature',
+                action: 'create',
                 properties: {
                     indc: true
+                },
+                geometry: {
+                    type: 'Point',
+                    coordinates: [-77.01210021972656,38.925763232374514]
+                }
+            })
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.statusCode, 200);
+            r.equals(res.body, 'true');
+            r.end();
+        });
+    });
+
+    q.test('bounds - point outside of bounds', (r) => {
+        request.post({
+            headers: { 'content-type' : 'application/json' },
+            url: 'http://ingalls:yeaheh@localhost:8000/api/data/feature',
+            body: JSON.stringify({
+                type: 'Feature',
+                action: 'create',
+                properties: {
+                    indc: false
                 },
                 geometry: {
                     type: 'Point',
