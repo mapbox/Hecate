@@ -181,7 +181,7 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
 #[get("/data/bounds/<bounds>")]
 fn bounds_get(conn: DbConn, bounds: String) -> Result<Json, status::Custom<String>> {
     match bounds::get(&conn.0, bounds) {
-        Ok(bounds) => Ok(Json(json!(true))),
+        Ok(bounds) => Ok(bounds),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 

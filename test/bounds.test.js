@@ -111,6 +111,19 @@ test('bounds', (q) => {
             r.end();
         });
     });
+
+    q.test('bounds - get dc', (r) => {
+        request.get({
+            url: 'http://localhost:8000/api/data/bounds/dc',
+        }, (err, res) => {
+            r.error(err, 'no errors');
+            r.equals(res.statusCode, 200);
+            r.deepEquals(JSON.parse(res.body), {
+                
+            });
+            r.end();
+        });
+    });
 });
 
 test('Disconnect', (t) => {

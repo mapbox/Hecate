@@ -42,5 +42,24 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
 }
 
 pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<Option<i64>, BoundsError> {
+    match conn.query("
+        SELECT name FROM bounds;
+    ", &[ ]) {
+        Ok(rows) => {
+            let mut names = Vec::<String>::new();
+
+            for row in rows.iter() {
+                names.push(row.get(0));
+            }
+
+            Ok(names)
+        },
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
+                _ => Err(BoundsError::ListError(String::from("generic")))
+            }
+        }
+    }
     Ok(Some(1))
 }
