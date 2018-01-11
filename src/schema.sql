@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 DROP TABLE IF EXISTS bounds;
 CREATE TABLE bounds (
     id          BIGSERIAL,
-    geom        GEOMETRY(POLYGON, 4326),
+    geom        GEOMETRY(MULTIPOLYGON, 4326),
     name        TEXT UNIQUE,
     props        JSONB
 );
