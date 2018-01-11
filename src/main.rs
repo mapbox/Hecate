@@ -5,6 +5,7 @@
 #![plugin(rocket_codegen)]
 
 extern crate hecate;
+extern crate rand;
 extern crate rocket;
 extern crate rocket_contrib;
 #[macro_use] extern crate clap;
@@ -15,26 +16,26 @@ extern crate postgres;
 extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate env_logger;
+extern crate tempdir;
+extern crate fallible_iterator;
 
 //Postgres Connection Pooling
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 
 use rocket_contrib::Json as Json;
-use rocket::response::status;
-use std::io::Cursor;
+use std::io::{Write, Cursor};
+use std::fs::File;
+use tempdir::TempDir;
+use std::collections::HashMap;
 use rocket::http::Status as HTTPStatus;
 use rocket::{Request, State, Outcome};
-use rocket::response::Response;
+use rocket::response::{Response, status, Stream};
 use rocket::request::{self, FromRequest};
 use clap::App;
-use std::collections::HashMap;
 use geojson::GeoJson;
-use hecate::feature;
-use hecate::user;
-use hecate::bounds;
-use hecate::delta;
-use hecate::xml;
+use hecate::{feature, user, bounds, delta, xml};
+use fallible_iterator::FallibleIterator;
 
 pub type PostgresPool = Pool<PostgresConnectionManager>;
 pub type PostgresPooledConnection = PooledConnection<PostgresConnectionManager>;
@@ -179,7 +180,7 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
 }
 
 #[get("/data/bounds/<bounds>")]
-fn bounds_get(conn: DbConn, bounds: String) -> Result<Json, status::Custom<String>> {
+fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<std::fs::File>, status::Custom<String>> {
     let trans = conn.0.transaction().unwrap();
 
     let query = bounds::get_query();
@@ -194,7 +195,7 @@ fn bounds_get(conn: DbConn, bounds: String) -> Result<Json, status::Custom<Strin
         }
     };
 
-    let rows = match stmt.lazy_query(&trans, &[&bounds], 1000) {
+    let mut rows = match stmt.lazy_query(&trans, &[&bounds], 1000) {
         Ok(rows) => rows,
         Err(err) => {
             match err.as_db() {
@@ -204,7 +205,24 @@ fn bounds_get(conn: DbConn, bounds: String) -> Result<Json, status::Custom<Strin
         }
     };
 
-    Ok(Json(json!(true)))
+    //TODO: Due to the way rocket/postgres are written it makes it very difficult to wrap/pass an Iter
+    //back to Rocket as a stream - instead use a file as an intermediary
+    let dir = TempDir::new(&*&format!("bounds_get_{}", rand::random::<i32>().to_string())).unwrap();
+    let file_path = dir.path().join("bounds.geojson");
+
+    { 
+        let mut f = File::create(&file_path).unwrap();
+
+        while let Some(row) = rows.next().unwrap() {
+            let mut row: String = row.get(0);
+            row.push_str("\n");
+            f.write(&row.into_bytes()).unwrap();
+        }
+    }
+
+    let f = File::open(file_path).unwrap();
+
+    Ok(Stream::from(f))
 }
 
 #[get("/data/features?<map>")]

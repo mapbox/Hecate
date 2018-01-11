@@ -4,6 +4,8 @@ version = "0.2.0"
 authors = ["ingalls <ingalls@protonmail.com>"]
 
 [dependencies]
+rand = "0.4"
+tempdir = "0.3"
 base64 = "~0.9.0"
 rocket = "0.3"
 rocket_codegen = "0.3.5"

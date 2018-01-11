@@ -44,7 +44,7 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
 }
 
 pub fn get_query() -> &'static str {
-    "SELECT row_to_json(t)
+    "SELECT row_to_json(t)::TEXT
         FROM (
             SELECT
                 geo.id AS id,
@@ -56,7 +56,7 @@ pub fn get_query() -> &'static str {
                 geo,
                 bounds
             WHERE
-                bounds.name = 'dc'
+                bounds.name = $1
                 AND ST_Intersects(geo.geom, bounds.geom)
             ORDER BY id
         ) t"

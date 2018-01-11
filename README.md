@@ -64,7 +64,7 @@ curl +X GET 'http://localhost:8000/api/data/bounds
 
 #### `GET` `/api/data/bounds/<bounds>`
 
-Return a `FeatureCollection` of all the geometries within the specified boundary file.
+Return line delimited GeoJSON `Feature` of all the geometries within the specified boundary file.
 
 *Required Options*
 
@@ -84,7 +84,7 @@ curl +X GET 'http://localhost:8000/api/data/bounds/us_dc
 
 #### `GET` `/api/data/feature/<id>`
 
-Return a single `Feature` given its' ID.
+Return a single GeoJSON `Feature` given its' ID.
 
 *Required Options*
 
