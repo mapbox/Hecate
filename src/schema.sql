@@ -2,6 +2,16 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS hstore;
 
+DROP TABLE IF EXISTS bounds;
+CREATE TABLE bounds (
+    id          BIGSERIAL,
+    geom        GEOMETRY(POLYGON, 4326),
+    name        TEXT UNIQUE,
+    props        JSONB
+);
+CREATE INDEX bounds_gist ON bounds USING GIST(geom);
+CREATE INDEX bounds_idx ON bounds(name);
+
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id          BIGSERIAL,
