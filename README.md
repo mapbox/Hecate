@@ -26,7 +26,7 @@ The --security-opt flag is required to be able to run and view `kcov` output.
 
 ### User Options
 
-#### `GET` `/api/user/create
+#### `GET` `/api/user/create`
 
 Create a new user, provied the username & password are not already taken
 
@@ -44,6 +44,8 @@ Create a new user, provied the username & password are not already taken
 curl +X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email=ingalls@protonmail.com
 ```
 
+---
+
 ### Boundary Downloading
 
 #### `GET` `/api/data/bounds/`
@@ -55,6 +57,8 @@ Return an array of possible boundary files with which data can be extracted from
 ```bash
 curl +X GET 'http://localhost:8000/api/data/bounds
 ```
+
+---
 
 #### `GET` `/api/data/bounds/<bounds>`
 
@@ -71,3 +75,5 @@ Return a `FeatureCollection` of all the geometries within the specified boundary
 ```bash
 curl +X GET 'http://localhost:8000/api/data/bounds/us_dc
 ```
+
+---
