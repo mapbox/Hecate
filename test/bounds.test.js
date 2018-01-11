@@ -90,7 +90,7 @@ test('bounds', (q) => {
                 },
                 geometry: {
                     type: 'Point',
-                    coordinates: [-77.01210021972656,38.925763232374514]
+                    coordinates: [-76.94755554199219,38.90385833966778]
                 }
             })
         }, (err, res) => {
@@ -119,7 +119,11 @@ test('bounds', (q) => {
             r.error(err, 'no errors');
             r.equals(res.statusCode, 200);
             r.deepEquals(JSON.parse(res.body), {
-                
+                id: 1,
+                type: 'Feature',
+                version: 1,
+                geometry: { type: 'Point', coordinates: [ -77.0121002197266, 38.9257632323745 ] },
+                properties: { indc: true }
             });
             r.end();
         });
