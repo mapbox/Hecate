@@ -24,6 +24,8 @@ The --security-opt flag is required to be able to run and view `kcov` output.
 
 #### `GET` `/`
 
+---
+
 ### User Options
 
 #### `GET` `/api/user/create`
@@ -33,10 +35,10 @@ Create a new user, provied the username & password are not already taken
 *Required Options*
 
 | Option     | Notes |
-| ---------- | ----- |
-| `username` | Desired username, must be unique |
-| `password` | Desired password |
-| `email`    | Desired email, must be unique |
+| :--------: | ----- |
+| `username` | `REQUIRED` Desired username, must be unique |
+| `password` | `REQUIRED` Desired password |
+| `email`    | `REQUIRED` Desired email, must be unique |
 
 *Example*
 
@@ -46,7 +48,7 @@ curl +X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email
 
 ---
 
-### Boundary Downloading
+### Downloading via Boundaries
 
 #### `GET` `/api/data/bounds/`
 
@@ -67,7 +69,7 @@ Return a `FeatureCollection` of all the geometries within the specified boundary
 *Required Options*
 
 | Option     | Notes |
-| ---------- | ----- |
+| :--------: | ----- |
 | `<bounds>` | One of the boundary files as specified via the `/ap/data/bounds`
 
 *Example*
@@ -77,3 +79,30 @@ curl +X GET 'http://localhost:8000/api/data/bounds/us_dc
 ```
 
 ---
+
+### Downloading Individual Features
+
+#### `GET` `/api/data/feature/<id>`
+
+Return a single `Feature` given its' ID.
+
+*Required Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | Numeric ID of a given feature to download |
+
+---
+
+### Download Multiple Features via BBOX
+
+#### `GET` `/api/data/features`
+
+Return a `FeatureCollection` of all features within a given bbox
+
+*Required Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `bbox` | Bounding Box in format `left,bottom,right,top` |
+ ---
