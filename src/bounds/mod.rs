@@ -47,13 +47,16 @@ pub fn get_query() -> &'static str {
     "SELECT row_to_json(t)
         FROM (
             SELECT
-                id AS id,
+                geo.id AS id,
                 'Feature' AS type,
-                version AS version,
-                ST_AsGeoJSON(geom)::JSON AS geometry,
-                props AS properties FROM geo
+                geo.version AS version,
+                ST_AsGeoJSON(geo.geom)::JSON AS geometry,
+                geo.props AS properties
+            FROM
+                geo,
+                bounds
             WHERE
-                bounds.name = $1,
+                bounds.name = 'dc'
                 AND ST_Intersects(geo.geom, bounds.geom)
             ORDER BY id
         ) t"
