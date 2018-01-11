@@ -70,7 +70,7 @@ Return a `FeatureCollection` of all the geometries within the specified boundary
 
 | Option     | Notes |
 | :--------: | ----- |
-| `<bounds>` | One of the boundary files as specified via the `/ap/data/bounds`
+| `<bounds>` | One of the boundary files as specified via the `/ap/data/bounds` |
 
 *Example*
 
@@ -92,6 +92,12 @@ Return a single `Feature` given its' ID.
 | :----: | ----- |
 | `<id>` | Numeric ID of a given feature to download |
 
+*Example*
+
+```bash
+curl +X GET 'http://localhost:8000/api/data/features/1542
+```
+
 ---
 
 <h3 align='center'>Downloading Multiple Features via BBOX</h3>
@@ -104,5 +110,6 @@ Return a `FeatureCollection` of all features within a given bbox
 
 | Option | Notes |
 | :----: | ----- |
-| `bbox` | Bounding Box in format `left,bottom,right,top` |
+| `bbox` | `REQUIRED` Bounding Box in format `left,bottom,right,top` |
+
  ---
