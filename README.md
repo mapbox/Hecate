@@ -26,7 +26,7 @@ The --security-opt flag is required to be able to run and view `kcov` output.
 
 ---
 
-### User Options
+<h3 align='center'>User Options</h3>
 
 #### `GET` `/api/user/create`
 
@@ -48,7 +48,7 @@ curl +X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email
 
 ---
 
-### Downloading via Boundaries
+<h3 align='center'>Downloading via Boundaries</h3>
 
 #### `GET` `/api/data/bounds/`
 
@@ -80,7 +80,7 @@ curl +X GET 'http://localhost:8000/api/data/bounds/us_dc
 
 ---
 
-### Downloading Individual Features
+<h3 align='center'>Downloading Individual Features</h3>
 
 #### `GET` `/api/data/feature/<id>`
 
@@ -94,7 +94,7 @@ Return a single `Feature` given its' ID.
 
 ---
 
-### Download Multiple Features via BBOX
+<h3 align='center'>Downloading Multiple Features via BBOX</h3>
 
 #### `GET` `/api/data/features`
 
