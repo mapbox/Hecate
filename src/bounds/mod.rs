@@ -1,6 +1,8 @@
 extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate postgres;
+extern crate std;
+extern crate rocket;
 
 #[derive(PartialEq, Debug)]
 pub enum BoundsError {
@@ -41,25 +43,18 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     }
 }
 
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<Option<i64>, BoundsError> {
-    match conn.query("
-        SELECT name FROM bounds;
-    ", &[ ]) {
-        Ok(rows) => {
-            let mut names = Vec::<String>::new();
-
-            for row in rows.iter() {
-                names.push(row.get(0));
-            }
-
-            Ok(names)
-        },
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
-                _ => Err(BoundsError::ListError(String::from("generic")))
-            }
-        }
-    }
-    Ok(Some(1))
+pub fn get_query() -> &'static str {
+    "SELECT row_to_json(t)
+        FROM (
+            SELECT
+                id AS id,
+                'Feature' AS type,
+                version AS version,
+                ST_AsGeoJSON(geom)::JSON AS geometry,
+                props AS properties FROM geo
+            WHERE
+                bounds.name = $1,
+                AND ST_Intersects(geo.geom, bounds.geom)
+            ORDER BY id
+        ) t"
 }

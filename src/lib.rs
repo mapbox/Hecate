@@ -1,3 +1,4 @@
+#![feature(underscore_lifetimes)]
 extern crate clap;
 #[macro_use] extern crate serde_json;
 

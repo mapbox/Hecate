@@ -180,11 +180,31 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
 
 #[get("/data/bounds/<bounds>")]
 fn bounds_get(conn: DbConn, bounds: String) -> Result<Json, status::Custom<String>> {
-    match bounds::get(&conn.0, bounds) {
-        Ok(bounds) => Ok(bounds),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
-    }
+    let trans = conn.0.transaction().unwrap();
 
+    let query = bounds::get_query();
+
+    let stmt = match trans.prepare(&query) {
+        Ok(stmt) => stmt,
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { return Err(status::Custom(HTTPStatus::InternalServerError, format!("Failed to download bounds: {}", e))); },
+                _ => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to download bounds"))); }
+            }
+        }
+    };
+
+    let rows = match stmt.lazy_query(&trans, &[&bounds], 1000) {
+        Ok(rows) => rows,
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { return Err(status::Custom(HTTPStatus::InternalServerError, format!("Failed to download bounds: {}", e))); },
+                _ => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to download bounds"))); }
+            }
+        }
+    };
+
+    Ok(Json(json!(true)))
 }
 
 #[get("/data/features?<map>")]
