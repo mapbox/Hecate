@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "description": "Test Runner for Hecate Server",
   "scripts": {
-    "test": "tape test/*.test.js"
+    "test": "./test.sh"
   },
   "repository": "git@github.com:ingalls/Hecate",
   "author": "ingalls <ingalls@protonmail.com>",
