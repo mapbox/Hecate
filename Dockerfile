@@ -26,13 +26,11 @@ RUN git clone http://github.com/SimonKagstrom/kcov.git && \
     make && \
     make install
 
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="~/.cargo/bin/:${PATH}"
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
+    && ~/.cargo/bin/rustup install nightly \
+    && ~/.cargo/bin/rustup default nightly
 
-RUN rustup install nightly \
-    && rustup default nightly
-
-RUN cargo install cargo-kcov
+# RUN cargo install cargo-kcov
 
 WORKDIR /usr/local/src/hecate
 ADD . /usr/local/src/hecate
