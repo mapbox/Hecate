@@ -62,6 +62,93 @@ server members.
 | `action`  | Only used for uploads, the desired action to be performed. One of `create`, `modify` or `delete` |
 
 
+### Examples
+
+#### Downloaded Features
+
+```JSON
+{
+    "id": 123,
+    "version": 2,
+    "type": "Feature",
+    "properties": {
+        "shop": true,
+        "name": "If Pigs Could Fly"
+    },
+    "geometry": {
+        "type": "Point",
+        "coordinates": [0,0]
+    }
+}
+```
+
+Downloaded Features will return the integer `id` of the feature, the current `version` and the user supplied `properties` and `geojson`.
+`action` is not applicable for downloaded features, it is only used on upload.
+
+#### Create Features
+
+```JSON
+{
+    "action": "create",
+    "type": "Feature",
+    "properties": {
+        "shop": true,
+        "name": "If Pigs Could Fly"
+    },
+    "geometry": {
+        "type": "Point",
+        "coordinates": [0,0]
+    }
+}
+```
+
+A features being uploaded for creation must have the `action: create` property. Since an `id` and `version` have not yet been
+assigned they should be omitted. Should an `id` or `version` be included the server will ignore them, assigning a new
+`id` and `version` per the servers internal id provisioner.
+
+#### Modify Features
+
+```JSON
+{
+    "id": 123,
+    "version": 1,
+    "action": "modify",
+    "type": "Feature",
+    "properties": {
+        "shop": true,
+        "name": "If Pigs Could Fly"
+    },
+    "geometry": {
+        "type": "Point",
+        "coordinates": [0,0]
+    }
+}
+```
+
+A feature being uploaded for modification must have the `action: modify` as well as the `id` and `version` property. The `id` is the integer id of the feature to modify and the `version` property is the 
+current version of the feature as stored by the server. If the version uploaded does not match the version that the server has stored, the modify will fail. This prevents consecutive edits from conflicting.
+
+Note that the modify operation is _not a delta operation_ and the full feature with the complete Geometry & All Properties must be included with each modify.
+
+Also note that since the `id` pool is shared accross geometry types, an id is allowed to change it's geometry type. eg. If `id: 1` is a `Point` and then a subsequent `action: modify` with a `Polygon` geometry is performed, `id: 1` is allowed to switch to the new `Polygon` type.
+
+#### Delete Features
+
+```JSON
+{
+    "id": 123,
+    "version": 1,
+    "action": "delete",
+    "type": "Feature",
+    "properties": null,
+    "geometry": null
+}
+```
+
+A feature being uploaded for deletion must have the `action: delete` as well as the `id` and `version` property. See _Modify Features_ above for an explanation of those properties.
+
+Note the `propeties` and `geometry` attributes must still be included. They can be set to `null` or be their previous value. They will be ignored.
+
 ### Samples
 
 ## API
