@@ -257,15 +257,42 @@ Return a `FeatureCollection` of all features within a given bbox
 
 <h3 align='center'>Feature Creation</h3>
 
-#### `POST` `/api/data/feature`
+#### `POST` `/api/data/feature` *Auth Required*
 
 Create, Modify, or Delete an individual GeoJSON `Feature`
 
+The Feature must follow format defined in [Feature Format](#feature-format).
+
+*Example*
+
+```bash
+curl \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"action": "create", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}' \
+    'http://username:password@localhost:8000/api/data/feature'
+```
+
 ---
 
-#### `POST` `/api/data/features`
+#### `POST` `/api/data/features` *Auth Required*
 
 Create, Modify, and/or Delete many features via a GeoJSON `FeatureCollection`
+
+The Feature must follow format defined in [Feature Format](#feature-format).
+
+Note that a mix of `create`, `modify`, and `delete` operatioons are allowed
+within each `FeatureCollection`
+
+*Example*
+
+```bash
+curl \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"type":"FeatureCollection","features": [{"action": "create", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}]}' \
+    'http://username:password@localhost:8000/api/data/features'
+```
 
 ---
 
