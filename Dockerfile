@@ -1,4 +1,4 @@
-FROM ubuntu:17.04
+FROM ubuntu:17.10
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 ENV SHELL /bin/bash
