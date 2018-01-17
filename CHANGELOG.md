@@ -22,6 +22,10 @@
 - Relations
     - [ ] Everything...
 
+## v0.3.0 
+
+- :tada: Add bounds API
+
 ## v0.2.0
 
 - :tada: Authentication on all endpoints!
