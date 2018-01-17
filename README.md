@@ -16,6 +16,7 @@ OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON I
     - [Downloading Individual Features](#downloading-individual-features)
     - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
     - [Feature Creation](#feature-creation)
+    - [OpenStreetMap API](#openstreetmap-api)
 
 ## Docker File (Coverage Tests)
 
@@ -147,7 +148,7 @@ Also note that since the `id` pool is shared accross geometry types, an id is al
 
 A feature being uploaded for deletion must have the `action: delete` as well as the `id` and `version` property. See _Modify Features_ above for an explanation of those properties.
 
-Note the `propeties` and `geometry` attributes must still be included. They can be set to `null` or be their previous value. They will be ignored.
+Note the `properties` and `geometry` attributes must still be included. They can be set to `null` or be their previous value. They will be ignored.
 
 ### Samples
 
@@ -295,4 +296,9 @@ curl \
 ```
 
 ---
+
+<h3 align='center'>OpenStreetMap API</h3>
+
+The primary goal of the hecate project is a very fast GeoJSON based Interchange. That said, the tooling the OSM community has built around editing is unparlled. As such, 
+Hecate provides a Work-In-Progress exiting shim to support a subset of API operations as defined by the [OSM API v0.6](httpl://wiki.openstreetmap.org/wiki/API_v0.6) document.
 
