@@ -32,12 +32,22 @@ test('Reset Database', (t) => {
 
 });
 
+test('features#user creation', t => {
+    request.get({
+        url: 'http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com'
+    }, (err, res) => {
+        t.error(err, 'no errors');
+        t.equals(res.statusCode, 200);
+        t.end();
+    });
+});
+
 test('features', (t) => {
     t.test('features - basic create', (q) => {
         q.test('features - basic create - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:8000/api/data/features',
+                url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
                 body: JSON.stringify({
                     type: 'FeatureCollection',
                     features: [{
@@ -114,7 +124,7 @@ test('features', (t) => {
         q.test('features - basic modify - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:8000/api/data/features',
+                url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
                 body: JSON.stringify({
                     type: 'FeatureCollection',
                     features: [{
@@ -199,7 +209,7 @@ test('features', (t) => {
         q.test('features - basic delete - endpoint', (r) => {
             request.post({
                 headers: { 'content-type' : 'application/json' },
-                url: 'http://localhost:8000/api/data/features',
+                url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
                 body: JSON.stringify({
                     type: 'FeatureCollection',
                     features: [{
