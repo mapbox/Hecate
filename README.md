@@ -8,6 +8,7 @@ OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON I
 
 1. [Brief](#brief)
 2. [Table of Contents](#table-of-contents)
+3. [Build Environment](#build-environment)
 3. [Docker File](#docker-file-coverage-tests)
 4. [Feature Format](#feature-format)
 5. [API](#api)
@@ -18,9 +19,51 @@ OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON I
     - [Feature Creation](#feature-creation)
     - [OpenStreetMap API](#openstreetmap-api)
 
+## Build Environment
+
+- Start by installing Rust from rust-lang.org, this will install the current stagle version
+
+```bash
+curl https://sh.rustup.rs -sSf | sh
+```
+
+- Source your bashrc/bash_profile to update your `PATH` variable
+
+```bash
+source ~/.bashrc        # Most Linux Distros, some OSX
+source ~/.bash_profile  # Most OSX, some Linux Distros
+```
+
+- Install the `nightly` build of rust, `Rocket`, the web-framework relies on some advanced compiler options not yet included in the default build.
+
+```bash
+rustup install nightly
+rustup default nightly
+```
+
+- Download and compile the project and all of it's libraries
+
+```bash
+cargo build
+```
+
+- Create the `hecate` database using the provided schema file.
+
+```bash
+echo "CREATE DATABASE hecate;" | psql -U postgres
+
+psql -U postgres -f src/schema.sql hecate
+``` 
+
+- Start the server
+
+```
+./start
+```
+
 ## Docker File (Coverage Tests)
 
-The Docker file is designed to give the user a testing environment to get tests up and running and be able to view coverage information.
+The Docker file is designed to give the user a testing environment to get rust tests to generate code coverage information
 
 Install docker and then run
 
