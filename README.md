@@ -47,6 +47,23 @@ and exceptions as outlined below.
 *Unsupported Geometry Types*
 - `GeometryCollection`
 
+### Additional Memebers
+
+The following table outlines top-level members used by hecate to handle feature creation/modification/deletion.
+
+Key/Value pairs in the `.properties` of a given feature are _never_ directly used by the server and are simply
+passed through to the storage backend. This prevents potential conflicts between user properties and required
+server members.
+
+| Member    | Notes |
+| :-------: | ----- |
+| `id`      | The unique integer `id` of a given feature. Note that all features get a unique id accross GeoJSON Geometry Type |
+| `version` | The version of a given feature, starts at `1` for a newly created feature |
+| `action`  | Only used for uploads, the desired action to be performed. One of `create`, `modify` or `delete` |
+
+
+### Samples
+
 ## API
 
 ### Index
