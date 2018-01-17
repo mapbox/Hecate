@@ -47,7 +47,7 @@ and exceptions as outlined below.
 *Unsupported Geometry Types*
 - `GeometryCollection`
 
-### Additional Memebers
+### Additional Members
 
 The following table outlines top-level members used by hecate to handle feature creation/modification/deletion.
 
