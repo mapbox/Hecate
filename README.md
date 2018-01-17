@@ -57,8 +57,14 @@ psql -U postgres -f src/schema.sql hecate
 
 - Start the server
 
-```
+```bash
 ./start
+```
+
+- Test it is working - should respond with `HTTP200`
+
+```bash
+curl 'localhost:8000
 ```
 
 ## Docker File (Coverage Tests)
