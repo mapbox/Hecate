@@ -10,6 +10,10 @@ OpenStreetMap Inspired Data Storage Backend Focused on Speed and GeoJSON Interch
 2. [Table of Contents](#table-of-contents)
 3. [Docker File](#docker-file-coverage-tests)
 4. [API](#api)
+    - [User Options](#user-options)
+    - [Downloading via Boundaries](#downloading-via-boundaries)
+    - [Downloading Individual Features](#downloading-individual-features)
+    - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
 
 ## Docker File (Coverage Tests)
 
