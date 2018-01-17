@@ -1,14 +1,15 @@
+#! /bin/bash
 set -euo pipefail
 
 service postgresql start
 
 cd $(dirname $0)/..
-cargo build
+~/.cargo/bin/cargo build
 
 killall -9 hecate || true
 
 function startsrv() {
-    cargo run&
+    ~/.cargo/bin/cargo run&
 
     sleep 2
 
