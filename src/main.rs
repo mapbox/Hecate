@@ -102,7 +102,7 @@ fn main() {
 
     let database = matched.value_of("database").unwrap_or("postgres@localhost:5432/hecate");
 
-    env_logger::init().unwrap();
+    env_logger::init();
 
     rocket::ignite()
         .manage(init_pool(&database))
