@@ -1,0 +1,13 @@
+version: 2
+
+jobs:
+    build:
+        machine: true
+        steps:
+            - checkout
+            - run:
+                name: "Build Docker Image"
+                command: "docker build -t ingalls/hecate:$CIRCLE_BRANCH ."
+            - run: 
+                name: "Tests"
+                command: "docker run --name hecate ingalls/hecate:$CIRCLE_BRANCH"

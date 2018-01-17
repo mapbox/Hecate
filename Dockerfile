@@ -26,9 +26,13 @@ RUN git clone http://github.com/SimonKagstrom/kcov.git && \
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="~/.cargo/bin/:${PATH}"
+
+RUN rustup install nightly \
+    && rustup default nightly
+
 RUN cargo install cargo-kcov
 
 WORKDIR /usr/local/src/hecate
 ADD . /usr/local/src/hecate
 
-CMD cargo kcov
+CMD yarn test
