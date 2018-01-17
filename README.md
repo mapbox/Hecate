@@ -4,6 +4,13 @@
 
 OpenStreetMap Inspired Data Storage Backend Focused on Speed and GeoJSON Interchange
 
+## Table Of Contents
+
+1. [Brief](#brief)
+2. [Table of Contents](#table-of-content)
+3. [Docker File](##docker-file-coverage-tests)
+4. [API](##api)
+
 ## Docker File (Coverage Tests)
 
 The Docker file is designed to give the user a testing environment to get tests up and running and be able to view coverage information.
