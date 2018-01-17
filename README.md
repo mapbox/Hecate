@@ -31,6 +31,14 @@ The --security-opt flag is required to be able to run and view `kcov` output.
 
 #### `GET` `/`
 
+Healthcheck URL, currently returns `Hello World!`
+
+*Example*
+
+```bash
+curl +X GET 'http://localhost:8000/
+```
+
 ---
 
 <h3 align='center'>User Options</h3>
