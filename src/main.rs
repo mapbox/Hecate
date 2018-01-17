@@ -234,7 +234,7 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
     }
 }
 
-#[post("/data/features", data="<body>")]
+#[post("/data/features", format="application/json", data="<body>")]
 fn features_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
     let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
         Ok(Some(uid)) => uid,

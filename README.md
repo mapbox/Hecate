@@ -2,18 +2,20 @@
 
 ## Brief
 
-OpenStreetMap Inspired Data Storage Backend Focused on Speed and GeoJSON Interchange
+OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange
 
 ## Table Of Contents
 
 1. [Brief](#brief)
 2. [Table of Contents](#table-of-contents)
 3. [Docker File](#docker-file-coverage-tests)
-4. [API](#api)
+4. [Feature Format](#feature-format)
+5. [API](#api)
     - [User Options](#user-options)
     - [Downloading via Boundaries](#downloading-via-boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
     - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
+    - [Feature Creation](#feature-creation)
 
 ## Docker File (Coverage Tests)
 
@@ -28,6 +30,22 @@ docker run  --security-opt seccomp=unconfined {{HASH FROM ABOVE}}
 ```
 
 The --security-opt flag is required to be able to run and view `kcov` output.
+
+## Feature Format
+
+Hecate is designed as a GeoJSON first interchange and uses [standard GeoJSON](http://geojson.org/) with a couple additions
+and exceptions as outlined below.
+
+*Supported Geometry Types*
+- `Point`
+- `MultiPoint`
+- `LineString`
+- `MultiLineString`
+- `Polygon`
+- `MultiPolygon`
+
+*Unsupported Geometry Types*
+- `GeometryCollection`
 
 ## API
 
@@ -131,4 +149,19 @@ Return a `FeatureCollection` of all features within a given bbox
 | :----: | ----- |
 | `bbox` | `REQUIRED` Bounding Box in format `left,bottom,right,top` |
 
- ---
+---
+
+<h3 align='center'>Feature Creation</h3>
+
+#### `POST` `/api/data/feature`
+
+Create, Modify, or Delete an individual GeoJSON `Feature`
+
+---
+
+#### `POST` `/api/data/features`
+
+Create, Modify, and/or Delete many features via a GeoJSON `FeatureCollection`
+
+---
+
