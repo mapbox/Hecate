@@ -163,7 +163,7 @@ Healthcheck URL, currently returns `Hello World!`
 *Example*
 
 ```bash
-curl +X GET 'http://localhost:8000/
+curl -X GET 'http://localhost:8000/
 ```
 
 ---
@@ -185,7 +185,7 @@ Create a new user, provied the username & password are not already taken
 *Example*
 
 ```bash
-curl +X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email=ingalls@protonmail.com
+curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email=ingalls@protonmail.com
 ```
 
 ---
@@ -199,7 +199,7 @@ Return an array of possible boundary files with which data can be extracted from
 *Example*
 
 ```bash
-curl +X GET 'http://localhost:8000/api/data/bounds
+curl -X GET 'http://localhost:8000/api/data/bounds
 ```
 
 ---
@@ -217,7 +217,7 @@ Return line delimited GeoJSON `Feature` of all the geometries within the specifi
 *Example*
 
 ```bash
-curl +X GET 'http://localhost:8000/api/data/bounds/us_dc
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
 ```
 
 ---
@@ -237,7 +237,7 @@ Return a single GeoJSON `Feature` given its' ID.
 *Example*
 
 ```bash
-curl +X GET 'http://localhost:8000/api/data/features/1542
+curl -X GET 'http://localhost:8000/api/data/features/1542
 ```
 
 ---
@@ -299,6 +299,79 @@ curl \
 
 <h3 align='center'>OpenStreetMap API</h3>
 
-The primary goal of the hecate project is a very fast GeoJSON based Interchange. That said, the tooling the OSM community has built around editing is unparlled. As such, 
-Hecate provides a Work-In-Progress exiting shim to support a subset of API operations as defined by the [OSM API v0.6](httpl://wiki.openstreetmap.org/wiki/API_v0.6) document.
+The primary goal of the hecate project is a very fast GeoJSON based Interchange. That said, the tooling the OSM community has built around editing is unparalled. As such, 
+Hecate provides a Work-In-Progress OpenStreetMap Shim to support a subset of API operations as defined by the [OSM API v0.6](httpl://wiki.openstreetmap.org/wiki/API_v0.6) document.
 
+*Current Gotchas*
+- Only `Way` & `Relation` editing is not currentltly supported. (`Node` create/modify/delete should work 100%)
+
+The following incomplete list of endpoints are implemented with some degree of coverage with the OSM API Spec but are likely incomplete/or written with the minimum flexibility required to
+support editing from JOSM. See the code for a full list.
+
+#### `GET` `/api/capabilities`
+#### `GET` `/api/0.6/capabilities`
+
+Return a static XML document describing the capabilities of the API.
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/capabilities
+```
+
+---
+
+#### `GET` `/api/0.6/user/details` *Auth Required*
+
+Returns a static XML document describing the number of unread messages that a user has. Every n minutes JOSM checks
+this and displays in the interface if there is a new message, to cut down on errors it simply returns a 0 message response.
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/0.6/user/details
+```
+
+---
+
+#### `PUT` `/api/0.6/changeset/create` *Auth Required*
+
+Create a new changset and set the meta information, returning the opened id.
+
+*Example*
+
+```bash
+curl \
+    -X PUT \
+    -d '<osm><changeset><tag k="comment" v="Just adding some streetnames"/></changeset></osm>' \
+    'http://localhost:8000/api/0.6/changeset/create
+```
+
+---
+
+#### `GET` `/api/0.6/changeset/<changeset_id>/upload` *Auth Required*
+
+Upload osm xml data to a given changeset
+
+*Example*
+
+```bash
+curl \
+    -X POST \
+    -d '<diffResult version="0.6">NODE/WAY/RELATIONS here</diffResult>' \
+    'http://localhost:8000/api/0.6/changeset/1/upload'
+```
+
+---
+
+#### `PUT` `/api/0.6/changeset/<changeset_id>/close` *Auth Required*
+
+Close a given changeset, preventing further modification to it
+
+*Example*
+
+```bash
+curl -X PUT 'http://localhost:8000/api/0.6/changeset/1/close'
+```
+
+---
