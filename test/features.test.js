@@ -2,6 +2,7 @@ const test = require('tape');
 const request = require('request');
 const exec = require('child_process').exec;
 const Pool = require('pg-pool');
+const path = require('path');
 
 const pool = new Pool({
     database: 'hecate',
@@ -24,7 +25,7 @@ test('Reset Database', (t) => {
             CREATE DATABASE hecate;
         " | psql -U postgres -q
 
-        psql -q -U postgres -f src/schema.sql hecate
+        psql -q -U postgres -f ${path.resolve(__dirname, '../src/schema.sql')} hecate
     `, (err, stdout, stderr) => {
         t.error(err, 'no errors');
         t.end();
