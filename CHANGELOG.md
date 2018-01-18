@@ -22,6 +22,11 @@
 - Relations
     - [ ] Everything...
 
+## v0.3.1
+
+- :pencil2: Huge doc update on endpoints & setting up
+- :rocket: Update a ton of install & Docker instructions
+
 ## v0.3.0 
 
 - :tada: Add bounds API
