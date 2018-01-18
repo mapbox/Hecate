@@ -25,12 +25,13 @@ use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 
 use rocket_contrib::Json as Json;
 use std::io::{Write, Cursor};
+use std::path::{Path, PathBuf};
 use std::fs::File;
 use tempdir::TempDir;
 use std::collections::HashMap;
 use rocket::http::Status as HTTPStatus;
 use rocket::{Request, State, Outcome};
-use rocket::response::{Response, status, Stream};
+use rocket::response::{Response, status, Stream, NamedFile};
 use rocket::request::{self, FromRequest};
 use clap::App;
 use geojson::GeoJson;
@@ -106,7 +107,12 @@ fn main() {
 
     rocket::ignite()
         .manage(init_pool(&database))
-        .mount("/", routes![index])
+        .mount("/", routes![
+            index
+        ])
+        .mount("/admin", routes![
+            staticsrv
+        ])
         .mount("/api", routes![
             user_create,
             feature_action,
@@ -132,6 +138,11 @@ fn main() {
 
 #[get("/")]
 fn index() -> &'static str { "Hello World!" }
+
+#[get("/<file..>")]
+fn staticsrv(file: PathBuf) -> Option<NamedFile> {
+    NamedFile::open(Path::new("web/").join(file)).ok()
+}
 
 #[error(401)]
 fn not_authorized() -> status::Custom<Json> {
@@ -342,11 +353,9 @@ fn xml_changeset_create(auth: HTTPAuth, conn: DbConn, body: String) -> Result<St
 #[put("/0.6/changeset/<id>/close")]
 fn xml_changeset_close(auth: HTTPAuth, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
     match user::auth(&conn.0, &auth.username, &auth.password) {
-        Ok(Some(uid)) => (),
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
-
-    Ok(id.to_string())
+        Ok(Some(_)) => Ok(id.to_string()),
+        _ => Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!")))
+    }
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]

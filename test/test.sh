@@ -8,6 +8,8 @@ cd $(dirname $0)/..
 
 killall -9 hecate || true
 
+echo "CREATE DATABASE hecate" | psql -U postgres
+
 function startsrv() {
     ~/.cargo/bin/cargo run&
 
