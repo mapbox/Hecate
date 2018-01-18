@@ -25,7 +25,7 @@ test('Reset Database', (t) => {
             CREATE DATABASE hecate;
         " | psql -U postgres -q
 
-        psql -q -U postgres -f ${path.resolve(__dirname, '../src/schema.sql')} hecate
+        psql -v ON_ERROR_STOP=1 -q -U postgres -f ${path.resolve(__dirname, '../src/schema.sql')} hecate
     `, (err, stdout, stderr) => {
         t.error(err, 'no errors');
         t.end();
