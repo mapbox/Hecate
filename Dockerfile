@@ -31,6 +31,7 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
     && ~/.cargo/bin/rustup default nightly
 
 RUN echo "local all postgres trust" > /etc/postgresql/9.6/main/pg_hba.conf \
+    &&_ echo "127.0.0.1 all postgres trust" >> /etc/postgresql/9.6/main/pg_hba.conf \
     && echo "host replication postgres samenet trust" >> /etc/postgresql/9.6/main/pg_hba.conf
 
 # RUN cargo install cargo-kcov
