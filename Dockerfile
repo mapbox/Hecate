@@ -16,7 +16,7 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-RUN apt-get update && apt-get install -y yarn && yarn install
+RUN apt-get update && apt-get install -y yarn
 
 RUN git clone http://github.com/SimonKagstrom/kcov.git && \
     cd kcov && \

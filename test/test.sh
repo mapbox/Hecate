@@ -3,6 +3,8 @@ set -euo pipefail
 
 service postgresql start
 
+yarn install
+
 cd $(dirname $0)/..
 ~/.cargo/bin/cargo build
 
