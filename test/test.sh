@@ -6,8 +6,6 @@ service postgresql start
 cd $(dirname $0)/..
 ~/.cargo/bin/cargo build
 
-killall -9 hecate || true
-
 echo "CREATE DATABASE hecate" | psql -U postgres
 
 function startsrv() {
