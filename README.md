@@ -13,6 +13,8 @@ OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON I
 4. [Feature Format](#feature-format)
 5. [API](#api)
     - [User Options](#user-options)
+    - [Admin Interface](#admin-interface)
+    - [Vector Tiles](#vector-tiles)
     - [Downloading via Boundaries](#downloading-via-boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
     - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
@@ -217,6 +219,34 @@ curl -X GET 'http://localhost:8000/
 
 ---
 
+<h3 align='center'>Admin Interface</h3>
+
+View the Admin Interface in your browser by pointing to `localhost:8000`
+
+---
+
+<h3 align='center'>Vector Tiles</h3>
+
+#### `GET` `/api/tiles/<z>/<x>/<y>
+
+Request a vector tile for a given set of coordinates. A [Mapbox Vector Tile](https://www.mapbox.com/vector-tiles/) is returned.
+
+*Required Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<z>` | `REQUIRED` Desired zoom level for tile
+| `<x>` | `REQUIRED` Desired x coordinate for tile
+| `<y>` | `REQUIRED` Desired y coordinate for tle
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email=ingalls@protonmail.com
+```
+
+---
+
 <h3 align='center'>User Options</h3>
 
 #### `GET` `/api/user/create`
@@ -261,7 +291,7 @@ Return line delimited GeoJSON `Feature` of all the geometries within the specifi
 
 | Option     | Notes |
 | :--------: | ----- |
-| `<bounds>` | One of the boundary files as specified via the `/ap/data/bounds` |
+| `<bounds>` | `REQUIRED` One of the boundary files as specified via the `/ap/data/bounds` |
 
 *Example*
 
@@ -281,7 +311,7 @@ Return a single GeoJSON `Feature` given its' ID.
 
 | Option | Notes |
 | :----: | ----- |
-| `<id>` | Numeric ID of a given feature to download |
+| `<id>` | `REQUIRED` Numeric ID of a given feature to download |
 
 *Example*
 

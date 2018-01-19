@@ -22,6 +22,11 @@
 - Relations
     - [ ] Everything...
 
+## 0.4.0
+
+- :tada: Service Vector Tiles directly from data for web interface
+- :pencil2: Doc new tile endpoint and admin interface
+
 ## v0.3.1
 
 - :pencil2: Huge doc update on endpoints & setting up
