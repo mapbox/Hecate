@@ -24,4 +24,22 @@ window.onload = () => {
         center: [-96, 37.8],
         zoom: 3
     });
+
+    window.vue.map.on('load', () => {
+        window.vue.map.addLayer({
+            id: 'hecate-data',
+            type: 'circle',
+            source: {
+                type: 'vector',
+                tiles: ['http://localhost:8000/api/tiles/{z}/{x}/{y}']
+            },
+            'source-layer': 'data',
+            paint: {
+                'circle-radius': {
+                    base: 1.75,
+                    stops: [[12, 2], [22, 180]]
+                },
+            }
+        });
+    });
 }

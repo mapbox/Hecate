@@ -24,8 +24,7 @@ pub use self::builder::{Tile, Layer, Feature, Value};
 pub use self::encoder::{Decode, Encode};
 pub use self::grid::{Grid};
 
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MVTError {
     NotFound
 }
@@ -39,12 +38,12 @@ impl MVTError {
     }
 }
 
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<i64, MVTError> {
+pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<proto::Tile, MVTError> {
     let grid = Grid::web_mercator();
     let bbox = grid.tile_extent(z, x, y);
     let mut tile = Tile::new(&bbox);
 
-    let layer = Layer::new("data");
+    let mut layer = Layer::new("data");
 
     let rows = conn.query("
         SELECT
@@ -58,10 +57,15 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
     ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy, &grid.srid]).unwrap();
 
     for row in rows.iter() {
+        let id: i64 = row.get(0);
+        let mut feature = Feature::new(row.get(1));
+        feature.set_id(id as u64);
+        layer.add_feature(feature);
     }
+
     tile.add_layer(layer);
 
     let encoded = tile.encode(&grid);
 
-    Ok(1)
+    Ok(encoded)
 }

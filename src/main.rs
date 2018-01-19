@@ -22,6 +22,7 @@ extern crate fallible_iterator;
 //Postgres Connection Pooling
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
+use mvt::Encode;
 
 use rocket_contrib::Json as Json;
 use std::io::{Write, Cursor};
@@ -152,10 +153,16 @@ fn mvt_get(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Response<'static>, sta
         Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, err.to_string())); }
     };
 
+    let mut c = Cursor::new(Vec::new());
+    match tile.to_writer(&mut c) {
+        Ok(_) => (),
+        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, err.to_string())); }
+    }
+
     let mut mvt_response = Response::new();
     mvt_response.set_status(HTTPStatus::Ok);
-    mvt_response.set_sized_body(Cursor::new(String::from("Hello")));
-    mvt_response.set_raw_header("Content-Type", "Vector Tile");
+    mvt_response.set_sized_body(c);
+    mvt_response.set_raw_header("Content-Type", "application/x-protobuf");
     Ok(mvt_response)
 }
 
