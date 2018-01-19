@@ -1,7 +1,9 @@
 [package]
 name = "hecate"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["ingalls <ingalls@protonmail.com>"]
+publish = false
+license = "MIT"
 
 [dependencies]
 rand = "0.4"

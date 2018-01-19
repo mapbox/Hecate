@@ -1,13 +1,7 @@
 {
-  "name": "Hecate",
-  "version": "0.3.1",
-  "description": "Test Runner for Hecate Server",
   "scripts": {
     "test": "./test/test.sh"
   },
-  "repository": "git@github.com:ingalls/Hecate",
-  "author": "ingalls <ingalls@protonmail.com>",
-  "license": "MIT",
   "private": true,
   "dependencies": {
     "pg": "^7.4.0",
