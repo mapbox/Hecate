@@ -51,7 +51,8 @@ test('xml#Download', (t) => {
                 type: 'Feature',
                 action: 'create',
                 properties: {
-                    i_am_a: 'point' 
+                    'addr:housenumber': '1234',
+                    'addr:street': 'Main St'
                 },
                 geometry: {
                     type: 'Point',
@@ -73,7 +74,8 @@ test('xml#Download', (t) => {
                 type: 'Feature',
                 action: 'create',
                 properties: {
-                    i_am_a: 'multipoint' 
+                    'addr:housenumber': '1234',
+                    'addr:street': 'yet another street'
                 },
                 geometry: {
                     type: 'MultiPoint',
@@ -95,7 +97,8 @@ test('xml#Download', (t) => {
                 type: 'Feature',
                 action: 'create',
                 properties: {
-                    i_am_a: 'linestring' 
+                    highway: 'residential',
+                    name: 'Main St E'
                 },
                 geometry: {
                     type: 'LineString',
@@ -117,7 +120,8 @@ test('xml#Download', (t) => {
                 type: 'Feature',
                 action: 'create',
                 properties: {
-                    i_am_a: 'multilinestring' 
+                    highway: 'service',
+                    name: 'Don\'t drive on me'
                 },
                 geometry: {
                     type: 'MultiLineString',
@@ -146,7 +150,7 @@ test('xml#Download', (t) => {
                 type: 'Feature',
                 action: 'create',
                 properties: {
-                    i_am_a: 'polygon' 
+                    building: true
                 },
                 geometry: {
                     type: 'Polygon',
@@ -174,7 +178,7 @@ test('xml#Download', (t) => {
                 type: 'Feature',
                 action: 'create',
                 properties: {
-                    i_am_a: 'polygon-inner' 
+                    building: true
                 },
                 geometry: {
                     type: 'Polygon',

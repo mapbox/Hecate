@@ -123,6 +123,7 @@ pub trait Generic {
 
 pub struct OSMTypes {
     node_it: i64,
+    way_it: i64,
     nodes: String,
     ways: String,
     rels: String
@@ -131,7 +132,8 @@ pub struct OSMTypes {
 impl OSMTypes {
     pub fn new() -> OSMTypes {
         OSMTypes {
-            node_it: 8000000000000000000,
+            node_it: 7000000000000000000,
+            way_it: 8000000000000000000,
             nodes: String::from(""),
             ways: String::from(""),
             rels: String::from("")
@@ -570,15 +572,13 @@ pub fn multipoint(feat: &geojson::Feature, coords: &Vec<geojson::PointType>, osm
     writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
 
     for nd in coords {
-        let node = match add_node(&nd, osm) {
+        let node_id = match add_node(&nd, osm) {
             Ok(node) => node,
             Err(_) => { return Err(XMLError::EncodingFailed); }
         };
 
-        osm.nodes.push_str(&*node.0);
-
         let mut xml_mem = XMLEvents::BytesStart::owned(b"member".to_vec(), 6);
-        xml_mem.push_attribute(("ref", &*node.1.to_string()));
+        xml_mem.push_attribute(("ref", &*node_id.to_string()));
         xml_mem.push_attribute(("type", "node"));
         xml_mem.push_attribute(("role", "point"));
         writer.write_event(XMLEvents::Event::Empty(xml_mem)).unwrap();
@@ -608,14 +608,12 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
         if n_refs.len() > 1 && *nd == coords[0] {
             n_ref = n_refs[0];
         } else {
-            let node = match add_node(&nd, osm) {
+            let node_id = match add_node(&nd, osm) {
                 Ok(node) => node,
                 Err(_) => { return Err(XMLError::EncodingFailed); }
             };
 
-            osm.nodes.push_str(&*node.0);
-
-            n_ref = node.1;
+            n_ref = node_id;
         }
 
         n_refs.push(n_ref);
@@ -684,19 +682,22 @@ pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &mut
     xml_tag.push_attribute(("v", "multipolygon"));
     writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
 
-    //TODO: CREATE WAY - NOT node - add_way fxn
-    for nd in coords {
-        let node = match add_node(&nd, osm) {
-            Ok(node) => node,
+    for (poly_it, poly) in coords.iter().enumerate() {
+        let way_id = match add_way(&poly, osm) {
+            Ok(way) => way,
             Err(_) => { return Err(XMLError::EncodingFailed); }
         };
 
-        osm.nodes.push_str(&*node.0);
-
         let mut xml_mem = XMLEvents::BytesStart::owned(b"member".to_vec(), 6);
-        xml_mem.push_attribute(("ref", &*node.1.to_string()));
-        xml_mem.push_attribute(("type", "node"));
-        xml_mem.push_attribute(("role", "point"));
+        xml_mem.push_attribute(("ref", &*way_id.to_string()));
+
+        if poly_it == 0 {
+            xml_mem.push_attribute(("role", "outer"));
+        } else {
+            xml_mem.push_attribute(("role", "inner"));
+        }
+
+        xml_mem.push_attribute(("type", "way"));
         writer.write_event(XMLEvents::Event::Empty(xml_mem)).unwrap();
     }
 
@@ -724,21 +725,71 @@ pub fn json2str(v: &serde_json::value::Value) -> String {
     }
 }
 
-pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<(String, i64), XMLError> {
+pub fn add_way(coords: &geojson::LineStringType, osm: &mut OSMTypes) -> Result<i64, XMLError> {
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
+
+    let mut xml_way = XMLEvents::BytesStart::owned(b"way".to_vec(), 3);
+
+    osm.way_it = osm.way_it + 1;
+    let id = osm.way_it;
+
+    xml_way.push_attribute(("id", &*id.to_string()));
+    xml_way.push_attribute(("version", "1"));
+    writer.write_event(XMLEvents::Event::Start(xml_way)).unwrap();
+
+    let mut n_refs: Vec<i64> = Vec::new();
+
+    for nd in coords {
+        let n_ref: i64;
+
+        if n_refs.len() > 1 && *nd == coords[0] {
+            n_ref = n_refs[0];
+        } else {
+            let node_id = match add_node(&nd, osm) {
+                Ok(node) => node,
+                Err(_) => { return Err(XMLError::EncodingFailed); }
+            };
+
+            n_ref = node_id;
+        }
+
+        n_refs.push(n_ref);
+    }
+
+    for n_ref in n_refs {
+        let mut xml_nd = XMLEvents::BytesStart::owned(b"nd".to_vec(), 2);
+        xml_nd.push_attribute(("ref", &*n_ref.to_string()));
+        writer.write_event(XMLEvents::Event::Empty(xml_nd)).unwrap();
+    }
+
+    writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"way"))).unwrap();
+
+    let way = String::from_utf8(writer.into_inner().into_inner()).unwrap();
+    osm.ways.push_str(&*way);
+
+    Ok(id)
+}
+
+
+pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<i64, XMLError> {
     let mut writer = Writer::new(Cursor::new(Vec::new()));
 
     let mut xml_node = XMLEvents::BytesStart::owned(b"node".to_vec(), 4);
 
     osm.node_it = osm.node_it + 1;
+    let id = osm.node_it;
 
-    xml_node.push_attribute(("id", &*osm.node_it.to_string()));
+    xml_node.push_attribute(("id", &*id.to_string()));
     xml_node.push_attribute(("version", "1"));
     xml_node.push_attribute(("lat", &*coords[1].to_string()));
     xml_node.push_attribute(("lon", &*coords[0].to_string()));
 
     writer.write_event(XMLEvents::Event::Empty(xml_node)).unwrap();
 
-    Ok((String::from_utf8(writer.into_inner().into_inner()).unwrap(), osm.node_it))
+    let node = String::from_utf8(writer.into_inner().into_inner()).unwrap();
+    osm.nodes.push_str(&*node);
+
+    Ok(id)
 }
 
 pub fn parse_osm(xml_node: &XMLEvents::BytesStart, meta: &mut HashMap<String, String>) -> Result<bool, XMLError> {
