@@ -12,16 +12,6 @@
 
 ## Future Releases
 
-- Ways
-    - [x] Ways can be created
-    - [x] Ways can be downloaded
-    - [x] Ways tags can be modified
-    - [ ] Ways can be moved
-        - moves only have the individual nodes uploaded in the delta
-        - resulting in the changes not actually affecting the way as the nodeids aren't tracked
-- Relations
-    - [ ] Everything...
-
 ## 0.4.0
 
 - :tada: Service Vector Tiles directly from data for web interface
