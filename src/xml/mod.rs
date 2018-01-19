@@ -494,7 +494,7 @@ pub fn from_features(fc: &geojson::FeatureCollection) -> Result<String, XMLError
                         polygon(&feat, &coords, &mut osm)?;
                     },
                     geojson::Value::MultiPolygon(ref coords) => {
-                        multipolygon(&feat, &coords, &mut osm);
+                        multipolygon(&feat, &coords, &mut osm)?;
                     },
                     _ => { return Err(XMLError::GCNotSupported); }
                 }
@@ -753,7 +753,59 @@ pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &mut
     Ok(true)
 }
 
-pub fn multipolygon(_feat: &geojson::Feature, _coords: &Vec<geojson::PolygonType>, _osm: &mut OSMTypes) {
+pub fn multipolygon(feat: &geojson::Feature, coords: &Vec<geojson::PolygonType>, osm: &mut OSMTypes) -> Result<bool, XMLError> {
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
+
+    let mut xml_rel = XMLEvents::BytesStart::owned(b"relation".to_vec(), 8);
+    xml_rel.push_attribute(("id", &*feature::get_id(feat).unwrap().to_string()));
+    xml_rel.push_attribute(("version", &*feature::get_version(feat).unwrap().to_string()));
+
+    writer.write_event(XMLEvents::Event::Start(xml_rel)).unwrap();
+
+    match *&feat.properties {
+        Some(ref props) => {
+            for (k, v) in props.iter() {
+                let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+                xml_tag.push_attribute(("k", k.as_str()));
+
+                xml_tag.push_attribute(("v", &*json2str(&v)));
+                writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+            }
+        },
+        None => { return Err(XMLError::Unknown); }
+    };
+
+    let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+    xml_tag.push_attribute(("k", "type"));
+    xml_tag.push_attribute(("v", "multipolygon"));
+    writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+
+    for polys in coords {
+        for (poly_it, poly) in polys.iter().enumerate() {
+            let way_id = match add_way(&poly, osm) {
+                Ok(way) => way,
+                Err(_) => { return Err(XMLError::EncodingFailed); }
+            };
+
+            let mut xml_mem = XMLEvents::BytesStart::owned(b"member".to_vec(), 6);
+            xml_mem.push_attribute(("ref", &*way_id.to_string()));
+
+            if poly_it == 0 {
+                xml_mem.push_attribute(("role", "outer"));
+            } else {
+                xml_mem.push_attribute(("role", "inner"));
+            }
+
+            xml_mem.push_attribute(("type", "way"));
+            writer.write_event(XMLEvents::Event::Empty(xml_mem)).unwrap();
+        }
+    }
+
+    writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"relation"))).unwrap();
+
+    osm.rels.push_str(&*String::from_utf8(writer.into_inner().into_inner()).unwrap());
+
+    Ok(true)
 
 }
 
