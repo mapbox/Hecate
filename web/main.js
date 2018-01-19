@@ -37,7 +37,7 @@ window.onload = () => {
             paint: {
                 'circle-radius': {
                     base: 1.75,
-                    stops: [[12, 2], [22, 180]]
+                    stops: [[14, 2], [22, 25]]
                 },
             }
         });
