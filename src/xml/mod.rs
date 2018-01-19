@@ -645,8 +645,58 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
     Ok(true)
 }
 
-pub fn multilinestring(_feat: &geojson::Feature, _coords: &Vec<geojson::LineStringType>, _osm: &mut OSMTypes) {
+pub fn multilinestring(feat: &geojson::Feature, coords: &Vec<geojson::LineStringType>, osm: &mut OSMTypes) {
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
 
+    let mut xml_way = XMLEvents::BytesStart::owned(b"way".to_vec(), 3);
+    xml_way.push_attribute(("id", &*feature::get_id(feat).unwrap().to_string()));
+    xml_way.push_attribute(("version", &*feature::get_version(feat).unwrap().to_string()));
+
+    writer.write_event(XMLEvents::Event::Start(xml_way)).unwrap();
+
+    let mut n_refs: Vec<i64> = Vec::new();
+
+    for nd in coords {
+        let n_ref: i64;
+
+        if n_refs.len() > 1 && *nd == coords[0] {
+            n_ref = n_refs[0];
+        } else {
+            let node_id = match add_node(&nd, osm) {
+                Ok(node) => node,
+                Err(_) => { return Err(XMLError::EncodingFailed); }
+            };
+
+            n_ref = node_id;
+        }
+
+        n_refs.push(n_ref);
+    }
+
+    for n_ref in n_refs {
+        let mut xml_nd = XMLEvents::BytesStart::owned(b"nd".to_vec(), 2);
+        xml_nd.push_attribute(("ref", &*n_ref.to_string()));
+        writer.write_event(XMLEvents::Event::Empty(xml_nd)).unwrap();
+    }
+
+    match *&feat.properties {
+        Some(ref props) => {
+            for (k, v) in props.iter() {
+                let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+                xml_tag.push_attribute(("k", k.as_str()));
+
+                xml_tag.push_attribute(("v", &*json2str(&v)));
+                writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+            }
+        },
+        None => { return Err(XMLError::Unknown); }
+    };
+
+    writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"way"))).unwrap();
+
+    osm.ways.push_str(&*String::from_utf8(writer.into_inner().into_inner()).unwrap());
+
+    Ok(true)
 }
 
 pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &mut OSMTypes) -> Result<bool, XMLError> {
