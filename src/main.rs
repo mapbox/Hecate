@@ -35,7 +35,7 @@ use rocket::response::{Response, status, Stream, NamedFile};
 use rocket::request::{self, FromRequest};
 use clap::App;
 use geojson::GeoJson;
-use hecate::{feature, user, bounds, delta, xml};
+use hecate::{feature, user, bounds, delta, xml, mvt};
 use fallible_iterator::FallibleIterator;
 
 pub type PostgresPool = Pool<PostgresConnectionManager>;
@@ -114,6 +114,7 @@ fn main() {
             staticsrv
         ])
         .mount("/api", routes![
+            mvt_get,
             user_create,
             feature_action,
             features_action,
@@ -142,6 +143,20 @@ fn index() -> &'static str { "Hello World!" }
 #[get("/<file..>")]
 fn staticsrv(file: PathBuf) -> Option<NamedFile> {
     NamedFile::open(Path::new("web/").join(file)).ok()
+}
+
+#[get("/tiles/<z>/<x>/<y>")]
+fn mvt_get(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
+    let tile = match mvt::get(&conn.0, z, x, y) {
+        Ok(tile) => tile,
+        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, err.to_string())); }
+    };
+
+    let mut mvt_response = Response::new();
+    mvt_response.set_status(HTTPStatus::Ok);
+    mvt_response.set_sized_body(Cursor::new(String::from("Hello")));
+    mvt_response.set_raw_header("Content-Type", "Vector Tile");
+    Ok(mvt_response)
 }
 
 #[error(401)]
