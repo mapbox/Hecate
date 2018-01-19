@@ -564,6 +564,11 @@ pub fn multipoint(feat: &geojson::Feature, coords: &Vec<geojson::PointType>, osm
         None => { return Err(XMLError::Unknown); }
     };
 
+    let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+    xml_tag.push_attribute(("k", "type"));
+    xml_tag.push_attribute(("v", "multipoint"));
+    writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+
     for nd in coords {
         let node = match add_node(&nd, osm) {
             Ok(node) => node,
@@ -641,6 +646,7 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
 
     Ok(true)
 }
+
 pub fn multilinestring(_feat: &geojson::Feature, _coords: &Vec<geojson::LineStringType>, _osm: &mut OSMTypes) {
 
 }
@@ -652,8 +658,53 @@ pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &mut
         return Ok(linestring(&feat, &coords[0], osm)?);
     }
 
-    //Handle polygons with inners as relations
-    Ok(false)
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
+
+    let mut xml_rel = XMLEvents::BytesStart::owned(b"relation".to_vec(), 8);
+    xml_rel.push_attribute(("id", &*feature::get_id(feat).unwrap().to_string()));
+    xml_rel.push_attribute(("version", &*feature::get_version(feat).unwrap().to_string()));
+
+    writer.write_event(XMLEvents::Event::Start(xml_rel)).unwrap();
+
+    match *&feat.properties {
+        Some(ref props) => {
+            for (k, v) in props.iter() {
+                let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+                xml_tag.push_attribute(("k", k.as_str()));
+
+                xml_tag.push_attribute(("v", &*json2str(&v)));
+                writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+            }
+        },
+        None => { return Err(XMLError::Unknown); }
+    };
+
+    let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+    xml_tag.push_attribute(("k", "type"));
+    xml_tag.push_attribute(("v", "multipolygon"));
+    writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+
+    //TODO: CREATE WAY - NOT node - add_way fxn
+    for nd in coords {
+        let node = match add_node(&nd, osm) {
+            Ok(node) => node,
+            Err(_) => { return Err(XMLError::EncodingFailed); }
+        };
+
+        osm.nodes.push_str(&*node.0);
+
+        let mut xml_mem = XMLEvents::BytesStart::owned(b"member".to_vec(), 6);
+        xml_mem.push_attribute(("ref", &*node.1.to_string()));
+        xml_mem.push_attribute(("type", "node"));
+        xml_mem.push_attribute(("role", "point"));
+        writer.write_event(XMLEvents::Event::Empty(xml_mem)).unwrap();
+    }
+
+    writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"relation"))).unwrap();
+
+    osm.rels.push_str(&*String::from_utf8(writer.into_inner().into_inner()).unwrap());
+
+    Ok(true)
 }
 
 pub fn multipolygon(_feat: &geojson::Feature, _coords: &Vec<geojson::PolygonType>, _osm: &mut OSMTypes) {
