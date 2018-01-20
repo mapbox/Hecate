@@ -10,7 +10,9 @@
 
 ## Version History
 
-## Future Releases
+## 0.5.0
+
+- :rocket: Add support for `multipoint`, `polygon`, `multilinestrint`, `multipolygon` via XML download shim
 
 ## 0.4.0
 
