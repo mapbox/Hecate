@@ -13,6 +13,8 @@ OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON I
 4. [Feature Format](#feature-format)
 5. [API](#api)
     - [User Options](#user-options)
+    - [Admin Interface](#admin-interface)
+    - [Vector Tiles](#vector-tiles)
     - [Downloading via Boundaries](#downloading-via-boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
     - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
@@ -217,6 +219,34 @@ curl -X GET 'http://localhost:8000/
 
 ---
 
+<h3 align='center'>Admin Interface</h3>
+
+View the Admin Interface in your browser by pointing to `localhost:8000`
+
+---
+
+<h3 align='center'>Vector Tiles</h3>
+
+#### `GET` `/api/tiles/<z>/<x>/<y>
+
+Request a vector tile for a given set of coordinates. A [Mapbox Vector Tile](https://www.mapbox.com/vector-tiles/) is returned.
+
+*Required Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<z>` | `REQUIRED` Desired zoom level for tile
+| `<x>` | `REQUIRED` Desired x coordinate for tile
+| `<y>` | `REQUIRED` Desired y coordinate for tle
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email=ingalls@protonmail.com
+```
+
+---
+
 <h3 align='center'>User Options</h3>
 
 #### `GET` `/api/user/create`
@@ -261,7 +291,7 @@ Return line delimited GeoJSON `Feature` of all the geometries within the specifi
 
 | Option     | Notes |
 | :--------: | ----- |
-| `<bounds>` | One of the boundary files as specified via the `/ap/data/bounds` |
+| `<bounds>` | `REQUIRED` One of the boundary files as specified via the `/ap/data/bounds` |
 
 *Example*
 
@@ -281,7 +311,7 @@ Return a single GeoJSON `Feature` given its' ID.
 
 | Option | Notes |
 | :----: | ----- |
-| `<id>` | Numeric ID of a given feature to download |
+| `<id>` | `REQUIRED` Numeric ID of a given feature to download |
 
 *Example*
 
@@ -351,8 +381,17 @@ curl \
 The primary goal of the hecate project is a very fast GeoJSON based Interchange. That said, the tooling the OSM community has built around editing is unparalled. As such, 
 Hecate provides a Work-In-Progress OpenStreetMap Shim to support a subset of API operations as defined by the [OSM API v0.6](httpl://wiki.openstreetmap.org/wiki/API_v0.6) document.
 
-*Current Gotchas*
-- Only `Way` & `Relation` editing is not currentltly supported. (`Node` create/modify/delete should work 100%)
+*Important Notes*
+- All GeoJSON types can be downloaded via the API and viewed in JOSM
+- MultiPoints
+    - Are represented using an OSM  `Relation`
+    - The type will be `multipoint`
+    - The member type will be `point`
+- MultiLineStrings
+    - Are represented using an OSM `Relation`
+    - The type will be `multilinestring`
+    - The member will be `line`
+- Uploading `Way` & `Relation` types are not currently supported, attempting to upload them may produce undesirable results.
 
 The following incomplete list of endpoints are implemented with some degree of coverage with the OSM API Spec but are likely incomplete/or written with the minimum flexibility required to
 support editing from JOSM. See the code for a full list.

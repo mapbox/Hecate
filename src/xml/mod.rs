@@ -123,6 +123,7 @@ pub trait Generic {
 
 pub struct OSMTypes {
     node_it: i64,
+    way_it: i64,
     nodes: String,
     ways: String,
     rels: String
@@ -131,7 +132,8 @@ pub struct OSMTypes {
 impl OSMTypes {
     pub fn new() -> OSMTypes {
         OSMTypes {
-            node_it: 8000000000000000000,
+            node_it: 7000000000000000000,
+            way_it: 8000000000000000000,
             nodes: String::from(""),
             ways: String::from(""),
             rels: String::from("")
@@ -486,13 +488,13 @@ pub fn from_features(fc: &geojson::FeatureCollection) -> Result<String, XMLError
                         linestring(&feat, &coords, &mut osm)?;
                     },
                     geojson::Value::MultiLineString(ref coords) => {
-                        multilinestring(&feat, &coords, &mut osm);
+                        multilinestring(&feat, &coords, &mut osm)?;
                     },
                     geojson::Value::Polygon(ref coords) => {
                         polygon(&feat, &coords, &mut osm)?;
                     },
                     geojson::Value::MultiPolygon(ref coords) => {
-                        multipolygon(&feat, &coords, &mut osm);
+                        multipolygon(&feat, &coords, &mut osm)?;
                     },
                     _ => { return Err(XMLError::GCNotSupported); }
                 }
@@ -564,16 +566,19 @@ pub fn multipoint(feat: &geojson::Feature, coords: &Vec<geojson::PointType>, osm
         None => { return Err(XMLError::Unknown); }
     };
 
+    let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+    xml_tag.push_attribute(("k", "type"));
+    xml_tag.push_attribute(("v", "multipoint"));
+    writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+
     for nd in coords {
-        let node = match add_node(&nd, osm) {
+        let node_id = match add_node(&nd, osm) {
             Ok(node) => node,
             Err(_) => { return Err(XMLError::EncodingFailed); }
         };
 
-        osm.nodes.push_str(&*node.0);
-
         let mut xml_mem = XMLEvents::BytesStart::owned(b"member".to_vec(), 6);
-        xml_mem.push_attribute(("ref", &*node.1.to_string()));
+        xml_mem.push_attribute(("ref", &*node_id.to_string()));
         xml_mem.push_attribute(("type", "node"));
         xml_mem.push_attribute(("role", "point"));
         writer.write_event(XMLEvents::Event::Empty(xml_mem)).unwrap();
@@ -603,14 +608,12 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
         if n_refs.len() > 1 && *nd == coords[0] {
             n_ref = n_refs[0];
         } else {
-            let node = match add_node(&nd, osm) {
+            let node_id = match add_node(&nd, osm) {
                 Ok(node) => node,
                 Err(_) => { return Err(XMLError::EncodingFailed); }
             };
 
-            osm.nodes.push_str(&*node.0);
-
-            n_ref = node.1;
+            n_ref = node_id;
         }
 
         n_refs.push(n_ref);
@@ -641,8 +644,54 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
 
     Ok(true)
 }
-pub fn multilinestring(_feat: &geojson::Feature, _coords: &Vec<geojson::LineStringType>, _osm: &mut OSMTypes) {
 
+pub fn multilinestring(feat: &geojson::Feature, coords: &Vec<geojson::LineStringType>, osm: &mut OSMTypes) -> Result<bool, XMLError> {
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
+
+    let mut xml_rel = XMLEvents::BytesStart::owned(b"relation".to_vec(), 8);
+    xml_rel.push_attribute(("id", &*feature::get_id(feat).unwrap().to_string()));
+    xml_rel.push_attribute(("version", &*feature::get_version(feat).unwrap().to_string()));
+
+    writer.write_event(XMLEvents::Event::Start(xml_rel)).unwrap();
+
+    match *&feat.properties {
+        Some(ref props) => {
+            for (k, v) in props.iter() {
+                let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+                xml_tag.push_attribute(("k", k.as_str()));
+
+                xml_tag.push_attribute(("v", &*json2str(&v)));
+                writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+            }
+        },
+        None => { return Err(XMLError::Unknown); }
+    };
+
+    let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+    xml_tag.push_attribute(("k", "type"));
+    xml_tag.push_attribute(("v", "multilinestring"));
+    writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+
+    for ln in coords {
+        let way_id = match add_way(&ln, osm) {
+            Ok(way) => way,
+            Err(_) => { return Err(XMLError::EncodingFailed); }
+        };
+
+        let mut xml_mem = XMLEvents::BytesStart::owned(b"member".to_vec(), 6);
+        xml_mem.push_attribute(("ref", &*way_id.to_string()));
+
+        xml_mem.push_attribute(("role", "line"));
+        xml_mem.push_attribute(("type", "way"));
+
+        writer.write_event(XMLEvents::Event::Empty(xml_mem)).unwrap();
+    }
+
+    writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"relation"))).unwrap();
+
+    osm.rels.push_str(&*String::from_utf8(writer.into_inner().into_inner()).unwrap());
+
+    Ok(true)
 }
 
 pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &mut OSMTypes) -> Result<bool, XMLError> {
@@ -652,11 +701,111 @@ pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &mut
         return Ok(linestring(&feat, &coords[0], osm)?);
     }
 
-    //Handle polygons with inners as relations
-    Ok(false)
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
+
+    let mut xml_rel = XMLEvents::BytesStart::owned(b"relation".to_vec(), 8);
+    xml_rel.push_attribute(("id", &*feature::get_id(feat).unwrap().to_string()));
+    xml_rel.push_attribute(("version", &*feature::get_version(feat).unwrap().to_string()));
+
+    writer.write_event(XMLEvents::Event::Start(xml_rel)).unwrap();
+
+    match *&feat.properties {
+        Some(ref props) => {
+            for (k, v) in props.iter() {
+                let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+                xml_tag.push_attribute(("k", k.as_str()));
+
+                xml_tag.push_attribute(("v", &*json2str(&v)));
+                writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+            }
+        },
+        None => { return Err(XMLError::Unknown); }
+    };
+
+    let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+    xml_tag.push_attribute(("k", "type"));
+    xml_tag.push_attribute(("v", "multipolygon"));
+    writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+
+    for (poly_it, poly) in coords.iter().enumerate() {
+        let way_id = match add_way(&poly, osm) {
+            Ok(way) => way,
+            Err(_) => { return Err(XMLError::EncodingFailed); }
+        };
+
+        let mut xml_mem = XMLEvents::BytesStart::owned(b"member".to_vec(), 6);
+        xml_mem.push_attribute(("ref", &*way_id.to_string()));
+
+        if poly_it == 0 {
+            xml_mem.push_attribute(("role", "outer"));
+        } else {
+            xml_mem.push_attribute(("role", "inner"));
+        }
+
+        xml_mem.push_attribute(("type", "way"));
+        writer.write_event(XMLEvents::Event::Empty(xml_mem)).unwrap();
+    }
+
+    writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"relation"))).unwrap();
+
+    osm.rels.push_str(&*String::from_utf8(writer.into_inner().into_inner()).unwrap());
+
+    Ok(true)
 }
 
-pub fn multipolygon(_feat: &geojson::Feature, _coords: &Vec<geojson::PolygonType>, _osm: &mut OSMTypes) {
+pub fn multipolygon(feat: &geojson::Feature, coords: &Vec<geojson::PolygonType>, osm: &mut OSMTypes) -> Result<bool, XMLError> {
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
+
+    let mut xml_rel = XMLEvents::BytesStart::owned(b"relation".to_vec(), 8);
+    xml_rel.push_attribute(("id", &*feature::get_id(feat).unwrap().to_string()));
+    xml_rel.push_attribute(("version", &*feature::get_version(feat).unwrap().to_string()));
+
+    writer.write_event(XMLEvents::Event::Start(xml_rel)).unwrap();
+
+    match *&feat.properties {
+        Some(ref props) => {
+            for (k, v) in props.iter() {
+                let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+                xml_tag.push_attribute(("k", k.as_str()));
+
+                xml_tag.push_attribute(("v", &*json2str(&v)));
+                writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+            }
+        },
+        None => { return Err(XMLError::Unknown); }
+    };
+
+    let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
+    xml_tag.push_attribute(("k", "type"));
+    xml_tag.push_attribute(("v", "multipolygon"));
+    writer.write_event(XMLEvents::Event::Empty(xml_tag)).unwrap();
+
+    for polys in coords {
+        for (poly_it, poly) in polys.iter().enumerate() {
+            let way_id = match add_way(&poly, osm) {
+                Ok(way) => way,
+                Err(_) => { return Err(XMLError::EncodingFailed); }
+            };
+
+            let mut xml_mem = XMLEvents::BytesStart::owned(b"member".to_vec(), 6);
+            xml_mem.push_attribute(("ref", &*way_id.to_string()));
+
+            if poly_it == 0 {
+                xml_mem.push_attribute(("role", "outer"));
+            } else {
+                xml_mem.push_attribute(("role", "inner"));
+            }
+
+            xml_mem.push_attribute(("type", "way"));
+            writer.write_event(XMLEvents::Event::Empty(xml_mem)).unwrap();
+        }
+    }
+
+    writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"relation"))).unwrap();
+
+    osm.rels.push_str(&*String::from_utf8(writer.into_inner().into_inner()).unwrap());
+
+    Ok(true)
 
 }
 
@@ -673,21 +822,71 @@ pub fn json2str(v: &serde_json::value::Value) -> String {
     }
 }
 
-pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<(String, i64), XMLError> {
+pub fn add_way(coords: &geojson::LineStringType, osm: &mut OSMTypes) -> Result<i64, XMLError> {
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
+
+    let mut xml_way = XMLEvents::BytesStart::owned(b"way".to_vec(), 3);
+
+    osm.way_it = osm.way_it + 1;
+    let id = osm.way_it;
+
+    xml_way.push_attribute(("id", &*id.to_string()));
+    xml_way.push_attribute(("version", "1"));
+    writer.write_event(XMLEvents::Event::Start(xml_way)).unwrap();
+
+    let mut n_refs: Vec<i64> = Vec::new();
+
+    for nd in coords {
+        let n_ref: i64;
+
+        if n_refs.len() > 1 && *nd == coords[0] {
+            n_ref = n_refs[0];
+        } else {
+            let node_id = match add_node(&nd, osm) {
+                Ok(node) => node,
+                Err(_) => { return Err(XMLError::EncodingFailed); }
+            };
+
+            n_ref = node_id;
+        }
+
+        n_refs.push(n_ref);
+    }
+
+    for n_ref in n_refs {
+        let mut xml_nd = XMLEvents::BytesStart::owned(b"nd".to_vec(), 2);
+        xml_nd.push_attribute(("ref", &*n_ref.to_string()));
+        writer.write_event(XMLEvents::Event::Empty(xml_nd)).unwrap();
+    }
+
+    writer.write_event(XMLEvents::Event::End(XMLEvents::BytesEnd::borrowed(b"way"))).unwrap();
+
+    let way = String::from_utf8(writer.into_inner().into_inner()).unwrap();
+    osm.ways.push_str(&*way);
+
+    Ok(id)
+}
+
+
+pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<i64, XMLError> {
     let mut writer = Writer::new(Cursor::new(Vec::new()));
 
     let mut xml_node = XMLEvents::BytesStart::owned(b"node".to_vec(), 4);
 
     osm.node_it = osm.node_it + 1;
+    let id = osm.node_it;
 
-    xml_node.push_attribute(("id", &*osm.node_it.to_string()));
+    xml_node.push_attribute(("id", &*id.to_string()));
     xml_node.push_attribute(("version", "1"));
     xml_node.push_attribute(("lat", &*coords[1].to_string()));
     xml_node.push_attribute(("lon", &*coords[0].to_string()));
 
     writer.write_event(XMLEvents::Event::Empty(xml_node)).unwrap();
 
-    Ok((String::from_utf8(writer.into_inner().into_inner()).unwrap(), osm.node_it))
+    let node = String::from_utf8(writer.into_inner().into_inner()).unwrap();
+    osm.nodes.push_str(&*node);
+
+    Ok(id)
 }
 
 pub fn parse_osm(xml_node: &XMLEvents::BytesStart, meta: &mut HashMap<String, String>) -> Result<bool, XMLError> {
