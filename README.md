@@ -343,13 +343,15 @@ Create, Modify, or Delete an individual GeoJSON `Feature`
 
 The Feature must follow format defined in [Feature Format](#feature-format).
 
+The feature also must contain a top-level String `message` attribute describing the changes being made (The delta message)
+
 *Example*
 
 ```bash
 curl \
     -X POST \
     -H "Content-Type: application/json" \
-    -d '{"action": "create", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}' \
+    -d '{"action": "create", "message": "Random Changes", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}' \
     'http://username:password@localhost:8000/api/data/feature'
 ```
 
@@ -359,7 +361,9 @@ curl \
 
 Create, Modify, and/or Delete many features via a GeoJSON `FeatureCollection`
 
-The Feature must follow format defined in [Feature Format](#feature-format).
+The Features in the FeatureCollection must follow format defined in [Feature Format](#feature-format).
+
+The FeatureCollection also must contain a top-level String `message` attribute describing the changes being made (The delta message)
 
 Note that a mix of `create`, `modify`, and `delete` operatioons are allowed
 within each `FeatureCollection`
@@ -370,7 +374,7 @@ within each `FeatureCollection`
 curl \
     -X POST \
     -H "Content-Type: application/json" \
-    -d '{"type":"FeatureCollection","features": [{"action": "create", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}]}' \
+    -d '{"type":"FeatureCollection","message":"A bunch of changes","features": [{"action": "create", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}]}' \
     'http://username:password@localhost:8000/api/data/features'
 ```
 
