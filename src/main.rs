@@ -117,6 +117,7 @@ fn main() {
         .mount("/api", routes![
             mvt_get,
             user_create,
+            delta_list,
             feature_action,
             features_action,
             feature_get,
@@ -201,6 +202,14 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
     match user::create(&conn.0, &user.username, &user.password, &user.email) {
         Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/deltas")]
+fn delta_list(conn: DbConn) ->  Result<Json, status::Custom<String>> {
+    match delta::list_json(&conn.0, None) {
+        Ok(deltas) => Ok(deltas),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
     }
 }
 
