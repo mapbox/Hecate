@@ -6,16 +6,22 @@ window.onload = () => {
         el: '#app',
         data: {
             credentials: {
-                map: {
-                    key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA'
-                }
+                map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' }
             },
-            bbox: [],
-            tileIndex: false
+            deltas: []
+        },
+        created: function() {
+            fetch('http://localhost:8000/api/deltas').then((response) => {
+                  return response.json();
+            }).then((body) => {
+                this.deltas = this.deltas.concat(body);
+            });
         },
         watch: { },
         methods: { }
     });
+
+    window.vue.moment = moment;
 
     mapboxgl.accessToken = window.vue.credentials.map.key;
     window.vue.map = new mapboxgl.Map({

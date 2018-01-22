@@ -9,6 +9,7 @@
         <link rel='stylesheet' href='./main.css' />
         <link href="https://api.mapbox.com/mapbox-assembly/v0.19.0/assembly.min.css" rel="stylesheet">
         <script async defer src="https://api.mapbox.com/mapbox-assembly/v0.19.0/assembly.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>
         <script src='https://unpkg.com/vue'></script>
         <script src="https://unpkg.com/vue-multiselect@2.0.3"></script>
         <script src="https://unpkg.com/vue-clipboard2@0.0.8/dist/vue-clipboard.min.js"></script>
@@ -37,24 +38,12 @@
                                 </div>
                                 <button class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></svg></button>
                             </div>
-
-                            <div class="px12 py12 border-b bg-darken10-on-hover border--gray-light">
+                            <div v-for="delta in deltas" class="px12 py12 border-b bg-darken10-on-hover border--gray-light">
                                 <div class="clearfix">
-                                    <div class="fl txt-bold">Ingalls</div>
-                                    <div class="fr txt-em">5 Minutes ago</div>
+                                    <div class="fl txt-bold" v-text="delta.username"></div>
+                                    <div class="fr txt-em" v-text="moment(delta.created).fromNow()"></div>
                                 </div>
-                                <div>
-                                    I AM THE MESSAGE
-                                </div>
-                            </div>
-                            <div class="px12 py12 border-b bg-darken10-on-hover border--gray-light">
-                                <div class="clearfix">
-                                    <div class="fl txt-bold">Martin</div>
-                                    <div class="fr txt-em">Yesterday</div>
-                                </div>
-                                <div>
-                                    I AM A REALLY LONG MESSAGE THAT GOES ON FOREVER AND SHOULD PROBABLY BE CUT OFF
-                                </div>
+                                <div v-text="delta.message ? delta.message : '{No Delta Message}'"></div>
                             </div>
                         </div>
                         <div class='px12 py12 bg-gray-faint round-b-ml txt-s'>
