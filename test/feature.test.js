@@ -107,6 +107,7 @@ test('feature#create', (t) => {
                 body: JSON.stringify({
                     type: 'Feature',
                     action: 'create',
+                    message: 'Creating a Point',
                     properties: {
                         number: '123'
                     },
@@ -147,6 +148,7 @@ test('feature#create', (t) => {
                 body: JSON.stringify({
                     type: 'Feature',
                     action: 'create',
+                    message: 'Creating a MultiPoint',
                     properties: {
                         number: '123'
                     },
@@ -187,6 +189,7 @@ test('feature#create', (t) => {
                 body: JSON.stringify({
                     type: 'Feature',
                     action: 'create',
+                    message: 'Creating a LineString',
                     properties: {
                         building: true
                     },
@@ -227,6 +230,7 @@ test('feature#create', (t) => {
                 body: JSON.stringify({
                     type: 'Feature',
                     action: 'create',
+                    message: 'Creating a MultiLineString',
                     properties: {
                         building: true
                     },
@@ -272,6 +276,7 @@ test('feature#modify', (t) => {
                     id: 1,
                     version: 1,
                     action: 'modify',
+                    message: 'Modify a Point',
                     type: 'Feature',
                     properties: {
                         number: '321'
@@ -314,6 +319,7 @@ test('feature#modify', (t) => {
                     id: 2,
                     version: 1,
                     action: 'modify',
+                    message: 'Modify a MultiPoint',
                     type: 'Feature',
                     properties: {
                         number: '321'
@@ -356,6 +362,7 @@ test('feature#modify', (t) => {
                     id: 3,
                     version: 1,
                     action: 'modify',
+                    message: 'Modify a LineString',
                     type: 'Feature',
                     properties: {
                         building: false
@@ -398,6 +405,7 @@ test('feature#modify', (t) => {
                     id: 4,
                     version: 1,
                     action: 'modify',
+                    message: 'Modify a MultiLineString',
                     type: 'Feature',
                     properties: {
                         building: false
@@ -442,6 +450,7 @@ test('feature#delete', (t) => {
             body: JSON.stringify({
                 id: 1,
                 type: 'Feature',
+                message: 'Delete - Version Mismatch',
                 action: 'delete',
                 version: 1,
                 properties: null,
@@ -464,6 +473,7 @@ test('feature#delete', (t) => {
                 body: JSON.stringify({
                     id: 1,
                     type: 'Feature',
+                    message: 'Delete a Point',
                     action: 'delete',
                     version: 2,
                     properties: null,
@@ -495,6 +505,7 @@ test('feature#delete', (t) => {
                 body: JSON.stringify({
                     id: 2,
                     type: 'Feature',
+                    message: 'Delete a MultiPoint',
                     action: 'delete',
                     version: 2,
                     properties: null,
@@ -525,6 +536,7 @@ test('feature#delete', (t) => {
                 body: JSON.stringify({
                     id: 3,
                     type: 'Feature',
+                    message: 'Delete a LineString',
                     action: 'delete',
                     version: 2,
                     properties: null,
@@ -555,6 +567,7 @@ test('feature#delete', (t) => {
                 body: JSON.stringify({
                     id: 4,
                     type: 'Feature',
+                    message: 'Delete a MultiLineString',
                     action: 'delete',
                     version: 2,
                     properties: null,

@@ -1,5 +1,6 @@
 {
     "type": "FeatureCollection",
+    "message": "Create Address Features",
     "features": [
         { "action": "create", "geometry":{"type":"Point","coordinates":[-77.0003528,38.8921953]},"type":"Feature","properties":{"source":"openaddresses,us-dc-statewide-1500390535","street":"CONSTITUTION AVENUE NE","number":"402"}},
         { "action": "create", "geometry":{"type":"Point","coordinates":[-76.999249,38.8926523]},"type":"Feature","properties":{"source":"openaddresses,us-dc-statewide-1500390535","street":"5TH STREET NE","number":"219"}},

@@ -43,7 +43,7 @@
                                     <div class="fl txt-bold" v-text="delta.username"></div>
                                     <div class="fr txt-em" v-text="moment(delta.created).fromNow()"></div>
                                 </div>
-                                <div v-text="delta.message ? delta.message : '{No Delta Message}'"></div>
+                                <div v-text="delta.props.message"></div>
                             </div>
                         </div>
                         <div class='px12 py12 bg-gray-faint round-b-ml txt-s'>

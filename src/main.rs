@@ -291,9 +291,22 @@ fn features_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, s
         }
     };
 
+    let delta_message = match fc.foreign_members {
+        None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("FeatureCollection Must have message property for delta"))); }
+        Some(ref members) => match members.get("message") {
+            Some(message) => match message.as_str() {
+                Some(message) => String::from(message),
+                None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("FeatureCollection Must have message property for delta"))); }
+            },
+            None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("FeatureCollection Must have message property for delta"))); }
+        }
+    };
+
     let trans = conn.0.transaction().unwrap();
 
-    let map: HashMap<String, Option<String>> = HashMap::new();
+    let mut map: HashMap<String, Option<String>> = HashMap::new();
+    map.insert(String::from("message"), Some(delta_message));
+
     let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
         Err(_) => {
@@ -578,9 +591,21 @@ fn feature_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, st
         }
     };
 
+    let delta_message = match feat.foreign_members {
+        None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Feature Must have message property for delta"))); }
+        Some(ref members) => match members.get("message") {
+            Some(message) => match message.as_str() {
+                Some(message) => String::from(message),
+                None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Feature Must have message property for delta"))); }
+            },
+            None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Feature Must have message property for delta"))); }
+        }
+    };
+
     let trans = conn.0.transaction().unwrap();
 
-    let map: HashMap<String, Option<String>> = HashMap::new();
+    let mut map: HashMap<String, Option<String>> = HashMap::new();
+    map.insert(String::from("message"), Some(delta_message));
     let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
         Err(_) => {

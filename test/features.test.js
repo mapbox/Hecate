@@ -51,6 +51,7 @@ test('features', (t) => {
                 url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
                 body: JSON.stringify({
                     type: 'FeatureCollection',
+                    message: 'Basic Creation',
                     features: [{
                         type: 'Feature',
                         action: 'create',
@@ -128,6 +129,7 @@ test('features', (t) => {
                 url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
                 body: JSON.stringify({
                     type: 'FeatureCollection',
+                    message: 'Basic Modification',
                     features: [{
                         id: 1,
                         type: 'Feature',
@@ -213,6 +215,7 @@ test('features', (t) => {
                 url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
                 body: JSON.stringify({
                     type: 'FeatureCollection',
+                    message: 'Basic Deletion',
                     features: [{
                         id: 1,
                         type: 'Feature',
