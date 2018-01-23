@@ -1,4 +1,4 @@
-1.25/*jshint browser:true,curly: false */
+/*jshint browser:true,curly: false */
 /* global L */
 
 window.onload = () => {
@@ -18,15 +18,13 @@ window.onload = () => {
             delta: function() {
                 //Reset Normal Map
                 if (!this.delta) {
-                    this.map_delta_unstyle();
-                    this.map_data_style();
+                    this.map_default_style();
 
                     this.map.getSource('hecate-delta').setData({ type: 'FeatureCollection', features: [] });
                 } else {
                     this.map.getSource('hecate-delta').setData(this.delta.features);
 
                     this.map_default_unstyle();
-                    this.map_delta_style();
 
                     this.delta.bbox = turf.bbox(this.delta.features);
                     this.map.fitBounds(this.delta.bbox);
@@ -55,19 +53,13 @@ window.onload = () => {
                     this.delta = body;
                 });
             },
-            map_delta_unstyle: function() {
-                this.map.removeLayer('hecate-delta-polygons');
-                this.map.removeLayer('hecate-delta-polygon-outlines');
-                this.map.removeLayer('hecate-delta-lines');
-                this.map.removeLayer('hecate-delta-points');
-            },
             map_delta_style: function() {
                 let action_create = '#008000';
                 let action_modify = '#FFFF00';
                 let action_delete = '#FF0000';
                 
                 this.map.addLayer({
-                    id: 'hecate-data-polygons',
+                    id: 'hecate-delta-polygons',
                     type: 'fill',
                     source: 'hecate-delta',
                     filter: ['==', '$type', 'Polygon'],
@@ -78,7 +70,7 @@ window.onload = () => {
                 });
 
                 this.map.addLayer({
-                    id: 'hecate-data-polygon-outlines',
+                    id: 'hecate-delta-polygon-outlines',
                     type: 'line',
                     source: 'hecate-delta',
                     filter: ['==', '$type', 'Polygon'],
@@ -93,7 +85,7 @@ window.onload = () => {
                 })
 
                 this.map.addLayer({
-                    id: 'hecate-data-lines',
+                    id: 'hecate-delta-lines',
                     type: 'line',
                     source: 'hecate-delta',
                     filter: ['==', '$type', 'LineString'],
@@ -108,7 +100,7 @@ window.onload = () => {
                 });
 
                 this.map.addLayer({
-                    id: 'hecate-data-points',
+                    id: 'hecate-delta-points',
                     type: 'circle',
                     source: 'hecate-delta',
                     filter: ['==', '$type', 'Point'],
@@ -212,6 +204,7 @@ window.onload = () => {
         });
 
         window.vue.map_default_style();
+        window.vue.map_delta_style();
     });
 
     window.vue.map.addControl(new MapboxGeocoder({
