@@ -26,52 +26,66 @@
         <div id="app" class="relative">
             <div class='viewport-full relative scroll-hidden'>
                 <div id="map" class='bg-darken10 viewport-twothirds viewport-full-ml absolute top left right bottom'></div>
-                <div class='absolute top-ml left z1 w-full w240-ml hmax-full px12 py12-ml'>
-                    <div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10'>
-                        <div class='scroll-auto'>
+                <div class='absolute top-ml left bottom z1 w-full w240-ml hmax-full px12 py12-ml' style="pointer-events: none;">
+
+                    <div v-if="delta" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+                        <div class="flex-child">
                             <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Deltas</h3>
+                        </div>
 
-                            <div v-if="delta">
-                                <div class='clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
-                                    <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
-                                    <div class="px12 py3 txt-bold fl">Delta <span v-text="delta.id"></span></div>
-                                </div>
-                                <div v-for="(feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                                    <span v-if="feat.geometry.type === 'Point'" class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-marker'/></span>
-                                    <span v-if="feat.geometry.type === 'MultiPoint'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-marker'/></span>
-                                    <span v-if="feat.geometry.type === 'LineString'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polyline'/></span>
-                                    <span v-if="feat.geometry.type === 'MultiLineString'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polyline'/></span>
-                                    <span v-if="feat.geometry.type === 'Polygon'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polygon'/></span>
-                                    <span v-if="feat.geometry.type === 'MultiPolygon'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polygon'/></span>
+                        <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
+                            <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
+                            <div class="px12 py3 txt-bold fl">Delta <span v-text="delta.id"></span></div>
+                        </div>
 
-                                    <span class="fl" v-text="feat.id"></span>
-                                    <span class="fl px6" v-text="feat.action"></span>
-                                </div>
-                            </div>
-                            <div v-else>
-                                <div class='px12 py12 bg-gray-faint round-b-ml txt-s'>
-                                    <div class='select-container'>
-                                        <select class='select select--s select--stroke'>
-                                            <option>Latest First</option>
-                                            <option>Earliest First</option>
-                                        </select>
-                                        <div class='select-arrow'></div>
-                                    </div>
-                                    <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
-                                </div>
-                                <div v-for="delta in deltas" @click="delta_get(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer">
-                                    <div class="clearfix">
-                                        <div class="fl txt-bold" v-text="delta.username"></div>
-                                        <div class="fr txt-em" v-text="moment(delta.created).fromNow()"></div>
-                                    </div>
-                                    <div v-text="delta.props.message"></div>
-                                </div>
+                        <div class="flex-child scroll-auto">
+                            <div v-for="(feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+                                <span v-if="feat.geometry.type === 'Point'" class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-marker'/></span>
+                                <span v-if="feat.geometry.type === 'MultiPoint'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-marker'/></span>
+                                <span v-if="feat.geometry.type === 'LineString'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polyline'/></span>
+                                <span v-if="feat.geometry.type === 'MultiLineString'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polyline'/></span>
+                                <span v-if="feat.geometry.type === 'Polygon'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polygon'/></span>
+                                <span v-if="feat.geometry.type === 'MultiPolygon'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polygon'/></span>
+
+                                <span class="fl" v-text="feat.id"></span>
+                                <span class="fl px6" v-text="feat.action"></span>
                             </div>
                         </div>
-                        <div class='px12 py12 bg-gray-faint round-b-ml txt-s'>
+
+                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
                             <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
                         </div>
                     </div>
+                    <div v-else class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+                        <div class="flex-child">
+                            <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Deltas</h3>
+                        </div>
+
+                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
+                            <div class='select-container'>
+                                <select class='select select--s select--stroke'>
+                                    <option>Latest First</option>
+                                    <option>Earliest First</option>
+                                </select>
+                                <div class='select-arrow'></div>
+                            </div>
+                            <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
+                        </div>
+                        <div class="flex-child scroll-auto">
+                            <div v-for="delta in deltas" @click="delta_get(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer wfull">
+                                <div class="clearfix">
+                                    <div class="fl txt-bold" v-text="delta.username"></div>
+                                    <div class="fr txt-em" v-text="moment(delta.created).fromNow()"></div>
+                                </div>
+                                <div v-text="delta.props.message"></div>
+                            </div>
+                        </div>
+
+                        <div class='px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
+                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
+                        </div>
+                    </div>
+
                 </div>
                 <div class='absolute top-mr right z1 px12 py12-ml'>
                     <div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10'>
