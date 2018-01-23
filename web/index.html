@@ -28,7 +28,30 @@
                 <div id="map" class='bg-darken10 viewport-twothirds viewport-full-ml absolute top left right bottom'></div>
                 <div class='absolute top-ml left bottom z1 w-full w240-ml hmax-full px12 py12-ml' style="pointer-events: none;">
 
-                    <div v-if="delta" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+                    <div v-if="feature" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+                        <div class="flex-child">
+                            <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Deltas</h3>
+                        </div>
+
+                        <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
+                            <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
+                            <div class="px12 py3 txt-bold fl">Feature <span v-text="feature.id"></span></div>
+                        </div>
+
+                        <div class="flex-child scroll-auto">
+                            <table class='table'>
+                                <thead><tr><th>Key</th><th>Value<th></tr></thead>
+                                 <tbody>
+                                    <tr v-for="prop in Object.keys(feature.properties)"><td v-text="prop"></td><td v-text="feature.properties[prop]"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
+                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
+                        </div>
+                    </div>
+                    <div v-else-if="delta" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
                         <div class="flex-child">
                             <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Deltas</h3>
                         </div>

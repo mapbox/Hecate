@@ -9,6 +9,7 @@ window.onload = () => {
                 map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' }
             },
             delta: false,
+            feature: false,
             deltas: []
         },
         created: function() {
@@ -51,6 +52,15 @@ window.onload = () => {
                         return feat;
                     });
                     this.delta = body;
+                });
+            },
+            feature_get: function(feature_id) {
+                if (!feature_id) return;
+
+                fetch(`http://127.0.0.1:8000/api/data/feature/${feature_id}`).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    this.feature = body;
                 });
             },
             map_delta_style: function() {
@@ -210,5 +220,13 @@ window.onload = () => {
     window.vue.map.addControl(new MapboxGeocoder({
         accessToken: mapboxgl.accessToken,
     }));
+
+    window.vue.map.on('click', (e) => {
+        if (window.vue.delta) return; //Don't currently support showing features within a delta
+
+        let clicked = window.vue.map.queryRenderedFeatures(e.point)[0];
+
+        if (clicked && clicked.properties.id) window.vue.feature_get(clicked.properties.id);
+    });
 }
 
