@@ -114,6 +114,7 @@ fn main() {
         .mount("/api", routes![
             mvt_get,
             user_create,
+            delta,
             delta_list,
             delta_list_offset,
             feature_action,
@@ -220,6 +221,14 @@ fn delta_list(conn: DbConn) ->  Result<Json, status::Custom<String>> {
 fn delta_list_offset(conn: DbConn, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
     match delta::list_json(&conn.0, Some(opts.offset)) {
         Ok(deltas) => Ok(deltas),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
+    }
+}
+
+#[get("/delta/<id>")]
+fn delta(conn: DbConn, id: i64) ->  Result<Json, status::Custom<String>> {
+    match delta::get_json(&conn.0, &id) {
+        Ok(delta) => Ok(delta),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
     }
 }
