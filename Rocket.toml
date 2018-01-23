@@ -1,5 +1,5 @@
 [global]
-address = "localhost"
+address = "127.0.0.1"
 log = "normal"
 port = 8000
 

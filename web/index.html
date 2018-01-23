@@ -9,22 +9,24 @@
         <link rel='stylesheet' href='./main.css' />
         <link href="https://api.mapbox.com/mapbox-assembly/v0.19.0/assembly.min.css" rel="stylesheet">
         <script async defer src="https://api.mapbox.com/mapbox-assembly/v0.19.0/assembly.js"></script>
+        <script async defer src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/5.1.5/turf.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>
         <script src='https://unpkg.com/vue'></script>
         <script src="https://unpkg.com/vue-multiselect@2.0.3"></script>
         <script src="https://unpkg.com/vue-clipboard2@0.0.8/dist/vue-clipboard.min.js"></script>
         <link rel="stylesheet" href="https://unpkg.com/vue-multiselect@2.0.3/dist/vue-multiselect.min.css">
         <link href='https://fonts.googleapis.com/css?family=Noto+Sans' rel='stylesheet' type='text/css'>
-        <script src='https://api.mapbox.com/mapbox-gl-js/v0.42.1/mapbox-gl.js'></script>
-        <link href='https://api.mapbox.com/mapbox-gl-js/v0.42.1/mapbox-gl.css' rel='stylesheet' />
-        <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js'></script>
+        <script src='https://api.mapbox.com/mapbox-gl-js/v0.43.0/mapbox-gl.js'></script>
+        <link href='https://api.mapbox.com/mapbox-gl-js/v0.43.0/mapbox-gl.css' rel='stylesheet' />
+        <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.2.0/mapbox-gl-geocoder.min.js'></script>
+        <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.2.0/mapbox-gl-geocoder.css' type='text/css' />
         <script src='./main.js'></script>
     </head>
     <body>
         <div id="app" class="relative">
             <div class='viewport-full relative scroll-hidden'>
                 <div id="map" class='bg-darken10 viewport-twothirds viewport-full-ml absolute top left right bottom'></div>
-                <div class='absolute top-ml left z1 w-full w240-ml px12 py12-ml'>
+                <div class='absolute top-ml left z1 w-full w240-ml hmax-full px12 py12-ml'>
                     <div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10'>
                         <div class='scroll-auto'>
                             <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Deltas</h3>
@@ -34,9 +36,9 @@
                                     <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
                                     <div class="px12 py3 txt-bold fl">Delta <span v-text="delta.id"></span></div>
                                 </div>
-                                <div v-for="feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover">
+                                <div v-for="(feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
                                     <span v-if="feat.geometry.type === 'Point'" class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-marker'/></span>
-                                    <span v-if="feat.geometry.type === 'MultiPoint'" class="fl px6 px6"><svg class='icon'><use xlink:href='#icon-marker'/></span>
+                                    <span v-if="feat.geometry.type === 'MultiPoint'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-marker'/></span>
                                     <span v-if="feat.geometry.type === 'LineString'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polyline'/></span>
                                     <span v-if="feat.geometry.type === 'MultiLineString'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polyline'/></span>
                                     <span v-if="feat.geometry.type === 'Polygon'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polygon'/></span>
