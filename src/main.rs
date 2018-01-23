@@ -1,7 +1,4 @@
-#![feature(plugin)]
-#![feature(custom_derive)]
-#![feature(custom_attribute)]
-#![feature(attr_literals)]
+#![feature(plugin, custom_derive, custom_attribute, attr_literals)]
 #![plugin(rocket_codegen)]
 
 extern crate hecate;
@@ -118,6 +115,7 @@ fn main() {
             mvt_get,
             user_create,
             delta_list,
+            delta_list_offset,
             feature_action,
             features_action,
             feature_get,
@@ -197,6 +195,11 @@ struct Map {
     bbox: String
 }
 
+#[derive(FromForm)]
+struct DeltaList {
+    offset: i64
+}
+
 #[get("/user/create?<user>")]
 fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>> {
     match user::create(&conn.0, &user.username, &user.password, &user.email) {
@@ -208,6 +211,14 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
 #[get("/deltas")]
 fn delta_list(conn: DbConn) ->  Result<Json, status::Custom<String>> {
     match delta::list_json(&conn.0, None) {
+        Ok(deltas) => Ok(deltas),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
+    }
+}
+
+#[get("/deltas?<opts>")]
+fn delta_list_offset(conn: DbConn, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
+    match delta::list_json(&conn.0, Some(opts.offset)) {
         Ok(deltas) => Ok(deltas),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
     }

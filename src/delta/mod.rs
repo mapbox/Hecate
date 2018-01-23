@@ -79,7 +79,7 @@ pub fn list_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
     };
 
     match conn.query("
-        SELECT array_to_json(Array_Agg(djson.delta))::JSON
+        SELECT COALESCE(array_to_json(Array_Agg(djson.delta)), '[]')::JSON
         FROM (
             SELECT row_to_json(d) as delta
             FROM (
