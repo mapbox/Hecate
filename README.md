@@ -281,7 +281,7 @@ Return an array of possible boundary files with which data can be extracted from
 ```bash
 curl -X GET 'http://localhost:8000/api/data/bounds
 ```
-bounds
+
 ---
 
 #### `GET` `/api/data/bounds/<bounds>`
