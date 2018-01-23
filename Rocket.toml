@@ -1,0 +1,8 @@
+[global]
+address = "localhost"
+log = "normal"
+port = 8000
+
+[global.limits]
+forms = 131072
+json = 20971520
