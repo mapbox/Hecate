@@ -252,7 +252,7 @@ curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email
 
 #### `GET` `/api/user/create`
 
-Create a new user, provied the username & password are not already taken
+Create a new user, provied the username & email are not already taken
 
 *Options*
 
