@@ -8,17 +8,32 @@ window.onload = () => {
             credentials: {
                 map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' }
             },
-            deltas: []
+            delta: false,
+            deltas: [],
         },
         created: function() {
-            fetch('http://localhost:8000/api/deltas').then((response) => {
-                  return response.json();
-            }).then((body) => {
-                this.deltas = this.deltas.concat(body);
-            });
+            this.deltas_refresh();
         },
         watch: { },
-        methods: { }
+        methods: {
+            deltas_refresh: function() {
+                fetch('http://localhost:8000/api/deltas').then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    this.deltas.splice(0, this.deltas.length);
+                    this.deltas = this.deltas.concat(body);
+                });
+            },
+            delta_get: function(delta_id) {
+                if (!delta_id) return;
+
+                fetch(`http://localhost:8000/api/delta/${delta_id}`).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    this.delta = body;
+                });
+            }
+        }
     });
 
     window.vue.moment = moment;
