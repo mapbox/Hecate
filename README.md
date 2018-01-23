@@ -228,7 +228,7 @@ View the Admin Interface in your browser by pointing to `localhost:8000`
 
 <h3 align='center'>Vector Tiles</h3>
 
-#### `GET` `/api/tiles/<z>/<x>/<y>
+#### `GET` `/api/tiles/<z>/<x>/<y>`
 
 Request a vector tile for a given set of coordinates. A [Mapbox Vector Tile](https://www.mapbox.com/vector-tiles/) is returned.
 
