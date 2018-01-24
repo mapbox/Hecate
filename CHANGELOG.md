@@ -10,6 +10,11 @@
 
 ## Version History
 
+## 0.6.0
+
+- :tada: Delta APIs
+- :tada: Usable Web API
+
 ## 0.5.0
 
 - :rocket: Add support for `multipoint`, `polygon`, `multilinestrint`, `multipolygon` via XML download shim
