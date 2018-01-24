@@ -1,6 +1,10 @@
 extern crate geojson;
 extern crate serde_json;
+extern crate r2d2;
+extern crate  r2d2_postgres;
+extern crate rocket_contrib;
 
+use self::rocket_contrib::Json as Json;
 use postgres;
 
 use std::collections::HashMap;
@@ -9,6 +13,8 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub enum DeltaError {
     CreationFail,
+    ListFail,
+    GetFail,
     FinalizeFail,
     NotFound
 }
@@ -17,6 +23,8 @@ impl DeltaError {
     pub fn to_string(&self) -> String {
         match *self {
             DeltaError::CreationFail => { String::from("Delta Creation Failure") },
+            DeltaError::ListFail => { String::from("Delta Listing Failed") },
+            DeltaError::GetFail => { String::from("Delta Get Failed") },
             DeltaError::FinalizeFail => { String::from("Finalization Failure") },
             DeltaError::NotFound => { String::from("Delta not found") }
         }
@@ -63,6 +71,81 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
             }
         },
         Ok(res) => { Ok(res.get(0).get(0)) }
+    }
+}
+
+pub fn list_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, offset: Option<i64>) -> Result<Json, DeltaError> {
+    let offset = match offset {
+        None => 0,
+        Some(offset) => offset
+    };
+
+    match conn.query("
+        SELECT COALESCE(array_to_json(Array_Agg(djson.delta)), '[]')::JSON
+        FROM (
+            SELECT row_to_json(d) as delta
+            FROM (
+                SELECT
+                    deltas.id,
+                    deltas.uid,
+                    users.username,
+                    deltas.created,
+                    deltas.props
+                FROM
+                    deltas,
+                    users
+                WHERE
+                    deltas.uid = users.id
+                    AND deltas.id > $1
+                ORDER BY id DESC
+                LIMIT 20
+            ) d
+        ) djson;
+    ", &[&offset]) {
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => { Err(DeltaError::ListFail) },
+                _ => Err(DeltaError::ListFail)
+            }
+        },
+        Ok(res) => {
+            let d_json: serde_json::Value = res.get(0).get(0);
+            Ok(Json(d_json))
+        }
+    }
+}
+
+pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<Json, DeltaError> {
+    match conn.query("
+        SELECT COALESCE(row_to_json(d), 'false'::JSON)
+        FROM (
+            SELECT
+                deltas.id,
+                deltas.uid,
+                users.username,
+                deltas.features,
+                deltas.affected,
+                deltas.props,
+                deltas.created,
+                deltas.props
+            FROM
+                deltas,
+                users
+            WHERE
+                deltas.uid = users.id
+                AND deltas.id = $1
+        ) d
+    ", &[&id]) {
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => { Err(DeltaError::GetFail) },
+                _ => Err(DeltaError::GetFail)
+            }
+        },
+        Ok(res) => {
+            let d_json: serde_json::Value = res.get(0).get(0);
+            Ok(Json(d_json))
+        }
     }
 }
 

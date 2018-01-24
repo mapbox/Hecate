@@ -19,6 +19,7 @@ OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON I
     - [Downloading Individual Features](#downloading-individual-features)
     - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
     - [Feature Creation](#feature-creation)
+    - [Deltas](#deltas)
     - [OpenStreetMap API](#openstreetmap-api)
 
 ## Build Environment
@@ -221,17 +222,17 @@ curl -X GET 'http://localhost:8000/
 
 <h3 align='center'>Admin Interface</h3>
 
-View the Admin Interface in your browser by pointing to `localhost:8000`
+View the Admin Interface in your browser by pointing to `127.0.0.1:8000/admin/index.html`
 
 ---
 
 <h3 align='center'>Vector Tiles</h3>
 
-#### `GET` `/api/tiles/<z>/<x>/<y>
+#### `GET` `/api/tiles/<z>/<x>/<y>`
 
 Request a vector tile for a given set of coordinates. A [Mapbox Vector Tile](https://www.mapbox.com/vector-tiles/) is returned.
 
-*Required Options*
+*Options*
 
 | Option     | Notes |
 | :--------: | ----- |
@@ -251,9 +252,9 @@ curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email
 
 #### `GET` `/api/user/create`
 
-Create a new user, provied the username & password are not already taken
+Create a new user, provied the username & email are not already taken
 
-*Required Options*
+*Options*
 
 | Option     | Notes |
 | :--------: | ----- |
@@ -287,7 +288,7 @@ curl -X GET 'http://localhost:8000/api/data/bounds
 
 Return line delimited GeoJSON `Feature` of all the geometries within the specified boundary file.
 
-*Required Options*
+*Options*
 
 | Option     | Notes |
 | :--------: | ----- |
@@ -307,7 +308,7 @@ curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
 
 Return a single GeoJSON `Feature` given its' ID.
 
-*Required Options*
+*Options*
 
 | Option | Notes |
 | :----: | ----- |
@@ -327,7 +328,7 @@ curl -X GET 'http://localhost:8000/api/data/features/1542
 
 Return a `FeatureCollection` of all features within a given bbox
 
-*Required Options*
+*Options*
 
 | Option | Notes |
 | :----: | ----- |
@@ -343,13 +344,15 @@ Create, Modify, or Delete an individual GeoJSON `Feature`
 
 The Feature must follow format defined in [Feature Format](#feature-format).
 
+The feature also must contain a top-level String `message` attribute describing the changes being made (The delta message)
+
 *Example*
 
 ```bash
 curl \
     -X POST \
     -H "Content-Type: application/json" \
-    -d '{"action": "create", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}' \
+    -d '{"action": "create", "message": "Random Changes", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}' \
     'http://username:password@localhost:8000/api/data/feature'
 ```
 
@@ -359,7 +362,9 @@ curl \
 
 Create, Modify, and/or Delete many features via a GeoJSON `FeatureCollection`
 
-The Feature must follow format defined in [Feature Format](#feature-format).
+The Features in the FeatureCollection must follow format defined in [Feature Format](#feature-format).
+
+The FeatureCollection also must contain a top-level String `message` attribute describing the changes being made (The delta message)
 
 Note that a mix of `create`, `modify`, and `delete` operatioons are allowed
 within each `FeatureCollection`
@@ -370,8 +375,51 @@ within each `FeatureCollection`
 curl \
     -X POST \
     -H "Content-Type: application/json" \
-    -d '{"type":"FeatureCollection","features": [{"action": "create", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}]}' \
+    -d '{"type":"FeatureCollection","message":"A bunch of changes","features": [{"action": "create", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}]}' \
     'http://username:password@localhost:8000/api/data/features'
+```
+
+---
+
+<h3 align='center'>Deltas</h3>
+
+#### `GET` `/api/deltas`
+
+Returns an array of the last 20 deltas with their corresponding metadata. Does not include geometric
+data on the delta. Request a specific delta to get geometric data.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `offset` | `OPTIONAL` Offset the returned 20 values by a given integer |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/deltas
+```
+
+```bash
+curl -X GET 'http://localhost:8000/api/deltas?offset=3
+```
+
+---
+
+#### `GET` `/api/deltas/<id>`
+
+Returns all data for a given delta as a JSON Object, including geometric data.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>` | `REQUIRED` Get all data on a given delta
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/delta/4
 ```
 
 ---

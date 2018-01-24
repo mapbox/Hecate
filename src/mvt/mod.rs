@@ -52,14 +52,14 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
             GeometryType(geom)
         FROM geo
         WHERE
-            geom
-            && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326)
+            geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326)
     ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy, &grid.srid]).unwrap();
 
     for row in rows.iter() {
         let id: i64 = row.get(0);
         let mut feature = Feature::new(row.get(1));
         feature.set_id(id as u64);
+        feature.add_property("id", Value::String(id.to_string()));
         layer.add_feature(feature);
     }
 

@@ -62,6 +62,7 @@ test('bounds', (q) => {
             url: 'http://ingalls:yeaheh@localhost:8000/api/data/feature',
             body: JSON.stringify({
                 type: 'Feature',
+                message: 'Create Point Inside of Bounds',
                 action: 'create',
                 properties: {
                     indc: true
@@ -85,6 +86,7 @@ test('bounds', (q) => {
             url: 'http://ingalls:yeaheh@localhost:8000/api/data/feature',
             body: JSON.stringify({
                 type: 'Feature',
+                message: 'Create Point Outside of Bounds',
                 action: 'create',
                 properties: {
                     indc: false

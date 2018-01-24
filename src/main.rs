@@ -1,7 +1,4 @@
-#![feature(plugin)]
-#![feature(custom_derive)]
-#![feature(custom_attribute)]
-#![feature(attr_literals)]
+#![feature(plugin, custom_derive, custom_attribute, attr_literals)]
 #![plugin(rocket_codegen)]
 
 extern crate hecate;
@@ -117,6 +114,9 @@ fn main() {
         .mount("/api", routes![
             mvt_get,
             user_create,
+            delta,
+            delta_list,
+            delta_list_offset,
             feature_action,
             features_action,
             feature_get,
@@ -196,11 +196,40 @@ struct Map {
     bbox: String
 }
 
+#[derive(FromForm)]
+struct DeltaList {
+    offset: i64
+}
+
 #[get("/user/create?<user>")]
 fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>> {
     match user::create(&conn.0, &user.username, &user.password, &user.email) {
         Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/deltas")]
+fn delta_list(conn: DbConn) ->  Result<Json, status::Custom<String>> {
+    match delta::list_json(&conn.0, None) {
+        Ok(deltas) => Ok(deltas),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
+    }
+}
+
+#[get("/deltas?<opts>")]
+fn delta_list_offset(conn: DbConn, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
+    match delta::list_json(&conn.0, Some(opts.offset)) {
+        Ok(deltas) => Ok(deltas),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
+    }
+}
+
+#[get("/delta/<id>")]
+fn delta(conn: DbConn, id: i64) ->  Result<Json, status::Custom<String>> {
+    match delta::get_json(&conn.0, &id) {
+        Ok(delta) => Ok(delta),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
     }
 }
 
@@ -282,9 +311,22 @@ fn features_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, s
         }
     };
 
+    let delta_message = match fc.foreign_members {
+        None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("FeatureCollection Must have message property for delta"))); }
+        Some(ref members) => match members.get("message") {
+            Some(message) => match message.as_str() {
+                Some(message) => String::from(message),
+                None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("FeatureCollection Must have message property for delta"))); }
+            },
+            None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("FeatureCollection Must have message property for delta"))); }
+        }
+    };
+
     let trans = conn.0.transaction().unwrap();
 
-    let map: HashMap<String, Option<String>> = HashMap::new();
+    let mut map: HashMap<String, Option<String>> = HashMap::new();
+    map.insert(String::from("message"), Some(delta_message));
+
     let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
         Err(_) => {
@@ -569,9 +611,21 @@ fn feature_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, st
         }
     };
 
+    let delta_message = match feat.foreign_members {
+        None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Feature Must have message property for delta"))); }
+        Some(ref members) => match members.get("message") {
+            Some(message) => match message.as_str() {
+                Some(message) => String::from(message),
+                None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Feature Must have message property for delta"))); }
+            },
+            None => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Feature Must have message property for delta"))); }
+        }
+    };
+
     let trans = conn.0.transaction().unwrap();
 
-    let map: HashMap<String, Option<String>> = HashMap::new();
+    let mut map: HashMap<String, Option<String>> = HashMap::new();
+    map.insert(String::from("message"), Some(delta_message));
     let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
         Err(_) => {

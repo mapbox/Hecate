@@ -49,6 +49,7 @@ test('xml#Download', (t) => {
             headers: { 'content-type' : 'application/json' },
             body: JSON.stringify({
                 type: 'Feature',
+                message: 'Create Point',
                 action: 'create',
                 properties: {
                     'addr:housenumber': '1234',
@@ -72,6 +73,7 @@ test('xml#Download', (t) => {
             headers: { 'content-type' : 'application/json' },
             body: JSON.stringify({
                 type: 'Feature',
+                message: 'Create MultiPoint',
                 action: 'create',
                 properties: {
                     'addr:housenumber': '1234',
@@ -95,6 +97,7 @@ test('xml#Download', (t) => {
             headers: { 'content-type' : 'application/json' },
             body: JSON.stringify({
                 type: 'Feature',
+                message: 'Create LineString',
                 action: 'create',
                 properties: {
                     highway: 'residential',
@@ -118,6 +121,7 @@ test('xml#Download', (t) => {
             headers: { 'content-type' : 'application/json' },
             body: JSON.stringify({
                 type: 'Feature',
+                message: 'Create MultiLineString',
                 action: 'create',
                 properties: {
                     highway: 'service',
@@ -148,6 +152,7 @@ test('xml#Download', (t) => {
             headers: { 'content-type' : 'application/json' },
             body: JSON.stringify({
                 type: 'Feature',
+                message: 'Create Polygon',
                 action: 'create',
                 properties: {
                     building: true
@@ -176,6 +181,7 @@ test('xml#Download', (t) => {
             headers: { 'content-type' : 'application/json' },
             body: JSON.stringify({
                 type: 'Feature',
+                message: 'Create Polygon-Inner',
                 action: 'create',
                 properties: {
                     building: true
@@ -210,6 +216,7 @@ test('xml#Download', (t) => {
             headers: { 'content-type' : 'application/json' },
             body: JSON.stringify({
                 type: 'Feature',
+                message: 'Create MultiPolygon',
                 action: 'create',
                 properties: {
                     building: true,

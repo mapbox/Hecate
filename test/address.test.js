@@ -85,7 +85,7 @@ test('address', (q) => {
 
             r.equals(res.id, '1');
             r.deepEquals(res.affected, affected);
-            r.deepEquals(res.props, {});
+            r.deepEquals(res.props, { message: 'Create Address Features' });
 
             for (let row of res.features.features) {
                 r.ok(row.id > 0, 'feature assigned id');
@@ -104,6 +104,7 @@ test('address', (q) => {
             url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
             body: JSON.stringify({
                 type: 'FeatureCollection',
+                message: 'Modify Address Features',
                 features: require('./fixtures/us_dc_pts.json').features.map((feat) => {
                     feat.id = ++id;
                     feat.action = 'modify';
@@ -147,7 +148,7 @@ test('address', (q) => {
 
             r.equals(res.id, '2');
             r.deepEquals(res.affected, affected);
-            r.deepEquals(res.props, {});
+            r.deepEquals(res.props, { message: 'Modify Address Features' });
             r.equals(res.uid, '1');
             r.equals(res.finalized, true);
 
@@ -162,6 +163,7 @@ test('address', (q) => {
             url: 'http://ingalls:yeaheh@localhost:8000/api/data/features',
             body: JSON.stringify({
                 type: 'FeatureCollection',
+                message: 'Delete Address Features',
                 features: require('./fixtures/us_dc_pts.json').features.map((feat) => {
                     feat.id = ++id;
                     feat.action = 'delete';
@@ -193,7 +195,7 @@ test('address', (q) => {
 
             r.equals(res.id, '3');
             r.deepEquals(res.affected, affected);
-            r.deepEquals(res.props, {});
+            r.deepEquals(res.props, { message: 'Delete Address Features' });
             r.equals(res.uid, '1');
             r.equals(res.finalized, true);
 

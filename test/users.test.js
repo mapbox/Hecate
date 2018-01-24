@@ -142,6 +142,7 @@ test('users - create user', (q) => {
             url: 'http://ingalls:test123@localhost:8000/api/data/feature',
             body: JSON.stringify({
                 type: 'Feature',
+                message: 'Testing User Auth',
                 action: 'create',
                 properties: {},
                 geometry: {
