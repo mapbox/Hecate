@@ -222,7 +222,7 @@ curl -X GET 'http://localhost:8000/
 
 <h3 align='center'>Admin Interface</h3>
 
-View the Admin Interface in your browser by pointing to `localhost:8000`
+View the Admin Interface in your browser by pointing to `127.0.0.1:8000/admin/index.html`
 
 ---
 
