@@ -10,16 +10,20 @@
 
 ## Version History
 
-## 0.6.0
+## v0.6.1
+
+- :bug: Use the `location.host` prop for all API calls in admin interface instead of hardcoded port
+
+## v0.6.0
 
 - :tada: Delta APIs
 - :tada: Usable Web API
 
-## 0.5.0
+## v0.5.0
 
 - :rocket: Add support for `multipoint`, `polygon`, `multilinestrint`, `multipolygon` via XML download shim
 
-## 0.4.0
+## v0.4.0
 
 - :tada: Service Vector Tiles directly from data for web interface
 - :pencil2: Doc new tile endpoint and admin interface
