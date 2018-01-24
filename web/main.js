@@ -34,7 +34,7 @@ window.onload = () => {
         },
         methods: {
             deltas_refresh: function() {
-                fetch('http://127.0.0.1:8000/api/deltas').then((response) => {
+                fetch(`http://${window.location.host}/api/deltas`).then((response) => {
                       return response.json();
                 }).then((body) => {
                     this.deltas.splice(0, this.deltas.length);
@@ -44,7 +44,7 @@ window.onload = () => {
             delta_get: function(delta_id) {
                 if (!delta_id) return;
 
-                fetch(`http://127.0.0.1:8000/api/delta/${delta_id}`).then((response) => {
+                fetch(`http://${window.location.host}/api/delta/${delta_id}`).then((response) => {
                       return response.json();
                 }).then((body) => {
                     body.features.features = body.features.features.map(feat => {
@@ -57,7 +57,7 @@ window.onload = () => {
             feature_get: function(feature_id) {
                 if (!feature_id) return;
 
-                fetch(`http://127.0.0.1:8000/api/data/feature/${feature_id}`).then((response) => {
+                fetch(`http://${window.location.host}/api/data/feature/${feature_id}`).then((response) => {
                       return response.json();
                 }).then((body) => {
                     this.feature = body;
@@ -205,7 +205,7 @@ window.onload = () => {
     window.vue.map.on('load', () => {
         window.vue.map.addSource('hecate-data', {
             type: 'vector',
-            tiles: [ 'http://127.0.0.1:8000/api/tiles/{z}/{x}/{y}' ]
+            tiles: [ `http://${window.location.host}/api/tiles/{z}/{x}/{y}` ]
         });
 
         window.vue.map.addSource('hecate-delta', {
