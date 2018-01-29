@@ -31,6 +31,7 @@ function testsrv() {
         node $TEST
     done
 
+    cargo test
 }
 
 startsrv
