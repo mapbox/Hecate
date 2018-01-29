@@ -171,19 +171,19 @@ mod tests {
     fn to_feat() {
         let mut n = Node::new();
         let tree = OSMTree::new();
-        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing id"))));
+        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing id"))), "missing id errors");
 
         n.id = Some(1);
-        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing lat"))));
+        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing lat"))), "missing lat errors");
 
         n.lat = Some(1.1);
-        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing lon"))));
+        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing lon"))), "missing lon errors");
 
         n.lon = Some(2.2);
-        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing version"))));
+        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing version"))), "missing version errors");
 
         n.version = Some(1);
-        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing or invalid action"))));
+        assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing or invalid action"))), "missing/invalid action errors");
 
         n.action = Some(Action::Create);
 
@@ -197,7 +197,7 @@ mod tests {
             properties: Some(serde_json::Map::new()),
             geometry: Some(geojson::Geometry::new(geojson::Value::Point(vec!(2.200000047683716, 1.100000023841858)))),
             foreign_members: Some(fmem.clone())
-        }));
+        }), "action create eq");
 
         n.action = Some(Action::Modify);
         fmem.insert(String::from("action"), json!(String::from("modify")));
@@ -207,7 +207,7 @@ mod tests {
             properties: Some(serde_json::Map::new()),
             geometry: Some(geojson::Geometry::new(geojson::Value::Point(vec!(2.200000047683716, 1.100000023841858)))),
             foreign_members: Some(fmem.clone())
-        }));
+        }), "action modify eq");
 
         n.action = Some(Action::Delete);
         fmem.insert(String::from("action"), json!(String::from("delete")));
@@ -215,8 +215,8 @@ mod tests {
             bbox: None,
             id: Some(json!(1)),
             properties: Some(serde_json::Map::new()),
-            geometry: Some(geojson::Geometry::new(geojson::Value::Point(vec!(2.200000047683716, 1.100000023841858)))),
+            geometry: None,
             foreign_members: Some(fmem.clone())
-        }));
+        }), "action delete eq");
     }
 }
