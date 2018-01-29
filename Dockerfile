@@ -28,13 +28,12 @@ RUN git clone http://github.com/SimonKagstrom/kcov.git && \
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
     && ~/.cargo/bin/rustup install nightly \
-    && ~/.cargo/bin/rustup default nightly
+    && ~/.cargo/bin/rustup default nightly \
+    && ~/.cargo/bin/cargo install cargo-kcov
 
 RUN echo "local all all trust " > /etc/postgresql/9.6/main/pg_hba.conf \
     && echo "host all all 127.0.0.1/32 trust" >> /etc/postgresql/9.6/main/pg_hba.conf \
     && echo "host all all ::1/128 trust" >> /etc/postgresql/9.6/main/pg_hba.conf
-
-RUN cargo install cargo-kcov
 
 WORKDIR /usr/local/src/hecate
 ADD . /usr/local/src/hecate
