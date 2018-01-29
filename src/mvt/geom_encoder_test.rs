@@ -1,5 +1,5 @@
-use screen;
-use geom_encoder::EncodableGeom;
+use mvt::screen;
+use mvt::geom_encoder::EncodableGeom;
 
 #[test]
 fn test_geom_encoding() {

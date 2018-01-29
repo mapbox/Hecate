@@ -1,6 +1,6 @@
-use builder::{Tile, Layer, Feature, Value};
-use geom::{Geometry, Point};
-use grid::{Grid, Extent};
+use mvt::builder::{Tile, Layer, Feature, Value};
+use mvt::geom::{Geometry, Point};
+use mvt::grid::{Grid, Extent};
 use postgis::ewkb;
 
 #[test]
