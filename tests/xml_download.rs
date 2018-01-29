@@ -1,38 +1,46 @@
-const test = require('tape');
-const request = require('request');
-const exec = require('child_process').exec;
-const Pool = require('pg-pool');
-const path = require('path');
+extern crate curl;
+extern crate postgres;
 
-const pool = new Pool({
-    database: 'hecate',
-    user: 'postgres',
-    port: 5432
-});
+#[cfg(test)]
+mod test {
+    use std::fs::File;
+    use std::io::prelude::*;
+    use postgres::{Connection, TlsMode};
+    use curl::easy::Easy;
 
-test('Reset Database', (t) => {
-    exec(`
-        echo "
+    fn reset_database() {
+        let conn = Connection::connect("postgres://postgres@localhost:5432", TlsMode::None).unwrap();
+        conn.execute("
             SELECT pg_terminate_backend(pg_stat_activity.pid)
-                FROM pg_stat_activity
-                WHERE
-                    pg_stat_activity.datname = 'hecate'
-                    AND pid <> pg_backend_pid();
-        " | psql -U postgres -q >/dev/null
-
-        echo "
+            FROM pg_stat_activity
+            WHERE
+                pg_stat_activity.datname = 'hecate'
+                AND pid <> pg_backend_pid();
+        ", &[]).unwrap();
+        conn.execute("
             DROP DATABASE hecate;
+        ", &[]).unwrap();
+        conn.execute("
             CREATE DATABASE hecate;
-        " | psql -U postgres -q
+        ", &[]).unwrap();
 
-        psql -v ON_ERROR_STOP=1 -q -U postgres -f ${path.resolve(__dirname, '../src/schema.sql')} hecate
-    `, (err, stdout, stderr) => {
-        t.error(err, 'no errors');
-        t.end();
-    });
+        let mut file = File::open("./src/schema.sql").unwrap();
+        let mut table_sql = String::new();
+        file.read_to_string(&mut table_sql).unwrap();
+        conn.batch_execute(&*table_sql).unwrap();
+    }
 
-});
 
+    #[test]
+    fn create_user() {
+        let mut easy = Easy::new();
+        easy.url("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+        easy.perform().unwrap();
+
+        assert_eq!(easy.response_code(), Ok(200));
+    }
+}
+/*
 test('xml - create user', t => {
     request.get({
         url: 'http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com'
@@ -114,7 +122,7 @@ test('xml#Download', (t) => {
             q.end();
         });
     });
-    
+
     t.test('xml#Download#MultiLineString', q => {
         request.post({
             url: 'http://ingalls:yeaheh@localhost:8000/api/data/feature',
@@ -282,3 +290,4 @@ function XML(xml) {
     if (Array.isArray(xml)) xml = xml[0];
     return xml.replace(/[\n\s]/g, '')
 }
+*/

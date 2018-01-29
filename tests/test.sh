@@ -27,7 +27,7 @@ function startsrv() {
 }
 
 function testsrv() {
-    for TEST in test/*.test.js; do
+    for TEST in tests/*.test.js; do
         node $TEST
     done
 

@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "./test/test.sh"
+    "test": "./tests/test.sh"
   },
   "private": true,
   "dependencies": {

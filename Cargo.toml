@@ -5,6 +5,9 @@ authors = ["ingalls <ingalls@protonmail.com>"]
 publish = false
 license = "MIT"
 
+[dev-dependencies]
+curl = "0.4.11"
+
 [dependencies]
 rand = "0.4"
 tempdir = "0.3"
