@@ -9,7 +9,7 @@ mod test {
     use curl::easy::{Easy, List};
 
     #[test]
-    fn test() {
+    fn xml_download() {
         { // Reset Database:
             let conn = Connection::connect("postgres://postgres@localhost:5432", TlsMode::None).unwrap();
 
