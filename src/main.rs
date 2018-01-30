@@ -79,6 +79,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for HTTPAuth {
         match base64::decode(&auth) {
             Ok(decoded) => match String::from_utf8(decoded) {
                 Ok(decoded_str) => {
+
                     let split = decoded_str.split(":").collect::<Vec<&str>>();
 
                     if split.len() != 2 { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }

@@ -1,4 +1,4 @@
-extern crate curl;
+extern crate reqwest;
 extern crate postgres;
 
 #[cfg(test)]
@@ -6,7 +6,7 @@ mod test {
     use std::fs::File;
     use std::io::prelude::*;
     use postgres::{Connection, TlsMode};
-    use curl::easy::{Easy, List};
+    use reqwest;
 
     #[test]
     fn users() {
@@ -38,169 +38,90 @@ mod test {
         }
 
         { //Create Username
-            let mut easy = Easy::new();
-            easy.url("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
-            easy.write_function(|buf| {
-                assert_eq!(buf.len(), 4);
-                assert_eq!(String::from_utf8_lossy(buf), String::from("true"));
-                Ok(buf.len())
-            }).unwrap();
-            easy.perform().unwrap();
-
-            assert_eq!(easy.response_code(), Ok(200));
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
         }
 
-        { //Duplicate Username Fail
-            let mut easy = Easy::new();
-            easy.url("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
-            easy.write_function(|buf| {
-                assert_eq!(buf.len(), 90);
-                assert_eq!(String::from_utf8_lossy(buf), String::from("Could not create user: duplicate key value violates unique constraint \"users_username_key\""));
-                Ok(buf.len())
-            }).unwrap();
-            easy.perform().unwrap();
-
-            assert_eq!(easy.response_code(), Ok(400));
+        { //Create Username
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            assert_eq!(resp.text().unwrap(), "Could not create user: duplicate key value violates unique constraint \"users_username_key\"");
+            assert!(resp.status().is_client_error());
         }
 
         { //Feature Upload with no auth Fail
-            let mut easy = Easy::new();
-            easy.url("http://localhost:8000/api/data/feature").unwrap();
-            easy.post(true).unwrap();
-
-            let mut list = List::new();
-            list.append("Content-Type: application/json").unwrap();
-            easy.http_headers(list).unwrap();
-
-            easy.post_fields_copy(r#"
-                {
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
                     "type": "Feature",
                     "message": "Create Point",
                     "action": "create",
-                    "properties": {
-                        "addr:housenumber": "1234",
-                        "addr:street": "Main St"
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [ -79.46014970541, 43.67263458218963 ]
-                    }
-                }
-            "#.as_bytes()).unwrap();
+                    "properties": { "addr:housenumber": "1234", "addr:street": "Main St" },
+                    "geometry": { "type": "Point", "coordinates": [ -79.46014970541, 43.67263458218963 ] }
+                }"#)
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
 
-            easy.write_function(|buf| {
-                assert_eq!(buf.len(), 95);
-                assert_eq!(String::from_utf8_lossy(buf), String::from("{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}"));
-                Ok(buf.len())
-            }).unwrap();
-            easy.perform().unwrap();
-
-            assert_eq!(easy.response_code(), Ok(401));
+            assert!(resp.status().is_client_error());
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
         }
 
         { //Feature Upload with bad username
-            let mut easy = Easy::new();
-            easy.url("http://ingalls@localhost:8000/api/data/feature").unwrap();
-            easy.post(true).unwrap();
-
-            let mut list = List::new();
-            list.append("Content-Type: application/json").unwrap();
-            easy.http_headers(list).unwrap();
-
-            easy.post_fields_copy(r#"
-                {
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
                     "type": "Feature",
                     "message": "Create Point",
                     "action": "create",
-                    "properties": {
-                        "addr:housenumber": "1234",
-                        "addr:street": "Main St"
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [ -79.46014970541, 43.67263458218963 ]
-                    }
-                }
-            "#.as_bytes()).unwrap();
+                    "properties": { "addr:housenumber": "1234", "addr:street": "Main St" },
+                    "geometry": { "type": "Point", "coordinates": [ -79.46014970541, 43.67263458218963 ] }
+                }"#)
+                .basic_auth("ingalls2", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
 
-            easy.write_function(|buf| {
-                assert_eq!(buf.len(), 15);
-                assert_eq!(String::from_utf8_lossy(buf), String::from("Not Authorized!"));
-                Ok(buf.len())
-            }).unwrap();
-            easy.perform().unwrap();
-
-            assert_eq!(easy.response_code(), Ok(401));
+            assert!(resp.status().is_client_error());
+            assert_eq!(resp.text().unwrap(), "Not Authorized!");
         }
 
         { //Feature Upload with bad password
-            let mut easy = Easy::new();
-            easy.url("http://ingalls:yeah@localhost:8000/api/data/feature").unwrap();
-            easy.post(true).unwrap();
-
-            let mut list = List::new();
-            list.append("Content-Type: application/json").unwrap();
-            easy.http_headers(list).unwrap();
-
-            easy.post_fields_copy(r#"
-                {
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
                     "type": "Feature",
                     "message": "Create Point",
                     "action": "create",
-                    "properties": {
-                        "addr:housenumber": "1234",
-                        "addr:street": "Main St"
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [ -79.46014970541, 43.67263458218963 ]
-                    }
-                }
-            "#.as_bytes()).unwrap();
+                    "properties": { "addr:housenumber": "1234", "addr:street": "Main St" },
+                    "geometry": { "type": "Point", "coordinates": [ -79.46014970541, 43.67263458218963 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh2"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
 
-            easy.write_function(|buf| {
-                assert_eq!(buf.len(), 15);
-                assert_eq!(String::from_utf8_lossy(buf), String::from("Not Authorized!"));
-                Ok(buf.len())
-            }).unwrap();
-            easy.perform().unwrap();
-
-            assert_eq!(easy.response_code(), Ok(401));
+            assert!(resp.status().is_client_error());
+            assert_eq!(resp.text().unwrap(), "Not Authorized!");
         }
 
         { //Feature Upload with correct creds
-            let mut easy = Easy::new();
-            easy.url("http://ingalls:yeaheh@localhost:8000/api/data/feature").unwrap();
-            easy.post(true).unwrap();
-
-            let mut list = List::new();
-            list.append("Content-Type: application/json").unwrap();
-            easy.http_headers(list).unwrap();
-
-            easy.post_fields_copy(r#"
-                {
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
                     "type": "Feature",
                     "message": "Create Point",
                     "action": "create",
-                    "properties": {
-                        "addr:housenumber": "1234",
-                        "addr:street": "Main St"
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [ -79.46014970541, 43.67263458218963 ]
-                    }
-                }
-            "#.as_bytes()).unwrap();
+                    "properties": { "addr:housenumber": "1234", "addr:street": "Main St" },
+                    "geometry": { "type": "Point", "coordinates": [ -79.46014970541, 43.67263458218963 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
 
-            easy.write_function(|buf| {
-                assert_eq!(buf.len(), 4);
-                assert_eq!(String::from_utf8_lossy(buf), String::from("true"));
-                Ok(buf.len())
-            }).unwrap();
-            easy.perform().unwrap();
-
-            assert_eq!(easy.response_code(), Ok(200));
+            assert!(resp.status().is_success());
+            assert_eq!(resp.text().unwrap(), "true");
         }
     }
 }

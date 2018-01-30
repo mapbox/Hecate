@@ -6,7 +6,7 @@ publish = false
 license = "MIT"
 
 [dev-dependencies]
-curl = "0.4.11"
+reqwest = "0.8.4"
 
 [dependencies]
 rand = "0.4"
