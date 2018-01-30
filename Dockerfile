@@ -5,7 +5,7 @@ ENV SHELL /bin/bash
 
 # set the locale
 RUN apt-get update -y \
-    && apt-get install -y software-properties-common apt-transport-https python-software-properties python-setuptools python-dev git locales curl postgresql postgresql-contrib postgis wget libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc binutils-dev libiberty-dev git build-essential pkg-config zlib1g-dev python \
+    && apt-get install -y software-properties-common apt-transport-https python-software-properties python-setuptools python-dev git locales curl openssl openssl-dev postgresql postgresql-contrib postgis wget libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc binutils-dev libiberty-dev git build-essential pkg-config zlib1g-dev python \
     && locale-gen en_US.UTF-8 \
     && bash -c "curl -sS http://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -" \
     && bash -c "echo \"deb http://dl.yarnpkg.com/debian/ stable main\" | tee  /etc/apt/sources.list.d/yarn.list" \
