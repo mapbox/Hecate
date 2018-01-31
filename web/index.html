@@ -136,7 +136,8 @@
                                     <div class="fl txt-bold" v-text="delta.username"></div>
                                     <div class="fr txt-em" v-text="moment(delta.created).fromNow()"></div>
                                 </div>
-                                <div v-text="delta.props.message"></div>
+                                <span v-text="delta.props.message"></span>
+                                <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
                             </div>
                         </div>
 
