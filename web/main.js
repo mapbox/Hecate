@@ -8,9 +8,10 @@ window.onload = () => {
             credentials: {
                 map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' }
             },
-            delta: false,
             feature: false,
-            deltas: []
+            delta: false,
+            deltas: [],
+            bounds: false,
         },
         created: function() {
             this.deltas_refresh();
