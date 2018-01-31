@@ -149,6 +149,8 @@ fn staticsrv(file: PathBuf) -> Option<NamedFile> {
 
 #[get("/tiles/<z>/<x>/<y>")]
 fn mvt_get(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
+    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
+
     let tile = match mvt::get(&conn.0, z, x, y) {
         Ok(tile) => tile,
         Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, err.to_string())); }
