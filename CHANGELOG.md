@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.7.1
+
+- :rocket: View list of bounds via the web UI
+
 ## v0.7.0
 
 - :white_check_mark: Rewrite all JS tests in pure rust w/ reqwest
