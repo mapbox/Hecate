@@ -79,6 +79,37 @@
                             <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
                         </div>
                     </div>
+                    <div v-else-if="bounds" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+                        <div class="flex-child">
+                            <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Bounds</h3>
+                        </div>
+
+                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
+                            <div class='select-container'>
+                                <select v-model="panel" class='select select--s select--stroke'>
+                                    <option v-bind:value="{ panel: 'deltas' }">Deltas</option>
+                                    <option v-bind:value="{ panel: 'bounds' }" selected>Bounds</option>
+                                </select>
+                                <div class='select-arrow'></div>
+                            </div>
+                            <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
+                        </div>
+
+                        <div class="flex-child scroll-auto">
+                            <div v-if="!bounds.length" class="px12 py3 clearfix bg-white">
+                                <div align="center">No Boundaries</div>
+                            </div>
+
+                            <div v-for="(bound, bound_it) in bounds" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+                                <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-database'/></span>
+                                <span class="fl" v-text="bound"></span>
+                            </div>
+                        </div>
+
+                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
+                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
+                        </div>
+                    </div>
                     <div v-else class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
                         <div class="flex-child">
                             <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Deltas</h3>
@@ -86,14 +117,19 @@
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
                             <div class='select-container'>
-                                <select class='select select--s select--stroke'>
-                                    <option>Deltas</option>
-                                    <option>Bounds</option>
+                                <select v-model="panel" class='select select--s select--stroke'>
+                                    <option v-bind:value="{ panel: 'deltas' }">Deltas</option>
+                                    <option v-bind:value="{ panel: 'bounds' }" selected>Bounds</option>
                                 </select>
                                 <div class='select-arrow'></div>
                             </div>
                             <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
                         </div>
+
+                        <div v-if="!deltas.length" class="px12 py3 clearfix bg-white">
+                            <div align="center">No Deltas</div>
+                        </div>
+
                         <div class="flex-child scroll-auto">
                             <div v-for="delta in deltas" @click="delta_get(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer wfull">
                                 <div class="clearfix">

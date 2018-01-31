@@ -8,6 +8,7 @@ window.onload = () => {
             credentials: {
                 map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' }
             },
+            panel: { panel: 'deltas' },
             feature: false,
             delta: false,
             deltas: [],
@@ -17,6 +18,13 @@ window.onload = () => {
             this.deltas_refresh();
         },
         watch: {
+            panel: function() {
+                if (this.panel.panel === 'deltas') {
+                    this.bounds = false;
+                } else {
+                    this.bounds_refresh();
+                }
+            },
             delta: function() {
                 //Reset Normal Map
                 if (!this.delta) {
@@ -34,6 +42,13 @@ window.onload = () => {
             }
         },
         methods: {
+            bounds_refresh: function() {
+                    fetch(`http://${window.location.host}/api/data/bounds`).then((response) => {
+                          return response.json();
+                    }).then((body) => {
+                        this.bounds = body;
+                    });
+            },
             deltas_refresh: function() {
                 fetch(`http://${window.location.host}/api/deltas`).then((response) => {
                       return response.json();
