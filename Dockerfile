@@ -5,7 +5,33 @@ ENV SHELL /bin/bash
 
 # set the locale
 RUN apt-get update -y \
-    && apt-get install -y software-properties-common apt-transport-https python-software-properties python-setuptools python-dev git locales curl openssl postgresql postgresql-contrib postgis wget libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc binutils-dev libiberty-dev git build-essential pkg-config zlib1g-dev python \
+    && apt-get install -y \
+        software-properties-common \
+        python-software-properties \
+        libcurl4-openssl-dev \
+        apt-transport-https \
+        postgresql-contrib \
+        python-setuptools \
+        build-essential \
+        libiberty-dev \
+        binutils-dev \
+        pkg-config \
+        zlib1g-dev \
+        postgresql \
+        python-dev \
+        libssl-dev \
+        libelf-dev \
+        libdw-dev \
+        locales \
+        postgis \
+        openssl \
+        python \
+        cmake \
+        curl \
+        wget \
+        git \
+        gcc \
+        git \
     && locale-gen en_US.UTF-8 \
     && bash -c "echo \"America/New_York\" > /etc/timezone"
 
