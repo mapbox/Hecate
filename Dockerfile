@@ -7,16 +7,11 @@ ENV SHELL /bin/bash
 RUN apt-get update -y \
     && apt-get install -y software-properties-common apt-transport-https python-software-properties python-setuptools python-dev git locales curl openssl openssl-dev postgresql postgresql-contrib postgis wget libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc binutils-dev libiberty-dev git build-essential pkg-config zlib1g-dev python \
     && locale-gen en_US.UTF-8 \
-    && bash -c "curl -sS http://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -" \
-    && bash -c "echo \"deb http://dl.yarnpkg.com/debian/ stable main\" | tee  /etc/apt/sources.list.d/yarn.list" \
-    && bash -c "echo \"America/New_York\" > /etc/timezone" \
-    && curl https://nodejs.org/dist/v6.10.2/node-v6.10.2-linux-x64.tar.gz | tar zxC /usr/local --strip-components=1
+    && bash -c "echo \"America/New_York\" > /etc/timezone"
 
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
-
-RUN apt-get update && apt-get install -y yarn
 
 RUN git clone http://github.com/SimonKagstrom/kcov.git && \
     cd kcov && \
@@ -38,4 +33,4 @@ RUN echo "local all all trust " > /etc/postgresql/9.6/main/pg_hba.conf \
 WORKDIR /usr/local/src/hecate
 ADD . /usr/local/src/hecate
 
-CMD yarn test
+CMD ./tests/test.sh
