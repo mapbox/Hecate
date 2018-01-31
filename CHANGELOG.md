@@ -10,6 +10,11 @@
 
 ## Version History
 
+## v0.7.0
+
+- :white_check_mark: Rewrite all JS tests in pure rust w/ reqwest
+- :rocket: Limit number of features in MVT at low zooms
+
 ## v0.6.1
 
 - :bug: Use the `location.host` prop for all API calls in admin interface instead of hardcoded port
