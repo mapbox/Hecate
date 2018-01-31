@@ -45,6 +45,10 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
 
     let mut layer = Layer::new("data");
 
+    let mut limit: Option<i64> = None;
+    if z < 10 { limit = Some(10) }
+    else if z < 14 { limit = Some(100) }
+
     let rows = conn.query("
         SELECT
             id,
@@ -53,7 +57,9 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
         FROM geo
         WHERE
             geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326)
-    ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy, &grid.srid]).unwrap();
+        ORDER BY ST_Area(geom)
+        LIMIT $6
+    ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy, &grid.srid, &limit]).unwrap();
 
     for row in rows.iter() {
         let id: i64 = row.get(0);

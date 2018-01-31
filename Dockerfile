@@ -5,18 +5,39 @@ ENV SHELL /bin/bash
 
 # set the locale
 RUN apt-get update -y \
-    && apt-get install -y software-properties-common apt-transport-https python-software-properties python-setuptools python-dev git locales curl postgresql postgresql-contrib postgis wget libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc binutils-dev libiberty-dev git build-essential pkg-config zlib1g-dev python \
+    && apt-get install -y \
+        software-properties-common \
+        python-software-properties \
+        libcurl4-openssl-dev \
+        apt-transport-https \
+        postgresql-contrib \
+        python-setuptools \
+        build-essential \
+        libiberty-dev \
+        binutils-dev \
+        pkg-config \
+        zlib1g-dev \
+        postgresql \
+        python-dev \
+        libssl-dev \
+        libelf-dev \
+        libdw-dev \
+        locales \
+        postgis \
+        openssl \
+        python \
+        cmake \
+        curl \
+        wget \
+        git \
+        gcc \
+        git \
     && locale-gen en_US.UTF-8 \
-    && bash -c "curl -sS http://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -" \
-    && bash -c "echo \"deb http://dl.yarnpkg.com/debian/ stable main\" | tee  /etc/apt/sources.list.d/yarn.list" \
-    && bash -c "echo \"America/New_York\" > /etc/timezone" \
-    && curl https://nodejs.org/dist/v6.10.2/node-v6.10.2-linux-x64.tar.gz | tar zxC /usr/local --strip-components=1
+    && bash -c "echo \"America/New_York\" > /etc/timezone"
 
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
-
-RUN apt-get update && apt-get install -y yarn
 
 RUN git clone http://github.com/SimonKagstrom/kcov.git && \
     cd kcov && \
@@ -28,15 +49,14 @@ RUN git clone http://github.com/SimonKagstrom/kcov.git && \
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
     && ~/.cargo/bin/rustup install nightly \
-    && ~/.cargo/bin/rustup default nightly
+    && ~/.cargo/bin/rustup default nightly \
+    && ~/.cargo/bin/cargo install cargo-kcov
 
 RUN echo "local all all trust " > /etc/postgresql/9.6/main/pg_hba.conf \
     && echo "host all all 127.0.0.1/32 trust" >> /etc/postgresql/9.6/main/pg_hba.conf \
     && echo "host all all ::1/128 trust" >> /etc/postgresql/9.6/main/pg_hba.conf
 
-# RUN cargo install cargo-kcov
-
 WORKDIR /usr/local/src/hecate
 ADD . /usr/local/src/hecate
 
-CMD yarn test
+CMD ./tests/test.sh
