@@ -43,7 +43,7 @@ mod test {
             assert!(resp.status().is_success());
         }
 
-        { //XML Changeset Create
+        { //XML Changeset Create (Node Create)
             let client = reqwest::Client::new();
             let mut resp = client.put("http://localhost:8000/api/0.6/changeset/create")
                 .body(r#"<osm><changeset><tag k="created_by" v="Hecate Server"/><tag k="comment" v="Buncho Random Text"/></changeset></osm>"#)
@@ -52,6 +52,119 @@ mod test {
                 .unwrap();
             assert_eq!(resp.text().unwrap(), "1");
             assert!(resp.status().is_success());
+        }
+
+        { //XML Changeset Verification (Node Create)
+            let resp = reqwest::get("http://localhost:8000/api/delta/1").unwrap();
+            assert!(resp.status().is_success());
+            //TODO Check body contents
+        }
+
+        { //XML Node Create
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/0.6/changeset/1/upload")
+                .body(r#"
+                    <osmChange version="0.6" generator="Hecate Server">
+                        <create>
+                            <node id='-1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
+                                <tag k='amenity' v='shop' />
+                                <tag k='building' v='yes' />
+                            </node>
+                        </create>
+                    </osmChange>
+                "#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), r#"<diffResult generator="Hecate Server" version="0.6"><node old_id="-1" new_id="1" new_version="1"/></diffResult>"#);
+            assert!(resp.status().is_success());
+        }
+
+        { //XML Node Verification
+            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            assert!(resp.status().is_success());
+            //TODO Check body contents
+        }
+
+        { //XML Changeset Create (Node Modify)
+            let client = reqwest::Client::new();
+            let mut resp = client.put("http://localhost:8000/api/0.6/changeset/create")
+                .body(r#"<osm><changeset><tag k="created_by" v="Hecate Server"/><tag k="comment" v="Buncho Random Text"/></changeset></osm>"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), "2");
+            assert!(resp.status().is_success());
+        }
+
+        { //XML Changeset Verification (Node Modify)
+            let resp = reqwest::get("http://localhost:8000/api/delta/2").unwrap();
+            assert!(resp.status().is_success());
+            //TODO Check body contents
+        }
+
+        { //XML Node Modify
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/0.6/changeset/2/upload")
+                .body(r#"
+                    <osmChange version="0.6" generator="Hecate Server">
+                        <modify>
+                            <node id='1' version='1' changeset='1' lat='1.1' lon='1.1'>
+                                <tag k='building' v='house' />
+                            </node>
+                        </modify>
+                    </osmChange>
+                "#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), r#"<diffResult generator="Hecate Server" version="0.6"><node old_id="1" new_id="1" new_version="2"/></diffResult>"#);
+            assert!(resp.status().is_success());
+        }
+
+        { //XML Node Verification
+            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            assert!(resp.status().is_success());
+            //TODO Check body contents
+        }
+
+        { //XML Changeset Create (Node Delete)
+            let client = reqwest::Client::new();
+            let mut resp = client.put("http://localhost:8000/api/0.6/changeset/create")
+                .body(r#"<osm><changeset><tag k="created_by" v="Hecate Server"/><tag k="comment" v="Buncho Random Text"/></changeset></osm>"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), "3");
+            assert!(resp.status().is_success());
+        }
+
+        { //XML Changeset Verification (Node Delete)
+            let resp = reqwest::get("http://localhost:8000/api/delta/3").unwrap();
+            assert!(resp.status().is_success());
+            //TODO Check body contents
+        }
+
+        { //XML Node Delete
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/0.6/changeset/3/upload")
+                .body(r#"
+                    <osmChange version="0.6" generator="Hecate Server">
+                        <delete>
+                            <node id='1' version='2' />
+                        </delete>
+                    </osmChange>
+                "#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), r#"<diffResult generator="Hecate Server" version="0.6"><node old_id="1"/></diffResult>"#);
+            assert!(resp.status().is_success());
+        }
+
+        { //XML Node Verification
+            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            assert!(resp.status().is_client_error());
         }
     }
 }
