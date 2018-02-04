@@ -9,6 +9,7 @@ window.onload = () => {
                 map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' }
             },
             panel: { panel: 'deltas' },
+            modal: false,
             feature: false,
             delta: false,
             deltas: [],
@@ -42,6 +43,9 @@ window.onload = () => {
             }
         },
         methods: {
+            login: function() {
+                this.modal = 'login';
+            },
             bounds_refresh: function() {
                     fetch(`http://${window.location.host}/api/data/bounds`).then((response) => {
                           return response.json();
