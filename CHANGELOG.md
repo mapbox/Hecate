@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.7.2
+
+- :rocket: Improvements to the web UI
+
 ## v0.7.1
 
 - :rocket: View list of bounds via the web UI

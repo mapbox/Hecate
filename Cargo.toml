@@ -1,6 +1,6 @@
 [package]
 name = "hecate"
-version = "0.7.1"
+version = "0.7.2"
 authors = ["ingalls <ingalls@protonmail.com>"]
 publish = false
 license = "MIT"
