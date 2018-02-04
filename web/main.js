@@ -9,7 +9,18 @@ window.onload = () => {
                 map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' }
             },
             panel: { panel: 'deltas' },
-            modal: false,
+            modal: {
+                type: false,
+                login: {
+                    username: '',
+                    password: ''
+                },
+                register: {
+                    username: '',
+                    password: '',
+                    email: ''
+                }
+            },
             feature: false,
             delta: false,
             deltas: [],
@@ -43,8 +54,11 @@ window.onload = () => {
             }
         },
         methods: {
-            login: function() {
-                this.modal = 'login';
+            login_show: function() {
+                this.modal.type = 'login';
+            },
+            register_show: function() {
+                this.modal.type = 'register';
             },
             bounds_refresh: function() {
                     fetch(`http://${window.location.host}/api/data/bounds`).then((response) => {
