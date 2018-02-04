@@ -27,10 +27,10 @@
             <div class='viewport-full relative scroll-hidden'>
                 <div id="map" class='bg-darken10 viewport-twothirds viewport-full-ml absolute top left right bottom'></div>
                 <div class='absolute top-ml left bottom z1 w-full w240-ml hmax-full px12 py12-ml' style="pointer-events: none;">
-
                     <div v-if="feature" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                        <div class="flex-child">
-                            <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Deltas</h3>
+                        <div class="flex-child px12 py12">
+                            <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
+                            <button class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'/></button>
                         </div>
 
                         <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
@@ -52,8 +52,9 @@
                         </div>
                     </div>
                     <div v-else-if="delta" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                        <div class="flex-child">
-                            <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Deltas</h3>
+                        <div class="flex-child px12 py12">
+                            <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
+                            <button class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'/></button>
                         </div>
 
                         <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
@@ -80,8 +81,9 @@
                         </div>
                     </div>
                     <div v-else-if="bounds" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                        <div class="flex-child">
-                            <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Bounds</h3>
+                        <div class="flex-child px12 py12">
+                            <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
+                            <button class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'/></button>
                         </div>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
@@ -113,8 +115,9 @@
                         </div>
                     </div>
                     <div v-else class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                        <div class="flex-child">
-                            <h3 class='px12 py12 txt-m txt-bold mb6'>Hecate Deltas</h3>
+                        <div class="flex-child px12 py12">
+                            <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
+                            <button class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'/></button>
                         </div>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
@@ -149,9 +152,44 @@
                     </div>
 
                 </div>
-                <div class='absolute top-mr right z1 px12 py12-ml'>
-                    <div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10'>
-                        <button class='btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'/></button>
+                <div class='absolute top left bottom right z2 bg-black' style="pointer-events: none;">
+                    <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
+                        <div class="flex-child px12 py12 w600 h300 bg-white round-ml shadow-darken10">
+                            <div class='grid w-full'>
+                                <div class='col col--8'>
+                                    <h3 class='fl py6 txt-m txt-bold w-full'>Hecate Login</h3>
+                                </div>
+                                <div class='col col--4'>
+                                    <button class='fr btn round bg-gray-light bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                                </div>
+
+                                <div class='col col--12 py12'>
+                                    <label>
+                                        Username:
+                                        <input class='input py12' placeholder='username'/>
+                                    </label>
+                                </div>
+
+                                <div class='col col--12 py12'>
+                                    <label>
+                                        Password:
+                                        <input type='password' class='input py12' placeholder='password'/>
+                                    </label>
+                                </div>
+
+                                <div class='col col--12'>
+                                    <div class='grid grid--gut12'>
+                                        <div class='col col--6 py12'>
+                                            <button class='btn round bg-gray w-full'>Register</button>
+                                        </div>
+
+                                        <div class='col col--6 py12'>
+                                            <button class='btn round w-full'>Login</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
