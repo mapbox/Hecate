@@ -100,9 +100,11 @@
                                 <div align="center">No Boundaries</div>
                             </div>
 
-                            <div v-for="(bound, bound_it) in bounds" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                                <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-database'/></span>
-                                <span class="fl" v-text="bound"></span>
+                            <div v-for="(bound, bound_it) in bounds" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+                                <a v-bind:href="`/api/data/bounds/${bounds}`" target="_blank" class="w-full clearfix">
+                                    <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-database'/></span>
+                                    <span class="fl" v-text="bound"></span>
+                                </a>
                             </div>
                         </div>
 
@@ -136,7 +138,7 @@
                                     <div class="fl txt-bold" v-text="delta.username"></div>
                                     <div class="fr txt-em" v-text="moment(delta.created).fromNow()"></div>
                                 </div>
-                                <span v-text="delta.props.message"></span>
+                                <span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span>
                                 <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
                             </div>
                         </div>
