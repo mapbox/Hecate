@@ -84,11 +84,11 @@ window.onload = () => {
                 this.modal.type = 'register';
             },
             bounds_refresh: function() {
-                    fetch(`http://${window.location.host}/api/data/bounds`).then((response) => {
-                          return response.json();
-                    }).then((body) => {
-                        this.bounds = body;
-                    });
+                fetch(`http://${window.location.host}/api/data/bounds`).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    this.bounds = body;
+                });
             },
             deltas_refresh: function() {
                 fetch(`http://${window.location.host}/api/deltas`).then((response) => {
