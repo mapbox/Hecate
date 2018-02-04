@@ -11,6 +11,10 @@ window.onload = () => {
             panel: { panel: 'deltas' },
             modal: {
                 type: false,
+                ok: {
+                    header: '',
+                    body: ''
+                },
                 login: {
                     username: '',
                     password: ''
@@ -56,6 +60,25 @@ window.onload = () => {
         methods: {
             login_show: function() {
                 this.modal.type = 'login';
+            },
+            register: function() {
+                fetch(`http://${window.location.host}/api/register?username=${this.modal.register.username}&password=${this.modal.register.password}&email=${this.modal.register.email}`).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    this.modal.register = {
+                        username: '',
+                        password: '',
+                        email: ''
+                    };
+
+                    this.modal.ok = {
+
+                    }
+                    this.modal.type = 'ok'
+
+                    this.deltas.splice(0, this.deltas.length);
+                    this.deltas = this.deltas.concat(body);
+                });
             },
             register_show: function() {
                 this.modal.type = 'register';
