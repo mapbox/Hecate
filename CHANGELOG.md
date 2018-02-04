@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.7.3
+
+- :rocket: Allow downloading bounds files via web UI
+
 ## v0.7.2
 
 - :rocket: Improvements to the web UI
