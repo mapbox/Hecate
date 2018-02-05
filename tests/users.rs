@@ -123,5 +123,16 @@ mod test {
             assert!(resp.status().is_success());
             assert_eq!(resp.text().unwrap(), "true");
         }
+
+        { //Create a new token given username & password
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/token")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+            assert_eq!(resp.text().unwrap().len(), 34);
+        }
     }
 }

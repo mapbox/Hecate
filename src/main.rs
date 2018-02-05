@@ -115,6 +115,7 @@ fn main() {
         .mount("/api", routes![
             mvt_get,
             user_create,
+            user_create_token,
             delta,
             delta_list,
             delta_list_offset,
@@ -208,6 +209,19 @@ struct DeltaList {
 fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>> {
     match user::create(&conn.0, &user.username, &user.password, &user.email) {
         Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/user/token")]
+fn user_create_token(conn: DbConn, auth: HTTPAuth) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+        Ok(Some(uid)) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match user::create_token(&conn.0, &uid) {
+        Ok(token) => Ok(Json(json!(token))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
