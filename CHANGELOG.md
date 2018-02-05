@@ -10,6 +10,14 @@
 
 ## Version History
 
+## v0.8.0
+
+- :rocket: Add login fxn to web UI
+- :rocket: Add register fxn to web UI
+- :tada: Add user info endpoint
+- :tada: Add user session endpoint
+- :rocket: Refactor Auth object to support Basic or Cookie auth
+
 ## v0.7.3
 
 - :rocket: Allow downloading bounds files via web UI
