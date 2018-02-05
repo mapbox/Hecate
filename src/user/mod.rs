@@ -96,24 +96,4 @@ pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnec
         Err(_) => Err(UserError::NotFound)
     }
 }
-
-pub fn auth_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String) -> Result<String, UserError> {
-    match conn.query("
-        SELECT
-            id
-        FROM
-            users
-        WHERE
-            username = $1
-            AND password = crypt($2, password)
-    ", &[ &username, &password ]) {
-        Ok(res) => {
-            if res.len() == 0 { return Ok(None); }
-            let uid: i64 = res.get(0).get(0);
-
-            Ok(Some(uid))
-        },
-        Err(_) => Err(UserError::NotFound)
-    }
-}
 */

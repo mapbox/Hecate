@@ -28,6 +28,7 @@ use std::fs::File;
 use tempdir::TempDir;
 use std::collections::HashMap;
 use rocket::http::Status as HTTPStatus;
+use rocket::http::{Cookie, Cookies};
 use rocket::{Request, State, Outcome};
 use rocket::response::{Response, status, Stream, NamedFile};
 use rocket::request::{self, FromRequest};
@@ -67,6 +68,9 @@ struct HTTPAuth {
 impl<'a, 'r> FromRequest<'a, 'r> for HTTPAuth {
     type Error = ();
     fn from_request(request: &'a Request<'r>) -> request::Outcome<HTTPAuth, ()> {
+
+        request.cookies();
+
         let keys: Vec<_> = request.headers().get("Authorization").collect();
 
         if keys.len() != 1 || keys[0].len() < 7 { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
@@ -115,7 +119,7 @@ fn main() {
         .mount("/api", routes![
             mvt_get,
             user_create,
-            user_create_token,
+            user_create_session,
             delta,
             delta_list,
             delta_list_offset,
@@ -213,15 +217,18 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
     }
 }
 
-#[get("/user/token")]
-fn user_create_token(conn: DbConn, auth: HTTPAuth) -> Result<Json, status::Custom<String>> {
+#[get("/user/session")]
+fn user_create_session(conn: DbConn, auth: HTTPAuth, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
     let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
         Ok(Some(uid)) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
 
     match user::create_token(&conn.0, &uid) {
-        Ok(token) => Ok(Json(json!(token))),
+        Ok(token) => {
+            cookies.add_private(Cookie::new("session", token));
+            Ok(Json(json!(true)))
+        },
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
