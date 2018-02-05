@@ -78,6 +78,7 @@ fn main() {
         ])
         .mount("/api", routes![
             mvt_get,
+            user_self,
             user_create,
             user_create_session,
             delta,
@@ -173,6 +174,19 @@ struct DeltaList {
 fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>> {
     match user::create(&conn.0, &user.username, &user.password, &user.email) {
         Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/user/info")]
+fn user_self(conn: DbConn, auth: user::Auth) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match user::info(&conn.0, &uid) {
+        Ok(info) => { Ok(Json(json!(info))) },
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }

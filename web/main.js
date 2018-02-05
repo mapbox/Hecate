@@ -45,6 +45,7 @@ window.onload = () => {
         },
         created: function() {
             this.deltas_refresh();
+            this.logout();
         },
         watch: {
             panel: function() {
@@ -82,13 +83,17 @@ window.onload = () => {
                     headers: new Headers({
                         'Authorization': 'Basic '+ btoa(`${window.vue.modal.login.username}:${window.vue.modal.login.password}`)
                     })
-                }).then((body) => {
-                    this.modal.login = {
-                        username: '',
-                        password: ''
-                    };
-                    this.modal.type = false;
-                    this.credentials.authed = true;
+                }).then((response) => {
+                    if (response.status === 200) {
+                        this.modal.login = {
+                            username: '',
+                            password: ''
+                        };
+                        this.modal.type = false;
+                        this.credentials.authed = true;
+                    } else {
+                        //TODO Error
+                    }
                 });
 
             }, login_show: function() {

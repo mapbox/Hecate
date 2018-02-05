@@ -48,6 +48,33 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
+pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<String, UserError> {
+    match conn.query("
+        SELECT row_to_json(u)::TEXT
+        FROM (
+            SELECT
+                id,
+                username,
+                email,
+                meta
+            FROM
+                users
+            WHERE id = $1
+        ) u
+    ", &[ &uid ]) {
+        Ok(res) => {
+            let info: String = res.get(0).get(0);
+            Ok(info)
+        },
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(UserError::CreateTokenError(e.message.clone())) },
+                _ => Err(UserError::CreateTokenError(String::from("generic")))
+            }
+        }
+    }
+}
+
 pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, auth: Auth) -> Option<i64> {
     if auth.basic != None {
         let (username, password): (String, String) = auth.basic.unwrap();
@@ -80,7 +107,6 @@ pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
             Ok(res) => {
                 if res.len() == 0 { return None; }
                 let uid: i64 = res.get(0).get(0);
-
                 Some(uid)
             },
             Err(_) => None
