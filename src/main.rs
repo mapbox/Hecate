@@ -180,7 +180,7 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
 #[get("/user/session")]
 fn user_create_session(conn: DbConn, auth: user::Auth, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
     let uid = match user::auth(&conn.0, auth) {
-        Ok(Some(uid)) => uid,
+        Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
 
@@ -283,7 +283,7 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
 #[post("/data/features", format="application/json", data="<body>")]
 fn features_action(auth: user::Auth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
     let uid = match user::auth(&conn.0, auth) {
-        Ok(Some(uid)) => uid,
+        Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
 
@@ -373,7 +373,7 @@ fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
 #[put("/0.6/changeset/create", data="<body>")]
 fn xml_changeset_create(auth: user::Auth, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
     let uid = match user::auth(&conn.0, auth) {
-        Ok(Some(uid)) => uid,
+        Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
 
@@ -401,7 +401,7 @@ fn xml_changeset_create(auth: user::Auth, conn: DbConn, body: String) -> Result<
 #[put("/0.6/changeset/<id>/close")]
 fn xml_changeset_close(auth: user::Auth, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
     match user::auth(&conn.0, auth) {
-        Ok(Some(_)) => Ok(id.to_string()),
+        Some(_) => Ok(id.to_string()),
         _ => Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!")))
     }
 }
@@ -409,7 +409,7 @@ fn xml_changeset_close(auth: user::Auth, conn: DbConn, id: i64) -> Result<String
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
 fn xml_changeset_modify(auth: user::Auth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
     let uid = match user::auth(&conn.0, auth) {
-        Ok(Some(uid)) => uid,
+        Some(uid) => uid,
         _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
 
@@ -455,7 +455,7 @@ fn xml_changeset_modify(auth: user::Auth, conn: DbConn, delta_id: i64, body: Str
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
 fn xml_changeset_upload(auth: user::Auth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
     let uid = match user::auth(&conn.0, auth) {
-        Ok(Some(uid)) => uid,
+        Some(uid) => uid,
         _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
 
@@ -583,7 +583,7 @@ fn xml_user() -> String {
 #[post("/data/feature", format="application/json", data="<body>")]
 fn feature_action(auth: user::Auth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
     let uid = match user::auth(&conn.0, auth) {
-        Ok(Some(uid)) => uid,
+        Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
 

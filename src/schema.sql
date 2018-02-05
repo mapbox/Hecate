@@ -25,6 +25,7 @@ CREATE TABLE users (
 
 DROP TABLE IF EXISTS users_tokens;
 CREATE TABLE users_tokens (
+    name        TEXT,
     uid         BIGINT,
     token       TEXT,
     expiry      TIMESTAMP

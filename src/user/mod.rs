@@ -17,6 +17,7 @@ pub struct Auth {
 #[derive(PartialEq, Debug)]
 pub enum UserError {
     NotFound,
+    NotAuthorized,
     CreateError(String),
     CreateTokenError(String)
 }
@@ -25,6 +26,7 @@ impl UserError {
     pub fn to_string(&self) -> String {
         match *self {
             UserError::NotFound => String::from("User Not Found"),
+            UserError::NotAuthorized => String::from("User Not Authorized"),
             UserError::CreateError(ref msg) => String::from(format!("Could not create user: {}", msg)),
             UserError::CreateTokenError(ref msg) => String::from(format!("Could not create token: {}", msg))
         }
@@ -33,7 +35,8 @@ impl UserError {
 
 pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String, email: &String) -> Result<bool, UserError> {
     match conn.query("
-        INSERT INTO users (username, password, email, meta) VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, '{}'::JSONB);
+        INSERT INTO users (username, password, email, meta)
+            VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, '{}'::JSONB);
     ", &[ &username, &password, &email ]) {
         Ok(_) => Ok(true),
         Err(err) => {
@@ -45,38 +48,53 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, auth: Auth) -> Result<Option<i64>, UserError> {
+pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, auth: Auth) -> Option<i64> {
     if auth.basic != None {
         let (username, password): (String, String) = auth.basic.unwrap();
 
         match conn.query("
-            SELECT
-                id
-            FROM
-                users
-            WHERE
-                username = $1
-                AND password = crypt($2, password)
+            SELECT id
+                FROM users
+                WHERE
+                    username = $1
+                    AND password = crypt($2, password)
         ", &[ &username, &password ]) {
             Ok(res) => {
-                if res.len() == 0 { return Ok(None); }
+                if res.len() == 0 { return None; }
                 let uid: i64 = res.get(0).get(0);
 
-                Ok(Some(uid))
+                Some(uid)
             },
-            Err(_) => Err(UserError::NotFound)
+            Err(_) => None
         }
     } else if auth.token != None {
-        Err(UserError::NotFound)
+        let token: String = auth.token.unwrap();
+
+        match conn.query("
+            SELECT uid
+            FROM users_tokens
+            WHERE
+                token = $1
+                AND now() < expiry
+        ", &[ &token ]) {
+            Ok(res) => {
+                if res.len() == 0 { return None; }
+                let uid: i64 = res.get(0).get(0);
+
+                Some(uid)
+            },
+            Err(_) => None
+        }
     } else {
-        Err(UserError::NotFound)
+        None
     }
 }
 
 pub fn create_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<String, UserError> {
     match conn.query("
-        INSERT INTO users_tokens (uid, token, expiry)
+        INSERT INTO users_tokens (name, uid, token, expiry)
             VALUES (
+                'Session Token',
                 $1,
                 md5(random()::TEXT),
                 now() + INTERVAL '4 hours'
