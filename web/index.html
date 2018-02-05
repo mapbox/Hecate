@@ -12,9 +12,6 @@
         <script async defer src='https://cdnjs.cloudflare.com/ajax/libs/Turf.js/5.1.5/turf.js'></script>
         <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js'></script>
         <script src='https://unpkg.com/vue'></script>
-        <script src='https://unpkg.com/vue-multiselect@2.0.3'></script>
-        <script src='https://unpkg.com/vue-clipboard2@0.0.8/dist/vue-clipboard.min.js'></script>
-        <link rel='stylesheet' href='https://unpkg.com/vue-multiselect@2.0.3/dist/vue-multiselect.min.css'>
         <link href='https://fonts.googleapis.com/css?family=Noto+Sans' rel='stylesheet' type='text/css'>
         <script src='https://api.mapbox.com/mapbox-gl-js/v0.43.0/mapbox-gl.js'></script>
         <link href='https://api.mapbox.com/mapbox-gl-js/v0.43.0/mapbox-gl.css' rel='stylesheet' />
@@ -28,10 +25,7 @@
                 <div id="map" class='bg-darken10 viewport-twothirds viewport-full-ml absolute top left right bottom'></div>
                 <div class='absolute top-ml left bottom z1 w-full w240-ml hmax-full px12 py12-ml' style="pointer-events: none;">
                     <div v-if="feature" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                        <div class="flex-child px12 py12">
-                            <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
-                            <button @click="login_show" class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'/></button>
-                        </div>
+                        <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
 
                         <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
                             <button @click="feature = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
@@ -52,10 +46,7 @@
                         </div>
                     </div>
                     <div v-else-if="delta" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                        <div class="flex-child px12 py12">
-                            <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
-                            <button @click="login_show" class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'/></button>
-                        </div>
+                        <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
 
                         <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
                             <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
@@ -81,10 +72,7 @@
                         </div>
                     </div>
                     <div v-else-if="bounds" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                        <div class="flex-child px12 py12">
-                            <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
-                            <button @click="login_show" class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'/></button>
-                        </div>
+                        <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Bounds'></heading>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
                             <div class='select-container'>
@@ -114,11 +102,9 @@
                             <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
                         </div>
                     </div>
+
                     <div v-else class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                        <div class="flex-child px12 py12">
-                            <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
-                            <button @click="login_show" class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'/></button>
-                        </div>
+                        <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
                             <div class='select-container'>
@@ -250,6 +236,8 @@
                                 <div class='col col--4'>
                                     <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
                                 </div>
+
+                                <div class='col col--12 py24' v-text='modal.ok.body'></div>
 
                                 <div class='col col--12'>
                                     <div class='grid grid--gut12'>

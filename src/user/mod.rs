@@ -96,30 +96,20 @@ pub fn create_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
     }
 }
 
-/*
-pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String) -> Result<String, UserError> {
+pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, token: &String) -> Result<bool, UserError> {
     match conn.query("
-        SELECT
-            id
-        FROM
-            users
-        WHERE
-            username = $1
-            AND password = crypt($2, password)
-    ", &[ &username, &password ]) {
+        DELETE FROM users_tokens
+            WHERE token = $1;
+    ", &[ &token ]) {
         Ok(res) => {
-            if res.len() == 0 { return Ok(None); }
-            let uid: i64 = res.get(0).get(0);
-
-            Ok(Some(uid))
+            Ok(true)
         },
         Err(_) => Err(UserError::NotFound)
     }
 }
-*/
 
 impl<'a, 'r> FromRequest<'a, 'r> for Auth {
-    type Error = (); 
+    type Error = ();
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Auth, ()> {
         match request.cookies().get_private("session") {
             Some(token) => {
@@ -157,5 +147,5 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
             },
             Err(_) => Outcome::Failure((Status::Unauthorized, ()))
         }
-    }   
+    }
 }
