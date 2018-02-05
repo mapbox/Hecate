@@ -58,7 +58,22 @@ window.onload = () => {
             }
         },
         methods: {
-            login_show: function() {
+            login: function() {
+                fetch(`http://${window.location.host}/api/user/session`, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: new Headers({
+                        'Authorization': 'Basic '+ btoa(`${window.vue.modal.login.username}:${window.vue.login.password}`)
+                    })
+                }).then((body) => {
+                    this.modal.login = {
+                        username: '',
+                        password: ''
+                    };
+                    this.modal = false;
+                });
+
+            }, login_show: function() {
                 this.modal.type = 'login';
             },
             register: function() {
@@ -71,9 +86,7 @@ window.onload = () => {
                         email: ''
                     };
 
-                    this.modal.ok = {
-
-                    }
+                    this.modal.ok = { }
                     this.modal.type = 'ok'
 
                     this.deltas.splice(0, this.deltas.length);

@@ -8,7 +8,6 @@ extern crate rocket_contrib;
 #[macro_use] extern crate clap;
 #[macro_use] extern crate serde_json;
 extern crate geojson;
-extern crate base64;
 extern crate postgres;
 extern crate r2d2;
 extern crate r2d2_postgres;
@@ -57,45 +56,6 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
         match pool.get() {
             Ok(conn) => Outcome::Success(DbConn(conn)),
             Err(_) => Outcome::Failure((HTTPStatus::ServiceUnavailable, ()))
-        }
-    }
-}
-
-struct HTTPAuth {
-    username: String,
-    password: String
-}
-impl<'a, 'r> FromRequest<'a, 'r> for HTTPAuth {
-    type Error = ();
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<HTTPAuth, ()> {
-
-        request.cookies();
-
-        let keys: Vec<_> = request.headers().get("Authorization").collect();
-
-        if keys.len() != 1 || keys[0].len() < 7 { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
-
-        let mut authtype = String::from(keys[0]);
-        let auth = authtype.split_off(6);
-
-        if authtype != "Basic " { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
-
-        match base64::decode(&auth) {
-            Ok(decoded) => match String::from_utf8(decoded) {
-                Ok(decoded_str) => {
-
-                    let split = decoded_str.split(":").collect::<Vec<&str>>();
-
-                    if split.len() != 2 { return Outcome::Failure((HTTPStatus::Unauthorized, ())); }
-
-                    Outcome::Success(HTTPAuth {
-                        username: String::from(split[0]),
-                        password: String::from(split[1])
-                    })
-                },
-                Err(_) => Outcome::Failure((HTTPStatus::Unauthorized, ()))
-            },
-            Err(_) => Outcome::Failure((HTTPStatus::Unauthorized, ()))
         }
     }
 }
@@ -218,8 +178,8 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
 }
 
 #[get("/user/session")]
-fn user_create_session(conn: DbConn, auth: HTTPAuth, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+fn user_create_session(conn: DbConn, auth: user::Auth, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
         Ok(Some(uid)) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -321,8 +281,8 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
-fn features_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+fn features_action(auth: user::Auth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
         Ok(Some(uid)) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -411,8 +371,8 @@ fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(auth: HTTPAuth, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+fn xml_changeset_create(auth: user::Auth, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
         Ok(Some(uid)) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -439,16 +399,16 @@ fn xml_changeset_create(auth: HTTPAuth, conn: DbConn, body: String) -> Result<St
 }
 
 #[put("/0.6/changeset/<id>/close")]
-fn xml_changeset_close(auth: HTTPAuth, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
-    match user::auth(&conn.0, &auth.username, &auth.password) {
+fn xml_changeset_close(auth: user::Auth, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
+    match user::auth(&conn.0, auth) {
         Ok(Some(_)) => Ok(id.to_string()),
         _ => Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!")))
     }
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(auth: HTTPAuth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
-    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+fn xml_changeset_modify(auth: user::Auth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+    let uid = match user::auth(&conn.0, auth) {
         Ok(Some(uid)) => uid,
         _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -493,8 +453,8 @@ fn xml_changeset_modify(auth: HTTPAuth, conn: DbConn, delta_id: i64, body: Strin
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(auth: HTTPAuth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
-    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+fn xml_changeset_upload(auth: user::Auth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+    let uid = match user::auth(&conn.0, auth) {
         Ok(Some(uid)) => uid,
         _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -621,8 +581,8 @@ fn xml_user() -> String {
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(auth: HTTPAuth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, &auth.username, &auth.password) {
+fn feature_action(auth: user::Auth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
         Ok(Some(uid)) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
