@@ -9,7 +9,7 @@ CREATE TABLE bounds (
     id          BIGSERIAL,
     geom        GEOMETRY(MULTIPOLYGON, 4326),
     name        TEXT UNIQUE,
-    props        JSONB
+    props       JSONB
 );
 CREATE INDEX bounds_gist ON bounds USING GIST(geom);
 CREATE INDEX bounds_idx ON bounds(name);
@@ -21,6 +21,14 @@ CREATE TABLE users (
     password    TEXT,
     email       TEXT UNIQUE,
     meta        JSONB
+);
+
+DROP TABLE IF EXISTS users_tokens;
+CREATE TABLE users_tokens (
+    name        TEXT,
+    uid         BIGINT,
+    token       TEXT,
+    expiry      TIMESTAMP
 );
 
 DROP TABLE IF EXISTS geo;

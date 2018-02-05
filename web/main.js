@@ -6,16 +6,46 @@ window.onload = () => {
         el: '#app',
         data: {
             credentials: {
-                map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' }
+                map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' },
+                authed: false
             },
             panel: { panel: 'deltas' },
+            modal: {
+                type: false,
+                ok: {
+                    header: '',
+                    body: ''
+                },
+                login: {
+                    username: '',
+                    password: ''
+                },
+                register: {
+                    username: '',
+                    password: '',
+                    email: ''
+                }
+            },
             feature: false,
             delta: false,
             deltas: [],
             bounds: false,
         },
+        components: {
+            heading: {
+                template: `
+                    <div class='flex-child px12 py12'>
+                        <h3 class='fl py6 txt-m txt-bold' v-text='title'></h3>
+                        <button v-if='is_authed' @click='logout' class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-logout'></use></svg></button>
+                        <button @click='login_show' class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'></use></svg></button>
+                    </div>
+                `,
+                props: [ 'is_authed', 'login_show', 'logout', 'title' ],
+            }
+        },
         created: function() {
             this.deltas_refresh();
+            this.logout();
         },
         watch: {
             panel: function() {
@@ -42,12 +72,59 @@ window.onload = () => {
             }
         },
         methods: {
+            logout: function() {
+                this.credentials.authed = false;
+                document.cookie = 'session=; Max-Age=0'
+            },
+            login: function() {
+                fetch(`http://${window.location.host}/api/user/session`, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: new Headers({
+                        'Authorization': 'Basic '+ btoa(`${window.vue.modal.login.username}:${window.vue.modal.login.password}`)
+                    })
+                }).then((response) => {
+                    if (response.status === 200) {
+                        this.modal.login = {
+                            username: '',
+                            password: ''
+                        };
+                        this.modal.type = false;
+                        this.credentials.authed = true;
+                    } else {
+                        //TODO Error
+                    }
+                });
+
+            }, login_show: function() {
+                if (!this.credentials.authed) this.modal.type = 'login';
+            },
+            register: function() {
+                fetch(`http://${window.location.host}/api/user/create?username=${this.modal.register.username}&password=${this.modal.register.password}&email=${this.modal.register.email}`).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    this.modal.register = {
+                        username: '',
+                        password: '',
+                        email: ''
+                    };
+
+                    this.modal.ok = {
+                        header: 'Account Created',
+                        body: 'Your account has been created! You can login now'
+                    }
+                    this.modal.type = 'ok'
+                });
+            },
+            register_show: function() {
+                this.modal.type = 'register';
+            },
             bounds_refresh: function() {
-                    fetch(`http://${window.location.host}/api/data/bounds`).then((response) => {
-                          return response.json();
-                    }).then((body) => {
-                        this.bounds = body;
-                    });
+                fetch(`http://${window.location.host}/api/data/bounds`).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    this.bounds = body;
+                });
             },
             deltas_refresh: function() {
                 fetch(`http://${window.location.host}/api/deltas`).then((response) => {

@@ -123,5 +123,18 @@ mod test {
             assert!(resp.status().is_success());
             assert_eq!(resp.text().unwrap(), "true");
         }
+
+        { //Create a new session given username & password
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/session")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+            assert_eq!(resp.text().unwrap(), "true");
+            //TODO test for cookie existence - reqwest is currently working on adding better cookie
+            //support
+        }
     }
 }
