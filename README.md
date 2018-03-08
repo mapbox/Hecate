@@ -61,7 +61,7 @@ psql -U postgres -f src/schema.sql hecate
 - Start the server
 
 ```bash
-./start
+cargo run
 ```
 
 - Test it is working - should respond with `HTTP200`
