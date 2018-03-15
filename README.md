@@ -244,7 +244,7 @@ A custom property validation file can be specified using the schema flag.
 cargo run -- --schema <PATH-TO-SCHEMA>.json
 ```
 
-Note hecate currently supports the JSON Schema draft-05. Once draft-06/07 support lands in
+Note hecate currently supports the JSON Schema draft-04. Once draft-06/07 support lands in
 [valico](https://github.com/rustless/valico) we can support newer versions of the spec.
 
 ## API

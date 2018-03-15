@@ -99,8 +99,16 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     }
 }
 
-pub fn action(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+pub fn action(trans: &postgres::transaction::Transaction, schema: &Option<serde_json::value::Value>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let action = get_action(&feat)?;
+
+    let valid: bool = match schema {
+        &Some(ref schema) => {
+            println!("{:?}", schema);
+            true
+        },
+        &None => true
+    };
 
     let res = match action {
         Action::Create => create(&trans, &feat, &delta)?,

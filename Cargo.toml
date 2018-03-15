@@ -9,7 +9,7 @@ license = "MIT"
 reqwest = "0.8.4"
 
 [dependencies]
-valico = "1"
+valico = "2.0"
 rand = "0.4"
 tempdir = "0.3"
 postgis = "0.5.0"
