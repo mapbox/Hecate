@@ -12,6 +12,7 @@ pub enum FeatureError {
     NoMembers,
     NoGeometry,
     VersionRequired,
+    SchemaMisMatch,
     CreateError(String),
     DeleteVersionMismatch,
     DeleteError(String),
@@ -44,6 +45,7 @@ impl FeatureError {
             FeatureError::NoMembers => String::from("No Members"),
             FeatureError::NoGeometry => String::from("No Geometry"),
             FeatureError::VersionRequired => String::from("Version Required"),
+            FeatureError::SchemaMisMatch => String::from("Feature properties do not pass schema definition"),
             FeatureError::CreateError(ref msg) => format!("Create Error: {}", msg),
             FeatureError::DeleteVersionMismatch => String::from("Delete Version Mismatch"),
             FeatureError::DeleteError(ref msg) => format!("Delete Error: {}", msg),
@@ -131,6 +133,15 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
         Some(ref props) => props
     };
 
+    let valid = match schema {
+        &Some(ref schema) => {
+            schema.validate(&json!(props)).is_valid()
+        },
+        &None => true
+    };
+
+    if !valid { return Err(FeatureError::SchemaMisMatch) };
+
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
@@ -170,6 +181,15 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
         None => { return Err(FeatureError::NoProps); },
         Some(ref props) => props
     };
+
+    let valid = match schema {
+        &Some(ref schema) => {
+            schema.validate(&json!(props)).is_valid()
+        },
+        &None => true
+    };
+
+    if !valid { return Err(FeatureError::SchemaMisMatch) };
 
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;

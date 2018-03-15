@@ -287,7 +287,7 @@ fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<std::fs::File>, sta
     let dir = TempDir::new(&*&format!("bounds_get_{}", rand::random::<i32>().to_string())).unwrap();
     let file_path = dir.path().join("bounds.geojson");
 
-    { 
+    {
         let mut f = File::create(&file_path).unwrap();
 
         while let Some(row) = rows.next().unwrap() {
