@@ -3,6 +3,7 @@ extern crate r2d2_postgres;
 extern crate geojson;
 extern crate postgres;
 extern crate serde_json;
+extern crate valico;
 
 #[derive(PartialEq, Debug)]
 pub enum FeatureError {
@@ -99,27 +100,27 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     }
 }
 
-pub fn action(trans: &postgres::transaction::Transaction, schema: &Option<serde_json::value::Value>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<serde_json::value::Value>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let action = get_action(&feat)?;
 
-    let valid: bool = match schema {
+    let mut scope = valico::json_schema::Scope::new();
+    let schema = match schema_json {
         &Some(ref schema) => {
-            println!("{:?}", schema);
-            true
+            Some(scope.compile_and_return(schema.clone(), false).unwrap())
         },
-        &None => true
+        &None => None
     };
 
     let res = match action {
-        Action::Create => create(&trans, &feat, &delta)?,
-        Action::Modify => modify(&trans, &feat, &delta)?,
+        Action::Create => create(&trans, &schema, &feat, &delta)?,
+        Action::Modify => modify(&trans, &schema, &feat, &delta)?,
         Action::Delete => delete(&trans, &feat)?
     };
 
     Ok(res)
 }
 
-pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -159,7 +160,7 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
-pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
