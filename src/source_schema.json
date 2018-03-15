@@ -1,5 +1,5 @@
 {
-	"$schema": "http://json-schema.org/draft-05/schema#",
+	"$schema": "http://json-schema.org/draft-04/schema#",
 	"title": "Address source",
 	"description": "Validate addresses source",
 	"type": "object",
@@ -11,7 +11,7 @@
 		"number": {
 			"description": "Number of the building.",
 			"type": "string",
-			"pattern": "^[1-9]\d*$"
+			"pattern": "^[1-9]\\d*$"
 		},
 		"street": {
 			"description": "Name of the street where the building is located.",
