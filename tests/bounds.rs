@@ -6,6 +6,9 @@ mod test {
     use std::fs::File;
     use std::io::prelude::*;
     use postgres::{Connection, TlsMode};
+    use std::process::Command;
+    use std::time::Duration;
+    use std::thread;
     use reqwest;
 
     #[test]
@@ -22,7 +25,7 @@ mod test {
             ", &[]).unwrap();
 
             conn.execute("
-                DROP DATABASE hecate;
+                DROP DATABASE IF EXISTS hecate;
             ", &[]).unwrap();
 
             conn.execute("
@@ -36,6 +39,9 @@ mod test {
             file.read_to_string(&mut table_sql).unwrap();
             conn.batch_execute(&*table_sql).unwrap();
         }
+
+        let mut server = Command::new("cargo").arg("run").spawn().unwrap();
+        thread::sleep(Duration::from_secs(1));
 
         {
             let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
@@ -105,5 +111,7 @@ mod test {
             assert_eq!(&*body_str, r#"{"id":1,"type":"Feature","version":1,"geometry":{"type":"Point","coordinates":[-77.0121002197266,38.9257632323745]},"properties":{"indc": true}}"#);
             assert!(resp.status().is_success());
         }
+
+        server.kill().unwrap();
     }
 }

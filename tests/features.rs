@@ -6,6 +6,9 @@ mod test {
     use std::fs::File;
     use std::io::prelude::*;
     use postgres::{Connection, TlsMode};
+    use std::process::Command;
+    use std::time::Duration;
+    use std::thread;
     use reqwest;
 
     #[test]
@@ -22,7 +25,7 @@ mod test {
             ", &[]).unwrap();
 
             conn.execute("
-                DROP DATABASE hecate;
+                DROP DATABASE IF EXISTS hecate;
             ", &[]).unwrap();
 
             conn.execute("
@@ -36,6 +39,9 @@ mod test {
             file.read_to_string(&mut table_sql).unwrap();
             conn.batch_execute(&*table_sql).unwrap();
         }
+
+        let mut server = Command::new("cargo").arg("run").spawn().unwrap();
+        thread::sleep(Duration::from_secs(1));
 
         { //Create Username
             let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
@@ -232,5 +238,7 @@ mod test {
             let resp = reqwest::get("http://localhost:8000/api/data/feature/3").unwrap();
             assert!(resp.status().is_client_error());
         }
+
+        server.kill().unwrap();
     }
 }
