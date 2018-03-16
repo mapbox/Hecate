@@ -6,10 +6,13 @@ mod test {
     use std::fs::File;
     use std::io::prelude::*;
     use postgres::{Connection, TlsMode};
+    use std::process::Command;
     use reqwest;
 
     #[test]
     fn xml_upload() {
+        let mut server = Command::new("../hecate/target/debug/hecate").spawn().unwrap();
+
         { // Reset Database:
             let conn = Connection::connect("postgres://postgres@localhost:5432", TlsMode::None).unwrap();
 
@@ -166,5 +169,7 @@ mod test {
             let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
             assert!(resp.status().is_client_error());
         }
+
+        server.kill().unwrap();
     }
 }

@@ -6,10 +6,13 @@ mod test {
     use std::fs::File;
     use std::io::prelude::*;
     use postgres::{Connection, TlsMode};
+    use std::process::Command;
     use reqwest;
 
     #[test]
     fn users() {
+        let mut server = Command::new("../hecate/target/debug/hecate").spawn().unwrap();
+        
         {
             let conn = Connection::connect("postgres://postgres@localhost:5432", TlsMode::None).unwrap();
 
@@ -136,5 +139,7 @@ mod test {
             //TODO test for cookie existence - reqwest is currently working on adding better cookie
             //support
         }
+
+        server.kill().unwrap();
     }
 }

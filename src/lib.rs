@@ -42,7 +42,6 @@ use rocket::response::{Response, status, Stream, NamedFile};
 use rocket::request::{self, FromRequest};
 use geojson::GeoJson;
 use fallible_iterator::FallibleIterator;
-use std::io::Read;
 
 pub fn start(database: String, schema: Option<serde_json::value::Value>) {
     env_logger::init();

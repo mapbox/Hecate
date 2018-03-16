@@ -6,10 +6,13 @@ mod test {
     use std::fs::File;
     use std::io::prelude::*;
     use postgres::{Connection, TlsMode};
+    use std::process::Command;
     use reqwest;
 
     #[test]
     fn bounds() {
+        let mut server = Command::new("../hecate/target/debug/hecate").spawn().unwrap();
+
         {
             let conn = Connection::connect("postgres://postgres@localhost:5432", TlsMode::None).unwrap();
 
@@ -105,5 +108,7 @@ mod test {
             assert_eq!(&*body_str, r#"{"id":1,"type":"Feature","version":1,"geometry":{"type":"Point","coordinates":[-77.0121002197266,38.9257632323745]},"properties":{"indc": true}}"#);
             assert!(resp.status().is_success());
         }
+
+        server.kill().unwrap();
     }
 }
