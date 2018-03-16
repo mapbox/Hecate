@@ -1,0 +1,22 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "Address source",
+	"description": "Validate addresses source",
+	"type": "object",
+	"properties": {
+		"source": {
+			"description": "Name of the source where the data comes from",
+			"type": "string"
+		},
+		"number": {
+			"description": "Number of the building.",
+			"type": "string",
+			"pattern": "^[1-9]\\d*$"
+		},
+		"street": {
+			"description": "Name of the street where the building is located.",
+			"type": "string"
+		}
+	},
+	"required": ["source", "number", "street"]
+}
