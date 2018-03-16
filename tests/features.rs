@@ -7,12 +7,12 @@ mod test {
     use std::io::prelude::*;
     use postgres::{Connection, TlsMode};
     use std::process::Command;
+    use std::time::Duration;
+    use std::thread;
     use reqwest;
 
     #[test]
     fn features() {
-        let mut server = Command::new("../hecate/target/debug/hecate").spawn().unwrap();
-
         {
             let conn = Connection::connect("postgres://postgres@localhost:5432", TlsMode::None).unwrap();
 
@@ -39,6 +39,9 @@ mod test {
             file.read_to_string(&mut table_sql).unwrap();
             conn.batch_execute(&*table_sql).unwrap();
         }
+
+        let mut server = Command::new("cargo").arg("run").spawn().unwrap();
+        thread::sleep(Duration::from_secs(1));
 
         { //Create Username
             let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
