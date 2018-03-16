@@ -145,9 +145,7 @@ pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnec
         DELETE FROM users_tokens
             WHERE token = $1;
     ", &[ &token ]) {
-        Ok(res) => {
-            Ok(true)
-        },
+        Ok(_) => Ok(true),
         Err(_) => Err(UserError::NotFound)
     }
 }

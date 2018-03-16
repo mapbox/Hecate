@@ -3,6 +3,7 @@ extern crate r2d2_postgres;
 extern crate geojson;
 extern crate postgres;
 extern crate serde_json;
+extern crate valico;
 
 #[derive(PartialEq, Debug)]
 pub enum FeatureError {
@@ -11,6 +12,7 @@ pub enum FeatureError {
     NoMembers,
     NoGeometry,
     VersionRequired,
+    SchemaMisMatch,
     CreateError(String),
     DeleteVersionMismatch,
     DeleteError(String),
@@ -43,6 +45,7 @@ impl FeatureError {
             FeatureError::NoMembers => String::from("No Members"),
             FeatureError::NoGeometry => String::from("No Geometry"),
             FeatureError::VersionRequired => String::from("Version Required"),
+            FeatureError::SchemaMisMatch => String::from("Feature properties do not pass schema definition"),
             FeatureError::CreateError(ref msg) => format!("Create Error: {}", msg),
             FeatureError::DeleteVersionMismatch => String::from("Delete Version Mismatch"),
             FeatureError::DeleteError(ref msg) => format!("Delete Error: {}", msg),
@@ -99,19 +102,27 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     }
 }
 
-pub fn action(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<serde_json::value::Value>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let action = get_action(&feat)?;
 
+    let mut scope = valico::json_schema::Scope::new();
+    let schema = match schema_json {
+        &Some(ref schema) => {
+            Some(scope.compile_and_return(schema.clone(), false).unwrap())
+        },
+        &None => None
+    };
+
     let res = match action {
-        Action::Create => create(&trans, &feat, &delta)?,
-        Action::Modify => modify(&trans, &feat, &delta)?,
+        Action::Create => create(&trans, &schema, &feat, &delta)?,
+        Action::Modify => modify(&trans, &schema, &feat, &delta)?,
         Action::Delete => delete(&trans, &feat)?
     };
 
     Ok(res)
 }
 
-pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -121,6 +132,15 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
         None => { return Err(FeatureError::NoProps); },
         Some(ref props) => props
     };
+
+    let valid = match schema {
+        &Some(ref schema) => {
+            schema.validate(&json!(props)).is_valid()
+        },
+        &None => true
+    };
+
+    if !valid { return Err(FeatureError::SchemaMisMatch) };
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
@@ -151,7 +171,7 @@ pub fn create(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
-pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -161,6 +181,15 @@ pub fn modify(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
         None => { return Err(FeatureError::NoProps); },
         Some(ref props) => props
     };
+
+    let valid = match schema {
+        &Some(ref schema) => {
+            schema.validate(&json!(props)).is_valid()
+        },
+        &None => true
+    };
+
+    if !valid { return Err(FeatureError::SchemaMisMatch) };
 
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;

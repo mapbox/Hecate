@@ -11,7 +11,10 @@ OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON I
 3. [Build Environment](#build-environment)
 3. [Docker File](#docker-file-coverage-tests)
 4. [Feature Format](#feature-format)
-5. [API](#api)
+5. [Server](#server)
+    - [Database Connection](#database)
+    - [JSON Validation](#json-validation)
+6. [API](#api)
     - [User Options](#user-options)
     - [Admin Interface](#admin-interface)
     - [Vector Tiles](#vector-tiles)
@@ -203,6 +206,46 @@ A feature being uploaded for deletion must have the `action: delete` as well as 
 Note the `properties` and `geometry` attributes must still be included. They can be set to `null` or be their previous value. They will be ignored.
 
 ### Samples
+
+## Server
+
+This section of the guide goes over various options on has when launching the server
+
+Hecate can be launched with default options with
+
+```
+cargo run
+```
+
+### Database
+
+By default hecate will attempt to connect to `postgres@localhost:5432/hecate`.
+
+Note that only postgres/postgis backed databases are currently supported.
+
+This database should be created prior to launching hecate. For instructions on setting up the database
+see the [Build Environment](#build-environment) section of this doc.
+
+A custom database name, postgres user or port can be specified using the database flag.
+
+```
+cargo run -- --database "<USER>:<PASSWORD>@<HOST>/<DATABASE>"
+
+cargo run -- --database "<USER>@<HOST>/<DATABASE>"
+```
+
+### JSON Validation
+
+By default hecate will allow any properties on a given GeoJSON feature, including nestled arrays, maps, etc.
+
+A custom property validation file can be specified using the schema flag.
+
+```
+cargo run -- --schema <PATH-TO-SCHEMA>.json
+```
+
+Note hecate currently supports the JSON Schema draft-04. Once draft-06/07 support lands in
+[valico](https://github.com/rustless/valico) we can support newer versions of the spec.
 
 ## API
 

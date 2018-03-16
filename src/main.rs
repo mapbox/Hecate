@@ -3,6 +3,7 @@
 
 extern crate hecate;
 extern crate rand;
+extern crate valico;
 extern crate rocket;
 extern crate rocket_contrib;
 #[macro_use] extern crate clap;
@@ -35,6 +36,7 @@ use clap::App;
 use geojson::GeoJson;
 use hecate::{feature, user, bounds, delta, xml, mvt};
 use fallible_iterator::FallibleIterator;
+use std::io::Read;
 
 pub type PostgresPool = Pool<PostgresConnectionManager>;
 pub type PostgresPooledConnection = PooledConnection<PostgresConnectionManager>;
@@ -66,10 +68,25 @@ fn main() {
 
     let database = matched.value_of("database").unwrap_or("postgres@localhost:5432/hecate");
 
+    let validation:Option<serde_json::value::Value> = match matched.value_of("schema") {
+        Some(schema_path) => {
+            let mut schema_file = File::open(&Path::new(schema_path)).unwrap();
+            let mut schema_str = String::new();
+
+            schema_file.read_to_string(&mut schema_str).unwrap();
+
+            let schema_json: serde_json::value::Value = serde_json::from_str(&schema_str).unwrap();
+
+            Some(schema_json)
+        },
+        None => None
+    };
+
     env_logger::init();
 
     rocket::ignite()
         .manage(init_pool(&database))
+        .manage(validation)
         .mount("/", routes![
             index
         ])
@@ -270,7 +287,7 @@ fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<std::fs::File>, sta
     let dir = TempDir::new(&*&format!("bounds_get_{}", rand::random::<i32>().to_string())).unwrap();
     let file_path = dir.path().join("bounds.geojson");
 
-    { 
+    {
         let mut f = File::create(&file_path).unwrap();
 
         while let Some(row) = rows.next().unwrap() {
@@ -295,7 +312,7 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
-fn features_action(auth: user::Auth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+fn features_action(auth: user::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
     let uid = match user::auth(&conn.0, auth) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
@@ -334,16 +351,14 @@ fn features_action(auth: user::Auth, conn: DbConn, body: String) -> Result<Json,
     };
 
     for feat in &mut fc.features {
-        match feature::action(&trans, &feat, &None) {
+        match feature::action(&trans, &schema.inner(), &feat, &None) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
                 return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
             },
             Ok(res) => {
-                if res.old == None {
-                    feat.id = Some(json!(res.new));
-                }
+                if res.old == None { feat.id = Some(json!(res.new)); }
             }
         }
     }
@@ -467,7 +482,7 @@ fn xml_changeset_modify(auth: user::Auth, conn: DbConn, delta_id: i64, body: Str
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(auth: user::Auth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
+fn xml_changeset_upload(auth: user::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
     let uid = match user::auth(&conn.0, auth) {
         Some(uid) => uid,
         _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
@@ -497,7 +512,7 @@ fn xml_changeset_upload(auth: user::Auth, conn: DbConn, delta_id: i64, body: Str
     let mut ids: HashMap<i64, feature::Response> = HashMap::new();
 
     for feat in &mut fc.features {
-        let feat_res = match feature::action(&trans, &feat, &Some(delta_id)) {
+        let feat_res = match feature::action(&trans, &schema.inner(), &feat, &Some(delta_id)) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
@@ -595,7 +610,7 @@ fn xml_user() -> String {
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(auth: user::Auth, conn: DbConn, body: String) -> Result<Json, status::Custom<String>> {
+fn feature_action(auth: user::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
     let uid = match user::auth(&conn.0, auth) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
@@ -633,7 +648,7 @@ fn feature_action(auth: user::Auth, conn: DbConn, body: String) -> Result<Json, 
         }
     };
 
-    match feature::action(&trans, &feat, &None) {
+    match feature::action(&trans, schema.inner(), &feat, &None) {
         Ok(res) => { feat.id = Some(json!(res.new)) },
         Err(err) => {
             trans.set_rollback();

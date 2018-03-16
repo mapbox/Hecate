@@ -9,3 +9,10 @@ args:
         value_name: DATABASE
         help: Specify an alternate database in format USER@HOST:PORT/DATABASE
         takes_value: true
+
+    - schema:
+        short: s
+        long: schema
+        value_name: SCHEMA
+        help: Specify a JSON Validation Schema for data in the hecate database
+        takes_value: true
