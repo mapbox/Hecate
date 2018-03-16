@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.9.0
+
+- :rocket: Add JSON Schema Validation
+
 ## v0.8.0
 
 - :rocket: Add login fxn to web UI
