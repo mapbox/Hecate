@@ -25,7 +25,7 @@ mod test {
             ", &[]).unwrap();
 
             conn.execute("
-                DROP DATABASE hecate;
+                DROP DATABASE IF EXISTS hecate;
             ", &[]).unwrap();
 
             conn.execute("
