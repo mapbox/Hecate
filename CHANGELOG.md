@@ -10,6 +10,11 @@
 
 ## Version History
 
+## v0.10.0
+
+- :rocket: `hecate::start` is now exposed via lib. Note thta it is blocking, per the rocket docs
+- :white_check_mark: Each test now creates and manages its own server instance
+
 ## v0.9.0
 
 - :rocket: Add JSON Schema Validation
