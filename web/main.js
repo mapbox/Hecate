@@ -292,6 +292,7 @@ window.onload = () => {
         container: 'map',
         style: 'mapbox://styles/mapbox/satellite-v9',
         center: [-96, 37.8],
+        hash: true,
         maxzoom: 14,
         zoom: 3
     });

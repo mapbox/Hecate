@@ -36,7 +36,19 @@
                             <table class='table txt-xs'>
                                 <thead><tr><th>Key</th><th>Value</th></tr></thead>
                                  <tbody>
-                                    <tr v-for="prop in Object.keys(feature.properties)"><td v-text="prop"></td><td v-text="feature.properties[prop]"></td></tr>
+                                    <tr v-for="prop in Object.keys(feature.properties)">
+                                        <td v-text="prop"></td>
+                                        <td v-if="feature.properties[prop][0] !== 'undefined' && prop ==='street'">
+                                            <template v-for="element in feature.properties[prop]" style="border-bottom: dotted;">
+                                                <tr v-for="key in Object.keys(element)">
+                                                    <td v-text="key"></td>
+                                                    <td v-text="element[key]"></td>
+                                                </tr>
+                                                <div style="border-bottom: solid #CBCBCB 1px;"></div>
+                                            </template>
+                                        </td>
+                                        <td v-else v-text="feature.properties[prop]"></td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
