@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.10.1
+
+- :rocket: Better visualization of Arrays & Object properties in web UI
+
 ## v0.10.0
 
 - :rocket: `hecate::start` is now exposed via lib. Note thta it is blocking, per the rocket docs
