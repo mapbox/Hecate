@@ -7,7 +7,8 @@ window.onload = () => {
         data: {
             credentials: {
                 map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' },
-                authed: false
+                authed: false,
+                username: ''
             },
             panel: { panel: 'deltas' },
             modal: {
@@ -85,12 +86,13 @@ window.onload = () => {
                     })
                 }).then((response) => {
                     if (response.status === 200) {
+                        this.modal.type = false;
+                        this.credentials.authed = true;
+                        this.credentuals.username = this.modal.login.username;
                         this.modal.login = {
                             username: '',
                             password: ''
                         };
-                        this.modal.type = false;
-                        this.credentials.authed = true;
                     } else {
                         //TODO Error
                     }
