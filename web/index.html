@@ -38,16 +38,28 @@
                                  <tbody>
                                     <tr v-for="prop in Object.keys(feature.properties)">
                                         <td v-text="prop"></td>
-                                        <td v-if="feature.properties[prop][0] !== 'undefined' && prop ==='street'">
+
+                                        <!-- element: (Array) -->
+                                        <td v-if="Array.isArray(feature.properties[prop])">
                                             <template v-for="element in feature.properties[prop]" style="border-bottom: dotted;">
-                                                <tr v-for="key in Object.keys(element)">
-                                                    <td v-text="key"></td>
-                                                    <td v-text="element[key]"></td>
-                                                </tr>
+                                                <!-- element: Array: (Object) -->
+                                                <template v-if="typeof element === 'object' && !Array.isArray(element)">
+                                                    <tr v-for="key in Object.keys(element)">
+                                                        <td v-text="key"></td>
+                                                        <td v-text="element[key]"></td>
+                                                    </tr>
+                                                </template>
+                                                <!-- element: Array: (Array, String, Number) -->
+                                                <template v-else>
+                                                    <td v-text="JSON.stringify(element)"></td>
+                                                </template>
+
                                                 <div style="border-bottom: solid #CBCBCB 1px;"></div>
                                             </template>
                                         </td>
-                                        <td v-else v-text="feature.properties[prop]"></td>
+
+                                        <!-- element: (Object, String, Number) -->
+                                        <td v-else v-text="JSON.stringify(feature.properties[prop])"></td>
                                     </tr>
                                 </tbody>
                             </table>
