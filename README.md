@@ -1,8 +1,6 @@
 <h1 align='center'>Hecate</h1>
 
-## Brief
-
-OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange
+<p align=center>OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange</p>
 
 ## Table Of Contents
 
