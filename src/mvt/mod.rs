@@ -97,7 +97,7 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
 
 pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: i64, x: i64, y: i64, tile: &proto::Tile) -> Result<(), MVTError> {
     match conn.query("
-        INSERT INTO tiles (z, x, y, tiles)
+        INSERT INTO tiles (z, x, y, tile)
             VALUES ($1, $2, $3, $4)
     ", &[&z, &x, &y, &tile.to_bytes().unwrap()]) {
         Err(_) => Err(MVTError::DB),
