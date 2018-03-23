@@ -26,28 +26,48 @@ pub use self::grid::{Grid};
 
 #[derive(Debug, PartialEq)]
 pub enum MVTError {
-    NotFound
+    NotFound,
+    DB,
 }
 
 impl MVTError {
     pub fn to_string(&self) -> String {
         match *self {
-            MVTError::NotFound => { String::from("Tile not found") }
+            MVTError::NotFound => { String::from("Tile not found") },
+            MVTError::DB => { String::from("Tile Database Error") }
 
         }
     }
 }
 
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<proto::Tile, MVTError> {
+pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: i64, x: i64, y: i64) -> Result<Option<proto::Tile>, MVTError> {
+    let rows = match conn.query("
+        SELECT tile
+        FROM tiles
+        WHERE
+            z = $1
+            AND x = $2
+            AND y = $3
+    ", &[&z, &x, &y]) {
+        Ok(rows) => rows,
+        Err(_) => { return Err(MVTError::DB); }
+};
+
+if rows.len() == 0 { return Ok(None); }
+
+Ok(None)
+    }
+
+pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: &u8, x: &u32, y: &u32) -> Result<proto::Tile, MVTError> {
     let grid = Grid::web_mercator();
-    let bbox = grid.tile_extent(z, x, y);
+    let bbox = grid.tile_extent(*z, *x, *y);
     let mut tile = Tile::new(&bbox);
 
     let mut layer = Layer::new("data");
 
     let mut limit: Option<i64> = None;
-    if z < 10 { limit = Some(10) }
-    else if z < 14 { limit = Some(100) }
+    if *z < 10 { limit = Some(10) }
+    else if *z < 14 { limit = Some(100) }
 
     let rows = conn.query("
         SELECT
@@ -71,7 +91,27 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
 
     tile.add_layer(layer);
 
-    let encoded = tile.encode(&grid);
+    Ok(tile.encode(&grid))
+}
 
-    Ok(encoded)
+
+pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: i64, x: i64, y: i64, tile: &proto::Tile) -> Result<(), MVTError> {
+    match conn.query("
+        INSERT INTO tiles (z, x, y, tiles)
+            VALUES ($1, $2, $3, $4)
+    ", &[&z, &x, &y, &tile.to_bytes().unwrap()]) {
+        Err(_) => Err(MVTError::DB),
+        _ => Ok(())
+    }
+}
+
+pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<proto::Tile, MVTError> {
+    match db_get(&conn, i64::from(z), i64::from(x), i64::from(y))? {
+        Some(tile) => { return Ok(tile); }
+        _ => ()
+    };
+
+    let tile = db_create(&conn, &z, &x, &y)?;
+
+    Ok(tile)
 }

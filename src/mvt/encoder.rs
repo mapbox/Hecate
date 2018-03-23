@@ -7,6 +7,7 @@ use mvt::proto;
 
 pub trait Encode {
     fn to_writer(&self, out: &mut Write) -> Result<(), ProtobufError>;
+    fn to_bytes(&self) -> Result<Vec<u8>, ProtobufError>;
 }
 
 pub trait Decode {
@@ -18,6 +19,13 @@ impl Encode for proto::Tile {
         let mut os = CodedOutputStream::new(&mut out);
         let _ = self.write_to(&mut os);
         os.flush()
+    }
+
+    fn to_bytes(&self) -> Result<Vec<u8>, ProtobufError> {
+        let mut bytes = Vec::<u8>::new();
+        CodedOutputStream::vec(&mut bytes);
+
+        Ok(bytes)
     }
 }
 

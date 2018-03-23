@@ -4,6 +4,14 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS hstore;
 
+DROP TABLE IF EXISTS tiles;
+CREATE TABLE tiles (
+    z           BIGINT,
+    x           BIGINT,
+    y           BIGINT,
+    tile        BYTEA
+);
+
 DROP TABLE IF EXISTS bounds;
 CREATE TABLE bounds (
     id          BIGSERIAL,
