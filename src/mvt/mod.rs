@@ -51,12 +51,12 @@ pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     ", &[&z, &x, &y]) {
         Ok(rows) => rows,
         Err(_) => { return Err(MVTError::DB); }
-};
+    };
 
-if rows.len() == 0 { return Ok(None); }
+    if rows.len() == 0 { return Ok(None); }
 
-Ok(None)
-    }
+    Ok(None)
+}
 
 pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: &u8, x: &u32, y: &u32) -> Result<proto::Tile, MVTError> {
     let grid = Grid::web_mercator();
@@ -106,12 +106,14 @@ pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
 }
 
 pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<proto::Tile, MVTError> {
-    match db_get(&conn, i64::from(z), i64::from(x), i64::from(y))? {
+    match db_get(&conn, z as i64, x as i64, y as i64)? {
         Some(tile) => { return Ok(tile); }
         _ => ()
     };
 
     let tile = db_create(&conn, &z, &x, &y)?;
+
+    db_cache(&conn, z as i64, x as i64, y as i64, &tile)?;
 
     Ok(tile)
 }
