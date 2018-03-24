@@ -23,7 +23,10 @@ impl Encode for proto::Tile {
 
     fn to_bytes(&self) -> Result<Vec<u8>, ProtobufError> {
         let mut bytes = Vec::<u8>::new();
-        CodedOutputStream::vec(&mut bytes);
+        {
+            let mut os = CodedOutputStream::vec(&mut bytes);
+            let _ = self.write_to(&mut os);
+        }
 
         Ok(bytes)
     }

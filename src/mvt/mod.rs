@@ -40,15 +40,10 @@ impl MVTError {
     }
 }
 
-pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: i64, x: i64, y: i64) -> Result<Option<proto::Tile>, MVTError> {
+pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String) -> Result<Option<proto::Tile>, MVTError> {
     let rows = match conn.query("
-        SELECT tile
-        FROM tiles
-        WHERE
-            z = $1
-            AND x = $2
-            AND y = $3
-    ", &[&z, &x, &y]) {
+        SELECT tile FROM tiles WHERE ref = $1;
+    ", &[&coord]) {
         Ok(rows) => rows,
         Err(_) => { return Err(MVTError::DB); }
     };
@@ -95,25 +90,26 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
 }
 
 
-pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: i64, x: i64, y: i64, tile: &proto::Tile) -> Result<(), MVTError> {
+pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String, tile: &proto::Tile) -> Result<(), MVTError> {
     match conn.query("
-        INSERT INTO tiles (z, x, y, tile)
-            VALUES ($1, $2, $3, $4)
-    ", &[&z, &x, &y, &tile.to_bytes().unwrap()]) {
+        INSERT INTO tiles (ref, tile)
+            VALUES ($1, $2)
+                ON CONFLICT (ref) DO UPDATE SET tile = $2;
+    ", &[&coord, &tile.to_bytes().unwrap()]) {
         Err(_) => Err(MVTError::DB),
         _ => Ok(())
     }
 }
 
 pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<proto::Tile, MVTError> {
-    match db_get(&conn, z as i64, x as i64, y as i64)? {
+    match db_get(&conn, format!("{}/{}/{}", &z, &x, &y))? {
         Some(tile) => { return Ok(tile); }
         _ => ()
     };
 
     let tile = db_create(&conn, &z, &x, &y)?;
 
-    db_cache(&conn, z as i64, x as i64, y as i64, &tile)?;
+    db_cache(&conn, format!("{}/{}/{}", &z, &x, &y), &tile)?;
 
     Ok(tile)
 }

@@ -6,9 +6,7 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 
 DROP TABLE IF EXISTS tiles;
 CREATE TABLE tiles (
-    z           BIGINT UNIQUE,
-    x           BIGINT UNIQUE,
-    y           BIGINT UNIQUE,
+    ref         TEXT UNIQUE,
     tile        BYTEA
 );
 
