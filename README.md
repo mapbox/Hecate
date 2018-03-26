@@ -6,11 +6,6 @@
   <a href="https://circleci.com/gh/ingalls/hecate/tree/master"><img src="https://circleci.com/gh/ingalls/hecate/tree/master.svg?style=shield"/></a>
 </p>
 
-## Brief
-
-OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange
->>>>>>> 4e39cfc... Add Circle Shield
-
 ## Table Of Contents
 
 1. [Brief](#brief)
