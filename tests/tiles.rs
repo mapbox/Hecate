@@ -70,7 +70,7 @@ mod test {
             let mut body: Vec<u8> = Vec::new();
             resp.read_to_end(&mut body).unwrap();
 
-            assert_eq!(body.len(), 13);
+            assert_eq!(body.len(), 10);
             assert!(resp.status().is_success());
         }
 

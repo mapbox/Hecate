@@ -12,6 +12,7 @@ pub trait Encode {
 
 pub trait Decode {
     fn from_reader(input: &mut Read) -> Result<Self, ProtobufError> where Self: Sized;
+    fn from_bytes(bytes: &Vec<u8>) -> Result<Self, ProtobufError> where Self: Sized;
 }
 
 impl Encode for proto::Tile {
@@ -36,5 +37,9 @@ impl Decode for proto::Tile {
     fn from_reader(input: &mut Read) -> Result<Self, ProtobufError> {
         let mut reader = BufReader::new(input);
         protobuf::parse_from_reader(&mut reader)
+    }
+
+    fn from_bytes(bytes: &Vec<u8>) -> Result<Self, ProtobufError> {
+        protobuf::parse_from_bytes(bytes)
     }
 }

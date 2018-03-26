@@ -45,12 +45,18 @@ pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
         SELECT tile FROM tiles WHERE ref = $1;
     ", &[&coord]) {
         Ok(rows) => rows,
-        Err(_) => { return Err(MVTError::DB); }
+        Err(err) => match err.as_db() {
+            Some(_e) => { return Err(MVTError::DB); },
+            _ => { return Err(MVTError::DB); }
+        }
     };
 
     if rows.len() == 0 { return Ok(None); }
 
-    Ok(None)
+    let bytes: Vec<u8> = rows.get(0).get(0);
+    let tile = proto::Tile::from_bytes(&bytes).unwrap();
+
+    Ok(Some(tile))
 }
 
 pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: &u8, x: &u32, y: &u32) -> Result<proto::Tile, MVTError> {
@@ -96,7 +102,10 @@ pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
             VALUES ($1, $2)
                 ON CONFLICT (ref) DO UPDATE SET tile = $2;
     ", &[&coord, &tile.to_bytes().unwrap()]) {
-        Err(_) => Err(MVTError::DB),
+        Err(err) => match err.as_db() {
+            Some(_e) => Err(MVTError::DB),
+            _ => Err(MVTError::DB),
+        }
         _ => Ok(())
     }
 }
