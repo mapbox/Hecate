@@ -1,12 +1,10 @@
 <h1 align='center'>Hecate</h1>
 
+<p align=center>OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange</p>
+
 <p align="center">
-  <a href="https://circleci.com/gh/ingalls/hecate/tree/master"><img src="https://circleci.com/gh/ingalls/hecate/tree/master.svg?style=shield"/></a>
+  <a href="https://circleci.com/gh/ingalls/Hecate/tree/master"><img src="https://circleci.com/gh/ingalls/Hecate/tree/master.svg?style=shield"/></a>
 </p>
-
-## Brief
-
-OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange
 
 ## Table Of Contents
 
