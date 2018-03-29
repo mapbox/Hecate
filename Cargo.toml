@@ -2,8 +2,16 @@
 name = "hecate"
 version = "0.10.1"
 authors = ["ingalls <ingalls@protonmail.com>"]
-publish = false
 license = "MIT"
+description = "OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange"
+
+homepage = "https://github.com/ingalls/Hecate"
+repository = "https://github.com/ingalls/Hecate"
+
+readme = "README.md"
+
+categories = ["database"]
+maintenance = { status = "actively-developed" }
 
 [dev-dependencies]
 reqwest = "0.8.4"
