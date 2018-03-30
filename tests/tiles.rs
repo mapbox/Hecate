@@ -60,6 +60,7 @@ mod test {
             assert_eq!(tile_ref, String::from("1/2/3"));
 
             let tile: Vec<u8> = res.get(0).get(1);
+
             assert_eq!(tile.len(), 10);
         }
 
@@ -70,7 +71,7 @@ mod test {
             let mut body: Vec<u8> = Vec::new();
             resp.read_to_end(&mut body).unwrap();
 
-            assert_eq!(body.len(), 10);
+            assert_eq!(body.len(), 13);
             assert!(resp.status().is_success());
         }
 
