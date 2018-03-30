@@ -6,6 +6,7 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 
 DROP TABLE IF EXISTS tiles;
 CREATE TABLE tiles (
+    created     TIMESTAMP,
     ref         TEXT UNIQUE,
     tile        BYTEA
 );

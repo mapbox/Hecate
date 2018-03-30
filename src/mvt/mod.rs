@@ -42,7 +42,11 @@ impl MVTError {
 
 pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String) -> Result<Option<proto::Tile>, MVTError> {
     let rows = match conn.query("
-        SELECT tile FROM tiles WHERE ref = $1;
+        SELECT tile
+        FROM tiles
+        WHERE
+            ref = $1
+            AND NOW() > created + INVERVAL '4 hours'
     ", &[&coord]) {
         Ok(rows) => rows,
         Err(err) => match err.as_db() {
@@ -98,8 +102,8 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
 
 pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String, tile: &proto::Tile) -> Result<(), MVTError> {
     match conn.query("
-        INSERT INTO tiles (ref, tile)
-            VALUES ($1, $2)
+        INSERT INTO tiles (ref, tile, created)
+            VALUES ($1, $2, NOW())
                 ON CONFLICT (ref) DO UPDATE SET tile = $2;
     ", &[&coord, &tile.to_bytes().unwrap()]) {
         Err(err) => match err.as_db() {
