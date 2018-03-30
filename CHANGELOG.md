@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.11.0
+
+- :rocket: Add time based TileCache for faster map rendering
+
 ## v0.10.1
 
 - :rocket: Better visualization of Arrays & Object properties in web UI
