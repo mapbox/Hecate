@@ -46,7 +46,7 @@ pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
         FROM tiles
         WHERE
             ref = $1
-            AND NOW() > created + INVERVAL '4 hours'
+            AND NOW() > created + INTERVAL '4 hours'
     ", &[&coord]) {
         Ok(rows) => rows,
         Err(err) => match err.as_db() {
