@@ -48,8 +48,8 @@ RUN git clone http://github.com/SimonKagstrom/kcov.git && \
     make install
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
-    && ~/.cargo/bin/rustup install nightly \
-    && ~/.cargo/bin/rustup default nightly \
+    && ~/.cargo/bin/rustup install nightly-2018-01-12 \
+    && ~/.cargo/bin/rustup default nightly-2018-01-12 \
     && ~/.cargo/bin/cargo install cargo-kcov
 
 RUN echo "local all all trust " > /etc/postgresql/9.6/main/pg_hba.conf \
