@@ -31,7 +31,6 @@ fn test_build_tile() {
     // Encode the tile as protobuf structs
     let grid = Grid::wgs84();
     let data = tile.encode(&grid);
-    println!("{:#?}", data);
     assert_eq!(TILE_EXAMPLE, &*format!("{:#?}", data));
 }
 

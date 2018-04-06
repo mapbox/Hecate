@@ -46,7 +46,11 @@ impl Generic for Rel {
     }
 
     fn set_tag(&mut self, k: String, v: String) {
-        self.tags.insert(k, json!(v));
+        let value = match serde_json::from_str::<serde_json::Value>(&*v) {
+            Ok(value) => value,
+            Err(_) => serde_json::Value::String(v)
+        };
+        self.tags.insert(k, value);
     }
 
     fn has_tags(&self) -> bool {
