@@ -6,7 +6,7 @@ pub struct Rel {
     pub user: Option<String>,
     pub uid: Option<i32>,
     pub modified: bool,
-    pub tags: HashMap<String, String>,
+    pub tags: serde_json::Map<String, serde_json::Value>,
     pub action: Option<Action>,
     pub version: Option<i32>,
     pub parents: Vec<i64>,
@@ -33,7 +33,7 @@ impl Generic for Rel {
             modified: false,
             user: None,
             uid: None,
-            tags: HashMap::new(),
+            tags: serde_json::Map::new(),
             action: None,
             parents: Vec::new(),
             version: None,
@@ -46,7 +46,7 @@ impl Generic for Rel {
     }
 
     fn set_tag(&mut self, k: String, v: String) {
-        self.tags.insert(k, v);
+        self.tags.insert(k, json!(v));
     }
 
     fn has_tags(&self) -> bool {

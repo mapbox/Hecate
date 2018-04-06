@@ -36,7 +36,7 @@ impl Generic for Node {
     }
 
     fn set_tag(&mut self, k: String, v: String) {
-        self.tags.insert(k, serde_json::Value::String(v));
+        self.tags.insert(k, json!(v));
     }
 
     fn has_tags(&self) -> bool {
