@@ -10,6 +10,11 @@
 
 ## Version History
 
+## v0.12.0
+
+- :rocket: Add support for JSON in OSM XML
+- :tada: Add schema endpoint
+
 ## v0.11.0
 
 - :rocket: Add time based TileCache for faster map rendering
