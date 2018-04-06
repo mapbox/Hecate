@@ -20,6 +20,7 @@
 6. [API](#api)
     - [User Options](#user-options)
     - [Admin Interface](#admin-interface)
+    - [Schema](#schema)
     - [Vector Tiles](#vector-tiles)
     - [Downloading via Boundaries](#downloading-via-boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
@@ -269,6 +270,22 @@ curl -X GET 'http://localhost:8000/
 <h3 align='center'>Admin Interface</h3>
 
 View the Admin Interface in your browser by pointing to `127.0.0.1:8000/admin/index.html`
+
+---
+
+<h3 align='center'>Admin Interface</h3>
+
+
+#### `GET` `/api/schema`
+
+Return a JSON object containing the schema used by the server or return a 404 if no schema file is in use.
+
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/schema
+```
 
 ---
 
