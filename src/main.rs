@@ -16,7 +16,11 @@ fn main() {
 
     let schema: Option<serde_json::value::Value> = match matched.value_of("schema") {
         Some(schema_path) => {
-            let mut schema_file = File::open(&Path::new(schema_path)).unwrap();
+            let mut schema_file = match File::open(&Path::new(schema_path)) {
+                Ok(file) => file,
+                Err(_) => panic!("Failed to open file at: {}", schema_path)
+            };
+
             let mut schema_str = String::new();
 
             schema_file.read_to_string(&mut schema_str).unwrap();
