@@ -1,3 +1,4 @@
+use serde_json;
 use std::fmt;
 use xml::*;
 
@@ -36,7 +37,11 @@ impl Generic for Node {
     }
 
     fn set_tag(&mut self, k: String, v: String) {
-        self.tags.insert(k, serde_json::Value::String(v));
+        let value = match serde_json::from_str::<serde_json::Value>(&*v) {
+            Ok(value) => value,
+            Err(_) => serde_json::Value::String(v)
+        };
+        self.tags.insert(k, value);
     }
 
     fn has_tags(&self) -> bool {

@@ -56,6 +56,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             staticsrv
         ])
         .mount("/api", routes![
+            get_schema,
             mvt_get,
             user_self,
             user_create,
@@ -295,6 +296,14 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
     match feature::get_bbox(&conn.0, bbox) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/schema")]
+fn get_schema(schema: State<Option<serde_json::value::Value>>) -> Result<Json, status::Custom<String>> {
+    match schema.inner().clone() {
+        Some(s) => Ok(Json(json!(s.clone()))),
+        None => Err(status::Custom(HTTPStatus::NotFound, String::from("No Schema Validation Enforced")))
     }
 }
 

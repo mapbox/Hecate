@@ -1,0 +1,35 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Address source",
+    "description": "Validate addresses source",
+    "type": "object",
+    "required": ["source", "number", "street"],
+    "properties": {
+        "source": {
+            "description": "Name of the source where the data comes from",
+            "type": "string"
+        },
+        "number": {
+            "description": "Number of the building.",
+            "type": [ "string", "number" ]
+        },
+        "street": {
+            "description": "Name Array of street names to which this address belongs",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["display"],
+                "propeties": {
+                    "display": {
+                        "type": "string",
+                        "description": "Single name string of a potential road name"
+                    },
+                    "priority": {
+                        "type": "integer",
+                        "description": "Used to determine the primary name of a feature"
+                    }
+                }
+            }
+        }
+    }
+}
