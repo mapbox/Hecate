@@ -11,7 +11,7 @@
         },
         "number": {
             "description": "Number of the building.",
-            "type": "string"
+            "type": [ "string", "number" ]
         },
         "street": {
             "description": "Name Array of street names to which this address belongs",

@@ -56,7 +56,7 @@ mod test {
 
         { //Get Schema in use
             let mut resp = reqwest::get("http://localhost:8000/api/schema").unwrap();
-            assert_eq!(resp.text().unwrap(), "{\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"Validate addresses source\",\"properties\":{\"number\":{\"description\":\"Number of the building.\",\"type\":\"string\"},\"source\":{\"description\":\"Name of the source where the data comes from\",\"type\":\"string\"},\"street\":{\"description\":\"Name Array of street names to which this address belongs\",\"items\":{\"propeties\":{\"display\":{\"description\":\"Single name string of a potential road name\",\"type\":\"string\"},\"priority\":{\"description\":\"Used to determine the primary name of a feature\",\"type\":\"integer\"}},\"required\":[\"display\"],\"type\":\"object\"},\"type\":\"array\"}},\"required\":[\"source\",\"number\",\"street\"],\"title\":\"Address source\",\"type\":\"object\"}");
+            assert_eq!(resp.text().unwrap(), "{\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"Validate addresses source\",\"properties\":{\"number\":{\"description\":\"Number of the building.\",\"type\":[\"string\",\"number\"]},\"source\":{\"description\":\"Name of the source where the data comes from\",\"type\":\"string\"},\"street\":{\"description\":\"Name Array of street names to which this address belongs\",\"items\":{\"propeties\":{\"display\":{\"description\":\"Single name string of a potential road name\",\"type\":\"string\"},\"priority\":{\"description\":\"Used to determine the primary name of a feature\",\"type\":\"integer\"}},\"required\":[\"display\"],\"type\":\"object\"},\"type\":\"array\"}},\"required\":[\"source\",\"number\",\"street\"],\"title\":\"Address source\",\"type\":\"object\"}");
             assert!(resp.status().is_success());
         }
 
@@ -142,7 +142,7 @@ mod test {
                 .body(r#"
                     <osmChange version="0.6" generator="Hecate Server">
                         <create>
-                            <node id='-1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
+                            <node id='-1' version='1' changeset='1' lat='0' lon='0'>
                                 <tag k='source' v='Test Data' />
                                 <tag k='number' v='123' />
                                 <tag k='street' v='[{ "test": "123" }]'/>
@@ -163,7 +163,7 @@ mod test {
                 .body(r#"
                     <osmChange version="0.6" generator="Hecate Server">
                         <create>
-                            <node id='-1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
+                            <node id='-1' version='1' changeset='1' lat='0' lon='0'>
                                 <tag k='source' v='Test Data' />
                                 <tag k='number' v='123' />
                                 <tag k='street' v='[{ "display": "Main Street" }]'/>
@@ -174,8 +174,8 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), "Feature properties do not pass schema definition");
-            assert!(resp.status().is_client_error());
+            assert_eq!(resp.text().unwrap(), "<diffResult generator=\"Hecate Server\" version=\"0.6\"><node old_id=\"-1\" new_id=\"2\" new_version=\"1\"/></diffResult>");
+            assert!(resp.status().is_success());
         }
 
         server.kill().unwrap();
