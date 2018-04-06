@@ -125,6 +125,59 @@ mod test {
             assert_eq!(resp.text().unwrap(), "true");
         }
 
+        { //XML Changeset Create (Node Create)
+            let client = reqwest::Client::new();
+            let mut resp = client.put("http://localhost:8000/api/0.6/changeset/create")
+                .body(r#"<osm><changeset><tag k="created_by" v="Hecate Server"/><tag k="comment" v="Buncho Random Text"/></changeset></osm>"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), "4");
+            assert!(resp.status().is_success());
+        }
+
+        { //XML Node Create Failure
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/0.6/changeset/4/upload")
+                .body(r#"
+                    <osmChange version="0.6" generator="Hecate Server">
+                        <create>
+                            <node id='-1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
+                                <tag k='source' v='Test Data' />
+                                <tag k='number' v='123' />
+                                <tag k='street' v='[{ "test": "123" }]'/>
+                            </node>
+                        </create>
+                    </osmChange>
+                "#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), "Feature properties do not pass schema definition");
+            assert!(resp.status().is_client_error());
+        }
+
+        { //XML Node Create Failure
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/0.6/changeset/4/upload")
+                .body(r#"
+                    <osmChange version="0.6" generator="Hecate Server">
+                        <create>
+                            <node id='-1' version='1' changeset='1' lat='-0.66180939203' lon='3.59219690827'>
+                                <tag k='source' v='Test Data' />
+                                <tag k='number' v='123' />
+                                <tag k='street' v='[{ "display": "Main Street" }]'/>
+                            </node>
+                        </create>
+                    </osmChange>
+                "#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), "Feature properties do not pass schema definition");
+            assert!(resp.status().is_client_error());
+        }
+
         server.kill().unwrap();
     }
 }
