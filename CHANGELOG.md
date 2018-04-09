@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.12.1
+
+- :bug: Unescape XML chars when uploading via OSMXML shim
+
 ## v0.12.0
 
 - :rocket: Add support for JSON in OSM XML
