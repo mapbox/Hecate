@@ -96,6 +96,10 @@ impl From<num::ParseIntError> for XMLError {
     }
 }
 
+pub fn unescape(prop: String) -> String {
+    prop.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'")
+}
+
 #[derive(PartialEq, Debug)]
 pub enum Value {
     None,

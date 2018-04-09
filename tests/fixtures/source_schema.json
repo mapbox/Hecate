@@ -19,13 +19,13 @@
             "items": {
                 "type": "object",
                 "required": ["display"],
-                "propeties": {
+                "properties": {
                     "display": {
                         "type": "string",
                         "description": "Single name string of a potential road name"
                     },
                     "priority": {
-                        "type": "integer",
+                        "type": "number",
                         "description": "Used to determine the primary name of a feature"
                     }
                 }

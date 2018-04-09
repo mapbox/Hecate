@@ -34,9 +34,11 @@ impl Generic for Way {
     }
 
     fn set_tag(&mut self, k: String, v: String) {
-        let value = match serde_json::from_str::<serde_json::Value>(&*v) {
+        let v_unescape = unescape(v);
+
+        let value = match serde_json::from_str::<serde_json::Value>(&*v_unescape) {
             Ok(value) => value,
-            Err(_) => serde_json::Value::String(v)
+            Err(_) => serde_json::Value::String(v_unescape)
         };
         self.tags.insert(k, value);
     }
