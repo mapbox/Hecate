@@ -72,6 +72,45 @@ window.onload = () => {
                 }
             }
         },
+        mounted: function(e) {
+            mapboxgl.accessToken = this.credentials.map.key;
+            this.map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/satellite-v9',
+                center: [-96, 37.8],
+                hash: true,
+                maxzoom: 14,
+                zoom: 3
+            });
+
+            this.map.on('load', () => {
+                this.map.addSource('hecate-data', {
+                    type: 'vector',
+                    maxzoom: 14,
+                    tiles: [ `http://${window.location.host}/api/tiles/{z}/{x}/{y}` ]
+                });
+
+                this.map.addSource('hecate-delta', {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: [] }
+                });
+
+                this.map_default_style();
+                this.map_delta_style();
+            });
+
+            this.map.addControl(new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+            }));
+
+            this.map.on('click', (e) => {
+                if (this.delta) return; //Don't currently support showing features within a delta
+
+                let clicked = this.map.queryRenderedFeatures(e.point)[0];
+
+                if (clicked && clicked.properties.id) this.feature_get(clicked.properties.id);
+            });
+        },
         methods: {
             logout: function() {
                 this.credentials.authed = false;
@@ -289,41 +328,5 @@ window.onload = () => {
 
     window.vue.moment = moment;
 
-    mapboxgl.accessToken = window.vue.credentials.map.key;
-    window.vue.map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/satellite-v9',
-        center: [-96, 37.8],
-        hash: true,
-        maxzoom: 14,
-        zoom: 3
-    });
-
-    window.vue.map.on('load', () => {
-        window.vue.map.addSource('hecate-data', {
-            type: 'vector',
-            tiles: [ `http://${window.location.host}/api/tiles/{z}/{x}/{y}` ]
-        });
-
-        window.vue.map.addSource('hecate-delta', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
-        });
-
-        window.vue.map_default_style();
-        window.vue.map_delta_style();
-    });
-
-    window.vue.map.addControl(new MapboxGeocoder({
-        accessToken: mapboxgl.accessToken,
-    }));
-
-    window.vue.map.on('click', (e) => {
-        if (window.vue.delta) return; //Don't currently support showing features within a delta
-
-        let clicked = window.vue.map.queryRenderedFeatures(e.point)[0];
-
-        if (clicked && clicked.properties.id) window.vue.feature_get(clicked.properties.id);
-    });
 }
 
