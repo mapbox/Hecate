@@ -10,4 +10,4 @@ jobs:
                 command: "docker build -t ingalls/hecate:$CIRCLE_BRANCH ."
             - run: 
                 name: "Tests"
-                command: "docker run --name hecate ingalls/hecate:$CIRCLE_BRANCH -e COMMITMSG=$(git log --format=oneline -n 1 $CIRCLE_SHA1) -e GITHUB_TOKEN=$GITHUB_TOKEN"
+                command: "docker run --env COMMITMSG=$(git log --format=oneline -n 1 $CIRCLE_SHA1) --env GITHUB_TOKEN=$GITHUB_TOKEN --name hecate ingalls/hecate:$CIRCLE_BRANCH"
