@@ -8,13 +8,13 @@ if [[ -n $(echo $GIT_COMMIT_DESC | grep -Po 'v[0-9]+\.[0-9]+\.[0-9]+' ) ]]; then
 
     ~/.cargo/bin/cargo build --release
 
-    zip ./target/release/
+    zip release.zip target/release/hecate
 
     curl \
         -H "Authorization: token $GITHUB_TOKEN" \
         -H "Accept: application/vnd.github.manifold-preview" \
         -H "Content-Type: application/zip" \
-        --data-binary @build/mac/package.zip \
+        --data-binary @release.zip \
         "https://uploads.github.com/repos/ingalls/Hecate/releases/${RELEASE}/assets?name=${RELEASE}-linux.zip"
 else
     service postgresql start
