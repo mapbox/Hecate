@@ -3,9 +3,9 @@ set -euo pipefail
 
 cd $(dirname $0)/..
 
-if [[ -n $(echo $GIT_COMMIT_DESC | grep -Po 'v[0-9]+\.[0-9]+\.[0-9]+' ) ]]; then
+if [[ -n $(echo $COMMITMSG | grep -Po 'v[0-9]+\.[0-9]+\.[0-9]+' ) ]]; then
     echo "OK - Building Release"
-    RELEASE= $(echo $GIT_COMMIT_DESC | grep -Po 'v[0-9]+\.[0-9]+\.[0-9]+') 
+    RELEASE= $(echo $COMMITMSG | grep -Po 'v[0-9]+\.[0-9]+\.[0-9]+') 
 
     echo "OK - Deletect: $RELEASE"
     ~/.cargo/bin/cargo build --release
