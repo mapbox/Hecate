@@ -26,7 +26,7 @@ RUN apt-get update -y \
         postgis \
         openssl \
         python \
-        unzip \
+        zip \
         cmake \
         curl \
         wget \

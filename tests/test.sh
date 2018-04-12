@@ -7,7 +7,7 @@ if [[ -n $(echo $COMMITMSG | grep -Po 'v[0-9]+\.[0-9]+\.[0-9]+' ) ]]; then
     echo "OK - Building Release"
     RELEASE=$(echo $COMMITMSG | grep -Po 'v[0-9]+\.[0-9]+\.[0-9]+') 
 
-    echo "OK - Deletect: $RELEASE"
+    echo "OK - Detected: $RELEASE"
     ~/.cargo/bin/cargo build --release
 
     zip release.zip target/release/hecate
