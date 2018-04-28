@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.12.2
+
+- :bug: Fix Web UI timezone bug
+
 ## v0.12.1
 
 - :bug: Unescape XML chars when uploading via OSMXML shim
