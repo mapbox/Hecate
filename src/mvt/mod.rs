@@ -1,5 +1,7 @@
 extern crate postgis;
 extern crate protobuf;
+extern crate geo;
+extern crate tilecover;
 
 use r2d2; 
 use r2d2_postgres;
@@ -40,6 +42,12 @@ impl MVTError {
     }
 }
 
+pub fn invalidate(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: &geo::Geometry<f64>) -> Result<bool, MVTError> {
+    //tilecover::tiles(
+
+    Ok(true)
+}
+
 pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String) -> Result<Option<proto::Tile>, MVTError> {
     let rows = match conn.query("
         SELECT tile
@@ -71,8 +79,11 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
     let mut layer = Layer::new("data");
 
     let mut limit: Option<i64> = None;
-    if *z < 10 { limit = Some(10) }
-    else if *z < 14 { limit = Some(100) }
+
+    if *z < 8 { limit = Some(10) }
+    else if *z < 10 { limit = Some(100) }
+    else if *z < 12 { limit = Some(1000) }
+    else if *z < 14 { limit = Some(10000) }
 
     let rows = conn.query("
         SELECT
