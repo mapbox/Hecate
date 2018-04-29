@@ -1,7 +1,5 @@
 extern crate postgis;
 extern crate protobuf;
-extern crate geo;
-extern crate tilecover;
 
 use r2d2; 
 use r2d2_postgres;
@@ -40,12 +38,6 @@ impl MVTError {
 
         }
     }
-}
-
-pub fn invalidate(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: &geo::Geometry<f64>) -> Result<bool, MVTError> {
-    //tilecover::tiles(
-
-    Ok(true)
 }
 
 pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String) -> Result<Option<proto::Tile>, MVTError> {

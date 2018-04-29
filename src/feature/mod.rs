@@ -4,6 +4,8 @@ extern crate geojson;
 extern crate postgres;
 extern crate serde_json;
 extern crate valico;
+extern crate tilecover;
+extern crate geo;
 
 #[derive(PartialEq, Debug)]
 pub enum FeatureError {
@@ -57,6 +59,12 @@ impl FeatureError {
             FeatureError::InvalidFeature => String::from( "Invalid Feature")
         }
     }
+}
+
+pub fn invalidate(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat: geo::Geometry<f64>) -> Result<bool, FeatureError> {
+    //tilecover::tiles(
+
+    Ok(true)
 }
 
 pub fn get_version(feat: &geojson::Feature) -> Result<i64, FeatureError> {
