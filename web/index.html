@@ -151,7 +151,7 @@
                             <div v-for="delta in deltas" @click="delta_get(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer wfull">
                                 <div class="clearfix">
                                     <div class="fl txt-bold" v-text="delta.username"></div>
-                                    <div class="fr txt-em" v-text="moment.tz(delta.created).add(moment.tz(delta.created).utcOffset(), 'minutes').fromNow()"></div>
+                                    <div class="fr txt-em" v-text="moment(delta.created).add(moment.tz(delta.created).utcOffset(), 'hours').fromNow()"></div>
                                 </div>
                                 <span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span>
                                 <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
