@@ -1,5 +1,6 @@
 extern crate postgis;
 extern crate protobuf;
+extern crate serde_json;
 
 use r2d2; 
 use r2d2_postgres;
@@ -77,8 +78,8 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
     let rows = conn.query("
         SELECT
             id,
-            ST_Transform(geom::geometry,3857),
-            GeometryType(geom)
+            props,
+            ST_Transform(geom::geometry,3857)
         FROM geo
         WHERE
             geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326)
@@ -88,9 +89,20 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
 
     for row in rows.iter() {
         let id: i64 = row.get(0);
-        let mut feature = Feature::new(row.get(1));
+        let mut feature = Feature::new(row.get(2));
         feature.set_id(id as u64);
-        feature.add_property("id", Value::String(id.to_string()));
+        feature.add_property("hecate:id", Value::String(id.to_string()));
+
+        let props: serde_json::Value = row.get(1);
+        match props.as_object() {
+            Some(props) => {
+                for (k, v) in props {
+                    feature.add_property(k, Value::String(serde_json::to_string(v)));
+                }
+            },
+            None => ()
+        }
+
         layer.add_feature(feature);
     }
 
