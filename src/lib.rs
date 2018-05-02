@@ -244,7 +244,6 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
 
 #[derive(Debug)]
 pub struct BoundsStream {
-    bounds: String,
     rows: postgres::rows::LazyRows<'static, 'static>,
     stmt: postgres::stmt::Statement<'static>,
     trans: postgres::transaction::Transaction<'static>,
@@ -260,18 +259,31 @@ impl Read for BoundsStream {
 impl BoundsStream {
     fn new(conn: PooledConnection<PostgresConnectionManager>, rbounds: String) -> Result<Self, status::Custom<String>> {
         let conn = Box::new(conn);
+
         let trans: postgres::transaction::Transaction = unsafe { mem::transmute(conn.transaction().unwrap()) };
+
         let stmt: postgres::stmt::Statement = unsafe { mem::transmute(trans.prepare(&bounds::get_query()).unwrap()) };
-        let rows: postgres::rows::LazyRows = unsafe { mem::transmute(stmt.lazy_query(&trans, &[&rbounds], 1000).unwrap()) };
+
+        let rows: postgres::rows::LazyRows = stmt.lazy_query(&trans, &[&rbounds], 1000).unwrap();
+
+        /*
 
         println!("Created Bounds Stream");
+
+        Ok(BoundsStream {
+            rows: rows,
+            stmt: stmt,
+            trans: trans,
+            conn: conn
+        })
+        */
 
         Ok(BoundsStream {
             bounds: rbounds,
             rows: rows,
             stmt: stmt,
             trans: trans,
-            conn: conn
+            conn: conn,
         })
     }
 }
