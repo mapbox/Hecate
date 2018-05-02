@@ -14,7 +14,6 @@ extern crate rocket;
 extern crate rocket_contrib;
 extern crate geojson;
 extern crate env_logger;
-extern crate tempdir;
 extern crate fallible_iterator;
 
 pub mod delta;
@@ -27,13 +26,12 @@ pub mod user;
 //Postgres Connection Pooling
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
+use std::mem;
 use mvt::Encode;
 
 use rocket_contrib::Json as Json;
-use std::io::{Write, Cursor};
+use std::io::{Read, Cursor};
 use std::path::{Path, PathBuf};
-use std::fs::File;
-use tempdir::TempDir;
 use std::collections::HashMap;
 use rocket::http::Status as HTTPStatus;
 use rocket::http::{Cookie, Cookies};
@@ -244,50 +242,45 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
     }
 }
 
-#[get("/data/bounds/<bounds>")]
-fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<std::fs::File>, status::Custom<String>> {
-    let trans = conn.0.transaction().unwrap();
+#[derive(Debug)]
+pub struct BoundsStream {
+    bounds: String,
+    rows: postgres::rows::LazyRows<'static, 'static>,
+    stmt: postgres::stmt::Statement<'static>,
+    trans: postgres::transaction::Transaction<'static>,
+    conn: Box<PooledConnection<PostgresConnectionManager>>
+}
 
-    let query = bounds::get_query();
-
-    let stmt = match trans.prepare(&query) {
-        Ok(stmt) => stmt,
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { return Err(status::Custom(HTTPStatus::InternalServerError, format!("Failed to download bounds: {}", e))); },
-                _ => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to download bounds"))); }
-            }
-        }
-    };
-
-    let mut rows = match stmt.lazy_query(&trans, &[&bounds], 1000) {
-        Ok(rows) => rows,
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { return Err(status::Custom(HTTPStatus::InternalServerError, format!("Failed to download bounds: {}", e))); },
-                _ => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to download bounds"))); }
-            }
-        }
-    };
-
-    //TODO: Due to the way rocket/postgres are written it makes it very difficult to wrap/pass an Iter
-    //back to Rocket as a stream - instead use a file as an intermediary
-    let dir = TempDir::new(&*&format!("bounds_get_{}", rand::random::<i32>().to_string())).unwrap();
-    let file_path = dir.path().join("bounds.geojson");
-
-    {
-        let mut f = File::create(&file_path).unwrap();
-
-        while let Some(row) = rows.next().unwrap() {
-            let mut row: String = row.get(0);
-            row.push_str("\n");
-            f.write(&row.into_bytes()).unwrap();
-        }
+impl Read for BoundsStream {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        Ok(0)
     }
+}
 
-    let f = File::open(file_path).unwrap();
+impl BoundsStream {
+    fn new(conn: PooledConnection<PostgresConnectionManager>, rbounds: String) -> Result<Self, status::Custom<String>> {
+        let conn = Box::new(conn);
+        let trans: postgres::transaction::Transaction = unsafe { mem::transmute(conn.transaction().unwrap()) };
+        let stmt: postgres::stmt::Statement = unsafe { mem::transmute(trans.prepare(&bounds::get_query()).unwrap()) };
+        let rows: postgres::rows::LazyRows = unsafe { mem::transmute(stmt.lazy_query(&trans, &[&rbounds], 1000).unwrap()) };
 
-    Ok(Stream::from(f))
+        println!("Created Bounds Stream");
+
+        Ok(BoundsStream {
+            bounds: rbounds,
+            rows: rows,
+            stmt: stmt,
+            trans: trans,
+            conn: conn
+        })
+    }
+}
+
+#[get("/data/bounds/<bounds>")]
+fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<BoundsStream>, status::Custom<String>> {
+    let bs = BoundsStream::new(conn.0, bounds)?;
+
+    Ok(Stream::from(bs))
 }
 
 #[get("/data/features?<map>")]
