@@ -243,15 +243,20 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
 }
 
 #[derive(Debug)]
-pub struct BoundsStream {
-    rows: postgres::rows::LazyRows<'static, 'static>,
-    stmt: postgres::stmt::Statement<'static>,
-    trans: postgres::transaction::Transaction<'static>,
+pub struct BoundsStream<'conn, 'trans, 'stmt> {
+    bounds: String,
+    rows: Option<postgres::rows::LazyRows<'trans, 'stmt>>,
+    stmt: postgres::stmt::Statement<'trans>,
+    trans: postgres::transaction::Transaction<'conn>,
     conn: Box<PooledConnection<PostgresConnectionManager>>
 }
 
 impl Read for BoundsStream {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if self.rows.is_none() {
+            self.rows = Some(self.stmt.lazy_query(&self.trans, &[&self.bounds], 1000).unwrap());
+        }
+
         Ok(0)
     }
 }
@@ -262,25 +267,11 @@ impl BoundsStream {
 
         let trans: postgres::transaction::Transaction = unsafe { mem::transmute(conn.transaction().unwrap()) };
 
-        let stmt: postgres::stmt::Statement = unsafe { mem::transmute(trans.prepare(&bounds::get_query()).unwrap()) };
-
-        let rows: postgres::rows::LazyRows = stmt.lazy_query(&trans, &[&rbounds], 1000).unwrap();
-
-        /*
-
-        println!("Created Bounds Stream");
-
-        Ok(BoundsStream {
-            rows: rows,
-            stmt: stmt,
-            trans: trans,
-            conn: conn
-        })
-        */
+        let stmt = trans.prepare(&bounds::get_query()).unwrap();
 
         Ok(BoundsStream {
             bounds: rbounds,
-            rows: rows,
+            rows: None,
             stmt: stmt,
             trans: trans,
             conn: conn,
@@ -290,7 +281,7 @@ impl BoundsStream {
 
 #[get("/data/bounds/<bounds>")]
 fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<BoundsStream>, status::Custom<String>> {
-    let bs = BoundsStream::new(conn.0, bounds)?;
+    let mut bs = BoundsStream::new(conn.0, bounds)?;
 
     Ok(Stream::from(bs))
 }
