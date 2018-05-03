@@ -54,7 +54,7 @@ CREATE INDEX geo_idx ON geo(id);
 DROP TABLE IF EXISTS styles;
 CREATE TABLE styles (
     id          BIGSERIAL,
-    version     BIGINT,
+    name        TEXT,
     style       JSONB,
     uid         BIGINT,
     public      BOOLEAN

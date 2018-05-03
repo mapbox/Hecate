@@ -19,6 +19,7 @@ pub mod delta;
 pub mod mvt;
 pub mod feature;
 pub mod bounds;
+pub mod style;
 pub mod xml;
 pub mod user;
 
@@ -28,7 +29,6 @@ use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 use std::mem;
 use mvt::Encode;
 
-use rocket_contrib::Json as Json;
 use std::io::{Read, Cursor};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
@@ -38,6 +38,7 @@ use rocket::{Request, State, Outcome};
 use rocket::response::{Response, status, Stream, NamedFile};
 use rocket::request::{self, FromRequest};
 use geojson::GeoJson;
+use rocket_contrib::Json;
 
 pub fn start(database: String, schema: Option<serde_json::value::Value>) {
     env_logger::init();
@@ -57,6 +58,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             user_self,
             user_create,
             user_create_session,
+            style_create,
             delta,
             delta_list,
             delta_list_offset,
@@ -204,6 +206,19 @@ fn user_create_session(conn: DbConn, auth: user::Auth, mut cookies: Cookies) -> 
             cookies.add_private(Cookie::new("session", token));
             Ok(Json(json!(true)))
         },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[post("/style", format="application/json", data="<style>")]
+fn style_create(conn: DbConn, auth: user::Auth, style: String) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match style::create(&conn.0, &uid, &style) {
+        Ok(created) => Ok(Json(json!(created))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
