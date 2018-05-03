@@ -248,40 +248,63 @@ pub struct BoundsStream {
 
 impl Read for BoundsStream {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        let write: Vec<u8>;
+        let mut current = 0;
 
-        if self.pending.is_some() {
-            write = self.pending.clone().unwrap();
-            self.pending = None;
-        } else {
-            let rows = self.trans.query("FETCH NEXT FROM next_bounds;", &[]).unwrap();
+        while current < buf.len() {
+            println!("LOOP: {} {}", current, buf.len());
+            let mut write: Vec<u8>;
 
-            if rows.len() == 0 { return Ok(0) };
+            if self.pending.is_some() {
+                println!("GET PENDING");
+                write = self.pending.clone().unwrap();
+                self.pending = None;
+            } else {
+                println!("GET FEAT");
+                let rows = self.trans.query("FETCH NEXT FROM next_bounds;", &[]).unwrap();
 
-            let feat: String = rows.get(0).get(0);
-            write = feat.into_bytes().to_vec();
-        }
-
-        if write.len() == 0 {
-            self.trans.query("CLOSE next_bounds;", &[]).unwrap();
-            return Ok(0);
-        } else if write.len() > buf.len() - 1 {
-            for it in 0..buf.len() {
-                buf[it] = write[it];
+                if rows.len() == 0 {
+                    write = Vec::new();
+                } else {
+                    let feat: String = rows.get(0).get(0);
+                    write = feat.into_bytes().to_vec();
+                    write.push(0x0A);
+                }
             }
 
-            let pending = write[buf.len()..write.len()].to_vec();
-            self.pending = Some(pending);
+            if write.len() == 0 {
+                //No more data to fetch, close up shop
+                break;
+            } else if current + write.len() > buf.len() {
+                //There is room to put a partial feature, saving the remaining
+                //to the pending q and ending
 
-            return Ok(buf.len());
-        } else {
-            for it in 0..write.len() {
-                buf[it] = write[it];
+                println!("END");
+                for it in current..buf.len() {
+                    buf[it] = write[it - current];
+                }
+
+                let pending = write[buf.len() - current..write.len()].to_vec();
+                self.pending = Some(pending);
+
+                current = current + (buf.len() - current);
+
+                break;
+            } else {
+                //There is room in the buff to print the whole feature
+                //and iterate around to grab another
+
+                println!("BEG {} {} {}", current, buf.len(), write.len());
+
+                for it in 0..write.len() {
+                    buf[current + it] = write[it];
+                }
+
+                current = current + write.len();
+                println!("{}", current);
             }
-            buf[write.len()] = 0x0A;
-
-            return Ok(write.len())
         }
+
+        Ok(current)
     }
 }
 
