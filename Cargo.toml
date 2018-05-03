@@ -1,6 +1,6 @@
 [package]
 name = "hecate"
-version = "0.12.2"
+version = "0.13.0"
 authors = ["ingalls <ingalls@protonmail.com>"]
 license = "MIT"
 description = "OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange"
@@ -32,7 +32,6 @@ serde_json = "1.0"
 r2d2 = "0.8.1"
 r2d2_postgres = "0.14.0"
 env_logger = "0.5"
-fallible-iterator = "0.1.x"
 
 [dependencies.postgres]
 version = "0.15.1"

@@ -14,8 +14,6 @@ extern crate rocket;
 extern crate rocket_contrib;
 extern crate geojson;
 extern crate env_logger;
-extern crate tempdir;
-extern crate fallible_iterator;
 
 pub mod delta;
 pub mod mvt;
@@ -27,13 +25,12 @@ pub mod user;
 //Postgres Connection Pooling
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
+use std::mem;
 use mvt::Encode;
 
 use rocket_contrib::Json as Json;
-use std::io::{Write, Cursor};
+use std::io::{Read, Cursor};
 use std::path::{Path, PathBuf};
-use std::fs::File;
-use tempdir::TempDir;
 use std::collections::HashMap;
 use rocket::http::Status as HTTPStatus;
 use rocket::http::{Cookie, Cookies};
@@ -41,7 +38,6 @@ use rocket::{Request, State, Outcome};
 use rocket::response::{Response, status, Stream, NamedFile};
 use rocket::request::{self, FromRequest};
 use geojson::GeoJson;
-use fallible_iterator::FallibleIterator;
 
 pub fn start(database: String, schema: Option<serde_json::value::Value>) {
     env_logger::init();
@@ -244,50 +240,107 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
     }
 }
 
-#[get("/data/bounds/<bounds>")]
-fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<std::fs::File>, status::Custom<String>> {
-    let trans = conn.0.transaction().unwrap();
+pub struct BoundsStream {
+    pending: Option<Vec<u8>>,
+    trans: postgres::transaction::Transaction<'static>,
+    conn: Box<PooledConnection<PostgresConnectionManager>>
+}
 
-    let query = bounds::get_query();
+impl Read for BoundsStream {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let mut current = 0;
 
-    let stmt = match trans.prepare(&query) {
-        Ok(stmt) => stmt,
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { return Err(status::Custom(HTTPStatus::InternalServerError, format!("Failed to download bounds: {}", e))); },
-                _ => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to download bounds"))); }
+        while current < buf.len() {
+            let mut write: Vec<u8> = Vec::new();
+
+            if self.pending.is_some() {
+                write = self.pending.clone().unwrap();
+                self.pending = None;
+            } else {
+                let rows = self.trans.query("FETCH 1000 FROM next_bounds;", &[]).unwrap();
+
+                if rows.len() != 0 {
+                    for row_it in 0..rows.len() {
+                        let feat: String = rows.get(row_it).get(0);
+                        write.append(&mut feat.into_bytes().to_vec());
+                        write.push(0x0A);
+                    }
+                }
+            }
+
+            if write.len() == 0 {
+                //No more data to fetch, close up shop
+                break;
+            } else if current + write.len() > buf.len() {
+                //There is room to put a partial feature, saving the remaining
+                //to the pending q and ending
+
+                for it in current..buf.len() {
+                    buf[it] = write[it - current];
+                }
+
+                let pending = write[buf.len() - current..write.len()].to_vec();
+                self.pending = Some(pending);
+
+                current = current + (buf.len() - current);
+
+                break;
+            } else {
+                //There is room in the buff to print the whole feature
+                //and iterate around to grab another
+
+                for it in 0..write.len() {
+                    buf[current + it] = write[it];
+                }
+
+                current = current + write.len();
             }
         }
-    };
 
-    let mut rows = match stmt.lazy_query(&trans, &[&bounds], 1000) {
-        Ok(rows) => rows,
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { return Err(status::Custom(HTTPStatus::InternalServerError, format!("Failed to download bounds: {}", e))); },
-                _ => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to download bounds"))); }
-            }
-        }
-    };
-
-    //TODO: Due to the way rocket/postgres are written it makes it very difficult to wrap/pass an Iter
-    //back to Rocket as a stream - instead use a file as an intermediary
-    let dir = TempDir::new(&*&format!("bounds_get_{}", rand::random::<i32>().to_string())).unwrap();
-    let file_path = dir.path().join("bounds.geojson");
-
-    {
-        let mut f = File::create(&file_path).unwrap();
-
-        while let Some(row) = rows.next().unwrap() {
-            let mut row: String = row.get(0);
-            row.push_str("\n");
-            f.write(&row.into_bytes()).unwrap();
-        }
+        Ok(current)
     }
+}
 
-    let f = File::open(file_path).unwrap();
+impl BoundsStream {
+    fn new(conn: PooledConnection<PostgresConnectionManager>, rbounds: String) -> Result<Self, status::Custom<String>> {
+        let pg_conn = Box::new(conn);
 
-    Ok(Stream::from(f))
+        let trans: postgres::transaction::Transaction = unsafe { mem::transmute(pg_conn.transaction().unwrap()) };
+
+        trans.execute("
+            DECLARE next_bounds CURSOR FOR
+                SELECT
+                    row_to_json(t)::TEXT
+                FROM (
+                    SELECT
+                        geo.id AS id,
+                        'Feature' AS type,
+                        geo.version AS version,
+                        ST_AsGeoJSON(geo.geom)::JSON AS geometry,
+                        geo.props AS properties
+                    FROM
+                        geo,
+                        bounds
+                    WHERE
+                        bounds.name = $1
+                        AND ST_Intersects(geo.geom, bounds.geom)
+                ) t
+        ", &[&rbounds]).unwrap();
+
+        Ok(BoundsStream {
+            pending: None,
+            trans: trans,
+            conn: pg_conn,
+        })
+    }
+}
+
+
+#[get("/data/bounds/<bounds>")]
+fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<BoundsStream>, status::Custom<String>> {
+    let bs = BoundsStream::new(conn.0, bounds)?;
+
+    Ok(Stream::from(bs))
 }
 
 #[get("/data/features?<map>")]

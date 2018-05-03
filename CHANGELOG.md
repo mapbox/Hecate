@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.13.0
+
+- :rocket: Rewrite `bounds` endpoint to use in-memory streams
+
 ## v0.12.2
 
 - :bug: Fix Web UI timezone bug
