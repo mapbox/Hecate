@@ -59,6 +59,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             user_create,
             user_create_session,
             style_create,
+            style_get,
             delta,
             delta_list,
             delta_list_offset,
@@ -219,6 +220,16 @@ fn style_create(conn: DbConn, auth: user::Auth, style: String) -> Result<Json, s
 
     match style::create(&conn.0, &uid, &style) {
         Ok(created) => Ok(Json(json!(created))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/style/<id>")]
+fn style_get(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid: Option<i64> = user::auth(&conn.0, auth);
+
+    match style::get(&conn.0, &uid, &id) {
+        Ok(style) => Ok(Json(json!(style))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
