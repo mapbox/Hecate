@@ -14,7 +14,6 @@ extern crate rocket;
 extern crate rocket_contrib;
 extern crate geojson;
 extern crate env_logger;
-extern crate fallible_iterator;
 
 pub mod delta;
 pub mod mvt;
@@ -39,7 +38,6 @@ use rocket::{Request, State, Outcome};
 use rocket::response::{Response, status, Stream, NamedFile};
 use rocket::request::{self, FromRequest};
 use geojson::GeoJson;
-use fallible_iterator::FallibleIterator;
 
 pub fn start(database: String, schema: Option<serde_json::value::Value>) {
     env_logger::init();
@@ -242,46 +240,89 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
     }
 }
 
-#[derive(Debug)]
-pub struct BoundsStream<'conn, 'trans, 'stmt> {
-    bounds: String,
-    rows: Option<postgres::rows::LazyRows<'trans, 'stmt>>,
-    stmt: postgres::stmt::Statement<'trans>,
-    trans: postgres::transaction::Transaction<'conn>,
+pub struct BoundsStream {
+    pending: Option<Vec<u8>>,
+    trans: postgres::transaction::Transaction<'static>,
     conn: Box<PooledConnection<PostgresConnectionManager>>
 }
 
 impl Read for BoundsStream {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        if self.rows.is_none() {
-            self.rows = Some(self.stmt.lazy_query(&self.trans, &[&self.bounds], 1000).unwrap());
+        let write: Vec<u8>;
+
+        if self.pending.is_some() {
+            write = self.pending.clone().unwrap();
+            self.pending = None;
+        } else {
+            let rows = self.trans.query("FETCH NEXT FROM next_bounds;", &[]).unwrap();
+
+            if rows.len() == 0 { return Ok(0) };
+
+            let feat: String = rows.get(0).get(0);
+            write = feat.into_bytes().to_vec();
         }
 
-        Ok(0)
+        if write.len() == 0 {
+            self.trans.query("CLOSE next_bounds;", &[]).unwrap();
+            return Ok(0);
+        } else if write.len() > buf.len() - 1 {
+            for it in 0..buf.len() {
+                buf[it] = write[it];
+            }
+
+            let pending = write[buf.len()..write.len()].to_vec();
+            self.pending = Some(pending);
+
+            return Ok(buf.len());
+        } else {
+            for it in 0..write.len() {
+                buf[it] = write[it];
+            }
+            buf[write.len()] = 0x0A;
+
+            return Ok(write.len())
+        }
     }
 }
 
 impl BoundsStream {
     fn new(conn: PooledConnection<PostgresConnectionManager>, rbounds: String) -> Result<Self, status::Custom<String>> {
-        let conn = Box::new(conn);
+        let pg_conn = Box::new(conn);
 
-        let trans: postgres::transaction::Transaction = unsafe { mem::transmute(conn.transaction().unwrap()) };
+        let trans: postgres::transaction::Transaction = unsafe { mem::transmute(pg_conn.transaction().unwrap()) };
 
-        let stmt = trans.prepare(&bounds::get_query()).unwrap();
+        trans.execute("
+            DECLARE next_bounds CURSOR FOR
+                SELECT
+                    row_to_json(t)::TEXT
+                FROM (
+                    SELECT
+                        geo.id AS id,
+                        'Feature' AS type,
+                        geo.version AS version,
+                        ST_AsGeoJSON(geo.geom)::JSON AS geometry,
+                        geo.props AS properties
+                    FROM
+                        geo,
+                        bounds
+                    WHERE
+                        bounds.name = $1
+                        AND ST_Intersects(geo.geom, bounds.geom)
+                ) t
+        ", &[&rbounds]).unwrap();
 
         Ok(BoundsStream {
-            bounds: rbounds,
-            rows: None,
-            stmt: stmt,
+            pending: None,
             trans: trans,
-            conn: conn,
+            conn: pg_conn,
         })
     }
 }
 
+
 #[get("/data/bounds/<bounds>")]
 fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<BoundsStream>, status::Custom<String>> {
-    let mut bs = BoundsStream::new(conn.0, bounds)?;
+    let bs = BoundsStream::new(conn.0, bounds)?;
 
     Ok(Stream::from(bs))
 }
