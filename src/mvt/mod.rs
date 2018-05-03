@@ -97,7 +97,8 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
         match props.as_object() {
             Some(props) => {
                 for (k, v) in props {
-                    feature.add_property(k, Value::String(serde_json::to_string(v)));
+                    println!("{} {}", k, v);
+                    //feature.add_property(k, Value::String(serde_json::to_string(v)));
                 }
             },
             None => ()

@@ -53,7 +53,7 @@ CREATE INDEX geo_idx ON geo(id);
 
 DROP TABLE IF EXISTS styles;
 CREATE TABLE styles (
-    id          BIGSERIAL
+    id          BIGSERIAL,
     version     BIGINT,
     style       JSONB,
     uid         BIGINT,
