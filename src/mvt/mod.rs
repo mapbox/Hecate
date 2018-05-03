@@ -91,17 +91,16 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
         let id: i64 = row.get(0);
         let mut feature = Feature::new(row.get(2));
         feature.set_id(id as u64);
+
         feature.add_property("hecate:id", Value::String(id.to_string()));
 
         let props: serde_json::Value = row.get(1);
-        match props.as_object() {
-            Some(props) => {
-                for (k, v) in props {
-                    println!("{} {}", k, v);
-                    //feature.add_property(k, Value::String(serde_json::to_string(v)));
-                }
-            },
-            None => ()
+
+        let props = props.as_object().unwrap();
+
+        for (k, v) in props.iter() {
+            let v = serde_json::to_string(v).unwrap();
+            feature.add_property(k.clone(), Value::String(v));
         }
 
         layer.add_feature(feature);
