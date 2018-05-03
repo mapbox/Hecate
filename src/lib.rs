@@ -251,23 +251,20 @@ impl Read for BoundsStream {
         let mut current = 0;
 
         while current < buf.len() {
-            println!("LOOP: {} {}", current, buf.len());
-            let mut write: Vec<u8>;
+            let mut write: Vec<u8> = Vec::new();
 
             if self.pending.is_some() {
-                println!("GET PENDING");
                 write = self.pending.clone().unwrap();
                 self.pending = None;
             } else {
-                println!("GET FEAT");
-                let rows = self.trans.query("FETCH NEXT FROM next_bounds;", &[]).unwrap();
+                let rows = self.trans.query("FETCH 1000 FROM next_bounds;", &[]).unwrap();
 
-                if rows.len() == 0 {
-                    write = Vec::new();
-                } else {
-                    let feat: String = rows.get(0).get(0);
-                    write = feat.into_bytes().to_vec();
-                    write.push(0x0A);
+                if rows.len() != 0 {
+                    for row_it in 0..rows.len() {
+                        let feat: String = rows.get(row_it).get(0);
+                        write.append(&mut feat.into_bytes().to_vec());
+                        write.push(0x0A);
+                    }
                 }
             }
 
@@ -278,7 +275,6 @@ impl Read for BoundsStream {
                 //There is room to put a partial feature, saving the remaining
                 //to the pending q and ending
 
-                println!("END");
                 for it in current..buf.len() {
                     buf[it] = write[it - current];
                 }
@@ -293,14 +289,11 @@ impl Read for BoundsStream {
                 //There is room in the buff to print the whole feature
                 //and iterate around to grab another
 
-                println!("BEG {} {} {}", current, buf.len(), write.len());
-
                 for it in 0..write.len() {
                     buf[current + it] = write[it];
                 }
 
                 current = current + write.len();
-                println!("{}", current);
             }
         }
 
