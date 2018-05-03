@@ -114,12 +114,22 @@ mod test {
 
         { //Delete first point inside of bounds
             let client = reqwest::Client::new();
-            let mut resp = client.delete("http://localhost:8000/api/data/feature/1")
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "id": 1,
+                    "type": "Feature",
+                    "action": "delete",
+                    "version": 1,
+                    "message": "Create Point Inside of Bounds",
+                    "properties": null,
+                    "geometry": null
+                }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
                 .header(reqwest::header::ContentType::json())
                 .send()
                 .unwrap();
 
+            assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
