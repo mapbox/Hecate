@@ -292,6 +292,25 @@ curl \
 
 ---
 
+#### `DELETE` `/api/style/<id>`
+
+Delete a particular style by id. Users must be authorized and 
+can only delete styles created by them.
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given style to delete |
+
+*Example*
+
+```bash
+curl -X DELETE 'http://localhost:8000/api/style/1'
+```
+
+---
+
 #### `GET` `/api/style/<id>`
 
 Get a particular style by id, public styles can be requested unauthenticated,
@@ -308,6 +327,8 @@ private styles can only be obtained by the corresponding user making the request
 ```bash
 curl -X GET 'http://localhost:8000/api/style/1'
 ```
+
+---
 
 <h3 align='center'>Schema</h3>
 
