@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.14.0
+
+- :tada: Add mapbox-gl-js style related endpoints
+
 ## v0.13.0
 
 - :rocket: Rewrite `bounds` endpoint to use in-memory streams
