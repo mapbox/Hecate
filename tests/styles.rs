@@ -177,6 +177,54 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
+        { //Create Style 1 For List Tests
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/style")
+                .body(r#"{
+                    "name": "Style 1",
+                    "style": "I am a style"
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //Create Style 2 For List Tests
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/style")
+                .body(r#"{
+                    "name": "Style 2",
+                    "style": "I am a style"
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //Create Style 3 For List Tests
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/style")
+                .body(r#"{
+                    "name": "Style 2",
+                    "style": "I am a style"
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
         server.kill().unwrap();
     }
 }
