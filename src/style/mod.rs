@@ -24,7 +24,7 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
         INSERT into styles (name, style, uid, public)
             VALUES (
                 'New Style',
-                $1,
+                $1::TEXT::JSON,
                 $2,
                 false
             )
