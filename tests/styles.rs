@@ -67,7 +67,7 @@ mod test {
 
         { //Get Style - No Auth
             let mut resp = reqwest::get("http://localhost:8000/api/style/1").unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"code":401,"reason":"You must be logged in to access this resource","status":"Not Authorized"}"#);
+            assert_eq!(resp.text().unwrap(), "Style Not Found");
             assert!(resp.status().is_client_error());
         }
 
@@ -147,7 +147,7 @@ mod test {
             let mut resp = client.delete("http://localhost:8000/api/style/1")
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"code":401,"reason":"You must be logged in to access this resource","status":"Not Authorized"}"#);
+            assert_eq!(resp.text().unwrap(), "Not Authorized!");
             assert!(resp.status().is_client_error());
         }
 
@@ -220,6 +220,15 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { //Get Public Style - No Auth
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/style/2")
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), r#"{"id":2,"name":"Style 1","style":"I am a style"}"#);
+            assert!(resp.status().is_success());
+        }
+
         { //Get List of Public Styles - Style 1 should now appear, since it is now public
             let mut resp = reqwest::get("http://localhost:8000/api/styles").unwrap();
             assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1}]"#);
@@ -229,6 +238,16 @@ mod test {
         { //Get User List of Public Styles - Style 1 should now appear, since it is now public
             let mut resp = reqwest::get("http://localhost:8000/api/styles/1").unwrap();
             assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1}]"#);
+            assert!(resp.status().is_success());
+        }
+
+        { //Get User List of All Styles - authed user checking their own styles should see all
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/styles/1")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1},{"id":3,"name":"Style 2","public":false,"uid":1}]"#);
             assert!(resp.status().is_success());
         }
 
@@ -243,7 +262,7 @@ mod test {
             assert!(resp.status().is_success());
         }
 
-        { //Get List of Public Styles - Style 1 should now appear, since it is now public
+        { //Get List of Public Styles - Style 1 should not appear as it is private again
             let mut resp = reqwest::get("http://localhost:8000/api/styles").unwrap();
             assert_eq!(resp.text().unwrap(), "[]");
             assert!(resp.status().is_success());
