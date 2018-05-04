@@ -104,7 +104,31 @@ pub fn update(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
             }
         },
         Err(err) => {
-            println!("ERROR: {}", err);
+            match err.as_db() {
+                Some(_e) =>  Err(StyleError::NotFound),
+                _ => Err(StyleError::NotFound)
+            }
+        }
+    }
+}
+
+pub fn access(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, style_id: &i64, access: bool) -> Result<bool, StyleError> {
+    match conn.execute("
+        UPDATE styles
+            SET
+                public = $3
+            WHERE
+                id = $1
+                AND uid = $2
+    ", &[&style_id, &uid, &access]) {
+        Ok(updated) => {
+            if updated == 0 {
+                Err(StyleError::NotFound)
+            } else {
+                Ok(true)
+            }
+        },
+        Err(err) => {
             match err.as_db() {
                 Some(_e) =>  Err(StyleError::NotFound),
                 _ => Err(StyleError::NotFound)

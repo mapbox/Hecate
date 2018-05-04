@@ -60,6 +60,8 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             user_create_session,
             style_create,
             style_patch,
+            style_public,
+            style_private,
             style_delete,
             style_get,
             style_list_public,
@@ -223,6 +225,32 @@ fn style_create(conn: DbConn, auth: user::Auth, style: String) -> Result<Json, s
 
     match style::create(&conn.0, &uid, &style) {
         Ok(created) => Ok(Json(json!(created))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[post("/style/<id>/public")]
+fn style_public(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match style::access(&conn.0, &uid, &id, true) {
+        Ok(updated) => Ok(Json(json!(updated))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[post("/style/<id>/private")]
+fn style_private(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match style::access(&conn.0, &uid, &id, false) {
+        Ok(updated) => Ok(Json(json!(updated))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }

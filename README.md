@@ -330,6 +330,28 @@ curl -X GET 'http://localhost:8000/api/style/1'
 
 ---
 
+#### `PATCH` `/api/style/<id>`
+
+Update a style - auth required - users can only update their own styles
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given style to download |
+
+*Example*
+
+```bash
+curl \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"name": "New Name", "style": "New Mapbox Style Object Here"}' \
+    'http://username:password@localhost:8000/api/style'
+```
+
+---
+
 <h3 align='center'>Schema</h3>
 
 #### `GET` `/api/schema`
