@@ -3,6 +3,8 @@ extern crate r2d2_postgres;
 extern crate postgres;
 extern crate serde_json;
 
+use serde_json::Value;
+
 #[derive(PartialEq, Debug)]
 pub enum StyleError {
     NotFound,
@@ -23,11 +25,11 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     conn.query("
         INSERT into styles (name, style, uid, public)
             VALUES (
-                'New Style',
-                $1::TEXT::JSON,
+                COALESCE($1::TEXT::JSON->>'name', 'New Style')::TEXT,
+                COALESCE($1::TEXT::JSON->'style', '{}'::JSON),
                 $2,
                 false
-            )
+            );
     ", &[&style, &uid]).unwrap();
 
     Ok(true)
@@ -35,21 +37,41 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
 
 /// Get the style by id, if the style is public, the user need not be logged in,
 /// if the style is private ensure the owner is the requester
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &Option<i64>, style_id: &i64) -> Result<bool, StyleError> {
-    conn.query("
+pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &Option<i64>, style_id: &i64) -> Result<Value, StyleError> {
+    match conn.query("
         SELECT
-            style
-        FROM
-            styles
-        WHERE
-            id = $1
-            AND (
-                public IS true
-                OR uid = $2
-            )
-    ", &[&style_id, &uid]).unwrap();
+            row_to_json(t) as style
+        FROM (
+            SELECT
+                styles.id AS id,
+                styles.name AS name,
+                styles.style AS style
+            FROM
+                styles
+            WHERE
+                id = $1
+                AND (
+                    public IS true
+                    OR uid = $2
+                )
+        ) t
+    ", &[&style_id, &uid]) {
+        Ok(rows) => {
+            if rows.len() != 1 {
+                Err(StyleError::NotFound)
+            } else {
+                let style: Value = rows.get(0).get(0);
 
-    Err(StyleError::NotFound)
+                Ok(style)
+            }
+        },
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) =>  Err(StyleError::NotFound),
+                _ => Err(StyleError::NotFound)
+            } 
+        }
+    }
 }
 
 pub fn update(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, StyleError> {

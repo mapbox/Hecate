@@ -59,6 +59,7 @@ mod test {
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/style")
                 .body(r#"{
+                    "name": "Awesome Style",
                     "style": "I am a style"
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
@@ -82,7 +83,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"code":401,"reason":"You must be logged in to access this resource","status":"Not Authorized"}"#);
+            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Awesome Style","style":"I am a style"}"#);
             assert!(resp.status().is_client_error());
         }
 

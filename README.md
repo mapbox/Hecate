@@ -21,6 +21,7 @@
     - [User Options](#user-options)
     - [Admin Interface](#admin-interface)
     - [Schema](#schema)
+    - [Styles](#styles)
     - [Vector Tiles](#vector-tiles)
     - [Downloading via Boundaries](#downloading-via-boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
@@ -273,8 +274,42 @@ View the Admin Interface in your browser by pointing to `127.0.0.1:8000/admin/in
 
 ---
 
-<h3 align='center'>Admin Interface</h3>
+<h3 align='center'>Styles</h3>
 
+#### `POST` `/api/style`
+
+Create a new private style attached to the authenticated user
+
+*Example*
+
+```bash
+curl \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"name": "Name of this particular style", "style": "Mapbox Style Object Here"}' \
+    'http://username:password@localhost:8000/api/style'
+```
+
+---
+
+#### `GET` `/api/style/<id>`
+
+Get a particular style by id, public styles can be requested unauthenticated,
+private styles can only be obtained by the corresponding user making the request.
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given style to download |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/style/1'
+```
+
+<h3 align='center'>Schema</h3>
 
 #### `GET` `/api/schema`
 
