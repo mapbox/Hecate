@@ -81,12 +81,30 @@ pub fn update(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     Err(StyleError::NotFound)
 }
 
-pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, StyleError> {
-    conn.query("
-    ", &[]).unwrap();
-
-    Err(StyleError::NotFound)
+pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, style_id: &i64) -> Result<bool, StyleError> {
+    match conn.execute("
+        DELETE
+            FROM styles
+            WHERE
+                uid = $1
+                AND id = $2
+    ", &[&uid, &style_id]) {
+        Ok(deleted) => {
+            if deleted == 0 {
+                Err(StyleError::NotFound)
+            } else {
+                Ok(true)
+            }
+        },
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) =>  Err(StyleError::NotFound),
+                _ => Err(StyleError::NotFound)
+            } 
+        }
+    }
 }
+
 pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, StyleError> {
     conn.query("
     ", &[]).unwrap();

@@ -84,7 +84,7 @@ mod test {
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Awesome Style","style":"I am a style"}"#);
-            assert!(resp.status().is_client_error());
+            assert!(resp.status().is_success());
         }
 
         server.kill().unwrap();
