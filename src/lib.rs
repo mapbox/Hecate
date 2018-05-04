@@ -59,6 +59,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             user_create,
             user_create_session,
             style_create,
+            style_delete,
             style_get,
             delta,
             delta_list,
@@ -223,6 +224,20 @@ fn style_create(conn: DbConn, auth: user::Auth, style: String) -> Result<Json, s
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
+
+#[delete("/style/<id>")]
+fn style_delete(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match style::delete(&conn.0, &uid, &id) {
+        Ok(created) => Ok(Json(json!(created))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
 
 #[get("/style/<id>")]
 fn style_get(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {

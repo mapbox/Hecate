@@ -81,6 +81,7 @@ pub fn update(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     Err(StyleError::NotFound)
 }
 
+///Allow the owner of a given style to delete it
 pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, style_id: &i64) -> Result<bool, StyleError> {
     match conn.execute("
         DELETE
@@ -105,8 +106,13 @@ pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, StyleError> {
+pub fn public_list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, StyleError> {
     conn.query("
+        SELECT
+            id,
+            name
+        FROM
+            styles
     ", &[]).unwrap();
 
     Err(StyleError::NotFound)
