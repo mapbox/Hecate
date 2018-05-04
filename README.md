@@ -276,6 +276,48 @@ View the Admin Interface in your browser by pointing to `127.0.0.1:8000/admin/in
 
 <h3 align='center'>Styles</h3>
 
+#### `GET` `/api/styles`
+
+Return an array containing a reference to every public style
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/styles'
+```
+
+---
+
+#### `GET` `/api/styles/<user id>`
+
+Return an array containing styles owned by a particular user.
+
+By default any request will only return the public styles for a given user.
+
+If an authenticated user requests their own styles, it will return their public and private styles.
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<user id>` | `REQUIRED` Numeric ID of the user to get styles from |
+
+*Example*
+
+Return only public styles of user 1
+
+```bash
+curl -X GET 'http://localhost:8000/api/styles/1'
+```
+
+User requesting their own styles will get public & private styles
+
+```bash
+curl -X GET 'http://username:password@localhost:8000/api/styles/1'
+```
+
+---
+
 #### `POST` `/api/style`
 
 Create a new private style attached to the authenticated user
