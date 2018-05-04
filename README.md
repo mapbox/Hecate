@@ -468,7 +468,28 @@ Request a vector tile for a given set of coordinates. A [Mapbox Vector Tile](htt
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email=ingalls@protonmail.com
+curl -X GET 'http://localhost:8000/api/tiles/1/1/1
+```
+
+---
+
+#### `GET` `/api/tiles/<z>/<x>/<y>/regen`
+
+Allows an authenticated user to request a new tile for the given tile coordinates,
+ensuring the tile isn't returned from the tile cache.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<z>` | `REQUIRED` Desired zoom level for tile
+| `<x>` | `REQUIRED` Desired x coordinate for tile
+| `<y>` | `REQUIRED` Desired y coordinate for tle
+
+*Example*
+
+```bash
+curl -X GET 'http://username:password@localhost:8000/api/tiles/1/1/1/regen
 ```
 
 ---
