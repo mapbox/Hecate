@@ -59,6 +59,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             user_create,
             user_create_session,
             style_create,
+            style_patch,
             style_delete,
             style_get,
             delta,
@@ -221,6 +222,19 @@ fn style_create(conn: DbConn, auth: user::Auth, style: String) -> Result<Json, s
 
     match style::create(&conn.0, &uid, &style) {
         Ok(created) => Ok(Json(json!(created))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[patch("/style/<id>", format="application/json", data="<style>")]
+fn style_patch(conn: DbConn, auth: user::Auth, id: i64, style: String) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match style::update(&conn.0, &uid, &id, &style) {
+        Ok(updated) => Ok(Json(json!(updated))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }

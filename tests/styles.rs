@@ -97,6 +97,57 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
+        { //Update Style Name - Auth: ingalls
+            let client = reqwest::Client::new();
+            let mut resp = client.patch("http://localhost:8000/api/style/1")
+                .body(r#"{
+                    "name": "Modified Awesome Style"
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //Get Style - Authed: ingalls
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/style/1")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","style":"I am a style"}"#);
+            assert!(resp.status().is_success());
+        }
+
+
+        { //Update Style Style - Auth: ingalls
+            let client = reqwest::Client::new();
+            let mut resp = client.patch("http://localhost:8000/api/style/1")
+                .body(r#"{
+                    "style": "I am a modified style"
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //Get Style - Authed: ingalls
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/style/1")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","style":"I am a modified style"}"#);
+            assert!(resp.status().is_success());
+        }
+
         { //Delete Style - No Auth
             let client = reqwest::Client::new();
             let mut resp = client.delete("http://localhost:8000/api/style/1")
