@@ -77,7 +77,7 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
-        { //Get Ingalls - ingalls
+        { //Get Style - Authed: ingalls
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/style/1")
                 .basic_auth("ingalls", Some("yeaheh"))
@@ -85,6 +85,16 @@ mod test {
                 .unwrap();
             assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Awesome Style","style":"I am a style"}"#);
             assert!(resp.status().is_success());
+        }
+
+        { //Get Non-Existant Style - Auth: ingalls
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/style/100")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), r#"Style Not Found"#);
+            assert!(resp.status().is_client_error());
         }
 
         { //Delete Style - No Auth
