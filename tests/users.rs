@@ -70,7 +70,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert_eq!(resp.text().unwrap(), "Not Authorized!");
         }
 
         { //Feature Upload with bad username

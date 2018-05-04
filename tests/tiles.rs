@@ -39,14 +39,43 @@ mod test {
         let mut server = Command::new("cargo").arg("run").spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
+        { //Create Username
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //Create Point
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": {
+                        "string": "123",
+                        "number": 123,
+                        "array": [ 1, 2, 3 ]
+                    },
+                    "geometry": { "type": "Point", "coordinates": [ -97.734375,56.559482483762245 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+            assert_eq!(resp.text().unwrap(), "true");
+        }
+
         { //Request a tile via API
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/tiles/1/2/3").send().unwrap();
+            let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0").send().unwrap();
 
             let mut body: Vec<u8> = Vec::new();
             resp.read_to_end(&mut body).unwrap();
 
-            assert_eq!(body.len(), 13);
+            assert_eq!(body.len(), 100);
             assert!(resp.status().is_success());
         }
 
@@ -57,21 +86,21 @@ mod test {
             assert_eq!(res.len(), 1);
 
             let tile_ref: String = res.get(0).get(0);
-            assert_eq!(tile_ref, String::from("1/2/3"));
+            assert_eq!(tile_ref, String::from("1/0/0"));
 
             let tile: Vec<u8> = res.get(0).get(1);
 
-            assert_eq!(tile.len(), 10);
+            assert_eq!(tile.len(), 65);
         }
 
         { //Request a tile via API
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/tiles/1/2/3").send().unwrap();
+            let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0").send().unwrap();
 
             let mut body: Vec<u8> = Vec::new();
             resp.read_to_end(&mut body).unwrap();
 
-            assert_eq!(body.len(), 13);
+            assert_eq!(body.len(), 100);
             assert!(resp.status().is_success());
         }
 

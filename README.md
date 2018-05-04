@@ -21,6 +21,7 @@
     - [User Options](#user-options)
     - [Admin Interface](#admin-interface)
     - [Schema](#schema)
+    - [Styles](#styles)
     - [Vector Tiles](#vector-tiles)
     - [Downloading via Boundaries](#downloading-via-boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
@@ -273,8 +274,169 @@ View the Admin Interface in your browser by pointing to `127.0.0.1:8000/admin/in
 
 ---
 
-<h3 align='center'>Admin Interface</h3>
+<h3 align='center'>Styles</h3>
 
+#### `GET` `/api/styles`
+
+Return an array containing a reference to every public style
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/styles'
+```
+
+---
+
+#### `GET` `/api/styles/<user id>`
+
+Return an array containing styles owned by a particular user.
+
+By default any request will only return the public styles for a given user.
+
+If an authenticated user requests their own styles, it will return their public and private styles.
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<user id>` | `REQUIRED` Numeric ID of the user to get styles from |
+
+*Example*
+
+Return only public styles of user 1
+
+```bash
+curl -X GET 'http://localhost:8000/api/styles/1'
+```
+
+User requesting their own styles will get public & private styles
+
+```bash
+curl -X GET 'http://username:password@localhost:8000/api/styles/1'
+```
+
+---
+
+#### `POST` `/api/style`
+
+Create a new private style attached to the authenticated user
+
+*Example*
+
+```bash
+curl \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"name": "Name of this particular style", "style": "Mapbox Style Object Here"}' \
+    'http://username:password@localhost:8000/api/style'
+```
+
+---
+
+#### `DELETE` `/api/style/<id>`
+
+Delete a particular style by id. Users must be authorized and 
+can only delete styles created by them.
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given style to delete |
+
+*Example*
+
+```bash
+curl -X DELETE 'http://localhost:8000/api/style/1'
+```
+
+---
+
+#### `GET` `/api/style/<id>`
+
+Get a particular style by id, public styles can be requested unauthenticated,
+private styles can only be obtained by the corresponding user making the request.
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given style to download |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/style/1'
+```
+
+---
+
+#### `PATCH` `/api/style/<id>`
+
+Update a style - auth required - users can only update their own styles
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given style to download |
+
+*Example*
+
+```bash
+curl \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"name": "New Name", "style": "New Mapbox Style Object Here"}' \
+    'http://username:password@localhost:8000/api/style/1'
+```
+
+---
+
+#### `POST` `/api/style/<id>/private`
+
+Update a public style and mark it as private.
+
+Note: Once a style is public other users may have cloned it. This will not
+affect cloned styles that were made when it was public.
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given style to download |
+
+*Example*
+
+```bash
+curl -X POST 'http://username:password@localhost:8000/api/style/1/private'
+```
+
+---
+
+#### `POST` `/api/style/<id>/public`
+
+Update a style to make it public.
+
+It will then appear to all users in the global styles list
+and other users will be able to download, clone, and use it
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given style to download |
+
+*Example*
+
+```bash
+curl -X POST 'http://username:password@localhost:8000/api/style/1/public'
+```
+
+---
+
+<h3 align='center'>Schema</h3>
 
 #### `GET` `/api/schema`
 

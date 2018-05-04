@@ -51,6 +51,15 @@ CREATE TABLE geo (
 CREATE INDEX geo_gist ON geo USING GIST(geom);
 CREATE INDEX geo_idx ON geo(id);
 
+DROP TABLE IF EXISTS styles;
+CREATE TABLE styles (
+    id          BIGSERIAL,
+    name        TEXT,
+    style       JSONB,
+    uid         BIGINT,
+    public      BOOLEAN
+);
+
 DROP TABLE IF EXISTS deltas;
 CREATE TABLE deltas (
     id          BIGSERIAL,

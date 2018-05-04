@@ -19,6 +19,7 @@ pub mod delta;
 pub mod mvt;
 pub mod feature;
 pub mod bounds;
+pub mod style;
 pub mod xml;
 pub mod user;
 
@@ -28,7 +29,6 @@ use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 use std::mem;
 use mvt::Encode;
 
-use rocket_contrib::Json as Json;
 use std::io::{Read, Cursor};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
@@ -38,6 +38,7 @@ use rocket::{Request, State, Outcome};
 use rocket::response::{Response, status, Stream, NamedFile};
 use rocket::request::{self, FromRequest};
 use geojson::GeoJson;
+use rocket_contrib::Json;
 
 pub fn start(database: String, schema: Option<serde_json::value::Value>) {
     env_logger::init();
@@ -57,6 +58,14 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             user_self,
             user_create,
             user_create_session,
+            style_create,
+            style_patch,
+            style_public,
+            style_private,
+            style_delete,
+            style_get,
+            style_list_public,
+            style_list_user,
             delta,
             delta_list,
             delta_list_offset,
@@ -205,6 +214,115 @@ fn user_create_session(conn: DbConn, auth: user::Auth, mut cookies: Cookies) -> 
             Ok(Json(json!(true)))
         },
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[post("/style", format="application/json", data="<style>")]
+fn style_create(conn: DbConn, auth: user::Auth, style: String) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match style::create(&conn.0, &uid, &style) {
+        Ok(created) => Ok(Json(json!(created))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[post("/style/<id>/public")]
+fn style_public(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match style::access(&conn.0, &uid, &id, true) {
+        Ok(updated) => Ok(Json(json!(updated))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[post("/style/<id>/private")]
+fn style_private(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match style::access(&conn.0, &uid, &id, false) {
+        Ok(updated) => Ok(Json(json!(updated))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[patch("/style/<id>", format="application/json", data="<style>")]
+fn style_patch(conn: DbConn, auth: user::Auth, id: i64, style: String) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match style::update(&conn.0, &uid, &id, &style) {
+        Ok(updated) => Ok(Json(json!(updated))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[delete("/style/<id>")]
+fn style_delete(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid = match user::auth(&conn.0, auth) {
+        Some(uid) => uid,
+        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
+    };
+
+    match style::delete(&conn.0, &uid, &id) {
+        Ok(created) => Ok(Json(json!(created))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+
+#[get("/style/<id>")]
+fn style_get(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid: Option<i64> = user::auth(&conn.0, auth);
+
+    match style::get(&conn.0, &uid, &id) {
+        Ok(style) => Ok(Json(json!(style))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/styles")]
+fn style_list_public(conn: DbConn) -> Result<Json, status::Custom<String>> {
+    match style::list_public(&conn.0) {
+        Ok(styles) => Ok(Json(json!(styles))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/styles/<user>")]
+fn style_list_user(conn: DbConn, auth: user::Auth, user: i64) -> Result<Json, status::Custom<String>> {
+    match user::auth(&conn.0, auth) {
+        Some(uid) => {
+            if uid == user {
+                match style::list_user(&conn.0, &user) {
+                    Ok(styles) => Ok(Json(json!(styles))),
+                    Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+                }
+            } else {
+                match style::list_user_public(&conn.0, &user) {
+                    Ok(styles) => Ok(Json(json!(styles))),
+                    Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+                }
+            }
+        },
+        _ => {
+            match style::list_user_public(&conn.0, &user) {
+                Ok(styles) => Ok(Json(json!(styles))),
+                Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+            }
+        }
     }
 }
 

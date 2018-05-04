@@ -165,12 +165,22 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
 
         let keys: Vec<_> = request.headers().get("Authorization").collect();
 
-        if keys.len() != 1 || keys[0].len() < 7 { return Outcome::Failure((Status::Unauthorized, ())); }
+        if keys.len() != 1 || keys[0].len() < 7 {
+            return Outcome::Success(Auth {
+                token: None,
+                basic: None
+            });
+        }
 
         let mut authtype = String::from(keys[0]);
         let auth = authtype.split_off(6);
 
-        if authtype != "Basic " { return Outcome::Failure((Status::Unauthorized, ())); }
+        if authtype != "Basic " {
+            return Outcome::Success(Auth {
+                token: None,
+                basic: None
+            });
+        }
 
         match base64::decode(&auth) {
             Ok(decoded) => match String::from_utf8(decoded) {
