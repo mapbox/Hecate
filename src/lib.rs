@@ -62,6 +62,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             style_patch,
             style_delete,
             style_get,
+            style_list_public,
             delta,
             delta_list,
             delta_list_offset,
@@ -259,6 +260,14 @@ fn style_get(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Cu
 
     match style::get(&conn.0, &uid, &id) {
         Ok(style) => Ok(Json(json!(style))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/styles")]
+fn style_list_public(conn: DbConn) -> Result<Json, status::Custom<String>> {
+    match style::list_public(&conn.0) {
+        Ok(styles) => Ok(Json(json!(styles))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }

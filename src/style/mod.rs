@@ -138,8 +138,8 @@ pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn public_list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, StyleError> {
-    conn.query("
+pub fn list_public(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Value, StyleError> {
+    match conn.query("
         SELECT
             JSON_Agg(row_to_json(t))
         FROM (
@@ -151,7 +151,20 @@ pub fn public_list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnecti
                 public IS true
             ORDER BY id
         ) t;
-    ", &[]).unwrap();
-
-    Err(StyleError::NotFound)
+    ", &[]) {
+        Ok(rows) => {
+            if rows.len() == 0 {
+                Err(StyleError::NotFound)
+            } else {
+                let list: Value = rows.get(0).get(0);
+                Ok(list)
+            }
+        },
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => Err(StyleError::NotFound),
+                _ => Err(StyleError::NotFound)
+            }
+        }
+    }
 }
