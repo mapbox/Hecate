@@ -347,7 +347,49 @@ curl \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"name": "New Name", "style": "New Mapbox Style Object Here"}' \
-    'http://username:password@localhost:8000/api/style'
+    'http://username:password@localhost:8000/api/style/1'
+```
+
+---
+
+#### `POST` `/api/style/<id>/private`
+
+Update a public style and mark it as private.
+
+Note: Once a style is public other users may have cloned it. This will not
+affect cloned styles that were made when it was public.
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given style to download |
+
+*Example*
+
+```bash
+curl -X POST 'http://username:password@localhost:8000/api/style/1/private'
+```
+
+---
+
+#### `POST` `/api/style/<id>/public`
+
+Update a style to make it public.
+
+It will then appear to all users in the global styles list
+and other users will be able to download, clone, and use it
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given style to download |
+
+*Example*
+
+```bash
+curl -X POST 'http://username:password@localhost:8000/api/style/1/public'
 ```
 
 ---
