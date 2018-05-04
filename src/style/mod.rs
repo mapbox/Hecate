@@ -74,11 +74,30 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
     }
 }
 
-pub fn update(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, StyleError> {
-    conn.query("
-    ", &[]).unwrap();
-
-    Err(StyleError::NotFound)
+pub fn update(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, style_id: &i64, style: &String) -> Result<bool, StyleError> {
+    match conn.execute("
+        UPDATE styles
+            SET
+                name = COALESCE($3::JSON->>'name', name)
+                style = COALESCE($3::JSON->>'style', style)
+            WHERE
+                id = $1
+                AND uid = $2
+    ", &[&style_id, &uid, &style]) {
+        Ok(updated) => {
+            if updated == 0 {
+                Err(StyleError::NotFound)
+            } else {
+                Ok(true)
+            }
+        },
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) =>  Err(StyleError::NotFound),
+                _ => Err(StyleError::NotFound)
+            } 
+        }
+    }
 }
 
 ///Allow the owner of a given style to delete it

@@ -105,6 +105,16 @@ mod test {
             assert_eq!(resp.text().unwrap(), r#"true"#);
             assert!(resp.status().is_success());
         }
+        
+        { //Delete Style - Doesnt Exist
+            let client = reqwest::Client::new();
+            let mut resp = client.delete("http://localhost:8000/api/style/100")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+            assert_eq!(resp.text().unwrap(), r#"Style Not Found"#);
+            assert!(resp.status().is_client_error());
+        }
 
         server.kill().unwrap();
     }
