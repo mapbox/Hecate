@@ -88,7 +88,10 @@ mod test {
         }
 
         { //Delete Style - No Auth
-            let mut resp = reqwest::delete("http://localhost:8000/api/style/1").unwrap();
+            let client = reqwest::Client::new();
+            let mut resp = client.delete("http://localhost:8000/api/style/1")
+                .send()
+                .unwrap();
             assert_eq!(resp.text().unwrap(), r#"{"code":401,"reason":"You must be logged in to access this resource","status":"Not Authorized"}"#);
             assert!(resp.status().is_client_error());
         }
@@ -99,7 +102,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Awesome Style","style":"I am a style"}"#);
+            assert_eq!(resp.text().unwrap(), r#"true"#);
             assert!(resp.status().is_success());
         }
 
