@@ -162,6 +162,77 @@ pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
+///Return a list of all styles (public and private) for a given user
+pub fn list_user(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<Value, StyleError> {
+    match conn.query("
+        SELECT
+            COALESCE(JSON_Agg(row_to_json(t)), '[]'::JSON)
+        FROM (
+            SELECT
+                id,
+                name,
+                public,
+                uid
+            FROM
+                styles
+            WHERE
+                uid = $1
+            ORDER BY id
+        ) t;
+    ", &[&uid]) {
+        Ok(rows) => {
+            if rows.len() == 0 {
+                Err(StyleError::NotFound)
+            } else {
+                let list: Value = rows.get(0).get(0);
+                Ok(list)
+            }
+        },
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => Err(StyleError::NotFound),
+                _ => Err(StyleError::NotFound)
+            }
+        }
+    }
+}
+
+///Return a list of public styles for a given user
+pub fn list_user_public(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<Value, StyleError> {
+    match conn.query("
+        SELECT
+            COALESCE(JSON_Agg(row_to_json(t)), '[]'::JSON)
+        FROM (
+            SELECT
+                id,
+                name,
+                public,
+                uid
+            FROM
+                styles
+            WHERE
+                uid = $1
+                AND public IS TRUE
+            ORDER BY id
+        ) t;
+    ", &[&uid]) {
+        Ok(rows) => {
+            if rows.len() == 0 {
+                Err(StyleError::NotFound)
+            } else {
+                let list: Value = rows.get(0).get(0);
+                Ok(list)
+            }
+        },
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => Err(StyleError::NotFound),
+                _ => Err(StyleError::NotFound)
+            }
+        }
+    }
+}
+
 pub fn list_public(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Value, StyleError> {
     match conn.query("
         SELECT

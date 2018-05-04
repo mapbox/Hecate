@@ -49,12 +49,6 @@ mod test {
             assert!(resp.status().is_success());
         }
 
-        { //Create Username (ingalls-other)
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls-other&password=yeaheh&email=fake@example.com").unwrap();
-            assert_eq!(resp.text().unwrap(), "true");
-            assert!(resp.status().is_success());
-        }
-
         { //Create Style
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/style")
@@ -228,6 +222,12 @@ mod test {
 
         { //Get List of Public Styles - Style 1 should now appear, since it is now public
             let mut resp = reqwest::get("http://localhost:8000/api/styles").unwrap();
+            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1}]"#);
+            assert!(resp.status().is_success());
+        }
+
+        { //Get User List of Public Styles - Style 1 should now appear, since it is now public
+            let mut resp = reqwest::get("http://localhost:8000/api/styles/1").unwrap();
             assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1}]"#);
             assert!(resp.status().is_success());
         }

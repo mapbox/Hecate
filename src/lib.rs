@@ -65,6 +65,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             style_delete,
             style_get,
             style_list_public,
+            style_list_user,
             delta,
             delta_list,
             delta_list_offset,
@@ -297,6 +298,31 @@ fn style_list_public(conn: DbConn) -> Result<Json, status::Custom<String>> {
     match style::list_public(&conn.0) {
         Ok(styles) => Ok(Json(json!(styles))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/styles/<user>")]
+fn style_list_user(conn: DbConn, auth: user::Auth, user: i64) -> Result<Json, status::Custom<String>> {
+    match user::auth(&conn.0, auth) {
+        Some(uid) => {
+            if uid == user {
+                match style::list_user(&conn.0, &user) {
+                    Ok(styles) => Ok(Json(json!(styles))),
+                    Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+                }
+            } else {
+                match style::list_user_public(&conn.0, &user) {
+                    Ok(styles) => Ok(Json(json!(styles))),
+                    Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+                }
+            }
+        },
+        _ => {
+            match style::list_user_public(&conn.0, &user) {
+                Ok(styles) => Ok(Json(json!(styles))),
+                Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+            }
+        }
     }
 }
 
