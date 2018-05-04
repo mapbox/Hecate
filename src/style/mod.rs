@@ -168,7 +168,10 @@ pub fn list_public(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnecti
             COALESCE(JSON_Agg(row_to_json(t)), '[]'::JSON)
         FROM (
             SELECT
-                *
+                id,
+                name,
+                public,
+                uid
             FROM
                 styles
             WHERE

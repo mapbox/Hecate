@@ -209,15 +209,16 @@ mod test {
             assert!(resp.status().is_success());
         }
 
-        { //Create Style 3 For List Tests
+        { //Get List of Public Styles
+            let mut resp = reqwest::get("http://localhost:8000/api/styles").unwrap();
+            assert_eq!(resp.text().unwrap(), "[]");
+            assert!(resp.status().is_success());
+        }
+
+        { //Mark Style 1 as Public
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/style")
-                .body(r#"{
-                    "name": "Style 2",
-                    "style": "I am a style"
-                }"#)
+            let mut resp = client.post("http://localhost:8000/api/style/2/public")
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
                 .send()
                 .unwrap();
 
@@ -225,7 +226,24 @@ mod test {
             assert!(resp.status().is_success());
         }
 
-        { //Get List of Public Styles
+        { //Get List of Public Styles - Style 1 should now appear, since it is now public
+            let mut resp = reqwest::get("http://localhost:8000/api/styles").unwrap();
+            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1}]"#);
+            assert!(resp.status().is_success());
+        }
+
+        { //Mark Style 1 as Private again
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/style/2/private")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //Get List of Public Styles - Style 1 should now appear, since it is now public
             let mut resp = reqwest::get("http://localhost:8000/api/styles").unwrap();
             assert_eq!(resp.text().unwrap(), "[]");
             assert!(resp.status().is_success());
