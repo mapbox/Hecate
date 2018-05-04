@@ -141,7 +141,7 @@ pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
 pub fn list_public(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Value, StyleError> {
     match conn.query("
         SELECT
-            JSON_Agg(row_to_json(t))
+            COALESCE(JSON_Agg(row_to_json(t)), '[]'::JSON)
         FROM (
             SELECT
                 *

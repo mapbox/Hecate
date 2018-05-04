@@ -225,6 +225,12 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { //Get List of Public Styles
+            let mut resp = reqwest::get("http://localhost:8000/api/styles").unwrap();
+            assert_eq!(resp.text().unwrap(), "[]");
+            assert!(resp.status().is_success());
+        }
+
         server.kill().unwrap();
     }
 }
