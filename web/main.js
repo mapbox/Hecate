@@ -42,7 +42,29 @@ window.onload = () => {
                         <button @click='login_show' class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'></use></svg></button>
                     </div>
                 `,
-                props: [ 'is_authed', 'login_show', 'logout', 'title' ],
+                props: [ 'is_authed', 'login_show', 'logout', 'title' ]
+            },
+            panel: {
+                data: function() {
+                    return {
+                        panel: 'Deltas'
+                    };
+                },
+                watch: {
+                    panel: function() {
+                        this.$emit('input', this.panel);
+                    }
+                },
+                template: `
+                    <div class='select-container'>
+                        <select v-model="panel" class='select select--s select--stroke'>
+                            <option>Deltas</option>
+                            <option>Bounds</option>
+                            <option>Styles</option>
+                        </select>
+                        <div class='select-arrow'></div>
+                    </div>
+                `
             },
             foot: {
                 template: `

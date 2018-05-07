@@ -98,14 +98,7 @@
                         <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Bounds'></heading>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-                            <div class='select-container'>
-                                <select v-model="panel" class='select select--s select--stroke'>
-                                    <option>Deltas</option>
-                                    <option>Bounds</option>
-                                    <option>Styles</option>
-                                </select>
-                                <div class='select-arrow'></div>
-                            </div>
+                            <panel v-model="panel"/>
                             <button @click="bounds_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
                         </div>
 
@@ -128,14 +121,7 @@
                         <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Styles'></heading>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-                            <div class='select-container'>
-                                <select v-model="panel" class='select select--s select--stroke'>
-                                    <option>Deltas</option>
-                                    <option>Bounds</option>
-                                    <option>Styles</option>
-                                </select>
-                                <div class='select-arrow'></div>
-                            </div>
+                            <panel v-model="panel"/>
                             <button @click="styles_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
                         </div>
 
@@ -158,14 +144,7 @@
                         <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-                            <div class='select-container'>
-                                <select v-model="panel" class='select select--s select--stroke'>
-                                    <option>Deltas</option>
-                                    <option>Bounds</option>
-                                    <option>Styles</option>
-                                </select>
-                                <div class='select-arrow'></div>
-                            </div>
+                            <panel v-model="panel"/>
                             <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
                         </div>
 
