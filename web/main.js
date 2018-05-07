@@ -10,7 +10,7 @@ window.onload = () => {
                 authed: false,
                 username: ''
             },
-            panel: { panel: 'deltas' },
+            panel: 'Deltas',
             modal: {
                 type: false,
                 ok: {
@@ -30,7 +30,8 @@ window.onload = () => {
             feature: false,
             delta: false,
             deltas: [],
-            bounds: false,
+            bounds: [],
+            styles: []
         },
         components: {
             heading: {
@@ -42,6 +43,13 @@ window.onload = () => {
                     </div>
                 `,
                 props: [ 'is_authed', 'login_show', 'logout', 'title' ],
+            },
+            foot: {
+                template: `
+                    <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
+                        <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
+                    </div>
+                `
             }
         },
         created: function() {
@@ -50,11 +58,16 @@ window.onload = () => {
         },
         watch: {
             panel: function() {
-                if (this.panel.panel === 'deltas') {
-                    this.bounds = false;
-                } else {
+                if (this.panel === 'Bounds') {
                     this.bounds_refresh();
+                } else if (this.panel === 'Styles') {
+                    this.bounds_refresh();
+                } else if (this.panel === 'Deltas') {
+                    this.deltas_refresh();
                 }
+            },
+            styles: function() {
+
             },
             delta: function() {
                 //Reset Normal Map
@@ -165,6 +178,13 @@ window.onload = () => {
                       return response.json();
                 }).then((body) => {
                     this.bounds = body;
+                });
+            },
+            styles_refresh: function() {
+                fetch(`http://${window.location.host}/api/styles`).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    this.styles = body;
                 });
             },
             deltas_refresh: function() {
@@ -327,6 +347,5 @@ window.onload = () => {
     });
 
     window.vue.moment = moment;
-
 }
 

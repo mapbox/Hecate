@@ -67,9 +67,7 @@
                             </table>
                         </div>
 
-                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
-                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
-                        </div>
+                        <foot/>
                     </div>
                     <div v-else-if="delta" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
                         <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
@@ -94,22 +92,21 @@
                             </div>
                         </div>
 
-                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
-                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
-                        </div>
+                        <foot/>
                     </div>
-                    <div v-else-if="bounds" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+                    <div v-else-if="panel == 'Bounds'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
                         <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Bounds'></heading>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
                             <div class='select-container'>
                                 <select v-model="panel" class='select select--s select--stroke'>
-                                    <option v-bind:value="{ panel: 'deltas' }">Deltas</option>
-                                    <option v-bind:value="{ panel: 'bounds' }" selected>Bounds</option>
+                                    <option>Deltas</option>
+                                    <option>Bounds</option>
+                                    <option>Styles</option>
                                 </select>
                                 <div class='select-arrow'></div>
                             </div>
-                            <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
+                            <button @click="bounds_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
                         </div>
 
                         <div class="flex-child scroll-auto">
@@ -125,19 +122,47 @@
                             </div>
                         </div>
 
-                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
-                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
-                        </div>
+                        <foot/>
                     </div>
+                    <div v-else-if="panel == 'Styles'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+                        <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Styles'></heading>
 
+                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
+                            <div class='select-container'>
+                                <select v-model="panel" class='select select--s select--stroke'>
+                                    <option>Deltas</option>
+                                    <option>Bounds</option>
+                                    <option>Styles</option>
+                                </select>
+                                <div class='select-arrow'></div>
+                            </div>
+                            <button @click="styles_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
+                        </div>
+
+                        <div class="flex-child scroll-auto">
+                            <div v-if="!styles.length" class="px12 py3 clearfix bg-white">
+                                <div align="center">No Custom Styles</div>
+                            </div>
+
+                            <div v-for="(style, styles_it) in styles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+                                <a v-bind:href="`/api/styles/${styles}`" target="_blank" class="w-full clearfix">
+                                    <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-paint'/></span>
+                                    <span class="fl" v-text="style"></span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <foot/>
+                    </div>
                     <div v-else class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
                         <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
                             <div class='select-container'>
                                 <select v-model="panel" class='select select--s select--stroke'>
-                                    <option v-bind:value="{ panel: 'deltas' }">Deltas</option>
-                                    <option v-bind:value="{ panel: 'bounds' }" selected>Bounds</option>
+                                    <option>Deltas</option>
+                                    <option>Bounds</option>
+                                    <option>Styles</option>
                                 </select>
                                 <div class='select-arrow'></div>
                             </div>
@@ -159,9 +184,7 @@
                             </div>
                         </div>
 
-                        <div class='px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
-                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
-                        </div>
+                        <foot/>
                     </div>
 
                 </div>
