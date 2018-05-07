@@ -17,6 +17,12 @@ window.onload = () => {
                     header: '',
                     body: ''
                 },
+                style: {
+                    style: '',
+                    username: '',
+                    uid: false,
+                    name: ''
+                },
                 login: {
                     username: '',
                     password: ''
@@ -207,6 +213,27 @@ window.onload = () => {
                       return response.json();
                 }).then((body) => {
                     this.styles = body;
+                });
+            },
+            get_style: function(style_id, cb) {
+                fetch(`http://${window.location.host}/api/style/1`).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    return cb(null, body);
+                }).catch((err) => {
+                    return cb(err);
+                });
+            },
+            style_modal: function(style_id) {
+                this.get_style(style_id, (err, style) => {
+                    //TODO Error modal
+
+                    this.modal.style.style = JSON.stringify(style, null, 4);
+                    this.modal.style.id = style.id;
+                    this.modal.style.username = style.username;
+                    this.modal.style.name = style.name;
+
+                    this.modal.type = 'style';
                 });
             },
             deltas_refresh: function() {

@@ -56,16 +56,20 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
         FROM (
             SELECT
                 styles.id AS id,
+                styles.uid AS uid,
                 styles.name AS name,
-                styles.style AS style
+                styles.style AS style,
+                users.username AS username
             FROM
-                styles
+                styles,
+                users
             WHERE
-                id = $1
+                styles.id = $1
                 AND (
-                    public IS true
-                    OR uid = $2
+                    styles.public IS true
+                    OR styles.uid = $2
                 )
+                AND users.id = styles.uid
         ) t
     ", &[&style_id, &uid]) {
         Ok(rows) => {
