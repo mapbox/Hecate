@@ -78,6 +78,11 @@ cargo run
 curl 'localhost:8000
 ```
 
+You will now have an empty database which can be populated with your own data/user accounts.
+
+If you want to populate the database with sample data for testing, [ingalls/hecate-example](https://github.com/ingalls/hecate-example)
+has a selection of scripts to populate the database with test data.
+
 ## Docker File (Coverage Tests)
 
 The Docker file is designed to give the user a testing environment to get rust tests to generate code coverage information
