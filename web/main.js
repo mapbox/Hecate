@@ -83,7 +83,7 @@ window.onload = () => {
                 if (this.panel === 'Bounds') {
                     this.bounds_refresh();
                 } else if (this.panel === 'Styles') {
-                    this.bounds_refresh();
+                    this.styles_refresh();
                 } else if (this.panel === 'Deltas') {
                     this.deltas_refresh();
                 }

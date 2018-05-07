@@ -108,7 +108,7 @@
                             </div>
 
                             <div v-for="(bound, bound_it) in bounds" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                                <a v-bind:href="`/api/data/bounds/${bounds}`" target="_blank" class="w-full clearfix">
+                                <a v-bind:href="`/api/data/bounds/${bound}`" target="_blank" class="w-full clearfix">
                                     <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-database'/></span>
                                     <span class="fl" v-text="bound"></span>
                                 </a>
@@ -130,10 +130,10 @@
                                 <div align="center">No Custom Styles</div>
                             </div>
 
-                            <div v-for="(style, styles_it) in styles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                                <a v-bind:href="`/api/styles/${styles}`" target="_blank" class="w-full clearfix">
+                            <div v-for="(style, style_it) in styles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+                                <a v-bind:href="`/api/data/style/${style.id}`" target="_blank" class="w-full clearfix">
                                     <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-paint'/></span>
-                                    <span class="fl" v-text="style"></span>
+                                    <span class="fl" v-text="style.name"></span>
                                 </a>
                             </div>
                         </div>
