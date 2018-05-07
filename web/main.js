@@ -34,6 +34,10 @@ window.onload = () => {
                     uid: false,
                     name: ''
                 },
+                style_create: {
+                    name: '',
+                    style: ''
+                },
                 login: {
                     username: '',
                     password: ''

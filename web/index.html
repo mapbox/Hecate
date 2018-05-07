@@ -264,6 +264,10 @@
                                 <div class='col col--8'>
                                     <h3 class='fl py6 txt-m txt-bold w-full' v-text='`${modal.style_set.username}/${modal.style_set.name}`'></h3>
                                 </div>
+                                <div class='col col--4'>
+                                    <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                                </div>
+
                                 <div class='col col--12'>
                                     <textarea readonly class='textarea w-full h360' v-model="modal.style_set.style"></textarea>
                                 </div>
