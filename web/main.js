@@ -35,10 +35,6 @@ window.onload = () => {
                     uid: false,
                     name: ''
                 },
-                style_create: {
-                    name: '',
-                    style: ''
-                },
                 login: {
                     username: '',
                     password: ''
@@ -265,6 +261,7 @@ window.onload = () => {
                     this.modal.style_set.style = JSON.stringify(style.style, null, 4);
                     this.modal.style_set.id = style.id;
                     this.modal.style_set.username = style.username;
+                    this.modal.style_set.uid = style.uid;
                     this.modal.style_set.name = style.name;
 
                     this.modal.type = 'style_set';
