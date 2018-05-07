@@ -133,7 +133,9 @@
                             <div v-for="(style, style_it) in styles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
                                 <a v-bind:href="`/api/data/style/${style.id}`" target="_blank" class="w-full clearfix">
                                     <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-paint'/></span>
-                                    <span class="fl" v-text="style.name"></span>
+                                    <div class="fl">
+                                        <span v-text="style.username"></span>/<span v-text="style.name"></span>
+                                    </div>
                                 </a>
                             </div>
                         </div>
