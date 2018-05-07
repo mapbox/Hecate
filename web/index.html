@@ -78,6 +78,7 @@
                             <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
                             <div class="px12 py3 txt-bold fl">Delta <span v-text="delta.id"></span></div>
                         </div>
+                        <div class="flex-child py12 px12 bg-gray-faint txt-s align-center"><span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span></div>
 
                         <div class="flex-child scroll-auto">
                             <div v-for="(feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
