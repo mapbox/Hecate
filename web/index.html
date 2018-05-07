@@ -283,7 +283,12 @@
                                         <div class='col col--8 py12'></div>
 
                                         <div class='col col--4 py12'>
-                                            <button @click='style_set(modal.style_set.id, JSON.parse(modal.style_set.style))' class='btn round btn--stroke w-full'>Apply Style</button>
+                                            <template v-if="credentials.uid === modal.style_set.uid">
+                                                <button @click='style_update(modal.style_set.id, modal.style_set.name, JSON.parse(modal.style_set.style))' class='btn round btn--stroke w-full'>Save &amp; Apply Style</button>
+                                            </template>
+                                            <template v-else>
+                                                <button @click='style_set(modal.style_set.id, JSON.parse(modal.style_set.style))' class='btn round btn--stroke w-full'>Apply Style</button>
+                                            </template>
                                         </div>
                                     </div>
                                 </div>

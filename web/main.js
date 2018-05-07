@@ -224,13 +224,40 @@ window.onload = () => {
                 });
             },
             style_get: function(style_id, cb) {
-                fetch(`http://${window.location.host}/api/style/1`).then((response) => {
+                fetch(`http://${window.location.host}/api/style/${style_id}`).then((response) => {
                       return response.json();
                 }).then((body) => {
                     return cb(null, body);
                 }).catch((err) => {
                     return cb(err);
                 });
+            },
+            style_update: function(style_id, style_name, style) {
+                if (!style_id) { //Create new style
+
+                } else { //Update Existing Style
+                    fetch(`http://${window.location.host}/api/style/${style_id}`, {
+                        method: 'PATCH',
+                        credentials: 'same-origin',
+                        headers: new Headers({
+                            'Authorization': 'Basic '+ btoa(`${window.vue.modal.login.username}:${window.vue.modal.login.password}`),
+                            'Content-Type': 'application/json'
+                        }),
+                        body: JSON.stringify({
+                            name: style_name,
+                            style: style
+                        })
+                    }).then((response) => {
+                        if (response.status === 200) {
+                            this.style_set(style_id, style);
+                        } else {
+                            return this.ok('Failed to push style', 'Failed to update or save given style');
+                        }
+                    }).catch((err) => {
+                        return this.ok('Failed to push style', 'Failed to update or save given style');
+                    });
+                
+                }
             },
             style_set: function(style_id, style) {
                 if (!style.version || style.version !== 8) return this.ok('Style Not Applied', 'The selected style could not be applied. The style version must be 8');
