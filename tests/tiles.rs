@@ -104,6 +104,28 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { //Request a tile regen - unauthenticated
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0/regen").send().unwrap();
+
+            assert_eq!(resp.text().unwrap(), "Not Authorized!");
+            assert!(resp.status().is_client_error());
+        }
+
+        { //Request a tile regen - authenticated
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0/regen")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            let mut body: Vec<u8> = Vec::new();
+            resp.read_to_end(&mut body).unwrap();
+
+            assert_eq!(body.len(), 100);
+            assert!(resp.status().is_success());
+        }
+
         server.kill().unwrap();
     }
 }

@@ -55,6 +55,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
         .mount("/api", routes![
             get_schema,
             mvt_get,
+            mvt_regen,
             user_self,
             user_create,
             user_create_session,
@@ -127,7 +128,33 @@ fn staticsrv(file: PathBuf) -> Option<NamedFile> {
 fn mvt_get(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
     if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
 
-    let tile = match mvt::get(&conn.0, z, x, y) {
+    let tile = match mvt::get(&conn.0, z, x, y, false) {
+        Ok(tile) => tile,
+        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, err.to_string())); }
+    };
+
+    let mut c = Cursor::new(Vec::new());
+    match tile.to_writer(&mut c) {
+        Ok(_) => (),
+        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, err.to_string())); }
+    }
+
+    let mut mvt_response = Response::new();
+    mvt_response.set_status(HTTPStatus::Ok);
+    mvt_response.set_sized_body(c);
+    mvt_response.set_raw_header("Content-Type", "application/x-protobuf");
+    Ok(mvt_response)
+}
+
+#[get("/tiles/<z>/<x>/<y>/regen")]
+fn mvt_regen(conn: DbConn, auth: user::Auth, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
+    if user::auth(&conn.0, auth).is_none() {
+        return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!")));
+    };
+
+    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
+
+    let tile = match mvt::get(&conn.0, z, x, y, true) {
         Ok(tile) => tile,
         Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, err.to_string())); }
     };
