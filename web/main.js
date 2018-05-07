@@ -10,14 +10,25 @@ window.onload = () => {
                 authed: false,
                 username: ''
             },
-            panel: 'Deltas',
+            panel: 'Deltas', //Store the current panel view (Deltas, Styles, Bounds, etc)
+            feature: false, //Store the currently selected feature - overides panel view
+            delta: false, //Store the currently selected delta - overrides panel view
+            deltas: [], //Store a list of the most recent deltas
+            bounds: [], //Store a list of all bounds
+            styles: [], //Store a list of public styles
+            layers: [], //Store list of GL layer names so they can be easily removed
+            style: false, //Store the id of the current style - false for generic style
             modal: {
                 type: false,
+                error: {
+                    header: '',
+                    body: ''
+                },
                 ok: {
                     header: '',
                     body: ''
                 },
-                set_style: {
+                style_set: {
                     style: '',
                     username: '',
                     uid: false,
@@ -32,12 +43,7 @@ window.onload = () => {
                     password: '',
                     email: ''
                 }
-            },
-            feature: false,
-            delta: false,
-            deltas: [],
-            bounds: [],
-            styles: []
+            }
         },
         components: {
             heading: {
@@ -97,13 +103,14 @@ window.onload = () => {
             delta: function() {
                 //Reset Normal Map
                 if (!this.delta) {
+                    this.map_unstyle();
                     this.map_default_style();
 
                     this.map.getSource('hecate-delta').setData({ type: 'FeatureCollection', features: [] });
                 } else {
                     this.map.getSource('hecate-delta').setData(this.delta.features);
-
-                    this.map_default_unstyle();
+                    this.map_unstyle();
+                    this.map_delta_style();
 
                     this.delta.bbox = turf.bbox(this.delta.features);
                     this.map.fitBounds(this.delta.bbox);
@@ -134,7 +141,6 @@ window.onload = () => {
                 });
 
                 this.map_default_style();
-                this.map_delta_style();
             });
 
             this.map.addControl(new MapboxGeocoder({
@@ -150,6 +156,11 @@ window.onload = () => {
             });
         },
         methods: {
+            ok: function(header, body) {
+                this.modal.ok.header = header;
+                this.modal.ok.body = body;
+                this.modal.type = 'ok';
+            },
             logout: function() {
                 this.credentials.authed = false;
                 document.cookie = 'session=; Max-Age=0'
@@ -188,11 +199,7 @@ window.onload = () => {
                         email: ''
                     };
 
-                    this.modal.ok = {
-                        header: 'Account Created',
-                        body: 'Your account has been created! You can login now'
-                    }
-                    this.modal.type = 'ok'
+                    this.ok('Account Created', 'Your account has been created! You can login now');
                 });
             },
             register_show: function() {
@@ -212,7 +219,7 @@ window.onload = () => {
                     this.styles = body;
                 });
             },
-            get_style: function(style_id, cb) {
+            style_get: function(style_id, cb) {
                 fetch(`http://${window.location.host}/api/style/1`).then((response) => {
                       return response.json();
                 }).then((body) => {
@@ -221,16 +228,22 @@ window.onload = () => {
                     return cb(err);
                 });
             },
-            set_style_modal: function(style_id) {
-                this.get_style(style_id, (err, style) => {
+            style_set: function(style_id, style) {
+                if (!style.version || style.version !== 8) return this.ok('Style Not Applied', 'The selected style could not be applied. The style version must be 8');
+                if (!style.layers || style.layers.length === 0) return this.ok('Style Not Applied', 'The selected style could not be applied. The style must contain at least 1 layer');
+
+
+            },
+            style_set_modal: function(style_id) {
+                this.style_get(style_id, (err, style) => {
                     //TODO Error modal
 
-                    this.modal.set_style.style = JSON.stringify(style.style, null, 4);
-                    this.modal.set_style.id = style.id;
-                    this.modal.set_style.username = style.username;
-                    this.modal.set_style.name = style.name;
+                    this.modal.style_set.style = JSON.stringify(style.style, null, 4);
+                    this.modal.style_set.id = style.id;
+                    this.modal.style_set.username = style.username;
+                    this.modal.style_set.name = style.name;
 
-                    this.modal.type = 'set_style';
+                    this.modal.type = 'style_set';
                 });
             },
             deltas_refresh: function() {
@@ -267,7 +280,8 @@ window.onload = () => {
                 let action_create = '#008000';
                 let action_modify = '#FFFF00';
                 let action_delete = '#FF0000';
-                
+               
+                this.layers.push('hecate-delta-polygons');
                 this.map.addLayer({
                     id: 'hecate-delta-polygons',
                     type: 'fill',
@@ -279,6 +293,7 @@ window.onload = () => {
                     }
                 });
 
+                this.layers.push('hecate-delta-polygon-outlines');
                 this.map.addLayer({
                     id: 'hecate-delta-polygon-outlines',
                     type: 'line',
@@ -294,6 +309,7 @@ window.onload = () => {
                     }
                 })
 
+                this.layers.push('hecate-delta-lines');
                 this.map.addLayer({
                     id: 'hecate-delta-lines',
                     type: 'line',
@@ -309,6 +325,7 @@ window.onload = () => {
                     }
                 });
 
+                this.layers.push('hecate-delta-points');
                 this.map.addLayer({
                     id: 'hecate-delta-points',
                     type: 'circle',
@@ -321,14 +338,16 @@ window.onload = () => {
                 });
 
             },
-            map_default_unstyle: function() {
-                this.map.removeLayer('hecate-data-polygons');
-                this.map.removeLayer('hecate-data-polygon-outlines');
-                this.map.removeLayer('hecate-data-lines');
-                this.map.removeLayer('hecate-data-points');
+            map_unstyle: function() {
+                for (let layer of this.layers) {
+                    this.map.removeLayer(layer);
+                }
+                this.layers = [];
             },
             map_default_style: function() {
                 const foregroundColor = '#FF0000';
+
+                this.layers.push('hecate-data-polygons');
                 this.map.addLayer({
                     id: 'hecate-data-polygons',
                     type: 'fill',
@@ -341,6 +360,7 @@ window.onload = () => {
                     }
                 });
 
+                this.layers.push('hecate-data-polygon-outlines');
                 this.map.addLayer({
                     id: 'hecate-data-polygon-outlines',
                     type: 'line',
@@ -358,6 +378,7 @@ window.onload = () => {
                     }
                 })
 
+                this.layers.push('hecate-data-lines');
                 this.map.addLayer({
                     id: 'hecate-data-lines',
                     type: 'line',
@@ -375,6 +396,7 @@ window.onload = () => {
                     }
                 });
 
+                this.layers.push('hecate-data-points');
                 this.map.addLayer({
                     id: 'hecate-data-points',
                     type: 'circle',

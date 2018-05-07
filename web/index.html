@@ -131,7 +131,7 @@
                             </div>
 
                             <div v-for="(style, style_it) in styles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                                <div @click="set_style_modal(style.id)" class="w-full clearfix">
+                                <div @click="style_set_modal(style.id)" class="w-full clearfix">
                                     <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-paint'/></span>
                                     <div class="fl">
                                         <span v-text="style.username"></span>/<span v-text="style.name"></span>
@@ -257,15 +257,15 @@
                         </div>
                     </div>
                 </div>
-                <div v-if='modal.type === "set_style"' class='absolute top left bottom right z2' style="pointer-events: none;">
+                <div v-if='modal.type === "style_set"' class='absolute top left bottom right z2' style="pointer-events: none;">
                     <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
                         <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
                             <div class='grid w-full'>
                                 <div class='col col--8'>
-                                    <h3 class='fl py6 txt-m txt-bold w-full' v-text='`${modal.set_style.username}/${modal.set_style.name}`'></h3>
+                                    <h3 class='fl py6 txt-m txt-bold w-full' v-text='`${modal.style_set.username}/${modal.style_set.name}`'></h3>
                                 </div>
                                 <div class='col col--12'>
-                                    <textarea readonly class='textarea w-full h360' v-model="modal.set_style.style"></textarea>
+                                    <textarea readonly class='textarea w-full h360' v-model="modal.style_set.style"></textarea>
                                 </div>
 
                                 <div class='col col--12'>
@@ -273,7 +273,7 @@
                                         <div class='col col--8 py12'></div>
 
                                         <div class='col col--4 py12'>
-                                            <button @click='style_set()' class='btn round btn--stroke w-full'>Apply Style</button>
+                                            <button @click='style_set(modal.style_set.id, JSON.parse(modal.style_set.style))' class='btn round btn--stroke w-full'>Apply Style</button>
                                         </div>
                                     </div>
                                 </div>
@@ -281,6 +281,33 @@
                         </div>
                     </div>
                 </div>
+                <div v-if='modal.type === "ok"' class='absolute top left bottom right z2 bg-black' style="pointer-events: none;">
+                    <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
+                        <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
+                            <div class='grid w-full'>
+                                <div class='col col--8'>
+                                    <h3 class='fl py6 txt-m txt-bold w-full' v-text='modal.ok.header'></h3>
+                                </div>
+                                <div class='col col--4'>
+                                    <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                                </div>
+
+                                <div class='col col--12 py24' v-text='modal.ok.body'></div>
+
+                                <div class='col col--12'>
+                                    <div class='grid grid--gut12'>
+                                        <div class='col col--6 py12'></div>
+
+                                        <div class='col col--6 py12'>
+                                            <button @click='modal.type = false' class='btn round w-full'>OK</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
                 <div v-if='modal.type === "ok"' class='absolute top left bottom right z2 bg-black' style="pointer-events: none;">
                     <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
                         <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
