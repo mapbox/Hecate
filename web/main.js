@@ -232,7 +232,23 @@ window.onload = () => {
                 if (!style.version || style.version !== 8) return this.ok('Style Not Applied', 'The selected style could not be applied. The style version must be 8');
                 if (!style.layers || style.layers.length === 0) return this.ok('Style Not Applied', 'The selected style could not be applied. The style must contain at least 1 layer');
 
+                this.map_unstyle();
 
+                for (let layer of style.layers) {
+                    if (!layer.id) {
+                        this.map_unstyle();
+                        this.map_default_style();
+                        return this.ok('Style Not Applied', 'Every layer in the style must have a unique id');
+                    }
+
+                    layer.source = 'hecate-data';
+                    layer['source-layer'] = 'data',
+
+                    this.layers.push(layer.id);
+                    this.map.addLayer(layer);
+                }
+
+                this.modal.type = false;
             },
             style_set_modal: function(style_id) {
                 this.style_get(style_id, (err, style) => {
