@@ -186,7 +186,7 @@ window.onload = () => {
                             password: ''
                         };
                     } else {
-                        //TODO Error
+                        return this.ok('Failed to Login', 'Failed to login with given credentials');
                     }
                 });
 
@@ -256,7 +256,7 @@ window.onload = () => {
             },
             style_set_modal: function(style_id) {
                 this.style_get(style_id, (err, style) => {
-                    //TODO Error modal
+                    if (err) return this.ok('Failed to retrieve style', err.message);
 
                     this.modal.style_set.style = JSON.stringify(style.style, null, 4);
                     this.modal.style_set.id = style.id;
