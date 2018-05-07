@@ -17,7 +17,7 @@ window.onload = () => {
                     header: '',
                     body: ''
                 },
-                style: {
+                set_style: {
                     style: '',
                     username: '',
                     uid: false,
@@ -93,9 +93,6 @@ window.onload = () => {
                 } else if (this.panel === 'Deltas') {
                     this.deltas_refresh();
                 }
-            },
-            styles: function() {
-
             },
             delta: function() {
                 //Reset Normal Map
@@ -224,16 +221,16 @@ window.onload = () => {
                     return cb(err);
                 });
             },
-            style_modal: function(style_id) {
+            set_style_modal: function(style_id) {
                 this.get_style(style_id, (err, style) => {
                     //TODO Error modal
 
-                    this.modal.style.style = JSON.stringify(style, null, 4);
-                    this.modal.style.id = style.id;
-                    this.modal.style.username = style.username;
-                    this.modal.style.name = style.name;
+                    this.modal.set_style.style = JSON.stringify(style.style, null, 4);
+                    this.modal.set_style.id = style.id;
+                    this.modal.set_style.username = style.username;
+                    this.modal.set_style.name = style.name;
 
-                    this.modal.type = 'style';
+                    this.modal.type = 'set_style';
                 });
             },
             deltas_refresh: function() {
