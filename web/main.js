@@ -8,7 +8,8 @@ window.onload = () => {
             credentials: {
                 map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' },
                 authed: false,
-                username: ''
+                username: '',
+                uid: false
             },
             panel: 'Deltas', //Store the current panel view (Deltas, Styles, Bounds, etc)
             feature: false, //Store the currently selected feature - overides panel view
@@ -178,13 +179,16 @@ window.onload = () => {
                     })
                 }).then((response) => {
                     if (response.status === 200) {
-                        this.modal.type = false;
-                        this.credentials.authed = true;
-                        this.credentials.username = this.modal.login.username;
-                        this.modal.login = {
-                            username: '',
-                            password: ''
-                        };
+                        response.json().then((response) => {
+                            this.modal.type = false;
+                            this.credentials.authed = true;
+                            this.credentials.username = this.modal.login.username;
+                            this.credentials.uid = parseInt(response);
+                            this.modal.login = {
+                                username: '',
+                                password: ''
+                            };
+                        });
                     } else {
                         return this.ok('Failed to Login', 'Failed to login with given credentials');
                     }
