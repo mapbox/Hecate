@@ -10,6 +10,10 @@
 
 ## Version History
 
+## v0.15.0
+
+- :tada: Add endpoint for manually regenerating Mapbox Vector Tiles
+
 ## v0.14.0
 
 - :tada: Add mapbox-gl-js style related endpoints
