@@ -127,7 +127,7 @@ window.onload = () => {
                     if (response.status === 200) {
                         this.modal.type = false;
                         this.credentials.authed = true;
-                        this.credentuals.username = this.modal.login.username;
+                        this.credentials.username = this.modal.login.username;
                         this.modal.login = {
                             username: '',
                             password: ''
