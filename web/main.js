@@ -108,7 +108,7 @@ window.onload = () => {
 
                 let clicked = this.map.queryRenderedFeatures(e.point)[0];
 
-                if (clicked && clicked.properties.id) this.feature_get(clicked.properties.id);
+                if (clicked && clicked.properties['hecate:id']) this.feature_get(clicked.properties['hecate:id']);
             });
         },
         methods: {
