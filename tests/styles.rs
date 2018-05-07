@@ -231,13 +231,13 @@ mod test {
 
         { //Get List of Public Styles - Style 1 should now appear, since it is now public
             let mut resp = reqwest::get("http://localhost:8000/api/styles").unwrap();
-            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1}]"#);
+            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1,"username":"ingalls"}]"#);
             assert!(resp.status().is_success());
         }
 
         { //Get User List of Public Styles - Style 1 should now appear, since it is now public
             let mut resp = reqwest::get("http://localhost:8000/api/styles/1").unwrap();
-            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1}]"#);
+            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1,"username":"ingalls"}]"#);
             assert!(resp.status().is_success());
         }
 
@@ -247,7 +247,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1},{"id":3,"name":"Style 2","public":false,"uid":1}]"#);
+            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1,"username":"ingalls"},{"id":3,"name":"Style 2","public":false,"uid":1,"username":"ingalls"}]"#);
             assert!(resp.status().is_success());
         }
 

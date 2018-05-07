@@ -180,7 +180,7 @@ pub fn list_user(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
             WHERE
                 uid = $1
                 AND users.id = uid
-            ORDER BY style.id
+            ORDER BY styles.id
         ) t;
     ", &[&uid]) {
         Ok(rows) => {
@@ -219,7 +219,7 @@ pub fn list_user_public(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresCon
                 uid = $1
                 AND public IS TRUE
                 AND uid = users.id
-            ORDER BY style.id
+            ORDER BY styles.id
         ) t;
     ", &[&uid]) {
         Ok(rows) => {
