@@ -61,7 +61,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "true");
+            assert_eq!(resp.text().unwrap(), "1");
             assert!(resp.status().is_success());
         }
 
@@ -183,7 +183,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "true");
+            assert_eq!(resp.text().unwrap(), "2");
             assert!(resp.status().is_success());
         }
 
@@ -199,7 +199,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "true");
+            assert_eq!(resp.text().unwrap(), "3");
             assert!(resp.status().is_success());
         }
 

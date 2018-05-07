@@ -232,15 +232,21 @@ window.onload = () => {
                     return cb(err);
                 });
             },
+            style_create:  function() {
+                this.modal.style_set.style = '';
+                this.modal.style_set.id = false;
+                this.modal.style_set.username = this.credentials.username;
+                this.modal.style_set.uid = this.credentials.uid;
+                this.modal.style_set.name = '';
+
+                this.modal.type = 'style_set';
+            },
             style_update: function(style_id, style_name, style) {
                 if (!style_id) { //Create new style
-
-                } else { //Update Existing Style
-                    fetch(`http://${window.location.host}/api/style/${style_id}`, {
-                        method: 'PATCH',
+                    fetch(`http://${window.location.host}/api/style`, {
+                        method: 'POST',
                         credentials: 'same-origin',
                         headers: new Headers({
-                            'Authorization': 'Basic '+ btoa(`${window.vue.modal.login.username}:${window.vue.modal.login.password}`),
                             'Content-Type': 'application/json'
                         }),
                         body: JSON.stringify({
@@ -251,10 +257,30 @@ window.onload = () => {
                         if (response.status === 200) {
                             this.style_set(style_id, style);
                         } else {
-                            return this.ok('Failed to push style', 'Failed to update or save given style');
+                            return this.ok('Failed to push style', 'Failed to update style');
                         }
                     }).catch((err) => {
-                        return this.ok('Failed to push style', 'Failed to update or save given style');
+                        return this.ok('Failed to push style', 'Failed to update style');
+                    });
+                } else { //Update Existing Style
+                    fetch(`http://${window.location.host}/api/style/${style_id}`, {
+                        method: 'PATCH',
+                        credentials: 'same-origin',
+                        headers: new Headers({
+                            'Content-Type': 'application/json'
+                        }),
+                        body: JSON.stringify({
+                            name: style_name,
+                            style: style
+                        })
+                    }).then((response) => {
+                        if (response.status === 200) {
+                            this.style_set(style_id, style);
+                        } else {
+                            return this.ok('Failed to push style', 'Failed to update style');
+                        }
+                    }).catch((err) => {
+                        return this.ok('Failed to push style', 'Failed to update style');
                     });
                 
                 }

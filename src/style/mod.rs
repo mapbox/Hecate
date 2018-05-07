@@ -21,22 +21,20 @@ impl StyleError {
 /// Creates a new GL JS Style under a given user account
 ///
 /// By default styles are private and can only be accessed by a single user
-pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, style: &String) -> Result<bool, StyleError> {
-    match conn.execute("
-        INSERT into styles (name, style, uid, public)
+pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, style: &String) -> Result<i64, StyleError> {
+    match conn.query("
+        INSERT INTO styles (name, style, uid, public)
             VALUES (
                 COALESCE($1::TEXT::JSON->>'name', 'New Style')::TEXT,
                 COALESCE($1::TEXT::JSON->'style', '{}'::JSON),
                 $2,
                 false
-            );
+            )
+            RETURNING id;
     ", &[&style, &uid]) {
-        Ok(updated) => {
-            if updated == 0 {
-                Err(StyleError::NotFound)
-            } else {
-                Ok(true)
-            }
+        Ok(rows) => {
+            let id = rows.get(0).get(0);
+            Ok(id)
         },
         Err(err) => {
             match err.as_db() {

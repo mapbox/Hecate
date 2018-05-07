@@ -252,7 +252,7 @@ fn style_create(conn: DbConn, auth: user::Auth, style: String) -> Result<Json, s
     };
 
     match style::create(&conn.0, &uid, &style) {
-        Ok(created) => Ok(Json(json!(created))),
+        Ok(style_id) => Ok(Json(json!(style_id))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }

@@ -123,8 +123,12 @@
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
                             <template><panel v-model="panel"/></template>
                             <button @click="styles_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
-                        </div>
 
+                            <template v-if="credentials.authed">
+                                <button @click="style_create" class='fr btn mx6 btn--s round align-center'>New</button>
+                            </template>
+                        </div>
+                        
                         <div class="flex-child scroll-auto">
                             <div v-if="!styles.length" class="px12 py3 clearfix bg-white">
                                 <div align="center">No Custom Styles</div>
