@@ -112,6 +112,14 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
+        { //Request a tile meta
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0/meta").send().unwrap();
+
+            assert!(resp.text().unwrap().contains("created"));
+            assert!(resp.status().is_success());
+        }
+
         { //Request a tile regen - authenticated
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0/regen")

@@ -55,6 +55,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
         .mount("/api", routes![
             get_schema,
             mvt_get,
+            mvt_meta,
             mvt_regen,
             user_self,
             user_create,
@@ -144,6 +145,16 @@ fn mvt_get(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Response<'static>, sta
     mvt_response.set_sized_body(c);
     mvt_response.set_raw_header("Content-Type", "application/x-protobuf");
     Ok(mvt_response)
+}
+
+#[get("/tiles/<z>/<x>/<y>/meta")]
+fn mvt_meta(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<String>> {
+    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
+
+    match mvt::meta(&conn.0, z, x, y) {
+        Ok(tile) => Ok(Json(tile)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
 }
 
 #[get("/tiles/<z>/<x>/<y>/regen")]

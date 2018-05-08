@@ -478,6 +478,26 @@ curl -X GET 'http://localhost:8000/api/tiles/1/1/1
 
 ---
 
+#### `GET` `/api/tiles/<z>/<x>/<y>/meta`
+
+Return any stored metadata about a given tile.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<z>` | `REQUIRED` Desired zoom level for tile
+| `<x>` | `REQUIRED` Desired x coordinate for tile
+| `<y>` | `REQUIRED` Desired y coordinate for tle
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/tiles/1/1/1/meta
+```
+
+---
+
 #### `GET` `/api/tiles/<z>/<x>/<y>/regen`
 
 Allows an authenticated user to request a new tile for the given tile coordinates,
