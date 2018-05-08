@@ -8,14 +8,33 @@ window.onload = () => {
             credentials: {
                 map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' },
                 authed: false,
-                username: ''
+                username: '',
+                uid: false
             },
-            panel: { panel: 'deltas' },
+            panel: 'Deltas', //Store the current panel view (Deltas, Styles, Bounds, etc)
+            feature: false, //Store the currently selected feature - overides panel view
+            delta: false, //Store the currently selected delta - overrides panel view
+            deltas: [], //Store a list of the most recent deltas
+            bounds: [], //Store a list of all bounds
+            pstyles: [], //If the user is authenticated, store a list of their private styles
+            styles: [], //Store a list of public styles
+            layers: [], //Store list of GL layer names so they can be easily removed
+            style: false, //Store the id of the current style - false for generic style
             modal: {
                 type: false,
+                error: {
+                    header: '',
+                    body: ''
+                },
                 ok: {
                     header: '',
                     body: ''
+                },
+                style_set: {
+                    style: '',
+                    username: '',
+                    uid: false,
+                    name: ''
                 },
                 login: {
                     username: '',
@@ -26,11 +45,7 @@ window.onload = () => {
                     password: '',
                     email: ''
                 }
-            },
-            feature: false,
-            delta: false,
-            deltas: [],
-            bounds: false,
+            }
         },
         components: {
             heading: {
@@ -41,31 +56,57 @@ window.onload = () => {
                         <button @click='login_show' class='fr px12 py12 btn round bg-white bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-user'></use></svg></button>
                     </div>
                 `,
-                props: [ 'is_authed', 'login_show', 'logout', 'title' ],
+                props: [ 'is_authed', 'login_show', 'logout', 'title' ]
+            },
+            panel: {
+                data: function() {
+                    return {
+                        panel: 'Deltas'
+                    };
+                },
+                watch: {
+                    panel: function() {
+                        this.$emit('input', this.panel);
+                    }
+                },
+                template: `
+                    <div class='select-container'>
+                        <select v-model="panel" class='select select--s select--stroke'>
+                            <option>Deltas</option>
+                            <option>Bounds</option>
+                            <option>Styles</option>
+                        </select>
+                        <div class='select-arrow'></div>
+                    </div>
+                `
+            },
+            foot: {
+                template: `
+                    <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
+                        <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
+                    </div>
+                `
             }
         },
         created: function() {
-            this.deltas_refresh();
             this.logout();
+            this.deltas_refresh();
         },
         watch: {
             panel: function() {
-                if (this.panel.panel === 'deltas') {
-                    this.bounds = false;
-                } else {
-                    this.bounds_refresh();
-                }
+                this.refresh();
             },
             delta: function() {
                 //Reset Normal Map
                 if (!this.delta) {
+                    this.map_unstyle();
                     this.map_default_style();
 
                     this.map.getSource('hecate-delta').setData({ type: 'FeatureCollection', features: [] });
                 } else {
                     this.map.getSource('hecate-delta').setData(this.delta.features);
-
-                    this.map_default_unstyle();
+                    this.map_unstyle();
+                    this.map_delta_style();
 
                     this.delta.bbox = turf.bbox(this.delta.features);
                     this.map.fitBounds(this.delta.bbox);
@@ -96,7 +137,6 @@ window.onload = () => {
                 });
 
                 this.map_default_style();
-                this.map_delta_style();
             });
 
             this.map.addControl(new MapboxGeocoder({
@@ -108,36 +148,60 @@ window.onload = () => {
 
                 let clicked = this.map.queryRenderedFeatures(e.point)[0];
 
-                if (clicked && clicked.properties.id) this.feature_get(clicked.properties.id);
+                if (clicked && clicked.properties['hecate:id']) this.feature_get(clicked.properties['hecate:id']);
             });
         },
         methods: {
+            ok: function(header, body) {
+                this.modal.ok.header = header;
+                this.modal.ok.body = body;
+                this.modal.type = 'ok';
+            },
             logout: function() {
                 this.credentials.authed = false;
-                document.cookie = 'session=; Max-Age=0'
+                document.cookie = 'session=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+                this.refresh();
+            },
+            refresh: function() {
+                if (this.panel === 'Bounds') {
+                    this.bounds_refresh();
+                } else if (this.panel === 'Styles') {
+                    this.styles_refresh();
+                } else if (this.panel === 'Deltas') {
+                    this.deltas_refresh();
+                }
             },
             login: function() {
                 fetch(`http://${window.location.host}/api/user/session`, {
                     method: 'GET',
                     credentials: 'same-origin',
                     headers: new Headers({
-                        'Authorization': 'Basic '+ btoa(`${window.vue.modal.login.username}:${window.vue.modal.login.password}`)
+                        'Authorization': 'Basic '+ btoa(`${this.modal.login.username}:${this.modal.login.password}`)
                     })
                 }).then((response) => {
                     if (response.status === 200) {
-                        this.modal.type = false;
-                        this.credentials.authed = true;
-                        this.credentials.username = this.modal.login.username;
-                        this.modal.login = {
-                            username: '',
-                            password: ''
-                        };
+                        response.json().then((response) => {
+                            this.modal.type = false;
+
+                            this.credentials.authed = true;
+                            this.credentials.username = this.modal.login.username;
+                            this.credentials.uid = parseInt(response);
+                            this.modal.login = {
+                                username: '',
+                                password: ''
+                            };
+
+                            this.refresh(); //Refresh the current panel as loggin in may reveal private data/styles
+                        });
                     } else {
-                        //TODO Error
+                        return this.ok('Failed to Login', 'Failed to login with given credentials');
                     }
+                }).catch((err) => {
+                    return this.ok('Failed to Login', 'Failed to login with given credentials');
                 });
 
-            }, login_show: function() {
+            },
+            login_show: function() {
                 if (!this.credentials.authed) this.modal.type = 'login';
             },
             register: function() {
@@ -150,11 +214,7 @@ window.onload = () => {
                         email: ''
                     };
 
-                    this.modal.ok = {
-                        header: 'Account Created',
-                        body: 'Your account has been created! You can login now'
-                    }
-                    this.modal.type = 'ok'
+                    this.ok('Account Created', 'Your account has been created! You can login now');
                 });
             },
             register_show: function() {
@@ -165,6 +225,129 @@ window.onload = () => {
                       return response.json();
                 }).then((body) => {
                     this.bounds = body;
+                });
+            },
+            styles_refresh: function() {
+                fetch(`http://${window.location.host}/api/styles`).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    this.styles = body;
+                });
+
+                if (this.credentials.authed) {
+                    fetch(`http://${window.location.host}/api/styles/${this.credentials.uid}`, {
+                        credentials: 'same-origin'
+                    }).then((response) => {
+                          return response.json();
+                    }).then((body) => {
+                        this.pstyles = body.filter((style) => {
+                            if (style.public) return false;
+                            return true;
+                        });
+                    });
+                } else {
+                    this.pstyles = [];
+                }
+            },
+            style_get: function(style_id, cb) {
+                fetch(`http://${window.location.host}/api/style/${style_id}`, {
+                    credentials: 'same-origin'
+                }).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    return cb(null, body);
+                }).catch((err) => {
+                    return cb(err);
+                });
+            },
+            style_create:  function(style, name) {
+                this.modal.style_set.style = style ? style : '';
+                this.modal.style_set.id = false;
+                this.modal.style_set.username = this.credentials.username;
+                this.modal.style_set.uid = this.credentials.uid;
+                this.modal.style_set.name = name ? `Copy of ${name}` : '';
+
+                this.modal.type = 'style_set';
+            },
+            style_update: function(style_id, style_name, style) {
+                if (!style_id) { //Create new style
+                    fetch(`http://${window.location.host}/api/style`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: new Headers({
+                            'Content-Type': 'application/json'
+                        }),
+                        body: JSON.stringify({
+                            name: style_name,
+                            style: style
+                        })
+                    }).then((response) => {
+                        if (response.status === 200) {
+                            this.refresh();
+                            this.style_set(style_id, style);
+                        } else {
+                            return this.ok('Failed to push style', 'Failed to update style');
+                        }
+                    }).catch((err) => {
+                        return this.ok('Failed to push style', 'Failed to update style');
+                    });
+                } else { //Update Existing Style
+                    fetch(`http://${window.location.host}/api/style/${style_id}`, {
+                        method: 'PATCH',
+                        credentials: 'same-origin',
+                        headers: new Headers({
+                            'Content-Type': 'application/json'
+                        }),
+                        body: JSON.stringify({
+                            name: style_name,
+                            style: style
+                        })
+                    }).then((response) => {
+                        if (response.status === 200) {
+                            this.refresh();
+                            this.style_set(style_id, style);
+                        } else {
+                            return this.ok('Failed to push style', 'Failed to update style');
+                        }
+                    }).catch((err) => {
+                        return this.ok('Failed to push style', 'Failed to update style');
+                    });
+                
+                }
+            },
+            style_set: function(style_id, style) {
+                if (!style.version || style.version !== 8) return this.ok('Style Not Applied', 'The selected style could not be applied. The style version must be 8');
+                if (!style.layers || style.layers.length === 0) return this.ok('Style Not Applied', 'The selected style could not be applied. The style must contain at least 1 layer');
+
+                this.map_unstyle();
+
+                for (let layer of style.layers) {
+                    if (!layer.id) {
+                        this.map_unstyle();
+                        this.map_default_style();
+                        return this.ok('Style Not Applied', 'Every layer in the style must have a unique id');
+                    }
+
+                    layer.source = 'hecate-data';
+                    layer['source-layer'] = 'data',
+
+                    this.layers.push(layer.id);
+                    this.map.addLayer(layer);
+                }
+
+                this.modal.type = false;
+            },
+            style_set_modal: function(style_id) {
+                this.style_get(style_id, (err, style) => {
+                    if (err) return this.ok('Failed to retrieve style', err.message);
+
+                    this.modal.style_set.style = JSON.stringify(style.style, null, 4);
+                    this.modal.style_set.id = style.id;
+                    this.modal.style_set.username = style.username;
+                    this.modal.style_set.uid = style.uid;
+                    this.modal.style_set.name = style.name;
+
+                    this.modal.type = 'style_set';
                 });
             },
             deltas_refresh: function() {
@@ -201,7 +384,8 @@ window.onload = () => {
                 let action_create = '#008000';
                 let action_modify = '#FFFF00';
                 let action_delete = '#FF0000';
-                
+               
+                this.layers.push('hecate-delta-polygons');
                 this.map.addLayer({
                     id: 'hecate-delta-polygons',
                     type: 'fill',
@@ -213,6 +397,7 @@ window.onload = () => {
                     }
                 });
 
+                this.layers.push('hecate-delta-polygon-outlines');
                 this.map.addLayer({
                     id: 'hecate-delta-polygon-outlines',
                     type: 'line',
@@ -228,6 +413,7 @@ window.onload = () => {
                     }
                 })
 
+                this.layers.push('hecate-delta-lines');
                 this.map.addLayer({
                     id: 'hecate-delta-lines',
                     type: 'line',
@@ -243,6 +429,7 @@ window.onload = () => {
                     }
                 });
 
+                this.layers.push('hecate-delta-points');
                 this.map.addLayer({
                     id: 'hecate-delta-points',
                     type: 'circle',
@@ -255,14 +442,16 @@ window.onload = () => {
                 });
 
             },
-            map_default_unstyle: function() {
-                this.map.removeLayer('hecate-data-polygons');
-                this.map.removeLayer('hecate-data-polygon-outlines');
-                this.map.removeLayer('hecate-data-lines');
-                this.map.removeLayer('hecate-data-points');
+            map_unstyle: function() {
+                for (let layer of this.layers) {
+                    this.map.removeLayer(layer);
+                }
+                this.layers = [];
             },
             map_default_style: function() {
                 const foregroundColor = '#FF0000';
+
+                this.layers.push('hecate-data-polygons');
                 this.map.addLayer({
                     id: 'hecate-data-polygons',
                     type: 'fill',
@@ -275,6 +464,7 @@ window.onload = () => {
                     }
                 });
 
+                this.layers.push('hecate-data-polygon-outlines');
                 this.map.addLayer({
                     id: 'hecate-data-polygon-outlines',
                     type: 'line',
@@ -292,6 +482,7 @@ window.onload = () => {
                     }
                 })
 
+                this.layers.push('hecate-data-lines');
                 this.map.addLayer({
                     id: 'hecate-data-lines',
                     type: 'line',
@@ -309,6 +500,7 @@ window.onload = () => {
                     }
                 });
 
+                this.layers.push('hecate-data-points');
                 this.map.addLayer({
                     id: 'hecate-data-points',
                     type: 'circle',
@@ -327,6 +519,5 @@ window.onload = () => {
     });
 
     window.vue.moment = moment;
-
 }
 

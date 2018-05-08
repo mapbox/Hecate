@@ -521,6 +521,18 @@ curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email
 
 ---
 
+#### `GET` `/api/user/session`
+
+Return a new session cookie and the `uid` given an Basic Authenticated request.
+
+*Example*
+
+```bash
+curl -X GET 'http://username:password@localhost:8000/api/user/session
+```
+
+---
+
 <h3 align='center'>Downloading via Boundaries</h3>
 
 #### `GET` `/api/data/bounds/`

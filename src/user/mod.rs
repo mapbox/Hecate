@@ -87,7 +87,7 @@ pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
                     AND password = crypt($2, password)
         ", &[ &username, &password ]) {
             Ok(res) => {
-                if res.len() == 0 { return None; }
+                if res.len() != 1 { return None; }
                 let uid: i64 = res.get(0).get(0);
 
                 Some(uid)

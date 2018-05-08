@@ -67,9 +67,7 @@
                             </table>
                         </div>
 
-                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
-                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
-                        </div>
+                        <foot/>
                     </div>
                     <div v-else-if="delta" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
                         <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
@@ -78,6 +76,7 @@
                             <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
                             <div class="px12 py3 txt-bold fl">Delta <span v-text="delta.id"></span></div>
                         </div>
+                        <div class="flex-child py12 px12 bg-gray-faint txt-s align-center"><span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span></div>
 
                         <div class="flex-child scroll-auto">
                             <div v-for="(feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
@@ -93,22 +92,14 @@
                             </div>
                         </div>
 
-                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
-                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
-                        </div>
+                        <foot/>
                     </div>
-                    <div v-else-if="bounds" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+                    <div v-else-if="panel == 'Bounds'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
                         <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Bounds'></heading>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-                            <div class='select-container'>
-                                <select v-model="panel" class='select select--s select--stroke'>
-                                    <option v-bind:value="{ panel: 'deltas' }">Deltas</option>
-                                    <option v-bind:value="{ panel: 'bounds' }" selected>Bounds</option>
-                                </select>
-                                <div class='select-arrow'></div>
-                            </div>
-                            <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
+                            <template><panel v-model="panel"/></template>
+                            <button @click="bounds_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
                         </div>
 
                         <div class="flex-child scroll-auto">
@@ -117,29 +108,58 @@
                             </div>
 
                             <div v-for="(bound, bound_it) in bounds" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                                <a v-bind:href="`/api/data/bounds/${bounds}`" target="_blank" class="w-full clearfix">
+                                <a v-bind:href="`/api/data/bounds/${bound}`" target="_blank" class="w-full clearfix">
                                     <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-database'/></span>
                                     <span class="fl" v-text="bound"></span>
                                 </a>
                             </div>
                         </div>
 
-                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
-                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
-                        </div>
+                        <foot/>
                     </div>
+                    <div v-else-if="panel == 'Styles'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+                        <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Styles'></heading>
 
+                        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
+                            <template><panel v-model="panel"/></template>
+                            <button @click="styles_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
+
+                            <template v-if="credentials.authed">
+                                <button @click="style_create" class='fr btn mx6 btn--s round align-center'>New</button>
+                            </template>
+                        </div>
+
+                        <div class="flex-child scroll-auto">
+                            <div v-if="!styles.length" class="px12 py3 clearfix bg-white">
+                                <div align="center">No Custom Styles</div>
+                            </div>
+
+                            <div v-for="(style, style_it) in pstyles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+                                <div @click="style_set_modal(style.id)" class="w-full clearfix">
+                                    <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-lock'/></span>
+                                    <div class="fl">
+                                        <span v-text="style.username"></span>/<span v-text="style.name"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-for="(style, style_it) in styles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+                                <div @click="style_set_modal(style.id)" class="w-full clearfix">
+                                    <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-paint'/></span>
+                                    <div class="fl">
+                                        <span v-text="style.username"></span>/<span v-text="style.name"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <foot/>
+                    </div>
                     <div v-else class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
                         <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
 
                         <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-                            <div class='select-container'>
-                                <select v-model="panel" class='select select--s select--stroke'>
-                                    <option v-bind:value="{ panel: 'deltas' }">Deltas</option>
-                                    <option v-bind:value="{ panel: 'bounds' }" selected>Bounds</option>
-                                </select>
-                                <div class='select-arrow'></div>
-                            </div>
+                            <template><panel v-model="panel"/></template>
                             <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
                         </div>
 
@@ -158,9 +178,7 @@
                             </div>
                         </div>
 
-                        <div class='px12 py12 bg-gray-faint round-b-ml txt-s flex-child'>
-                            <div align='center'><a href="https://github.com/ingalls/hecate">Powered By Hecate Server</a></div>
-                        </div>
+                        <foot/>
                     </div>
 
                 </div>
@@ -252,6 +270,76 @@
                         </div>
                     </div>
                 </div>
+                <div v-if='modal.type === "style_set"' class='absolute top left bottom right z2' style="pointer-events: none;">
+                    <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
+                        <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
+                            <div class='grid w-full'>
+                                <div class='col col--11'>
+                                    <template v-if="credentials.uid === modal.style_set.uid">
+                                        <input class='input my12' v-model="modal.style_set.name" placeholder="Style Name"/>
+                                    </template>
+                                    <template v-else>
+                                        <h3 class='fl py6 txt-m txt-bold fl'><span v-text='`${modal.style_set.username}/${modal.style_set.name}`'></span></h3>
+                                    </template>
+                                </div>
+
+                                <div class='col col--1'>
+                                    <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                                </div>
+
+                                <div class='col col--12'>
+                                    <textarea :readonly="credentials.uid !== modal.style_set.uid" class='textarea w-full h360' v-model="modal.style_set.style" placeholder="Style JSON"></textarea>
+                                </div>
+
+                                <div class='col col--12'>
+                                    <div class='grid grid--gut12'>
+                                        <div class='col col--8 py12'>
+                                            <template v-if="credentials.authed && credentials.uid !== modal.style_set.uid">
+                                                <button @click='style_create(modal.style_set.style, modal.style_set.name)' class='btn round btn--stroke w-full'>Clone &amp; Edit</button>
+                                            </template>
+                                        </div>
+
+                                        <div class='col col--4 py12'>
+                                            <template v-if="credentials.uid === modal.style_set.uid">
+                                                <button @click='style_update(modal.style_set.id, modal.style_set.name, JSON.parse(modal.style_set.style))' class='btn round btn--stroke w-full'>Save &amp; Apply Style</button>
+                                            </template>
+                                            <template v-else>
+                                                <button @click='style_set(modal.style_set.id, JSON.parse(modal.style_set.style))' class='btn round btn--stroke w-full'>Apply Style</button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-if='modal.type === "ok"' class='absolute top left bottom right z2 bg-black' style="pointer-events: none;">
+                    <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
+                        <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
+                            <div class='grid w-full'>
+                                <div class='col col--8'>
+                                    <h3 class='fl py6 txt-m txt-bold w-full' v-text='modal.ok.header'></h3>
+                                </div>
+                                <div class='col col--4'>
+                                    <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                                </div>
+
+                                <div class='col col--12 py24' v-text='modal.ok.body'></div>
+
+                                <div class='col col--12'>
+                                    <div class='grid grid--gut12'>
+                                        <div class='col col--6 py12'></div>
+
+                                        <div class='col col--6 py12'>
+                                            <button @click='modal.type = false' class='btn round w-full'>OK</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
                 <div v-if='modal.type === "ok"' class='absolute top left bottom right z2 bg-black' style="pointer-events: none;">
                     <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
                         <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">

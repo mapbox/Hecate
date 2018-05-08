@@ -61,7 +61,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "true");
+            assert_eq!(resp.text().unwrap(), "1");
             assert!(resp.status().is_success());
         }
 
@@ -77,7 +77,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Awesome Style","style":"I am a style"}"#);
+            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Awesome Style","style":"I am a style","uid":1,"username":"ingalls"}"#);
             assert!(resp.status().is_success());
         }
 
@@ -112,7 +112,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","style":"I am a style"}"#);
+            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","style":"I am a style","uid":1,"username":"ingalls"}"#);
             assert!(resp.status().is_success());
         }
 
@@ -138,7 +138,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","style":"I am a modified style"}"#);
+            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","style":"I am a modified style","uid":1,"username":"ingalls"}"#);
             assert!(resp.status().is_success());
         }
 
@@ -183,7 +183,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "true");
+            assert_eq!(resp.text().unwrap(), "2");
             assert!(resp.status().is_success());
         }
 
@@ -199,7 +199,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "true");
+            assert_eq!(resp.text().unwrap(), "3");
             assert!(resp.status().is_success());
         }
 
@@ -225,19 +225,19 @@ mod test {
             let mut resp = client.get("http://localhost:8000/api/style/2")
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"id":2,"name":"Style 1","style":"I am a style"}"#);
+            assert_eq!(resp.text().unwrap(), r#"{"id":2,"name":"Style 1","style":"I am a style","uid":1,"username":"ingalls"}"#);
             assert!(resp.status().is_success());
         }
 
         { //Get List of Public Styles - Style 1 should now appear, since it is now public
             let mut resp = reqwest::get("http://localhost:8000/api/styles").unwrap();
-            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1}]"#);
+            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1,"username":"ingalls"}]"#);
             assert!(resp.status().is_success());
         }
 
         { //Get User List of Public Styles - Style 1 should now appear, since it is now public
             let mut resp = reqwest::get("http://localhost:8000/api/styles/1").unwrap();
-            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1}]"#);
+            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1,"username":"ingalls"}]"#);
             assert!(resp.status().is_success());
         }
 
@@ -247,7 +247,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1},{"id":3,"name":"Style 2","public":false,"uid":1}]"#);
+            assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1,"username":"ingalls"},{"id":3,"name":"Style 2","public":false,"uid":1,"username":"ingalls"}]"#);
             assert!(resp.status().is_success());
         }
 
