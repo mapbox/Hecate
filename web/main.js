@@ -246,7 +246,9 @@ window.onload = () => {
                 }
             },
             style_get: function(style_id, cb) {
-                fetch(`http://${window.location.host}/api/style/${style_id}`).then((response) => {
+                fetch(`http://${window.location.host}/api/style/${style_id}`, {
+                    credentials: 'same-origin'
+                }).then((response) => {
                       return response.json();
                 }).then((body) => {
                     return cb(null, body);
@@ -277,6 +279,7 @@ window.onload = () => {
                         })
                     }).then((response) => {
                         if (response.status === 200) {
+                            this.refresh();
                             this.style_set(style_id, style);
                         } else {
                             return this.ok('Failed to push style', 'Failed to update style');
@@ -297,6 +300,7 @@ window.onload = () => {
                         })
                     }).then((response) => {
                         if (response.status === 200) {
+                            this.refresh();
                             this.style_set(style_id, style);
                         } else {
                             return this.ok('Failed to push style', 'Failed to update style');
