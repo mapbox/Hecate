@@ -1,7 +1,6 @@
 extern crate hecate;
 #[macro_use] extern crate clap;
 extern crate serde_json;
-extern crate tempdir;
 
 use std::path::Path;
 use std::fs::File;

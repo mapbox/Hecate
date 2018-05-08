@@ -1,6 +1,6 @@
 extern crate geojson;
-extern crate quick_xml;
 extern crate serde_json;
+extern crate quick_xml;
 
 mod node;
 mod way;
@@ -16,8 +16,8 @@ use xml::tree::OSMTree;
 use std::string;
 use std::num;
 use std::io::Cursor;
-use self::quick_xml::writer::Writer;
 use self::quick_xml::events as XMLEvents;
+use self::quick_xml::{Reader, Writer};
 use std::collections::HashMap;
 
 #[derive(PartialEq)]
@@ -72,8 +72,8 @@ impl From<string::FromUtf8Error> for XMLError {
     }
 }
 
-impl From<quick_xml::errors::Error> for XMLError {
-    fn from(_error: quick_xml::errors::Error) -> XMLError {
+impl From<quick_xml::Error> for XMLError {
+    fn from(_error: quick_xml::Error) -> XMLError {
         XMLError::InvalidXML
     }
 }
@@ -210,7 +210,7 @@ pub fn to_delta_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<
 }
 
 pub fn to_delta(body: &String) -> Result<HashMap<String, Option<String>>, XMLError> {
-    let mut reader = quick_xml::reader::Reader::from_str(body);
+    let mut reader = Reader::from_str(body);
     let mut buf = Vec::new();
 
     let mut map = HashMap::new();
@@ -283,7 +283,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
     let mut current_value = Value::None;
     let mut current_action = Action::None;
 
-    let mut reader = quick_xml::reader::Reader::from_str(body);
+    let mut reader = Reader::from_str(body);
     let mut buf = Vec::new();
 
     loop {
