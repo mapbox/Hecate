@@ -8,7 +8,13 @@
 - :arrow_up: when upgrading dependencies
 - :tada: when adding new features
 
-## Version History
+# Version History
+
+## v0.16.0
+
+- :tada: Add Styles UI
+- :rocket: Return Style ID on create
+- :rocket: Return `uid` on session token
 
 ## v0.15.0
 
