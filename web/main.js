@@ -90,7 +90,6 @@ window.onload = () => {
         },
         created: function() {
             this.deltas_refresh();
-            this.logout();
         },
         watch: {
             panel: function() {
@@ -159,7 +158,7 @@ window.onload = () => {
             },
             logout: function() {
                 this.credentials.authed = false;
-                document.cookie = 'session=; Max-Age=0'
+                document.cookie = 'session=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'
                 this.refresh();
             },
             refresh: function() {
@@ -181,6 +180,7 @@ window.onload = () => {
                     if (response.status === 200) {
                         response.json().then((response) => {
                             this.modal.type = false;
+
                             this.credentials.authed = true;
                             this.credentials.username = this.modal.login.username;
                             this.credentials.uid = parseInt(response);
