@@ -171,7 +171,7 @@ window.onload = () => {
                     method: 'GET',
                     credentials: 'same-origin',
                     headers: new Headers({
-                        'Authorization': 'Basic '+ btoa(`${window.vue.modal.login.username}:${window.vue.modal.login.password}`)
+                        'Authorization': 'Basic '+ btoa(`${this.modal.login.username}:${this.modal.login.password}`)
                     })
                 }).then((response) => {
                     if (response.status === 200) {
