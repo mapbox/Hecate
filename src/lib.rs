@@ -1,6 +1,8 @@
 #![feature(plugin, custom_derive, custom_attribute, attr_literals)]
 #![plugin(rocket_codegen)]
 
+static VERSION: &'static str = "0.18.0";
+
 #[macro_use] extern crate serde_json;
 extern crate r2d2;
 extern crate r2d2_postgres;
@@ -52,6 +54,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             staticsrv
         ])
         .mount("/api", routes![
+            meta,
             get_schema,
             mvt_get,
             mvt_meta,
@@ -118,6 +121,13 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
 
 #[get("/")]
 fn index() -> &'static str { "Hello World!" }
+
+#[get("/")]
+fn meta() -> Json {
+    Json(json!({
+        "version": VERSION
+    }))
+}
 
 #[get("/<file..>")]
 fn staticsrv(file: PathBuf) -> Option<NamedFile> {
