@@ -85,17 +85,15 @@ has a selection of scripts to populate the database with test data.
 
 ## Docker File (Coverage Tests)
 
-The Docker file is designed to give the user a testing environment to get rust tests to generate code coverage information
+The Docker file is designed to give the user a testing environment to easily run rust tests.
 
 Install docker and then run
 
 ```
 docker build .
 
-docker run  --security-opt seccomp=unconfined {{HASH FROM ABOVE}}
+docker run {{HASH FROM ABOVE}}
 ```
-
-The --security-opt flag is required to be able to run and view `kcov` output.
 
 ## Feature Format
 

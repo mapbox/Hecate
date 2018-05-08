@@ -39,16 +39,7 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-RUN git clone http://github.com/SimonKagstrom/kcov.git && \
-    cd kcov && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make && \
-    make install
-
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly-2018-01-13 \
-    && ~/.cargo/bin/cargo install cargo-kcov
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly-2018-05-05
 
 RUN echo "local all all trust " > /etc/postgresql/9.6/main/pg_hba.conf \
     && echo "host all all 127.0.0.1/32 trust" >> /etc/postgresql/9.6/main/pg_hba.conf \
