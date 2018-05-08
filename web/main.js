@@ -174,7 +174,6 @@ window.onload = () => {
             login: function() {
                 fetch(`http://${window.location.host}/api/user/session`, {
                     method: 'GET',
-                    credentials: 'same-origin',
                     headers: new Headers({
                         'Authorization': 'Basic '+ btoa(`${this.modal.login.username}:${this.modal.login.password}`)
                     })
