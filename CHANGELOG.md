@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.18.0
+
+- :arrow_up: `rust@nightly-2018-05-05`
+- :arrow_up: Update all deps to latest versions
+
 ## v0.17.0
 
 - :tada: Add `GET /api/tiles/<z>/<x>/<y>/meta` endpoint & assoc. tests
