@@ -21,22 +21,20 @@ impl StyleError {
 /// Creates a new GL JS Style under a given user account
 ///
 /// By default styles are private and can only be accessed by a single user
-pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, style: &String) -> Result<bool, StyleError> {
-    match conn.execute("
-        INSERT into styles (name, style, uid, public)
+pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, style: &String) -> Result<i64, StyleError> {
+    match conn.query("
+        INSERT INTO styles (name, style, uid, public)
             VALUES (
                 COALESCE($1::TEXT::JSON->>'name', 'New Style')::TEXT,
                 COALESCE($1::TEXT::JSON->'style', '{}'::JSON),
                 $2,
                 false
-            );
+            )
+            RETURNING id;
     ", &[&style, &uid]) {
-        Ok(updated) => {
-            if updated == 0 {
-                Err(StyleError::NotFound)
-            } else {
-                Ok(true)
-            }
+        Ok(rows) => {
+            let id = rows.get(0).get(0);
+            Ok(id)
         },
         Err(err) => {
             match err.as_db() {
@@ -56,16 +54,20 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
         FROM (
             SELECT
                 styles.id AS id,
+                styles.uid AS uid,
                 styles.name AS name,
-                styles.style AS style
+                styles.style AS style,
+                users.username AS username
             FROM
-                styles
+                styles,
+                users
             WHERE
-                id = $1
+                styles.id = $1
                 AND (
-                    public IS true
-                    OR uid = $2
+                    styles.public IS true
+                    OR styles.uid = $2
                 )
+                AND users.id = styles.uid
         ) t
     ", &[&style_id, &uid]) {
         Ok(rows) => {
@@ -169,15 +171,18 @@ pub fn list_user(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
             COALESCE(JSON_Agg(row_to_json(t)), '[]'::JSON)
         FROM (
             SELECT
-                id,
-                name,
-                public,
-                uid
+                styles.id,
+                styles.name,
+                styles.public,
+                styles.uid,
+                users.username
             FROM
-                styles
+                styles,
+                users
             WHERE
                 uid = $1
-            ORDER BY id
+                AND users.id = uid
+            ORDER BY styles.id
         ) t;
     ", &[&uid]) {
         Ok(rows) => {
@@ -204,16 +209,19 @@ pub fn list_user_public(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresCon
             COALESCE(JSON_Agg(row_to_json(t)), '[]'::JSON)
         FROM (
             SELECT
-                id,
-                name,
-                public,
-                uid
+                styles.id,
+                styles.name,
+                styles.public,
+                styles.uid,
+                users.username
             FROM
-                styles
+                styles,
+                users
             WHERE
                 uid = $1
                 AND public IS TRUE
-            ORDER BY id
+                AND uid = users.id
+            ORDER BY styles.id
         ) t;
     ", &[&uid]) {
         Ok(rows) => {
@@ -239,15 +247,18 @@ pub fn list_public(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnecti
             COALESCE(JSON_Agg(row_to_json(t)), '[]'::JSON)
         FROM (
             SELECT
-                id,
-                name,
-                public,
-                uid
+                styles.id,
+                styles.name,
+                styles.public,
+                styles.uid,
+                users.username
             FROM
-                styles
+                styles,
+                users
             WHERE
                 public IS true
-            ORDER BY id
+                AND uid = users.id
+            ORDER BY styles.id
         ) t;
     ", &[]) {
         Ok(rows) => {

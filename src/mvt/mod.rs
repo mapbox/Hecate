@@ -127,7 +127,7 @@ pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
 }
 
 pub fn meta(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<serde_json::Value, MVTError> {
-    let rows = match conn.query("
+    match conn.query("
         SELECT
             COALESCE(row_to_json(t), '{}'::JSON)
         FROM (
@@ -137,10 +137,15 @@ pub fn meta(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
                 tiles
             WHERE
                 ref = $1
-        ) t
-    ", &[&coord]) {
+        ) t;
+    ", &[&format!("{}/{}/{}", &z, &x, &y)]) {
         Ok(rows) => {
-
+            if rows.len() != 1 {
+                return Err(MVTError::NotFound);
+            } else {
+                let meta: serde_json::Value = rows.get(0).get(0);
+                return Ok(meta);
+            }
         },
         Err(err) => match err.as_db() {
             Some(_e) => { return Err(MVTError::DB); },
@@ -149,11 +154,13 @@ pub fn meta(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     };
 }
 
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<proto::Tile, MVTError> {
-    match db_get(&conn, format!("{}/{}/{}", &z, &x, &y))? {
-        Some(tile) => { return Ok(tile); }
-        _ => ()
-    };
+pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32, regen: bool) -> Result<proto::Tile, MVTError> {
+    if regen == false {
+        match db_get(&conn, format!("{}/{}/{}", &z, &x, &y))? {
+            Some(tile) => { return Ok(tile); }
+            _ => ()
+        };
+    }
 
     let tile = db_create(&conn, &z, &x, &y)?;
 

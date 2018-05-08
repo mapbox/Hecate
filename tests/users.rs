@@ -138,7 +138,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_success());
-            assert_eq!(resp.text().unwrap(), "true");
+            assert_eq!(resp.text().unwrap(), "1");
             //TODO test for cookie existence - reqwest is currently working on adding better cookie
             //support
         }

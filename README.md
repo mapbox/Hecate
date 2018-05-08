@@ -78,6 +78,11 @@ cargo run
 curl 'localhost:8000
 ```
 
+You will now have an empty database which can be populated with your own data/user accounts.
+
+If you want to populate the database with sample data for testing, [ingalls/hecate-example](https://github.com/ingalls/hecate-example)
+has a selection of scripts to populate the database with test data.
+
 ## Docker File (Coverage Tests)
 
 The Docker file is designed to give the user a testing environment to get rust tests to generate code coverage information
@@ -468,7 +473,28 @@ Request a vector tile for a given set of coordinates. A [Mapbox Vector Tile](htt
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email=ingalls@protonmail.com
+curl -X GET 'http://localhost:8000/api/tiles/1/1/1
+```
+
+---
+
+#### `GET` `/api/tiles/<z>/<x>/<y>/regen`
+
+Allows an authenticated user to request a new tile for the given tile coordinates,
+ensuring the tile isn't returned from the tile cache.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<z>` | `REQUIRED` Desired zoom level for tile
+| `<x>` | `REQUIRED` Desired x coordinate for tile
+| `<y>` | `REQUIRED` Desired y coordinate for tle
+
+*Example*
+
+```bash
+curl -X GET 'http://username:password@localhost:8000/api/tiles/1/1/1/regen
 ```
 
 ---
@@ -491,6 +517,18 @@ Create a new user, provied the username & email are not already taken
 
 ```bash
 curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email=ingalls@protonmail.com
+```
+
+---
+
+#### `GET` `/api/user/session`
+
+Return a new session cookie and the `uid` given an Basic Authenticated request.
+
+*Example*
+
+```bash
+curl -X GET 'http://username:password@localhost:8000/api/user/session
 ```
 
 ---
