@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.17.0
+
+- :tada: Add `GET /api/tiles/<z>/<x>/<y>/meta` endpoint & assoc. tests
+
 ## v0.16.0
 
 - :tada: Add Styles UI
