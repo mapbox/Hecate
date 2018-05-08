@@ -19,6 +19,7 @@
     - [JSON Validation](#json-validation)
 6. [API](#api)
     - [User Options](#user-options)
+    - [Meta](#meta)
     - [Admin Interface](#admin-interface)
     - [Schema](#schema)
     - [Styles](#styles)
@@ -257,7 +258,7 @@ Note hecate currently supports the JSON Schema draft-04. Once draft-06/07 suppor
 
 ## API
 
-### Index
+<h3 align='center'>Index</h3>
 
 #### `GET` `/`
 
@@ -274,6 +275,20 @@ curl -X GET 'http://localhost:8000/
 <h3 align='center'>Admin Interface</h3>
 
 View the Admin Interface in your browser by pointing to `127.0.0.1:8000/admin/index.html`
+
+---
+
+<h3 align='center'>Meta</h3>
+
+#### `GET` `/api`
+
+Return a JSON object containing metadata about the server
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api'
+```
 
 ---
 
