@@ -5,9 +5,16 @@ jobs:
         machine: true
         steps:
             - checkout
+            - restore_cache:
+                key: project-cache
             - run:
                 name: "Build Docker Image"
                 command: "docker build -t ingalls/hecate:$CIRCLE_BRANCH ."
             - run: 
                 name: "Tests"
                 command: "docker run --name hecate ingalls/hecate:$CIRCLE_BRANCH"
+            - save_cache:
+                key: project-cache
+                paths:
+                    - "~/.cargo"
+                    - "./target"
