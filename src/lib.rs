@@ -1,6 +1,5 @@
 #![feature(plugin, custom_derive, custom_attribute, attr_literals)]
 #![plugin(rocket_codegen)]
-#![feature(underscore_lifetimes)]
 
 #[macro_use] extern crate serde_json;
 extern crate r2d2;
