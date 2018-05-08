@@ -160,6 +160,7 @@ window.onload = () => {
             logout: function() {
                 this.credentials.authed = false;
                 document.cookie = 'session=; Max-Age=0'
+                this.refresh();
             },
             refresh: function() {
                 if (this.panel === 'Bounds') {
