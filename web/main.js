@@ -16,6 +16,7 @@ window.onload = () => {
             delta: false, //Store the currently selected delta - overrides panel view
             deltas: [], //Store a list of the most recent deltas
             bounds: [], //Store a list of all bounds
+            pstyles: [], //If the user is authenticated, store a list of their private styles
             styles: [], //Store a list of public styles
             layers: [], //Store list of GL layer names so they can be easily removed
             style: false, //Store the id of the current style - false for generic style
@@ -93,13 +94,7 @@ window.onload = () => {
         },
         watch: {
             panel: function() {
-                if (this.panel === 'Bounds') {
-                    this.bounds_refresh();
-                } else if (this.panel === 'Styles') {
-                    this.styles_refresh();
-                } else if (this.panel === 'Deltas') {
-                    this.deltas_refresh();
-                }
+                this.refresh();
             },
             delta: function() {
                 //Reset Normal Map
@@ -166,6 +161,15 @@ window.onload = () => {
                 this.credentials.authed = false;
                 document.cookie = 'session=; Max-Age=0'
             },
+            refresh: function() {
+                if (this.panel === 'Bounds') {
+                    this.bounds_refresh();
+                } else if (this.panel === 'Styles') {
+                    this.styles_refresh();
+                } else if (this.panel === 'Deltas') {
+                    this.deltas_refresh();
+                }
+            },
             login: function() {
                 fetch(`http://${window.location.host}/api/user/session`, {
                     method: 'GET',
@@ -184,13 +188,16 @@ window.onload = () => {
                                 username: '',
                                 password: ''
                             };
+
+                            this.refresh(); //Refresh the current panel as loggin in may reveal private data/styles
                         });
                     } else {
                         return this.ok('Failed to Login', 'Failed to login with given credentials');
                     }
                 });
 
-            }, login_show: function() {
+            },
+            login_show: function() {
                 if (!this.credentials.authed) this.modal.type = 'login';
             },
             register: function() {
@@ -222,6 +229,21 @@ window.onload = () => {
                 }).then((body) => {
                     this.styles = body;
                 });
+
+                if (this.credentials.authed) {
+                    fetch(`http://${window.location.host}/api/styles/${this.credentials.uid}`, {
+                        credentials: 'same-origin'
+                    }).then((response) => {
+                          return response.json();
+                    }).then((body) => {
+                        this.pstyles = body.filter((style) => {
+                            if (style.public) return false;
+                            return true;
+                        });
+                    });
+                } else {
+                    this.pstyles = [];
+                }
             },
             style_get: function(style_id, cb) {
                 fetch(`http://${window.location.host}/api/style/${style_id}`).then((response) => {
