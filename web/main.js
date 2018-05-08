@@ -194,6 +194,8 @@ window.onload = () => {
                     } else {
                         return this.ok('Failed to Login', 'Failed to login with given credentials');
                     }
+                }).catch((err) => {
+                    return this.ok('Failed to Login', 'Failed to login with given credentials');
                 });
 
             },
@@ -256,12 +258,12 @@ window.onload = () => {
                     return cb(err);
                 });
             },
-            style_create:  function() {
-                this.modal.style_set.style = '';
+            style_create:  function(style, name) {
+                this.modal.style_set.style = style ? style : '';
                 this.modal.style_set.id = false;
                 this.modal.style_set.username = this.credentials.username;
                 this.modal.style_set.uid = this.credentials.uid;
-                this.modal.style_set.name = '';
+                this.modal.style_set.name = name ? `Copy of ${name}` : '';
 
                 this.modal.type = 'style_set';
             },

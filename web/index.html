@@ -293,7 +293,11 @@
 
                                 <div class='col col--12'>
                                     <div class='grid grid--gut12'>
-                                        <div class='col col--8 py12'></div>
+                                        <div class='col col--8 py12'>
+                                            <template v-if="credentials.authed && credentials.uid !== modal.style_set.uid">
+                                                <button @click='style_create(modal.style_set.style, modal.style_set.name)' class='btn round btn--stroke w-full'>Clone &amp; Edit</button>
+                                            </template>
+                                        </div>
 
                                         <div class='col col--4 py12'>
                                             <template v-if="credentials.uid === modal.style_set.uid">
