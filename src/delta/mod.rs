@@ -29,7 +29,7 @@ impl DeltaError {
 }
 
 ///Get the history of a particular feature
-pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: i64) -> Result<serde_json::Value, DeltaError> {
+pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: &i64) -> Result<serde_json::Value, DeltaError> {
     match conn.query("
         SELECT json_agg(row_to_json(t))
         FROM (

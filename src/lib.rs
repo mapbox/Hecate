@@ -76,6 +76,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
             feature_action,
             features_action,
             feature_get,
+            feature_get_history,
             features_get,
             bounds_list,
             bounds_get,
@@ -900,6 +901,14 @@ fn feature_action(auth: user::Auth, conn: DbConn, schema: State<Option<serde_jso
 fn feature_get(conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
     match feature::get(&conn.0, &id) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[get("/data/feature/<id>/history")]
+fn feature_get_history(conn: DbConn, id: i64) -> Result<Json, status::Custom<String>> {
+    match delta::history(&conn.0, &id) {
+        Ok(features) => Ok(Json(features)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
