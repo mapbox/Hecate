@@ -77,7 +77,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Awesome Style","style":"I am a style","uid":1,"username":"ingalls"}"#);
+            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Awesome Style","public":false,"style":"I am a style","uid":1,"username":"ingalls"}"#);
             assert!(resp.status().is_success());
         }
 
@@ -112,7 +112,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","style":"I am a style","uid":1,"username":"ingalls"}"#);
+            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","public":false,"style":"I am a style","uid":1,"username":"ingalls"}"#);
             assert!(resp.status().is_success());
         }
 
@@ -138,7 +138,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","style":"I am a modified style","uid":1,"username":"ingalls"}"#);
+            assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","public":false,"style":"I am a modified style","uid":1,"username":"ingalls"}"#);
             assert!(resp.status().is_success());
         }
 
@@ -225,7 +225,7 @@ mod test {
             let mut resp = client.get("http://localhost:8000/api/style/2")
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), r#"{"id":2,"name":"Style 1","style":"I am a style","uid":1,"username":"ingalls"}"#);
+            assert_eq!(resp.text().unwrap(), r#"{"id":2,"name":"Style 1","public":true,"style":"I am a style","uid":1,"username":"ingalls"}"#);
             assert!(resp.status().is_success());
         }
 
