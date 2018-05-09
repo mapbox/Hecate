@@ -734,7 +734,7 @@ fn xml_changeset_upload(auth: user::Auth, conn: DbConn, schema: State<Option<ser
                 return Ok(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
             },
             Ok(feat_res) => {
-                if feat_res.old == None {
+                if feat_res.old.unwrap_or(0) < 0 {
                     feat.id = Some(json!(feat_res.new));
                 }
 
