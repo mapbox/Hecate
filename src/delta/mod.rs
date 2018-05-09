@@ -1,7 +1,7 @@
 extern crate geojson;
 extern crate serde_json;
 extern crate r2d2;
-extern crate  r2d2_postgres;
+extern crate r2d2_postgres;
 extern crate rocket_contrib;
 
 use self::rocket_contrib::Json as Json;
@@ -32,7 +32,7 @@ impl DeltaError {
 }
 
 ///Get the history of a particular feature
-pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: i64) -> Result<i64, DeltaError> {
+pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: i64) -> Result<Json, DeltaError> {
     match conn.query("
         SELECT json_agg(row_to_json(t))
         FROM (
@@ -53,7 +53,13 @@ pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMa
         WHERE
             (feat->>'id')::BIGINT = $1;
     ", &[&feat_id]) {
-        Ok(res) => { Ok(res.get(0).get(0)) },
+        Ok(res) => {
+            if res.len() == 0 { return Err(DeltaError::GetFail) }
+
+            let history: serde_json::Value = res.get(0).get(0);
+
+            Ok(Json(history))
+        },
         Err(err) => {
             match err.as_db() {
                 Some(_e) => { Err(DeltaError::GetFail) },
