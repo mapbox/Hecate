@@ -31,6 +31,38 @@ impl DeltaError {
     }
 }
 
+///Get the history of a particular feature
+pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: i64) -> Result<i64, DeltaError> {
+    match conn.query("
+        SELECT json_agg(row_to_json(t))
+        FROM (
+            SELECT
+                deltas.id,
+                deltas.created,
+                deltas.uid,
+                JSON_Array_Elements((deltas.features -> 'features')::JSON) AS feat,
+                users.username
+            FROM
+                deltas,
+                users
+            WHERE
+                affected @> ARRAY[$1]::BIGINT[]
+                AND users.id = deltas.uid
+            ORDER BY id DESC
+        ) t
+        WHERE
+            (feat->>'id')::BIGINT = $1;
+    ", &[&feat_id]) {
+        Ok(res) => { Ok(res.get(0).get(0)) },
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => { Err(DeltaError::GetFail) },
+                _ => Err(DeltaError::GetFail)
+            }
+        }
+    }
+}
+
 pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, DeltaError> {
     match trans.query("
         INSERT INTO deltas (id, created, props, uid) VALUES (
