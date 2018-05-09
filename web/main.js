@@ -308,7 +308,6 @@ window.onload = () => {
                         if (response.status !== 200) return this.ok('Failed to push style', 'Failed to update style');
 
                         if (this.credentials.authed && this.modal.style_set.id) {
-                            console.error('ACCESS');
                             fetch(`http://${window.location.host}/api/style/${style_id}/${this.modal.style_set.public ? 'public' : 'private'}`, {
                                 method: 'POST',
                                 credentials: 'same-origin'
