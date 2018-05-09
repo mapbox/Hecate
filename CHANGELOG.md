@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.20.2
+
+- :rocket: Add ability to toggle style access `public/private` via web UI
+
 ## v0.20.1
 
 - :bug: Fix negative feature ids entering deltas from xml_shim
