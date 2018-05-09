@@ -1,10 +1,7 @@
 extern crate geojson;
 extern crate serde_json;
 extern crate r2d2;
-extern crate  r2d2_postgres;
-extern crate rocket_contrib;
-
-use self::rocket_contrib::Json as Json;
+extern crate r2d2_postgres;
 use postgres;
 
 use std::collections::HashMap;
@@ -27,6 +24,42 @@ impl DeltaError {
             DeltaError::GetFail => { String::from("Delta Get Failed") },
             DeltaError::FinalizeFail => { String::from("Finalization Failure") },
             DeltaError::NotFound => { String::from("Delta not found") }
+        }
+    }
+}
+
+///Get the history of a particular feature
+pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: &i64) -> Result<serde_json::Value, DeltaError> {
+    match conn.query("
+        SELECT json_agg(row_to_json(t))
+        FROM (
+            SELECT
+                deltas.id,
+                deltas.uid,
+                JSON_Array_Elements((deltas.features -> 'features')::JSON) AS feat,
+                users.username
+            FROM
+                deltas,
+                users
+            WHERE
+                affected @> ARRAY[$1]::BIGINT[]
+                AND users.id = deltas.uid
+            ORDER BY id DESC
+        ) t
+        WHERE
+            (feat->>'id')::BIGINT = $1;
+    ", &[&feat_id]) {
+        Ok(res) => {
+            if res.len() == 0 { return Err(DeltaError::GetFail) }
+
+            let history: serde_json::Value = res.get(0).get(0);
+            Ok(history)
+        },
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => { Err(DeltaError::GetFail) },
+                _ => Err(DeltaError::GetFail)
+            }
         }
     }
 }
@@ -74,7 +107,7 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
     }
 }
 
-pub fn list_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, offset: Option<i64>) -> Result<Json, DeltaError> {
+pub fn list_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, offset: Option<i64>) -> Result<serde_json::Value, DeltaError> {
     let offset = match offset {
         None => 0,
         Some(offset) => offset
@@ -110,12 +143,12 @@ pub fn list_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
         },
         Ok(res) => {
             let d_json: serde_json::Value = res.get(0).get(0);
-            Ok(Json(d_json))
+            Ok(d_json)
         }
     }
 }
 
-pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<Json, DeltaError> {
+pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<serde_json::Value, DeltaError> {
     match conn.query("
         SELECT COALESCE(row_to_json(d), 'false'::JSON)
         FROM (
@@ -144,7 +177,7 @@ pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
         },
         Ok(res) => {
             let d_json: serde_json::Value = res.get(0).get(0);
-            Ok(Json(d_json))
+            Ok(d_json)
         }
     }
 }

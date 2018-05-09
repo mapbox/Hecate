@@ -71,6 +71,7 @@ CREATE TABLE deltas (
     finalized   BOOLEAN DEFAULT FALSE
 );
 CREATE INDEX deltas_idx ON deltas(id);
+CREATE INDEX deltas_affeted_idx on deltas USING GIN (affected);
 
 -- delete_geo( id, version )
 CREATE OR REPLACE FUNCTION delete_geo(BIGINT, BIGINT)

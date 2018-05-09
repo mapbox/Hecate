@@ -618,6 +618,24 @@ curl -X GET 'http://localhost:8000/api/data/features/1542
 
 ---
 
+#### `GET` `/api/data/feature/<id>/history`
+
+Return an array containing the full feature history for the provided feature id.
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `<id>` | `REQUIRED` Numeric ID of a given feature to download |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/features/1542/history
+```
+
+---
+
 <h3 align='center'>Downloading Multiple Features via BBOX</h3>
 
 #### `GET` `/api/data/features`
