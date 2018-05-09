@@ -31,6 +31,7 @@ pub enum Action {
     Delete
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Response {
     pub old: Option<i64>,
     pub new: Option<i64>,
