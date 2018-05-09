@@ -297,6 +297,13 @@
                                             <template v-if="credentials.authed && credentials.uid !== modal.style_set.uid">
                                                 <button @click='style_create(modal.style_set.style, modal.style_set.name)' class='btn round btn--stroke w-full'>Clone &amp; Edit</button>
                                             </template>
+                                            <template v-else-if="credentials.authed && modal.style_set.id">
+                                                <label class='switch-container my6'>
+                                                      <input type='checkbox' v-model="modal.style_set.public"/>
+                                                       <div class='switch mr6'></div>
+                                                       Public Style
+                                                </label>
+                                            </template>
                                         </div>
 
                                         <div class='col col--4 py12'>

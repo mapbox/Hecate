@@ -57,7 +57,8 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
                 styles.uid AS uid,
                 styles.name AS name,
                 styles.style AS style,
-                users.username AS username
+                users.username AS username,
+                styles.public AS public
             FROM
                 styles,
                 users

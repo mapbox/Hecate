@@ -34,6 +34,7 @@ window.onload = () => {
                     style: '',
                     username: '',
                     uid: false,
+                    public: false,
                     name: ''
                 },
                 login: {
@@ -266,6 +267,7 @@ window.onload = () => {
                 this.modal.style_set.username = this.credentials.username;
                 this.modal.style_set.uid = this.credentials.uid;
                 this.modal.style_set.name = name ? `Copy of ${name}` : '';
+                this.modal.style_set.public = false;
 
                 this.modal.type = 'style_set';
             },
@@ -346,6 +348,7 @@ window.onload = () => {
                     this.modal.style_set.username = style.username;
                     this.modal.style_set.uid = style.uid;
                     this.modal.style_set.name = style.name;
+                    this.modal.style_set.public = style.public;
 
                     this.modal.type = 'style_set';
                 });
