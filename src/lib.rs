@@ -376,7 +376,7 @@ fn style_list_user(conn: DbConn, auth: user::Auth, user: i64) -> Result<Json, st
 #[get("/deltas")]
 fn delta_list(conn: DbConn) ->  Result<Json, status::Custom<String>> {
     match delta::list_json(&conn.0, None) {
-        Ok(deltas) => Ok(deltas),
+        Ok(deltas) => Ok(Json(deltas)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
     }
 }
@@ -384,7 +384,7 @@ fn delta_list(conn: DbConn) ->  Result<Json, status::Custom<String>> {
 #[get("/deltas?<opts>")]
 fn delta_list_offset(conn: DbConn, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
     match delta::list_json(&conn.0, Some(opts.offset)) {
-        Ok(deltas) => Ok(deltas),
+        Ok(deltas) => Ok(Json(deltas)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
     }
 }
@@ -392,7 +392,7 @@ fn delta_list_offset(conn: DbConn, opts: DeltaList) ->  Result<Json, status::Cus
 #[get("/delta/<id>")]
 fn delta(conn: DbConn, id: i64) ->  Result<Json, status::Custom<String>> {
     match delta::get_json(&conn.0, &id) {
-        Ok(delta) => Ok(delta),
+        Ok(delta) => Ok(Json(delta)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
     }
 }
