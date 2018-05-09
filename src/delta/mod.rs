@@ -35,7 +35,6 @@ pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMa
         FROM (
             SELECT
                 deltas.id,
-                deltas.created,
                 deltas.uid,
                 JSON_Array_Elements((deltas.features -> 'features')::JSON) AS feat,
                 users.username
