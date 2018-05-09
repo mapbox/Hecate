@@ -864,7 +864,11 @@ fn feature_action(auth: user::Auth, conn: DbConn, schema: State<Option<serde_jso
     };
 
     match feature::action(&trans, schema.inner(), &feat, &None) {
-        Ok(res) => { feat.id = Some(json!(res.new)) },
+        Ok(res) => {
+            if res.new != None {
+                feat.id = Some(json!(res.new))
+            }
+        },
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
