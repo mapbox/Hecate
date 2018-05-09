@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.19.0
+
+- :tada: Add feature history API endpoint
+
 ## v0.18.0
 
 - :arrow_up: `rust@nightly-2018-05-05`
