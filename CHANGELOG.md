@@ -10,9 +10,13 @@
 
 # Version History
 
+## v0.20.0
+
+- :tada: Add feature history endpoint
+
 ## v0.19.0
 
-- :tada: Add feature history API endpoint
+- :tada: Add API Meta endpoint
 
 ## v0.18.0
 
