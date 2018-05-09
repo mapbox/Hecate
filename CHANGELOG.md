@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.20.1
+
+- :bug: Fix negative feature ids entering deltas from xml_shim
+
 ## v0.20.0
 
 - :tada: Add feature history endpoint
