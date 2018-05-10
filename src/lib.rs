@@ -27,10 +27,9 @@ pub mod user;
 //Postgres Connection Pooling
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
-use std::mem;
 use mvt::Encode;
 
-use std::io::{Read, Cursor};
+use std::io::{Cursor};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use rocket::http::Status as HTTPStatus;
@@ -406,105 +405,9 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
     }
 }
 
-pub struct BoundsStream {
-    pending: Option<Vec<u8>>,
-    trans: postgres::transaction::Transaction<'static>,
-    conn: Box<PooledConnection<PostgresConnectionManager>>
-}
-
-impl Read for BoundsStream {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        let mut current = 0;
-
-        while current < buf.len() {
-            let mut write: Vec<u8> = Vec::new();
-
-            if self.pending.is_some() {
-                write = self.pending.clone().unwrap();
-                self.pending = None;
-            } else {
-                let rows = self.trans.query("FETCH 1000 FROM next_bounds;", &[]).unwrap();
-
-                if rows.len() != 0 {
-                    for row_it in 0..rows.len() {
-                        let feat: String = rows.get(row_it).get(0);
-                        write.append(&mut feat.into_bytes().to_vec());
-                        write.push(0x0A);
-                    }
-                }
-            }
-
-            if write.len() == 0 {
-                //No more data to fetch, close up shop
-                break;
-            } else if current + write.len() > buf.len() {
-                //There is room to put a partial feature, saving the remaining
-                //to the pending q and ending
-
-                for it in current..buf.len() {
-                    buf[it] = write[it - current];
-                }
-
-                let pending = write[buf.len() - current..write.len()].to_vec();
-                self.pending = Some(pending);
-
-                current = current + (buf.len() - current);
-
-                break;
-            } else {
-                //There is room in the buff to print the whole feature
-                //and iterate around to grab another
-
-                for it in 0..write.len() {
-                    buf[current + it] = write[it];
-                }
-
-                current = current + write.len();
-            }
-        }
-
-        Ok(current)
-    }
-}
-
-impl BoundsStream {
-    fn new(conn: PooledConnection<PostgresConnectionManager>, rbounds: String) -> Result<Self, status::Custom<String>> {
-        let pg_conn = Box::new(conn);
-
-        let trans: postgres::transaction::Transaction = unsafe { mem::transmute(pg_conn.transaction().unwrap()) };
-
-        trans.execute("
-            DECLARE next_bounds CURSOR FOR
-                SELECT
-                    row_to_json(t)::TEXT
-                FROM (
-                    SELECT
-                        geo.id AS id,
-                        'Feature' AS type,
-                        geo.version AS version,
-                        ST_AsGeoJSON(geo.geom)::JSON AS geometry,
-                        geo.props AS properties
-                    FROM
-                        geo,
-                        bounds
-                    WHERE
-                        bounds.name = $1
-                        AND ST_Intersects(geo.geom, bounds.geom)
-                ) t
-        ", &[&rbounds]).unwrap();
-
-        Ok(BoundsStream {
-            pending: None,
-            trans: trans,
-            conn: pg_conn,
-        })
-    }
-}
-
-
 #[get("/data/bounds/<bounds>")]
-fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<BoundsStream>, status::Custom<String>> {
-    let bs = BoundsStream::new(conn.0, bounds)?;
+fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<bounds::BoundsStream>, status::Custom<String>> {
+    let bs = bounds::BoundsStream::new(conn.0, bounds)?;
 
     Ok(Stream::from(bs))
 }
