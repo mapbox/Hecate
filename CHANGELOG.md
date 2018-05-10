@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.20.3
+
+- :rocket: Migrate all BoundsStream implementation details into the `bounds` mod for cleaner `lib.rs` file
+
 ## v0.20.2
 
 - :rocket: Add ability to toggle style access `public/private` via web UI
