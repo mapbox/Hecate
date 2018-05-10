@@ -291,40 +291,40 @@ cargo run -- --auth path/to/auth.json
 
 #### Endpoint Lookup
 
-| Endpoint                              | Config Name           | Default       | Supported Behaviors       | Notes |
+| Example Endpoint                      | Config Name           | Default       | Supported Behaviors       | Notes |
 | ------------------------------------- | --------------------- | :-----------: | ------------------------- | :---: |
 | `GET /api`                            | `meta`                | `public`      | All                       |       |
 | `GET /api/schema`                     | `schema_get`          | `public`      | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>`          | `mvt_get`             | `public`      | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt_regen`           | `user`        | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt_meta`            | `public`      | All                       |       |
-|                                       | `user_self`           | `self`        | `self`, `admin`, `none`   |       |
-|                                       | `user_create`         | `public`      | All                       |       |
-|                                       | `user_create_session` | `self`        | `self`, `admin`, `none`   |       |
-|                                       | `style_create`        | `self`        | `self`, `admin`, `none`   |       | 
-|                                       | `style_patch`         | `self`        | `self`, `admin`, `none`   |       |
-|                                       | `style_public`        | `public`      | All                       |       |
-|                                       | `style_private`       | `self`        | `self`, `admin`, `none`   |       |
-|                                       | `style_delete`        | `self`        | `self`, `admin`, `none`   |       |
-|                                       | `style_get`           | `public`      | All                       | 1     |
-|                                       | `styles_list`         | `public`      | All                       | 1     |
-|                                       | `delta`               | `public`      | All                       |       |
-|                                       | `delta_list`          | `public`      | All                       |       |
-|                                       | `feature_post`        | `user`        | All                       |       |
-|                                       | `features_post`       | `user`        | All                       |       |
-|                                       | `feature_get`         | `public`      | All                       |       |
-|                                       | `feature_history`     | `public`      | All                       |       |
-|                                       | `features_get`        | `public`      | All                       |       |
-|                                       | `bounds_list`         | `public`      | All                       |       |
-|                                       | `bounds_get`          | `public`      | All                       |       |
-|                                       | `osm`                 | Not Set       | `none`                    | 2     |
-|                                       | `osm_capabilities`    | `public`      | All                       | 3     |
-|                                       | `osm_user`            | `public`      | All                       | 3     |
-|                                       | `osm_map`             | `public`      | All                       | 3     |
-|                                       | `osm_delta_create`    | `user`        | All                       | 3     |
-|                                       | `osm_delta_modify`    | `user`        | All                       | 3     |
-|                                       | `osm_delta_upload`    | `user`        | All                       | 3     |
-|                                       | `osm_delta_close`     | `user`        | All                       | 3     |
+| `GET /api/user/info`                  | `user_self`           | `self`        | `self`, `admin`, `none`   |       |
+| `GET /api/create`                     | `user_create`         | `public`      | All                       |       |
+| `GET /api/create/session`             | `user_create_session` | `self`        | `self`, `admin`, `none`   |       |
+| `POST /api/style`                     | `style_create`        | `self`        | `self`, `admin`, `none`   |       | 
+| `PATCH /api/style`                    | `style_patch`         | `self`        | `self`, `admin`, `none`   |       |
+| `POST /api/style/<id>/public`         | `style_public`        | `public`      | All                       |       |
+| `POST /api/style/<id>/private`        | `style_private`       | `self`        | `self`, `admin`, `none`   |       |
+| `DELETE /api/style/<id>`              | `style_delete`        | `self`        | `self`, `admin`, `none`   |       |
+| `GET /api/style/<id>`                 | `style_get`           | `public`      | All                       | 1     |
+| `GET /api/styles`                     | `styles_list`         | `public`      | All                       | 1     |
+| `GET /api/delta/<id>`                 | `delta`               | `public`      | All                       |       |
+| `GET /api/deltas`                     | `delta_list`          | `public`      | All                       |       |
+| `POST /api/feature`                   | `feature_post`        | `user`        | All                       |       |
+| `POST /api/features`                  | `features_post`       | `user`        | All                       |       |
+| `GET /api/data/feature/<id>`          | `feature_get`         | `public`      | All                       |       |
+| `GET /api/data/feature/<id>/history`  | `feature_history`     | `public`      | All                       |       |
+| `GET /api/data/features`              | `features_get`        | `public`      | All                       |       |
+| `GET /api/bounds`                     | `bounds_list`         | `public`      | All                       |       |
+| `GET /api/bounds/<id>`                | `bounds_get`          | `public`      | All                       |       |
+| `* /api/0.6/*`                        | `osm`                 | Not Set       | `none`                    | 2     |
+| `GET /api/0.6/capabilities`           | `osm_capabilities`    | `public`      | All                       | 3     |
+| `GET /api/0.6/user/details`           | `osm_user`            | `public`      | All                       | 3     |
+| `GET /api/0.6/map`                    | `osm_map`             | `public`      | All                       | 3     |
+| `PUT /api/0.6/changeset/create`       | `osm_delta_create`    | `user`        | All                       | 3     |
+| `PUT /api/0.6/changeset/<id>`         | `osm_delta_modify`    | `user`        | All                       | 3     |
+| `PUT /api/0.6/changeset/<id>/upload`  | `osm_delta_upload`    | `user`        | All                       | 3     |
+| `PUT /api/0.6/changeset/<id>/close`   | `osm_delta_close`     | `user`        | All                       | 3     |
 
 *Notes*
 
