@@ -54,7 +54,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
         ])
         .mount("/api", routes![
             meta,
-            get_schema,
+            schema_get,
             mvt_get,
             mvt_meta,
             mvt_regen,
@@ -422,7 +422,7 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
 }
 
 #[get("/schema")]
-fn get_schema(schema: State<Option<serde_json::value::Value>>) -> Result<Json, status::Custom<String>> {
+fn schema_get(schema: State<Option<serde_json::value::Value>>) -> Result<Json, status::Custom<String>> {
     match schema.inner().clone() {
         Some(s) => Ok(Json(json!(s.clone()))),
         None => Err(status::Custom(HTTPStatus::NotFound, String::from("No Schema Validation Enforced")))

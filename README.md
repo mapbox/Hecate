@@ -17,6 +17,7 @@
 5. [Server](#server)
     - [Database Connection](#database)
     - [JSON Validation](#json-validation)
+    - [Custom Authentication](#custom-authentication)
 6. [API](#api)
     - [User Options](#user-options)
     - [Meta](#meta)
@@ -237,7 +238,9 @@ see the [Build Environment](#build-environment) section of this doc.
 
 A custom database name, postgres user or port can be specified using the database flag.
 
-```
+*Example*
+
+```bash
 cargo run -- --database "<USER>:<PASSWORD>@<HOST>/<DATABASE>"
 
 cargo run -- --database "<USER>@<HOST>/<DATABASE>"
@@ -245,16 +248,90 @@ cargo run -- --database "<USER>@<HOST>/<DATABASE>"
 
 ### JSON Validation
 
-By default hecate will allow any properties on a given GeoJSON feature, including nestled arrays, maps, etc.
+By default Hecate will allow any property on a given GeoJSON feature, including nestled arrays, maps, etc.
 
 A custom property validation file can be specified using the schema flag.
 
-```
+*Example*
+
+```bash
 cargo run -- --schema <PATH-TO-SCHEMA>.json
 ```
 
 Note hecate currently supports the JSON Schema draft-04. Once draft-06/07 support lands in
 [valico](https://github.com/rustless/valico) we can support newer versions of the spec.
+
+### Custom Authentication
+
+By default the Hecate API is most favourable to a crowd-sourced data server. Any users
+can access the data/vector tiles. Users can create & manage data in addition, and admins
+can manage user accounts.
+
+This provides a middle ground for most users but all endpoints are entirely configurable
+and can run from a fully open server to fully locked down.
+
+If the default values aren't suitable for what you intend, passing in an authentication
+configuration JSON document will override the defaults.
+
+*Example*
+
+```
+cargo run -- -auth path/to/auth.json
+```
+
+#### Behavior Types
+
+| Type      | Description |
+| --------- | ----------- |
+| `public`  | Allow any authenticated or unauthenticated user access |
+| `admin`   | Allow only users with the `access: 'admin'` property on their user accounts access |
+| `user`    | Allow any user access to the endpoint |
+| `self`    | Only the specific user or an admin can edit their own metadata |
+| `none`    | Disable all access to the endpoint |
+
+#### Endpoint Lookup
+
+| Endpoint                              | Config Name           | Default       | Supported Behaviors       | Notes |
+| ------------------------------------- | --------------------- | ------------- | ------------------------- | :---: |
+| `GET /api`                            | `meta`                | `public`      | All                       |       |
+| `GET /api/schema`                     | `schema_get`          | `public`      | All                       |       |
+| `GET /api/tiles/<z>/<x>/<y>`          | `mvt_get`             | `public`      | All                       |       |
+| `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt_regen`           | `user`        | All                       |       |
+| `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt_meta`            | `public`      | All                       |       |
+|                                       | `user_self`           | `self`        | `self`, `admin`, `none`   |       |
+|                                       | `user_create`         | `public`      | All                       |       |
+|                                       | `user_create_session` | `self`        | `self`, `admin`, `none`   |       |
+|                                       | `style_create`        | `self`        | `self`, `admin`, `none`   |       | 
+|                                       | `style_patch`         | `self`        | `self`, `admin`, `none`   |       |
+|                                       | `style_public`        | `public`      | All                       |       |
+|                                       | `style_private`       | `self`        | `self`, `admin`, `none`   |       |
+|                                       | `style_delete`        | `self`        | `self`, `admin`, `none`   |       |
+|                                       | `style_get`           | `public`      | All                       | 1     |
+|                                       | `styles_list`         | `public`      | All                       | 1     |
+|                                       | `delta`               | `public`      | All                       |       |
+|                                       | `delta_list`          | `public`      | All                       |       |
+|                                       | `feature_post`        | `user`        |                           |       |
+|                                       | `features_post`       | `user`        | All                       |       |
+|                                       | `feature_get`         | `public`      | All                       |       |
+|                                       | `feature_history`     | `public`      | All                       |       |
+|                                       | `features_get`        | `public`      | All                       |       |
+|                                       | `bounds_list`         | `public`      | All                       |       |
+|                                       | `bounds_get`          | `public`      | All                       |       |
+|                                       | `osm`                 | Not Set       | `none`                    | 2     |
+|                                       | `osm_capabilities`    | `public`      | All                       | 3     |
+|                                       | `osm_user`            | `public`      | All                       | 3     |
+|                                       | `osm_map`             | `public`      | All                       | 3     |
+|                                       | `osm_delta_create`    | `user`        | All                       | 3     |
+|                                       | `osm_delta_modify`    | `user`        | All                       | 3     |
+|                                       | `osm_delta_upload`    | `user`        | All                       | 3     |
+|                                       | `osm_delta_close`     | `user`        | All                       | 3     |
+
+*Notes*
+
+1. This only affectes `public` styles. The `private` attribute on a style overrides this. A `private` style can _never_ be seen publically regardless of this setting.
+2. If the `osm` config option is set to `none` all OSM Shim functionality will be disabled - otherwise omit and set `osm_*` props manually
+3. OSM software expects the authentication on these endpoints to mirror OSM. Setting these to a non-default option is supported but will likely have unpredicable
+support when using OSM software. If you are running a private server you should disable OSM support entirely.
 
 ## API
 
