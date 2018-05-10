@@ -264,7 +264,7 @@ Note hecate currently supports the JSON Schema draft-04. Once draft-06/07 suppor
 ### Custom Authentication
 
 By default the Hecate API is most favourable to a crowd-sourced data server. Any users
-can access the data/vector tiles. Users can create & manage data in addition, and admins
+can access the data/vector tiles, users can create & manage data, and admins
 can manage user accounts.
 
 This provides a middle ground for most users but all endpoints are entirely configurable
@@ -276,7 +276,7 @@ configuration JSON document will override the defaults.
 *Example*
 
 ```
-cargo run -- -auth path/to/auth.json
+cargo run -- --auth path/to/auth.json
 ```
 
 #### Behavior Types
@@ -292,7 +292,7 @@ cargo run -- -auth path/to/auth.json
 #### Endpoint Lookup
 
 | Endpoint                              | Config Name           | Default       | Supported Behaviors       | Notes |
-| ------------------------------------- | --------------------- | ------------- | ------------------------- | :---: |
+| ------------------------------------- | --------------------- | :-----------: | ------------------------- | :---: |
 | `GET /api`                            | `meta`                | `public`      | All                       |       |
 | `GET /api/schema`                     | `schema_get`          | `public`      | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>`          | `mvt_get`             | `public`      | All                       |       |
@@ -310,7 +310,7 @@ cargo run -- -auth path/to/auth.json
 |                                       | `styles_list`         | `public`      | All                       | 1     |
 |                                       | `delta`               | `public`      | All                       |       |
 |                                       | `delta_list`          | `public`      | All                       |       |
-|                                       | `feature_post`        | `user`        |                           |       |
+|                                       | `feature_post`        | `user`        | All                       |       |
 |                                       | `features_post`       | `user`        | All                       |       |
 |                                       | `feature_get`         | `public`      | All                       |       |
 |                                       | `feature_history`     | `public`      | All                       |       |
