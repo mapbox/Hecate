@@ -631,7 +631,7 @@ Return an array containing the full feature history for the provided feature id.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/features/1542/history
+curl -X GET 'http://localhost:8000/api/data/feature/1542/history
 ```
 
 ---
