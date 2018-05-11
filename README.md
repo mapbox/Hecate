@@ -279,6 +279,15 @@ configuration JSON document will override the defaults.
 cargo run -- --auth path/to/auth.json
 ```
 
+__Contents of auth.json__
+```
+{
+    "endpoints": {
+        "meta": "public"        
+    }
+}
+```
+
 #### Behavior Types
 
 | Type      | Description |
@@ -291,45 +300,48 @@ cargo run -- --auth path/to/auth.json
 
 #### Endpoint Lookup
 
-| Example Endpoint                      | Config Name           | Default       | Supported Behaviors       | Notes |
-| ------------------------------------- | --------------------- | :-----------: | ------------------------- | :---: |
-| `GET /api`                            | `meta`                | `public`      | All                       |       |
-| `GET /api/schema`                     | `schema_get`          | `public`      | All                       |       |
-| `GET /api/tiles/<z>/<x>/<y>`          | `mvt_get`             | `public`      | All                       |       |
-| `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt_regen`           | `user`        | All                       |       |
-| `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt_meta`            | `public`      | All                       |       |
-| `GET /api/user/info`                  | `user_self`           | `self`        | `self`, `admin`, `none`   |       |
-| `GET /api/create`                     | `user_create`         | `public`      | All                       |       |
-| `GET /api/create/session`             | `user_create_session` | `self`        | `self`, `admin`, `none`   |       |
-| `POST /api/style`                     | `style_create`        | `self`        | `self`, `admin`, `none`   |       | 
-| `PATCH /api/style`                    | `style_patch`         | `self`        | `self`, `admin`, `none`   |       |
-| `POST /api/style/<id>/public`         | `style_public`        | `public`      | All                       |       |
-| `POST /api/style/<id>/private`        | `style_private`       | `self`        | `self`, `admin`, `none`   |       |
-| `DELETE /api/style/<id>`              | `style_delete`        | `self`        | `self`, `admin`, `none`   |       |
-| `GET /api/style/<id>`                 | `style_get`           | `public`      | All                       | 1     |
-| `GET /api/styles`                     | `styles_list`         | `public`      | All                       | 1     |
-| `GET /api/delta/<id>`                 | `delta`               | `public`      | All                       |       |
-| `GET /api/deltas`                     | `delta_list`          | `public`      | All                       |       |
-| `POST /api/feature`                   | `feature_post`        | `user`        | All                       |       |
-| `POST /api/features`                  | `features_post`       | `user`        | All                       |       |
-| `GET /api/data/feature/<id>`          | `feature_get`         | `public`      | All                       |       |
-| `GET /api/data/feature/<id>/history`  | `feature_history`     | `public`      | All                       |       |
-| `GET /api/data/features`              | `features_get`        | `public`      | All                       |       |
-| `GET /api/bounds`                     | `bounds_list`         | `public`      | All                       |       |
-| `GET /api/bounds/<id>`                | `bounds_get`          | `public`      | All                       |       |
-| `* /api/0.6/*`                        | `osm`                 | Not Set       | `none`                    | 2     |
-| `GET /api/0.6/capabilities`           | `osm_capabilities`    | `public`      | All                       | 3     |
-| `GET /api/0.6/user/details`           | `osm_user`            | `public`      | All                       | 3     |
-| `GET /api/0.6/map`                    | `osm_map`             | `public`      | All                       | 3     |
-| `PUT /api/0.6/changeset/create`       | `osm_delta_create`    | `user`        | All                       | 3     |
-| `PUT /api/0.6/changeset/<id>`         | `osm_delta_modify`    | `user`        | All                       | 3     |
-| `PUT /api/0.6/changeset/<id>/upload`  | `osm_delta_upload`    | `user`        | All                       | 3     |
-| `PUT /api/0.6/changeset/<id>/close`   | `osm_delta_close`     | `user`        | All                       | 3     |
+| Example Endpoint                      | Config Name               | Default       | Supported Behaviors       | Notes |
+| ------------------------------------- | ------------------------- | :-----------: | ------------------------- | :---: |
+| `GET /api`                            | `meta`                    | `public`      | All                       |       |
+| **JSON Schema**                       | `schema`                  |               | `none`                    |       |
+| `GET /api/schema`                     | `schema::get`             | `public`      | All                       |       |
+| **Mapbox Vector Tiles**               | `mvt`                     |               | `none`                    |       |
+| `GET /api/tiles/<z>/<x>/<y>`          | `mvt::get`                | `public`      | All                       |       |
+| `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt::regen`              | `user`        | All                       |       |
+| `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt::meta`               | `public`      | All                       |       |
+| **Users**                             | `user`                    |               | `none`                    |       |
+| `GET /api/user/info`                  | `user::info`              | `self`        | `self`, `admin`, `none`   |       |
+| `GET /api/create`                     | `user::create`            | `public`      | All                       |       |
+| `GET /api/create/session`             | `user::create_session`    | `self`        | `self`, `admin`, `none`   |       |
+| **Mapbox GL Styles**                  | `style`                   |               | `none`                    |       |
+| `POST /api/style`                     | `style::create`           | `self`        | `self`, `admin`, `none`   |       | 
+| `PATCH /api/style`                    | `style::patch`            | `self`        | `self`, `admin`, `none`   |       |
+| `POST /api/style/<id>/public`         | `style::set_public`       | `public`      | All                       |       |
+| `POST /api/style/<id>/private`        | `style::set_private`      | `self`        | `self`, `admin`, `none`   |       |
+| `DELETE /api/style/<id>`              | `style::delete`           | `self`        | `self`, `admin`, `none`   |       |
+| `GET /api/style/<id>`                 | `style::get`              | `public`      | All                       | 1     |
+| `GET /api/styles`                     | `style::list`             | `public`      | All                       | 1     |
+| **Deltas**                            | `delta`                   |               | `none`                    |       |
+| `GET /api/delta/<id>`                 | `delta::get`              | `public`      | All                       |       |
+| `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
+| `POST /api/feature(s)`                | `feature::create`         | `user`        | All                       |       |
+| `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |
+| `GET /api/data/feature/<id>/history`  | `feature::history`        | `public`      | All                       |       |
+| **Bounds**                            | `bounds`                  |               | `none`                    |       |
+| `GET /api/bounds`                     | `bounds::list`            | `public`      | All                       |       |
+| `GET /api/bounds/<id>`                | `bounds::get`             | `public`      | All                       |       |
+| **OpenStreetMap Shim**                | `osm`                     |               | `none`                    | 2     |
+| `GET /api/0.6/capabilities`           | `osm::capabilities`       | `public`      | All                       | 3     |
+| `GET /api/0.6/map`                    | `osm::map`                | `public`      | All                       | 3     |
+| `PUT /api/0.6/changeset/create`       | `osm::delta_create`       | `user`        | All                       | 3     |
+| `PUT /api/0.6/changeset/<id>`         | `osm::delta_modify`       | `user`        | All                       | 3     |
+| `PUT /api/0.6/changeset/<id>/upload`  | `osm::delta_upload`       | `user`        | All                       | 3     |
+| `PUT /api/0.6/changeset/<id>/close`   | `osm::delta_close`        | `user`        | All                       | 3     |
 
 *Notes*
 
 1. This only affectes `public` styles. The `private` attribute on a style overrides this. A `private` style can _never_ be seen publically regardless of this setting.
-2. If the `osm` config option is set to `none` all OSM Shim functionality will be disabled - otherwise omit and set `osm_*` props manually
+2. This is a category, the only valid option is `none` this will disable access to the endpoint entirely
 3. OSM software expects the authentication on these endpoints to mirror OSM. Setting these to a non-default option is supported but will likely have unpredicable
 support when using OSM software. If you are running a private server you should disable OSM support entirely.
 
