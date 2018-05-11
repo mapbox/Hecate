@@ -1,0 +1,161 @@
+extern crate r2d2;
+extern crate r2d2_postgres;
+extern crate postgres;
+extern crate rocket;
+extern crate base64;
+
+use self::rocket::request::{self, FromRequest};
+use self::rocket::http::Status;
+use self::rocket::{Request, Outcome};
+
+pub struct AuthSchema {
+    get: String
+}
+
+pub struct AuthUser {
+    info: String,
+    create: String,
+    create_session: String
+}
+
+pub struct AuthFeature {
+    create: String,
+    get: String,
+    history: String
+}
+
+pub struct AuthStyle {
+    create: String,
+    patch: String,
+    set_public: String,
+    set_private: String,
+    delete: String,
+    get: String,
+    list: String
+}
+
+pub struct AuthDelta {
+    get: String,
+    list: String,
+}
+
+pub struct AuthBounds {
+    list: String,
+    get: String
+}
+
+pub struct AuthOSM {
+    get: String,
+    create: String
+}
+
+pub struct CustomAuth {
+    meta: Option<String>,
+    schema: Option<AuthSchema>,
+    user: Option<AuthUser>,
+    feature: Option<AuthFeature>,
+    style: Option<AuthStyle>,
+    delta: Option<AuthDelta>,
+    bounds: Option<AuthBounds>,
+    osm: Option<AuthOSM>
+}
+
+pub struct Auth {
+    token: Option<String>,
+    basic: Option<(String, String)>
+}
+
+impl auth {
+    pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, auth: Auth) -> Option<i64> {
+        if auth.basic != None {
+            let (username, password): (String, String) = auth.basic.unwrap();
+
+            match conn.query("
+                SELECT id
+                    FROM users
+                    WHERE
+                        username = $1
+                        AND password = crypt($2, password)
+            ", &[ &username, &password ]) {
+                Ok(res) => {
+                    if res.len() != 1 { return None; }
+                    let uid: i64 = res.get(0).get(0);
+
+                    Some(uid)
+                },
+                Err(_) => None
+            }
+        } else if auth.token != None {
+            let token: String = auth.token.unwrap();
+
+            match conn.query("
+                SELECT uid
+                FROM users_tokens
+                WHERE
+                    token = $1
+                    AND now() < expiry
+            ", &[ &token ]) {
+                Ok(res) => {
+                    if res.len() == 0 { return None; }
+                    let uid: i64 = res.get(0).get(0);
+                    Some(uid)
+                },
+                Err(_) => None
+            }
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for Auth {
+    type Error = ();
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<Auth, ()> {
+        match request.cookies().get_private("session") {
+            Some(token) => {
+                return Outcome::Success(Auth {
+                    token: Some(String::from(token.value())),
+                    basic: None
+                });
+            },
+            None => ()
+        };
+
+        let keys: Vec<_> = request.headers().get("Authorization").collect();
+
+        if keys.len() != 1 || keys[0].len() < 7 {
+            return Outcome::Success(Auth {
+                token: None,
+                basic: None
+            });
+        }
+
+        let mut authtype = String::from(keys[0]);
+        let auth = authtype.split_off(6);
+
+        if authtype != "Basic " {
+            return Outcome::Success(Auth {
+                token: None,
+                basic: None
+            });
+        }
+
+        match base64::decode(&auth) {
+            Ok(decoded) => match String::from_utf8(decoded) {
+                Ok(decoded_str) => {
+
+                    let split = decoded_str.split(":").collect::<Vec<&str>>();
+
+                    if split.len() != 2 { return Outcome::Failure((Status::Unauthorized, ())); }
+
+                    Outcome::Success(Auth {
+                        token: None,
+                        basic: Some((String::from(split[0]), String::from(split[1])))
+                    })
+                },
+                Err(_) => Outcome::Failure((Status::Unauthorized, ()))
+            },
+            Err(_) => Outcome::Failure((Status::Unauthorized, ()))
+        }
+    }
+}
