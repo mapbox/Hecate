@@ -284,16 +284,16 @@ __Contents of auth.json__
 {
     "endpoints": {
         "meta": "public",
-        "schema": none,
+        "schema": null,
         "mvt": {
             "get": "user",
             "regen": "admin",
-            "meta": "none"
+            "meta": null
         },
         "users": {
             "info": "admin",
             "create": "admin",
-            "create_session": none
+            "create_session": null
         },
 
         ....
@@ -315,7 +315,7 @@ have a map containing the auth for each subkey.
 ```
 {
     "endpoint": {
-        "schema": none
+        "schema": null
     }
 }
 ```
@@ -324,53 +324,53 @@ have a map containing the auth for each subkey.
 
 | Type      | Description |
 | --------- | ----------- |
-| `public`  | Allow any authenticated or unauthenticated user access |
-| `admin`   | Allow only users with the `access: 'admin'` property on their user accounts access |
-| `user`    | Allow any user access to the endpoint |
-| `self`    | Only the specific user or an admin can edit their own metadata |
-| `none`    | Disable all access to the endpoint |
+| `"public"`  | Allow any authenticated or unauthenticated user access |
+| `"admin"`   | Allow only users with the `access: 'admin'` property on their user accounts access |
+| `"user"`    | Allow any user access to the endpoint |
+| `"self"`    | Only the specific user or an admin can edit their own metadata |
+| `"null"`    | Disable all access to the endpoint (Must be explicitly `null` |
 
 #### Endpoint Lookup
 
 | Example Endpoint                      | Config Name               | Default       | Supported Behaviors       | Notes |
 | ------------------------------------- | ------------------------- | :-----------: | ------------------------- | :---: |
 | `GET /api`                            | `meta`                    | `public`      | All                       |       |
-| **JSON Schema**                       | `schema`                  |               | `none`                    |       |
+| **JSON Schema**                       | `schema`                  |               | `null`                    | 2     |
 | `GET /api/schema`                     | `schema::get`             | `public`      | All                       |       |
-| **Mapbox Vector Tiles**               | `mvt`                     |               | `none`                    |       |
+| **Mapbox Vector Tiles**               | `mvt`                     |               | `null`                    | 2     |
 | `GET /api/tiles/<z>/<x>/<y>`          | `mvt::get`                | `public`      | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt::regen`              | `user`        | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt::meta`               | `public`      | All                       |       |
-| **Users**                             | `user`                    |               | `none`                    |       |
-| `GET /api/user/info`                  | `user::info`              | `self`        | `self`, `admin`, `none`   |       |
+| **Users**                             | `user`                    |               | `null`                    | 2     |
+| `GET /api/user/info`                  | `user::info`              | `self`        | `self`, `admin`, `null`   |       |
 | `GET /api/create`                     | `user::create`            | `public`      | All                       |       |
-| `GET /api/create/session`             | `user::create_session`    | `self`        | `self`, `admin`, `none`   |       |
-| **Mapbox GL Styles**                  | `style`                   |               | `none`                    |       |
-| `POST /api/style`                     | `style::create`           | `self`        | `self`, `admin`, `none`   |       |
-| `PATCH /api/style`                    | `style::patch`            | `self`        | `self`, `admin`, `none`   |       |
-| `POST /api/style/<id>/public`         | `style::set_public`       | `public`      | All                       |       |
-| `POST /api/style/<id>/private`        | `style::set_private`      | `self`        | `self`, `admin`, `none`   |       |
-| `DELETE /api/style/<id>`              | `style::delete`           | `self`        | `self`, `admin`, `none`   |       |
+| `GET /api/create/session`             | `user::create_session`    | `self`        | `self`, `admin`, `null`   |       |
+| **Mapbox GL Styles**                  | `style`                   |               | `null`                    | 2     |
+| `POST /api/style`                     | `style::create`           | `self`        | `self`, `admin`, `null`   |       |
+| `PATCH /api/style`                    | `style::patch`            | `self`        | `self`, `admin`, `null`   |       |
+| `POST /api/style/<id>/public`         | `style::set_public`       | `self`        | All                       |       |
+| `POST /api/style/<id>/private`        | `style::set_private`      | `self`        | `self`, `admin`, `null`   |       |
+| `DELETE /api/style/<id>`              | `style::delete`           | `self`        | `self`, `admin`, `null`   |       |
 | `GET /api/style/<id>`                 | `style::get`              | `public`      | All                       | 1     |
 | `GET /api/styles`                     | `style::list`             | `public`      | All                       | 1     |
-| **Deltas**                            | `delta`                   |               | `none`                    |       |
+| **Deltas**                            | `delta`                   |               | `null`                    | 2     |
 | `GET /api/delta/<id>`                 | `delta::get`              | `public`      | All                       |       |
 | `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
-| **Features**                          | `feature`                 |               | `none`                    |       |
+| **Features**                          | `feature`                 |               | `null`                    | 2     |
 | `POST /api/feature(s)`                | `feature::create`         | `user`        | All                       |       |
 | `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |
 | `GET /api/data/feature/<id>/history`  | `feature::history`        | `public`      | All                       |       |
-| **Bounds**                            | `bounds`                  |               | `none`                    |       |
+| **Bounds**                            | `bounds`                  |               | `null`                    | 2     |
 | `GET /api/bounds`                     | `bounds::list`            | `public`      | All                       |       |
 | `GET /api/bounds/<id>`                | `bounds::get`             | `public`      | All                       |       |
-| **OpenStreetMap Shim**                | `osm`                     |               | `none`                    | 2     |
+| **OpenStreetMap Shim**                | `osm`                     |               | `null`                    | 2     |
 | `GET /api/0.6/map`                    | `osm::get`                | `public`      | All                       | 3     |
 | `PUT /api/0.6/changeset/<id>/upload`  | `osm::create`             | `user`        | All                       | 3     |
 
 *Notes*
 
 1. This only affectes `public` styles. The `private` attribute on a style overrides this. A `private` style can _never_ be seen publically regardless of this setting.
-2. This is a category, the only valid option is `none` this will disable access to the endpoint entirely
+2. This is a category, the only valid option is `null` this will disable access to the endpoint entirely
 3. OSM software expects the authentication on these endpoints to mirror OSM. Setting these to a non-default option is supported but will likely have unpredicable
 support when using OSM software. If you are running a private server you should disable OSM support entirely.
 
