@@ -74,13 +74,40 @@ impl CustomAuth {
     pub fn new() -> Self {
         CustomAuth {
             meta: Some(String::from("public")),
-            schema: None,
-            user: None,
-            feature: None,
-            style: None,
-            delta: None,
-            bounds: None,
-            osm: None
+            schema: Some(AuthSchema {
+                get: Some(String::from("public"))
+            }),
+            user: Some(AuthUser {
+                info: Some(String::from("self")),
+                create: Some(String::from("public")),
+                create_session: Some(String::from("self"))
+            }),
+            feature: Some(AuthFeature {
+                create: Some(String::from("user")),
+                get: Some(String::from("public")),
+                history: Some(String::from("public"))
+            }),
+            style: Some(AuthStyle {
+                create: Some(String::from("self")),
+                patch: Some(String::from("self")),
+                set_public: Some(String::from("self")),
+                set_private: Some(String::from("self")),
+                delete: Some(String::from("self")),
+                get: Some(String::from("public")),
+                list: Some(String::from("public"))
+            }),
+            delta: Some(AuthDelta {
+                get: Some(String::from("public")),
+                list: Some(String::from("public"))
+            }),
+            bounds: Some(AuthBounds {
+                list: Some(String::from("public")),
+                get: Some(String::from("public"))
+            }),
+            osm: Some(AuthOSM {
+                get: Some(String::from("public")),
+                create: Some(String::from("user"))
+            })
         }
     }
 }
