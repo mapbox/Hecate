@@ -66,7 +66,7 @@ cargo build
 echo "CREATE DATABASE hecate;" | psql -U postgres
 
 psql -U postgres -f src/schema.sql hecate
-``` 
+```
 
 - Start the server
 
@@ -191,7 +191,7 @@ assigned they should be omitted. Should an `id` or `version` be included the ser
 }
 ```
 
-A feature being uploaded for modification must have the `action: modify` as well as the `id` and `version` property. The `id` is the integer id of the feature to modify and the `version` property is the 
+A feature being uploaded for modification must have the `action: modify` as well as the `id` and `version` property. The `id` is the integer id of the feature to modify and the `version` property is the
 current version of the feature as stored by the server. If the version uploaded does not match the version that the server has stored, the modify will fail. This prevents consecutive edits from conflicting.
 
 Note that the modify operation is _not a delta operation_ and the full feature with the complete Geometry & All Properties must be included with each modify.
@@ -283,7 +283,39 @@ __Contents of auth.json__
 ```
 {
     "endpoints": {
-        "meta": "public"        
+        "meta": "public",
+        "schema": none,
+        "mvt": {
+            "get": "user",
+            "regen": "admin",
+            "meta": "none"
+        },
+        "users": {
+            "info": "admin",
+            "create": "admin",
+            "create_session": none
+        },
+
+        ....
+
+    }
+}
+```
+
+It is important to note that if custom authentication is used, _every_ category must be either disabled or have
+an option for every sub category within it set. One cannot conditionally override only a subset of of the default options. This is for the security of private
+servers, since adding a new API endpoint is a non-breaking change, the server checks that you have specified
+a policy for every endpoint or are happy with just the defaults before it will start.
+
+IE:
+
+The below schema is invalid. Each category (schema, user, style) etc. must be specified as disabled or
+have a map containing the auth for each subkey.
+
+```
+{
+    "endpoint": {
+        "schema": none
     }
 }
 ```
@@ -314,7 +346,7 @@ __Contents of auth.json__
 | `GET /api/create`                     | `user::create`            | `public`      | All                       |       |
 | `GET /api/create/session`             | `user::create_session`    | `self`        | `self`, `admin`, `none`   |       |
 | **Mapbox GL Styles**                  | `style`                   |               | `none`                    |       |
-| `POST /api/style`                     | `style::create`           | `self`        | `self`, `admin`, `none`   |       | 
+| `POST /api/style`                     | `style::create`           | `self`        | `self`, `admin`, `none`   |       |
 | `PATCH /api/style`                    | `style::patch`            | `self`        | `self`, `admin`, `none`   |       |
 | `POST /api/style/<id>/public`         | `style::set_public`       | `public`      | All                       |       |
 | `POST /api/style/<id>/private`        | `style::set_private`      | `self`        | `self`, `admin`, `none`   |       |
@@ -443,7 +475,7 @@ curl \
 
 #### `DELETE` `/api/style/<id>`
 
-Delete a particular style by id. Users must be authorized and 
+Delete a particular style by id. Users must be authorized and
 can only delete styles created by them.
 
 *Options*
@@ -829,7 +861,7 @@ curl -X GET 'http://localhost:8000/api/delta/4
 
 <h3 align='center'>OpenStreetMap API</h3>
 
-The primary goal of the hecate project is a very fast GeoJSON based Interchange. That said, the tooling the OSM community has built around editing is unparalled. As such, 
+The primary goal of the hecate project is a very fast GeoJSON based Interchange. That said, the tooling the OSM community has built around editing is unparalled. As such,
 Hecate provides a Work-In-Progress OpenStreetMap Shim to support a subset of API operations as defined by the [OSM API v0.6](httpl://wiki.openstreetmap.org/wiki/API_v0.6) document.
 
 *Important Notes*
