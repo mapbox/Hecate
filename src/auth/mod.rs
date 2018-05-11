@@ -12,50 +12,50 @@ use self::rocket::{Request, Outcome};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthSchema {
-    get: String
+    get: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthUser {
-    info: String,
-    create: String,
-    create_session: String
+    info: Option<String>,
+    create: Option<String>,
+    create_session: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthFeature {
-    create: String,
-    get: String,
-    history: String
+    create: Option<String>,
+    get: Option<String>,
+    history: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthStyle {
-    create: String,
-    patch: String,
-    set_public: String,
-    set_private: String,
-    delete: String,
-    get: String,
-    list: String
+    create: Option<String>,
+    patch: Option<String>,
+    set_public: Option<String>,
+    set_private: Option<String>,
+    delete: Option<String>,
+    get: Option<String>,
+    list: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthDelta {
-    get: String,
-    list: String,
+    get: Option<String>,
+    list: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthBounds {
-    list: String,
-    get: String
+    list: Option<String>,
+    get: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthOSM {
-    get: String,
-    create: String
+    get: Option<String>,
+    create: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
