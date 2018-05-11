@@ -110,6 +110,68 @@ impl CustomAuth {
             })
         }
     }
+
+    pub fn validate(&self) {
+        match self.meta {
+            None => (),
+            Some(ref meta) => {
+
+            }
+        }
+
+        match self.schema {
+            None => (),
+            Some(ref schema) => {
+
+            }
+        }
+
+        match self.user {
+            None => (),
+            Some(ref user) => {
+
+            }
+        }
+
+        match self.feature {
+            None => (),
+            Some(ref feature) => {
+
+            }
+        }
+
+        match self.style {
+            None => (),
+            Some(ref style) => {
+
+            }
+        }
+
+        match self.delta {
+            None => (),
+            Some(ref delta) => {
+
+            }
+        }
+
+        match self.bounds {
+            None => (),
+            Some(ref bounds) => {
+
+            }
+        }
+
+        match self.osm {
+            None => (),
+            Some(ref osm) => {
+
+            }
+        }
+    }
+
+    pub fn is_meta(&self, auth: Auth) -> bool {
+        true
+    }
 }
 
 pub struct Auth {
