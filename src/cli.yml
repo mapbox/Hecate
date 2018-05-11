@@ -21,4 +21,4 @@ args:
         long: auth
         value_name: AUTH
         help: Specify a custom authentication schema to apply to the API
-        take_value: true
+        takes_value: true

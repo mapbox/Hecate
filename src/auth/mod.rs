@@ -65,46 +65,44 @@ pub struct Auth {
     basic: Option<(String, String)>
 }
 
-impl auth {
-    pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, auth: Auth) -> Option<i64> {
-        if auth.basic != None {
-            let (username, password): (String, String) = auth.basic.unwrap();
+pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, auth: Auth) -> Option<i64> {
+    if auth.basic != None {
+        let (username, password): (String, String) = auth.basic.unwrap();
 
-            match conn.query("
-                SELECT id
-                    FROM users
-                    WHERE
-                        username = $1
-                        AND password = crypt($2, password)
-            ", &[ &username, &password ]) {
-                Ok(res) => {
-                    if res.len() != 1 { return None; }
-                    let uid: i64 = res.get(0).get(0);
-
-                    Some(uid)
-                },
-                Err(_) => None
-            }
-        } else if auth.token != None {
-            let token: String = auth.token.unwrap();
-
-            match conn.query("
-                SELECT uid
-                FROM users_tokens
+        match conn.query("
+            SELECT id
+                FROM users
                 WHERE
-                    token = $1
-                    AND now() < expiry
-            ", &[ &token ]) {
-                Ok(res) => {
-                    if res.len() == 0 { return None; }
-                    let uid: i64 = res.get(0).get(0);
-                    Some(uid)
-                },
-                Err(_) => None
-            }
-        } else {
-            None
+                    username = $1
+                    AND password = crypt($2, password)
+        ", &[ &username, &password ]) {
+            Ok(res) => {
+                if res.len() != 1 { return None; }
+                let uid: i64 = res.get(0).get(0);
+
+                Some(uid)
+            },
+            Err(_) => None
         }
+    } else if auth.token != None {
+        let token: String = auth.token.unwrap();
+
+        match conn.query("
+            SELECT uid
+            FROM users_tokens
+            WHERE
+                token = $1
+                AND now() < expiry
+        ", &[ &token ]) {
+            Ok(res) => {
+                if res.len() == 0 { return None; }
+                let uid: i64 = res.get(0).get(0);
+                Some(uid)
+            },
+            Err(_) => None
+        }
+    } else {
+        None
     }
 }
 
