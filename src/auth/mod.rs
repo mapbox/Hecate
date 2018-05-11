@@ -70,6 +70,21 @@ pub struct CustomAuth {
     osm: Option<AuthOSM>
 }
 
+impl CustomAuth {
+    pub fn new() -> Self {
+        CustomAuth {
+            meta: Some(String::from("public")),
+            schema: None,
+            user: None,
+            feature: None,
+            style: None,
+            delta: None,
+            bounds: None,
+            osm: None
+        }
+    }
+}
+
 pub struct Auth {
     token: Option<String>,
     basic: Option<(String, String)>

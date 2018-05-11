@@ -45,6 +45,11 @@ use rocket_contrib::Json;
 pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
     env_logger::init();
 
+    let custom_auth: auth::CustomAuth = match auth {
+        None => auth::CustomAuth::new(),
+        Some(auth) => auth
+    };
+
     rocket::ignite()
         .manage(init_pool(&database))
         .manage(schema)
