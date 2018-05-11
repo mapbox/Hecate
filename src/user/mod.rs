@@ -8,6 +8,57 @@ use self::rocket::request::{self, FromRequest};
 use self::rocket::http::Status;
 use self::rocket::{Request, Outcome};
 
+pub struct AuthSchema {
+    get: String
+}
+
+pub struct AuthUser {
+    info: String,
+    create: String,
+    create_session: String
+}
+
+pub struct AuthFeature {
+    create: String,
+    get: String,
+    history: String
+}
+
+pub struct AuthStyle {
+    create: String,
+    patch: String,
+    set_public: String,
+    set_private: String,
+    delete: String,
+    get: String,
+    list: String
+}
+
+pub struct AuthDelta {
+    get: String,
+    list: String,
+}
+
+pub struct AuthBounds {
+    list: String,
+    get: String
+}
+
+pub struct AuthOSM {
+    get: String,
+    create: String
+}
+
+pub struct CustomAuth {
+    meta: Option<String>,
+    schema: Option<AuthSchema>,
+    user: Option<AuthUser>,
+    feature: Option<AuthFeature>,
+    style: Option<AuthStyle>,
+    delta: Option<AuthDelta>,
+    bounds: Option<AuthBounds>,
+    osm: Option<AuthOSM>
+}
 
 pub struct Auth {
     token: Option<String>,
