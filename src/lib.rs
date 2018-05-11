@@ -50,6 +50,8 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
         Some(auth) => auth
     };
 
+    println!("{:?}", custom_auth);
+
     rocket::ignite()
         .manage(init_pool(&database))
         .manage(schema)

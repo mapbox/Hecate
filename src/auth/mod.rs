@@ -10,26 +10,26 @@ use self::rocket::request::{self, FromRequest};
 use self::rocket::http::Status;
 use self::rocket::{Request, Outcome};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthSchema {
     get: String
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthUser {
     info: String,
     create: String,
     create_session: String
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthFeature {
     create: String,
     get: String,
     history: String
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthStyle {
     create: String,
     patch: String,
@@ -40,25 +40,25 @@ pub struct AuthStyle {
     list: String
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthDelta {
     get: String,
     list: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthBounds {
     list: String,
     get: String
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthOSM {
     get: String,
     create: String
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CustomAuth {
     meta: Option<String>,
     schema: Option<AuthSchema>,
