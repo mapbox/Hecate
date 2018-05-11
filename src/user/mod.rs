@@ -4,10 +4,6 @@ extern crate postgres;
 extern crate rocket;
 extern crate base64;
 
-use self::rocket::request::{self, FromRequest};
-use self::rocket::http::Status;
-use self::rocket::{Request, Outcome};
-
 #[derive(PartialEq, Debug)]
 pub enum UserError {
     NotFound,

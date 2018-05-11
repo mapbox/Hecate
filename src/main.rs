@@ -5,6 +5,7 @@ extern crate serde_json;
 use std::path::Path;
 use std::fs::File;
 use std::io::Read;
+use hecate::auth::CustomAuth;
 use clap::App;
 
 fn main() {
@@ -17,7 +18,7 @@ fn main() {
         Some(schema_path) => {
             let mut schema_file = match File::open(&Path::new(schema_path)) {
                 Ok(file) => file,
-                Err(_) => panic!("Failed to open file at: {}", schema_path)
+                Err(_) => panic!("Failed to open schema file at: {}", schema_path)
             };
 
             let mut schema_str = String::new();
@@ -31,5 +32,21 @@ fn main() {
         None => None
     };
 
-    hecate::start(String::from(database), schema);
+    let auth: Option<CustomAuth> = match matched.value_of("auth") {
+        Some(auth_path) => {
+            let mut auth_file = match File::open(&Path::new(auth_path)) {
+                Ok(file) => file,
+                Err(_) => panic!("Failed to open auth file at: {}", auth_path)
+            };
+
+            let mut auth_str = String::new();
+
+            auth_file.read_to_string(&mut auth_str).unwrap();
+
+            Some(serde_json::from_str(&*auth_str).unwrap())
+        },
+        None => None
+    };
+
+    hecate::start(String::from(database), schema, auth);
 }

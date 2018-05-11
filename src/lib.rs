@@ -4,6 +4,7 @@
 static VERSION: &'static str = "0.20.3";
 
 #[macro_use] extern crate serde_json;
+#[macro_use] extern crate serde_derive;
 extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate postgres;
@@ -41,7 +42,7 @@ use rocket::request::{self, FromRequest};
 use geojson::GeoJson;
 use rocket_contrib::Json;
 
-pub fn start(database: String, schema: Option<serde_json::value::Value>) {
+pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
     env_logger::init();
 
     rocket::ignite()
