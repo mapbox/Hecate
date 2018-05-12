@@ -10,64 +10,90 @@ use self::rocket::request::{self, FromRequest};
 use self::rocket::http::Status;
 use self::rocket::{Request, Outcome};
 
+fn is_all(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
+    match scope {
+        &None => Ok(true),
+        &Some(ref scope_str) => {
+            match *&scope_str {
+                _ => Err(format!("Scope {} must be one of public, admin, or user", scope_type)),
+                "public" => Ok(true),
+                "admin" => Ok(true),
+                "user" => Ok(true)
+            }
+        }
+    }
+}
+
+pub trait ValidAuth {
+    fn valid(&self) -> Result<bool, String>;
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthSchema {
-    get: Option<String>
+    pub get: Option<String>
+}
+
+impl ValidAuth for AuthSchema {
+    fn valid(&self) -> Result<bool, String> {
+        is_all("schema::get", &self.get)?;
+
+        Ok(true)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthUser {
-    info: Option<String>,
-    create: Option<String>,
-    create_session: Option<String>
+    pub info: Option<String>,
+    pub create: Option<String>,
+    pub create_session: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthFeature {
-    create: Option<String>,
-    get: Option<String>,
-    history: Option<String>
+    pub create: Option<String>,
+    pub get: Option<String>,
+    pub history: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthStyle {
-    create: Option<String>,
-    patch: Option<String>,
-    set_public: Option<String>,
-    set_private: Option<String>,
-    delete: Option<String>,
-    get: Option<String>,
-    list: Option<String>
+    pub create: Option<String>,
+    pub patch: Option<String>,
+    pub set_public: Option<String>,
+    pub set_private: Option<String>,
+    pub delete: Option<String>,
+    pub get: Option<String>,
+    pub list: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthDelta {
-    get: Option<String>,
-    list: Option<String>,
+    pub get: Option<String>,
+    pub list: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthBounds {
-    list: Option<String>,
-    get: Option<String>
+    pub list: Option<String>,
+    pub get: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthOSM {
-    get: Option<String>,
-    create: Option<String>
+    pub get: Option<String>,
+    pub create: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CustomAuth {
-    meta: Option<String>,
-    schema: Option<AuthSchema>,
-    user: Option<AuthUser>,
-    feature: Option<AuthFeature>,
-    style: Option<AuthStyle>,
-    delta: Option<AuthDelta>,
-    bounds: Option<AuthBounds>,
-    osm: Option<AuthOSM>
+    pub meta: Option<String>,
+    pub schema: Option<AuthSchema>,
+    pub user: Option<AuthUser>,
+    pub feature: Option<AuthFeature>,
+    pub style: Option<AuthStyle>,
+    pub delta: Option<AuthDelta>,
+    pub bounds: Option<AuthBounds>,
+    pub osm: Option<AuthOSM>
 }
 
 impl CustomAuth {
@@ -111,62 +137,10 @@ impl CustomAuth {
         }
     }
 
-    pub fn validate(&self) {
-        match self.meta {
-            None => (),
-            Some(ref meta) => {
+    pub fn valid(&self) -> Result<bool, String> {
+        is_all("meta", &self.meta)?;
 
-            }
-        }
-
-        match self.schema {
-            None => (),
-            Some(ref schema) => {
-
-            }
-        }
-
-        match self.user {
-            None => (),
-            Some(ref user) => {
-
-            }
-        }
-
-        match self.feature {
-            None => (),
-            Some(ref feature) => {
-
-            }
-        }
-
-        match self.style {
-            None => (),
-            Some(ref style) => {
-
-            }
-        }
-
-        match self.delta {
-            None => (),
-            Some(ref delta) => {
-
-            }
-        }
-
-        match self.bounds {
-            None => (),
-            Some(ref bounds) => {
-
-            }
-        }
-
-        match self.osm {
-            None => (),
-            Some(ref osm) => {
-
-            }
-        }
+        Ok(true)
     }
 
     pub fn is_meta(&self, auth: Auth) -> bool {
