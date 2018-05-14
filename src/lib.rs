@@ -435,7 +435,9 @@ fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<bounds::BoundsStrea
 }
 
 #[get("/data/features?<map>")]
-fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
+fn features_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_feature_get(&mut auth, &conn.0)?;
+
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
     match feature::get_bbox(&conn.0, bbox) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
@@ -452,8 +454,10 @@ fn schema_get(schema: State<Option<serde_json::value::Value>>) -> Result<Json, s
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
-fn features_action(mut auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_feature_create(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     let mut fc = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
@@ -737,8 +741,10 @@ fn xml_user() -> String {
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(mut auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_feature_create(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     let mut feat = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
@@ -811,7 +817,9 @@ fn feature_action(mut auth: auth::Auth, conn: DbConn, schema: State<Option<serde
 }
 
 #[get("/data/feature/<id>")]
-fn feature_get(conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
+fn feature_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_feature_get(&mut auth, &conn.0)?;
+
     match feature::get(&conn.0, &id) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
@@ -819,7 +827,9 @@ fn feature_get(conn: DbConn, id: i64) -> Result<String, status::Custom<String>> 
 }
 
 #[get("/data/feature/<id>/history")]
-fn feature_get_history(conn: DbConn, id: i64) -> Result<Json, status::Custom<String>> {
+fn feature_get_history(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_feature_history(&mut auth, &conn.0)?;
+
     match delta::history(&conn.0, &id) {
         Ok(features) => Ok(Json(features)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))

@@ -489,6 +489,27 @@ impl CustomAuth {
             Some(bounds) => auth_met(&bounds.list, auth, &conn)
         }
     }
+
+    pub fn allows_feature_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.feature {
+            None => Err(not_authed()),
+            Some(feature) => auth_met(&feature.create, auth, &conn)
+        }
+    }
+
+    pub fn allows_feature_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.feature {
+            None => Err(not_authed()),
+            Some(feature) => auth_met(&feature.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_feature_history(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.feature {
+            None => Err(not_authed()),
+            Some(feature) => auth_met(&feature.history, auth, &conn)
+        }
+    }
 }
 
 pub struct Auth {
