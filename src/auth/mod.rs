@@ -32,7 +32,7 @@ fn is_all(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
                 "public" => Ok(true),
                 "admin" => Ok(true),
                 "user" => Ok(true),
-                _ => Err(format!("Scope {} must be one of 'public', 'admin', 'user', or null", scope_type)),
+                _ => Err(format!("Auth Config Error: '{}' must be one of 'public', 'admin', 'user', or null", scope_type)),
             }
         }
     }
@@ -52,7 +52,7 @@ fn is_self(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
             match scope_str as &str {
                 "self" => Ok(true),
                 "admin" => Ok(true),
-                _ => Err(format!("Scope {} must be one of 'self', 'admin', or null", scope_type)),
+                _ => Err(format!("Auth Config Error: '{}' must be one of 'self', 'admin', or null", scope_type)),
             }
         }
     }
@@ -72,7 +72,7 @@ fn is_auth(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
             match scope_str as &str {
                 "user" => Ok(true),
                 "admin" => Ok(true),
-                _ => Err(format!("Scope {} must be one of 'self', 'admin', or null", scope_type)),
+                _ => Err(format!("Auth Config Error: '{}' must be one of 'self', 'admin', or null", scope_type)),
             }
         }
     }
