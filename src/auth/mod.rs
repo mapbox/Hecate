@@ -461,6 +461,20 @@ impl CustomAuth {
             Some(style) => auth_met(&style.list, auth, &conn)
         }
     }
+
+    pub fn allows_delta_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.delta {
+            None => Err(not_authed()),
+            Some(delta) => auth_met(&delta.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_delta_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.delta {
+            None => Err(not_authed()),
+            Some(delta) => auth_met(&delta.list, auth, &conn)
+        }
+    }
 }
 
 pub struct Auth {

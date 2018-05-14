@@ -390,7 +390,9 @@ fn style_list_user(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::C
 }
 
 #[get("/deltas")]
-fn delta_list(conn: DbConn) ->  Result<Json, status::Custom<String>> {
+fn delta_list(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) ->  Result<Json, status::Custom<String>> {
+    auth_rules.allows_delta_list(&mut auth, &conn.0)?;
+
     match delta::list_json(&conn.0, None) {
         Ok(deltas) => Ok(Json(deltas)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
@@ -398,7 +400,9 @@ fn delta_list(conn: DbConn) ->  Result<Json, status::Custom<String>> {
 }
 
 #[get("/deltas?<opts>")]
-fn delta_list_offset(conn: DbConn, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
+fn delta_list_offset(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
+    auth_rules.allows_delta_list(&mut auth, &conn.0)?;
+
     match delta::list_json(&conn.0, Some(opts.offset)) {
         Ok(deltas) => Ok(Json(deltas)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
@@ -406,7 +410,9 @@ fn delta_list_offset(conn: DbConn, opts: DeltaList) ->  Result<Json, status::Cus
 }
 
 #[get("/delta/<id>")]
-fn delta(conn: DbConn, id: i64) ->  Result<Json, status::Custom<String>> {
+fn delta(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) ->  Result<Json, status::Custom<String>> {
+    auth_rules.allows_delta_get(&mut auth, &conn.0)?;
+
     match delta::get_json(&conn.0, &id) {
         Ok(delta) => Ok(Json(delta)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
