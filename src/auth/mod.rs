@@ -10,15 +10,61 @@ use self::rocket::request::{self, FromRequest};
 use self::rocket::http::Status;
 use self::rocket::{Request, Outcome};
 
+///
+/// Allows a category to be null, public, admin, or user
+///
+/// This category makes up the majority of endpoints in hecate and is the most
+/// flexible
+///
 fn is_all(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
     match scope {
         &None => Ok(true),
         &Some(ref scope_str) => {
-            match *&scope_str {
-                _ => Err(format!("Scope {} must be one of public, admin, or user", scope_type)),
+            match scope_str as &str {
                 "public" => Ok(true),
                 "admin" => Ok(true),
-                "user" => Ok(true)
+                "user" => Ok(true),
+                _ => Err(format!("Scope {} must be one of 'public', 'admin', 'user', or null", scope_type)),
+            }
+        }
+    }
+}
+
+///
+/// Allows a category to be null, self, or admin
+///
+/// This category is used for CRUD operations against data for a specfic user,
+/// not only must the user be logged in but the user can only update their own
+/// data
+///
+fn is_self(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
+    match scope {
+        &None => Ok(true),
+        &Some(ref scope_str) => {
+            match scope_str as &str {
+                "self" => Ok(true),
+                "admin" => Ok(true),
+                _ => Err(format!("Scope {} must be one of 'self', 'admin', or null", scope_type)),
+            }
+        }
+    }
+}
+
+///
+/// Allows a category to be null, user, or admin
+///
+/// This category is used primarily for feature operations. The user must be
+/// logged in but can make changes to any feature, including features created
+/// by another user
+///
+fn is_auth(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
+    match scope {
+        &None => Ok(true),
+        &Some(ref scope_str) => {
+            match scope_str as &str {
+                "user" => Ok(true),
+                "admin" => Ok(true),
+                _ => Err(format!("Scope {} must be one of 'self', 'admin', or null", scope_type)),
             }
         }
     }
@@ -42,17 +88,38 @@ impl ValidAuth for AuthSchema {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct AuthMVT {
+    pub get: Option<String>,
+    pub regen: Option<String>,
+    pub meta: Option<String>
+}
+
+impl ValidAuth for AuthSchema {
+    fn valid(&self) -> Result<bool, String> {
+        is_all("mvt::get", &self.get)?;
+        is_all("mvt::regen", &self.regen)?;
+        is_all("mvt::meta", &self.meta)?;
+
+        Ok(true)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthUser {
     pub info: Option<String>,
     pub create: Option<String>,
     pub create_session: Option<String>
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AuthFeature {
-    pub create: Option<String>,
-    pub get: Option<String>,
-    pub history: Option<String>
+impl ValidAuth for AuthUser {
+    fn valid(&self) -> Result<bool, String> {
+        is_all("user::create", &self.meta)?;
+
+        is_self("user::create_session", &self.create_session)?;
+        is_self("user::info", &self.info)?;
+
+        Ok(true)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -66,10 +133,50 @@ pub struct AuthStyle {
     pub list: Option<String>
 }
 
+impl ValidAuth for AuthStyle {
+    fn valid(&self) -> Result<bool, String> {
+        is_self("style::create", &self.create)?;
+        is_self("style::patch", &self.patch)?;
+        is_self("style::set_public", &self.set_public)?;
+        is_self("style::set_private", &self.set_private)?;
+        is_self("style::delete", &self.delete)?;
+        is_all("style::get", &self.get)?;
+        is_all("style::list", &self.list)?;
+
+        Ok(true)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthDelta {
     pub get: Option<String>,
     pub list: Option<String>,
+}
+
+impl ValidAuth for AuthDelta {
+    fn valid(&self) -> Result<bool, String> {
+        is_all("delta::get", &self.get)?;
+        is_all("delta::list", &self.list)?;
+
+        Ok(true)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AuthFeature {
+    pub create: Option<String>,
+    pub get: Option<String>,
+    pub history: Option<String>
+}
+
+impl ValidAuth for AuthFeature {
+    fn valid(&self) -> Result<bool, String> {
+        is_auth("feature::create", &self.create)?;
+        is_all("feature::get", &self.get)?;
+        is_all("feature::history", &self.history)?;
+
+        Ok(true)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -78,15 +185,34 @@ pub struct AuthBounds {
     pub get: Option<String>
 }
 
+impl ValidAuth for AuthBounds {
+    fn valid(&self) -> Result<bool, String> {
+        is_all("bounds::list", &self.list)?;
+        is_all("bounds::get", &self.get)?;
+
+        Ok(true)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthOSM {
     pub get: Option<String>,
     pub create: Option<String>
 }
 
+impl ValidAuth for AuthBounds {
+    fn valid(&self) -> Result<bool, String> {
+        is_all("osm::get", &self.get)?;
+        is_auth("osm::create", &self.create)?;
+
+        Ok(true)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CustomAuth {
     pub meta: Option<String>,
+    pub mvt: Option<AuthMVT>,
     pub schema: Option<AuthSchema>,
     pub user: Option<AuthUser>,
     pub feature: Option<AuthFeature>,

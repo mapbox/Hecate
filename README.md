@@ -357,7 +357,7 @@ have a map containing the auth for each subkey.
 | `GET /api/delta/<id>`                 | `delta::get`              | `public`      | All                       |       |
 | `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
 | **Features**                          | `feature`                 |               | `null`                    | 2     |
-| `POST /api/feature(s)`                | `feature::create`         | `user`        | All                       |       |
+| `POST /api/feature(s)`                | `feature::create`         | `user`        | `user`, `admin`, `null`   |       |
 | `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |
 | `GET /api/data/feature/<id>/history`  | `feature::history`        | `public`      | All                       |       |
 | **Bounds**                            | `bounds`                  |               | `null`                    | 2     |
@@ -365,7 +365,7 @@ have a map containing the auth for each subkey.
 | `GET /api/bounds/<id>`                | `bounds::get`             | `public`      | All                       |       |
 | **OpenStreetMap Shim**                | `osm`                     |               | `null`                    | 2     |
 | `GET /api/0.6/map`                    | `osm::get`                | `public`      | All                       | 3     |
-| `PUT /api/0.6/changeset/<id>/upload`  | `osm::create`             | `user`        | All                       | 3     |
+| `PUT /api/0.6/changeset/<id>/upload`  | `osm::create`             | `user`        | `user`, `admin`, `null`   | 3     |
 
 *Notes*
 
