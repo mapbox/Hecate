@@ -283,13 +283,13 @@ impl ValidAuth for CustomAuth {
 /// requirements of an endpoint
 ///
 fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+    auth.validate(conn)?;
+
     match required {
         None => Err(not_authed()),
         Some(req) => match req.as_ref() {
             "public" => Ok(true),
             "admin" => {
-                auth.validate(conn)?;
-
                 if auth.uid.is_none() || auth.access.is_none() {
                     return Err(not_authed());
                 } else if auth.access == Some(String::from("admin")) {
@@ -299,8 +299,6 @@ fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &r2d2::PooledConne
                 }
             },
             "user" => {
-                auth.validate(conn)?;
-
                 if auth.uid.is_some() {
                     return Ok(true);
                 } else {
@@ -311,8 +309,6 @@ fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &r2d2::PooledConne
                 //Note: This ensures the user is validated,
                 //it is up to the parent caller to ensure
                 //the UID of 'self' matches the requested resource
-
-                auth.validate(conn)?;
 
                 if auth.uid.is_some() {
                     return Ok(true);
@@ -414,6 +410,55 @@ impl CustomAuth {
         match &self.user {
             None => Err(not_authed()),
             Some(user) => auth_met(&user.create_session, auth, &conn)
+        }
+    }
+
+    pub fn allows_style_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.style {
+            None => Err(not_authed()),
+            Some(style) => auth_met(&style.create, auth, &conn)
+        }
+    }
+
+    pub fn allows_style_patch(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.style {
+            None => Err(not_authed()),
+            Some(style) => auth_met(&style.patch, auth, &conn)
+        }
+    }
+
+    pub fn allows_style_set_public(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.style {
+            None => Err(not_authed()),
+            Some(style) => auth_met(&style.set_public, auth, &conn)
+        }
+    }
+
+    pub fn allows_style_set_private(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.style {
+            None => Err(not_authed()),
+            Some(style) => auth_met(&style.set_private, auth, &conn)
+        }
+    }
+
+    pub fn allows_style_delete(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.style {
+            None => Err(not_authed()),
+            Some(style) => auth_met(&style.delete, auth, &conn)
+        }
+    }
+
+    pub fn allows_style_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.style {
+            None => Err(not_authed()),
+            Some(style) => auth_met(&style.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_style_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.style {
+            None => Err(not_authed()),
+            Some(style) => auth_met(&style.list, auth, &conn)
         }
     }
 }

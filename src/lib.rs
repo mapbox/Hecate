@@ -287,8 +287,9 @@ fn user_create_session(conn: DbConn, mut auth: auth::Auth, auth_rules: State<aut
 }
 
 #[post("/style", format="application/json", data="<style>")]
-fn style_create(conn: DbConn, mut auth: auth::Auth, style: String) -> Result<Json, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn style_create(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, style: String) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_create(&mut auth, &conn.0)?;
+    let uid = auth.uid.unwrap();
 
     match style::create(&conn.0, &uid, &style) {
         Ok(style_id) => Ok(Json(json!(style_id))),
@@ -297,8 +298,9 @@ fn style_create(conn: DbConn, mut auth: auth::Auth, style: String) -> Result<Jso
 }
 
 #[post("/style/<id>/public")]
-fn style_public(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn style_public(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_set_public(&mut auth, &conn.0)?;
+    let uid = auth.uid.unwrap();
 
     match style::access(&conn.0, &uid, &id, true) {
         Ok(updated) => Ok(Json(json!(updated))),
@@ -307,8 +309,9 @@ fn style_public(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, sta
 }
 
 #[post("/style/<id>/private")]
-fn style_private(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn style_private(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_set_private(&mut auth, &conn.0)?;
+    let uid = auth.uid.unwrap();
 
     match style::access(&conn.0, &uid, &id, false) {
         Ok(updated) => Ok(Json(json!(updated))),
@@ -317,8 +320,9 @@ fn style_private(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, st
 }
 
 #[patch("/style/<id>", format="application/json", data="<style>")]
-fn style_patch(conn: DbConn, mut auth: auth::Auth, id: i64, style: String) -> Result<Json, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn style_patch(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64, style: String) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_patch(&mut auth, &conn.0)?;
+    let uid = auth.uid.unwrap();
 
     match style::update(&conn.0, &uid, &id, &style) {
         Ok(updated) => Ok(Json(json!(updated))),
@@ -327,8 +331,9 @@ fn style_patch(conn: DbConn, mut auth: auth::Auth, id: i64, style: String) -> Re
 }
 
 #[delete("/style/<id>")]
-fn style_delete(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn style_delete(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_delete(&mut auth, &conn.0)?;
+    let uid = auth.uid.unwrap();
 
     match style::delete(&conn.0, &uid, &id) {
         Ok(created) => Ok(Json(json!(created))),
@@ -338,17 +343,19 @@ fn style_delete(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, sta
 
 
 #[get("/style/<id>")]
-fn style_get(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid: Option<i64> = auth.validate(&conn.0)?;
+fn style_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_get(&mut auth, &conn.0)?;
 
-    match style::get(&conn.0, &uid, &id) {
+    match style::get(&conn.0, &auth.uid, &id) {
         Ok(style) => Ok(Json(json!(style))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
 
 #[get("/styles")]
-fn style_list_public(conn: DbConn) -> Result<Json, status::Custom<String>> {
+fn style_list_public(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_list(&mut auth, &conn.0)?;
+
     match style::list_public(&conn.0) {
         Ok(styles) => Ok(Json(json!(styles))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
@@ -356,9 +363,11 @@ fn style_list_public(conn: DbConn) -> Result<Json, status::Custom<String>> {
 }
 
 #[get("/styles/<user>")]
-fn style_list_user(conn: DbConn, mut auth: auth::Auth, user: i64) -> Result<Json, status::Custom<String>> {
-    match auth.validate(&conn.0) {
-        Ok(Some(uid)) => {
+fn style_list_user(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_list(&mut auth, &conn.0)?;
+
+    match auth.uid {
+        Some(uid) => {
             if uid == user {
                 match style::list_user(&conn.0, &user) {
                     Ok(styles) => Ok(Json(json!(styles))),
