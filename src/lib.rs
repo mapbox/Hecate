@@ -141,8 +141,7 @@ fn index() -> &'static str { "Hello World!" }
 
 #[get("/")]
 fn meta(mut auth: auth::Auth, conn: DbConn, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
-    auth.validate(&conn.0)?;
-    auth_rules.allows_meta(&auth)?;
+    auth_rules.allows_meta(&mut auth, &conn.0)?;
 
     Ok(Json(json!({
         "version": VERSION

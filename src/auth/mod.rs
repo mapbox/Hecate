@@ -282,12 +282,14 @@ impl ValidAuth for CustomAuth {
 /// Determines whether the current auth state meets or exceeds the
 /// requirements of an endpoint
 ///
-fn auth_met(required: &Option<String>, auth: &Auth) -> Result<bool, status::Custom<String>> {
+fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
     match required {
         None => Err(not_authed()),
         Some(req) => match req.as_ref() {
             "public" => Ok(true),
             "admin" => {
+                auth.validate(conn)?;
+
                 if auth.uid.is_none() || auth.access.is_none() {
                     return Err(not_authed());
                 } else if auth.access == Some(String::from("admin")) {
@@ -297,6 +299,8 @@ fn auth_met(required: &Option<String>, auth: &Auth) -> Result<bool, status::Cust
                 }
             },
             "self" => {
+                auth.validate(conn)?;
+
                 Ok(true)
             },
             _ => Err(not_authed())
@@ -350,8 +354,8 @@ impl CustomAuth {
         }
     }
 
-    pub fn allows_meta(&self, auth: &Auth) -> Result<bool, status::Custom<String>> {
-        auth_met(&self.meta, auth)
+    pub fn allows_meta(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        auth_met(&self.meta, auth, &conn)
     }
 }
 
