@@ -47,7 +47,14 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
 
     let custom_auth: auth::CustomAuth = match auth {
         None => auth::CustomAuth::new(),
-        Some(auth) => auth
+        Some(auth) => {
+            match auth.is_valid() {
+                Err(err_msg) => { panic!(err_msg); },
+                Ok(_) => ()
+            };
+
+            auth
+        }
     };
 
     println!("{:?}", custom_auth);

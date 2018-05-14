@@ -71,7 +71,7 @@ fn is_auth(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
 }
 
 pub trait ValidAuth {
-    fn valid(&self) -> Result<bool, String>;
+    fn is_valid(&self) -> Result<bool, String>;
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -80,7 +80,7 @@ pub struct AuthSchema {
 }
 
 impl ValidAuth for AuthSchema {
-    fn valid(&self) -> Result<bool, String> {
+    fn is_valid(&self) -> Result<bool, String> {
         is_all("schema::get", &self.get)?;
 
         Ok(true)
@@ -95,7 +95,7 @@ pub struct AuthMVT {
 }
 
 impl ValidAuth for AuthMVT {
-    fn valid(&self) -> Result<bool, String> {
+    fn is_valid(&self) -> Result<bool, String> {
         is_all("mvt::get", &self.get)?;
         is_all("mvt::regen", &self.regen)?;
         is_all("mvt::meta", &self.meta)?;
@@ -112,7 +112,7 @@ pub struct AuthUser {
 }
 
 impl ValidAuth for AuthUser {
-    fn valid(&self) -> Result<bool, String> {
+    fn is_valid(&self) -> Result<bool, String> {
         is_all("user::create", &self.create)?;
 
         is_self("user::create_session", &self.create_session)?;
@@ -134,7 +134,7 @@ pub struct AuthStyle {
 }
 
 impl ValidAuth for AuthStyle {
-    fn valid(&self) -> Result<bool, String> {
+    fn is_valid(&self) -> Result<bool, String> {
         is_self("style::create", &self.create)?;
         is_self("style::patch", &self.patch)?;
         is_self("style::set_public", &self.set_public)?;
@@ -154,7 +154,7 @@ pub struct AuthDelta {
 }
 
 impl ValidAuth for AuthDelta {
-    fn valid(&self) -> Result<bool, String> {
+    fn is_valid(&self) -> Result<bool, String> {
         is_all("delta::get", &self.get)?;
         is_all("delta::list", &self.list)?;
 
@@ -170,7 +170,7 @@ pub struct AuthFeature {
 }
 
 impl ValidAuth for AuthFeature {
-    fn valid(&self) -> Result<bool, String> {
+    fn is_valid(&self) -> Result<bool, String> {
         is_auth("feature::create", &self.create)?;
         is_all("feature::get", &self.get)?;
         is_all("feature::history", &self.history)?;
@@ -186,7 +186,7 @@ pub struct AuthBounds {
 }
 
 impl ValidAuth for AuthBounds {
-    fn valid(&self) -> Result<bool, String> {
+    fn is_valid(&self) -> Result<bool, String> {
         is_all("bounds::list", &self.list)?;
         is_all("bounds::get", &self.get)?;
 
@@ -201,7 +201,7 @@ pub struct AuthOSM {
 }
 
 impl ValidAuth for AuthOSM {
-    fn valid(&self) -> Result<bool, String> {
+    fn is_valid(&self) -> Result<bool, String> {
         is_all("osm::get", &self.get)?;
         is_auth("osm::create", &self.create)?;
 
@@ -221,6 +221,55 @@ pub struct CustomAuth {
     pub bounds: Option<AuthBounds>,
     pub osm: Option<AuthOSM>
 }
+
+impl ValidAuth for CustomAuth {
+    fn is_valid(&self) -> Result<bool, String> {
+        is_all("meta", &self.meta)?;
+
+        match &self.mvt {
+            None => (),
+            Some(ref mvt) => { mvt.is_valid()?; }
+        };
+
+        match &self.schema {
+            None => (),
+            Some(ref schema) => { schema.is_valid()?; }
+        };
+        
+        match &self.user {
+            None => (),
+            Some(ref user) => { user.is_valid()?; }
+        };
+
+        match &self.feature {
+            None => (),
+            Some(ref feature) => { feature.is_valid()?; }
+        };
+
+        match &self.style {
+            None => (),
+            Some(ref style) => { style.is_valid()?; }
+        };
+
+        match &self.delta {
+            None => (),
+            Some(ref delta) => { delta.is_valid()?; }
+        };
+
+        match &self.bounds {
+            None => (),
+            Some(ref bounds) => { bounds.is_valid()?; }
+        };
+
+        match &self.osm {
+            None => (),
+            Some(ref osm) => { osm.is_valid()?; }
+        };
+
+        Ok(true)
+    }
+}
+
 
 impl CustomAuth {
     pub fn new() -> Self {
@@ -266,12 +315,6 @@ impl CustomAuth {
                 create: Some(String::from("user"))
             })
         }
-    }
-
-    pub fn valid(&self) -> Result<bool, String> {
-        is_all("meta", &self.meta)?;
-
-        Ok(true)
     }
 
     pub fn is_meta(&self, auth: Auth) -> bool {
