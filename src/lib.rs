@@ -420,7 +420,9 @@ fn delta(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>
 }
 
 #[get("/data/bounds")]
-fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
+fn bounds_list(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_bounds_list(&mut auth, &conn.0)?;
+
     match bounds::list(&conn.0) {
         Ok(bounds) => Ok(Json(json!(bounds))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
@@ -428,7 +430,9 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
 }
 
 #[get("/data/bounds/<bounds>")]
-fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<bounds::BoundsStream>, status::Custom<String>> {
+fn bounds_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Stream<bounds::BoundsStream>, status::Custom<String>> {
+    auth_rules.allows_bounds_list(&mut auth, &conn.0)?;
+
     let bs = bounds::BoundsStream::new(conn.0, bounds)?;
 
     Ok(Stream::from(bs))
@@ -446,7 +450,9 @@ fn features_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::Cust
 }
 
 #[get("/schema")]
-fn schema_get(schema: State<Option<serde_json::value::Value>>) -> Result<Json, status::Custom<String>> {
+fn schema_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, schema: State<Option<serde_json::value::Value>>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_schema_get(&mut auth, &conn.0)?;
+
     match schema.inner().clone() {
         Some(s) => Ok(Json(json!(s.clone()))),
         None => Err(status::Custom(HTTPStatus::NotFound, String::from("No Schema Validation Enforced")))
@@ -524,7 +530,9 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 }
 
 #[get("/0.6/map?<map>")]
-fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
+fn xml_map(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+
     let query: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
 
     let fc = match feature::get_bbox(&conn.0, query) {
@@ -541,8 +549,10 @@ fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(mut auth: auth::Auth, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     let map = match xml::to_delta(&body) {
         Ok(map) => map,
@@ -566,15 +576,17 @@ fn xml_changeset_create(mut auth: auth::Auth, conn: DbConn, body: String) -> Res
 }
 
 #[put("/0.6/changeset/<id>/close")]
-fn xml_changeset_close(mut auth: auth::Auth, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
-    auth.validate(&conn.0)?;
+fn xml_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
 
     Ok(id.to_string())
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(mut auth: auth::Auth, conn: DbConn, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
+    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     let trans = conn.0.transaction().unwrap();
 
@@ -616,8 +628,10 @@ fn xml_changeset_modify(mut auth: auth::Auth, conn: DbConn, delta_id: i64, body:
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(mut auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
+    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     let trans = conn.0.transaction().unwrap();
 
@@ -693,8 +707,10 @@ fn xml_changeset_upload(mut auth: auth::Auth, conn: DbConn, schema: State<Option
 }
 
 #[get("/capabilities")]
-fn xml_capabilities() -> String {
-    String::from("
+fn xml_capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+
+    Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
             <api>
                 <version minimum=\"0.6\" maximum=\"0.6\"/>
@@ -705,12 +721,14 @@ fn xml_capabilities() -> String {
                 <status database=\"online\" api=\"online\"/>
             </api>
         </osm>
-    ")
+    "))
 }
 
 #[get("/0.6/capabilities")]
-fn xml_06capabilities() -> String {
-   String::from("
+fn xml_06capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+
+    Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
             <api>
                 <version minimum=\"0.6\" maximum=\"0.6\"/>
@@ -721,12 +739,14 @@ fn xml_06capabilities() -> String {
                 <status database=\"online\" api=\"online\"/>
             </api>
         </osm>
-    ")
+    "))
 }
 
 #[get("/0.6/user/details")]
-fn xml_user() -> String {
-    String::from("
+fn xml_user(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+
+    Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
             <user id=\"1\" display_name=\"user\" account_created=\"2010-06-18T12:34:58Z\">
                 <description></description>
@@ -737,7 +757,7 @@ fn xml_user() -> String {
                 </messages>
             </user>
         </osm>
-    ")
+    "))
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]

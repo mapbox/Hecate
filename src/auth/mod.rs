@@ -510,6 +510,27 @@ impl CustomAuth {
             Some(feature) => auth_met(&feature.history, auth, &conn)
         }
     }
+
+    pub fn allows_schema_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.schema {
+            None => Err(not_authed()),
+            Some(schema) => auth_met(&schema.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_osm_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.osm {
+            None => Err(not_authed()),
+            Some(osm) => auth_met(&osm.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_osm_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.osm {
+            None => Err(not_authed()),
+            Some(osm) => auth_met(&osm.create, auth, &conn)
+        }
+    }
 }
 
 pub struct Auth {
