@@ -12,6 +12,12 @@ use self::rocket::{Request, Outcome};
 use self::rocket::response::status;
 use self::rocket::http::Status as HTTPStatus;
 
+
+fn not_authed() -> status::Custom<String> {
+    let auth: status::Custom<String> = status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"));
+    return auth;
+}
+
 ///
 /// Allows a category to be null, public, admin, or user
 ///
@@ -320,7 +326,7 @@ impl CustomAuth {
     }
 
     pub fn allows_meta(&self, auth: &Auth) -> Result<bool, status::Custom<String>> {
-        Ok(true)
+        Err(not_authed())
     }
 }
 
@@ -382,7 +388,10 @@ impl Auth {
                     AND password = crypt($2, password)
             ", &[ &username, &password ]) {
                 Ok(res) => {
-                    if res.len() != 1 { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Not Authorized!"))); }
+                    if res.len() != 1 {
+                        return Err(not_authed());
+                    }
+
                     let uid: i64 = res.get(0).get(0);
                     let access: String = res.get(0).get(1);
 
@@ -391,8 +400,7 @@ impl Auth {
                     return Ok(Some(uid));
                 },
                 _ => {
-                    let err: status::Custom<String> = status::Custom(HTTPStatus::BadRequest, String::from("Not Authorized!"));
-                    return Err(err);
+                    return Err(not_authed());
                 }
             }
         }
@@ -414,8 +422,7 @@ impl Auth {
             ", &[ &token ]) {
                 Ok(res) => {
                     if res.len() == 0 {
-                        let err: status::Custom<String> = status::Custom(HTTPStatus::BadRequest, String::from("Not Authorized!"));
-                        return Err(err);
+                        return Err(not_authed());
                     }
 
                     let uid: i64 = res.get(0).get(0);
@@ -426,7 +433,7 @@ impl Auth {
                     return Ok(Some(uid));
                 },
                 _ => {
-                    return Err(status::Custom(HTTPStatus::BadRequest, String::from("Not Authorized!")));
+                    return Err(not_authed());
                 }
             }
         }
