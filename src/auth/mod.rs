@@ -9,6 +9,7 @@ extern crate serde_json;
 use self::rocket::request::{self, FromRequest};
 use self::rocket::http::Status;
 use self::rocket::{Request, Outcome};
+use self::rocket::response::status;
 
 ///
 /// Allows a category to be null, public, admin, or user
@@ -317,53 +318,94 @@ impl CustomAuth {
         }
     }
 
-    pub fn is_meta(&self, auth: Auth) -> bool {
-        true
+    pub fn allows_meta(&self, auth: &Auth) -> Result<bool, status::Custom<String>> {
+
+
+        Ok(true)
     }
 }
 
 pub struct Auth {
-    token: Option<String>,
-    basic: Option<(String, String)>
+    pub uid: Option<i64>,
+    pub token: Option<String>,
+    pub basic: Option<(String, String)>
 }
 
-pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, auth: Auth) -> Option<i64> {
-    if auth.basic != None {
-        let (username, password): (String, String) = auth.basic.unwrap();
+impl Auth {
+    pub fn new() -> Self {
+        Auth {
+            uid: None,
+            token: None,
+            basic: None
+        }
+    }
 
-        match conn.query("
-            SELECT id
-                FROM users
+    ///
+    /// Remove user data from the Auth object
+    ///
+    /// Used as a generic function by validate to ensure future
+    /// authentication methods are cleared with each validate
+    ///
+    pub fn secure(&mut self, uid: Option<i64>) {
+        self.uid = uid;
+        self.token = None;
+        self.basic = None;
+    }
+
+    ///
+    /// The Rocket Request guard simply provides a utility wrapper from the request to a more
+    /// easily parsable auth object. It **does not** perform any authentication.
+    ///
+    /// This function takes the populated Auth struct and checks if the token/basic auth is valid,
+    /// populated the uid field
+    ///
+    /// Note: Once validated the token/basic auth used to validate the user will be set to null
+    ///
+    pub fn validate(mut self, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Option<i64> {
+        if self.basic.is_some() {
+            let (username, password) = self.basic.clone().unwrap();
+
+            match conn.query("
+                SELECT id
+                    FROM users
+                    WHERE
+                        username = $1
+                        AND password = crypt($2, password)
+            ", &[ &username, &password ]) {
+                Ok(res) => {
+                    if res.len() != 1 { return None; }
+                    let uid: i64 = res.get(0).get(0);
+
+                    self.secure(Some(uid));
+
+                    return Some(uid);
+                },
+                Err(_) => ()
+            }
+        }
+
+        if self.token.is_some() {
+            let token = self.token.clone().unwrap();
+
+            match conn.query("
+                SELECT uid
+                FROM users_tokens
                 WHERE
-                    username = $1
-                    AND password = crypt($2, password)
-        ", &[ &username, &password ]) {
-            Ok(res) => {
-                if res.len() != 1 { return None; }
-                let uid: i64 = res.get(0).get(0);
+                    token = $1
+                    AND now() < expiry
+            ", &[ &token ]) {
+                Ok(res) => {
+                    if res.len() == 0 { return None; }
+                    let uid: i64 = res.get(0).get(0);
+    
+                    self.secure(Some(uid));
 
-                Some(uid)
-            },
-            Err(_) => None
-        }
-    } else if auth.token != None {
-        let token: String = auth.token.unwrap();
+                    return Some(uid);
+                },
+                Err(_) => ()
+            }
+        };
 
-        match conn.query("
-            SELECT uid
-            FROM users_tokens
-            WHERE
-                token = $1
-                AND now() < expiry
-        ", &[ &token ]) {
-            Ok(res) => {
-                if res.len() == 0 { return None; }
-                let uid: i64 = res.get(0).get(0);
-                Some(uid)
-            },
-            Err(_) => None
-        }
-    } else {
         None
     }
 }
@@ -371,36 +413,32 @@ pub fn auth(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
 impl<'a, 'r> FromRequest<'a, 'r> for Auth {
     type Error = ();
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Auth, ()> {
+        let mut auth = Auth::new();
+
         match request.cookies().get_private("session") {
             Some(token) => {
-                return Outcome::Success(Auth {
-                    token: Some(String::from(token.value())),
-                    basic: None
-                });
+                auth.token = Some(String::from(token.value()));
+
+                return Outcome::Success(auth);
             },
             None => ()
         };
 
         let keys: Vec<_> = request.headers().get("Authorization").collect();
 
+        //Auth Failed - None object returned
         if keys.len() != 1 || keys[0].len() < 7 {
-            return Outcome::Success(Auth {
-                token: None,
-                basic: None
-            });
+            return Outcome::Success(auth);
         }
 
         let mut authtype = String::from(keys[0]);
-        let auth = authtype.split_off(6);
+        let auth_str = authtype.split_off(6);
 
         if authtype != "Basic " {
-            return Outcome::Success(Auth {
-                token: None,
-                basic: None
-            });
+            return Outcome::Success(auth);
         }
 
-        match base64::decode(&auth) {
+        match base64::decode(&auth_str) {
             Ok(decoded) => match String::from_utf8(decoded) {
                 Ok(decoded_str) => {
 
@@ -408,10 +446,9 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
 
                     if split.len() != 2 { return Outcome::Failure((Status::Unauthorized, ())); }
 
-                    Outcome::Success(Auth {
-                        token: None,
-                        basic: Some((String::from(split[0]), String::from(split[1])))
-                    })
+                    auth.basic = Some((String::from(split[0]), String::from(split[1])));
+
+                    Outcome::Success(auth)
                 },
                 Err(_) => Outcome::Failure((Status::Unauthorized, ()))
             },

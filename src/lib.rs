@@ -47,7 +47,7 @@ use rocket_contrib::Json;
 pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
     env_logger::init();
 
-    let custom_auth: auth::CustomAuth = match auth {
+    let auth_rules: auth::CustomAuth = match auth {
         None => auth::CustomAuth::new(),
         Some(auth) => {
             match auth.is_valid() {
@@ -59,11 +59,10 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
         }
     };
 
-    println!("{:?}", custom_auth);
-
     rocket::ignite()
         .manage(init_pool(&database))
         .manage(schema)
+        .manage(auth_rules)
         .mount("/", routes![
             index
         ])
@@ -141,10 +140,12 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
 fn index() -> &'static str { "Hello World!" }
 
 #[get("/")]
-fn meta() -> Json {
-    Json(json!({
+fn meta(auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_meta(&auth)?;
+
+    Ok(Json(json!({
         "version": VERSION
-    }))
+    })))
 }
 
 #[get("/<file..>")]
@@ -186,7 +187,7 @@ fn mvt_meta(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<
 
 #[get("/tiles/<z>/<x>/<y>/regen")]
 fn mvt_regen(conn: DbConn, auth: auth::Auth, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
-    if auth::auth(&conn.0, auth).is_none() {
+    if auth.validate(&conn.0).is_none() {
         return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!")));
     };
 
@@ -255,7 +256,7 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
 
 #[get("/user/info")]
 fn user_self(conn: DbConn, auth: auth::Auth) -> Result<Json, status::Custom<String>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -268,7 +269,7 @@ fn user_self(conn: DbConn, auth: auth::Auth) -> Result<Json, status::Custom<Stri
 
 #[get("/user/session")]
 fn user_create_session(conn: DbConn, auth: auth::Auth, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -284,7 +285,7 @@ fn user_create_session(conn: DbConn, auth: auth::Auth, mut cookies: Cookies) -> 
 
 #[post("/style", format="application/json", data="<style>")]
 fn style_create(conn: DbConn, auth: auth::Auth, style: String) -> Result<Json, status::Custom<String>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -297,7 +298,7 @@ fn style_create(conn: DbConn, auth: auth::Auth, style: String) -> Result<Json, s
 
 #[post("/style/<id>/public")]
 fn style_public(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -310,7 +311,7 @@ fn style_public(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status:
 
 #[post("/style/<id>/private")]
 fn style_private(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -323,7 +324,7 @@ fn style_private(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status
 
 #[patch("/style/<id>", format="application/json", data="<style>")]
 fn style_patch(conn: DbConn, auth: auth::Auth, id: i64, style: String) -> Result<Json, status::Custom<String>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -336,7 +337,7 @@ fn style_patch(conn: DbConn, auth: auth::Auth, id: i64, style: String) -> Result
 
 #[delete("/style/<id>")]
 fn style_delete(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -350,7 +351,7 @@ fn style_delete(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status:
 
 #[get("/style/<id>")]
 fn style_get(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid: Option<i64> = auth::auth(&conn.0, auth);
+    let uid: Option<i64> = auth.validate(&conn.0);
 
     match style::get(&conn.0, &uid, &id) {
         Ok(style) => Ok(Json(json!(style))),
@@ -368,7 +369,7 @@ fn style_list_public(conn: DbConn) -> Result<Json, status::Custom<String>> {
 
 #[get("/styles/<user>")]
 fn style_list_user(conn: DbConn, auth: auth::Auth, user: i64) -> Result<Json, status::Custom<String>> {
-    match auth::auth(&conn.0, auth) {
+    match auth.validate(&conn.0) {
         Some(uid) => {
             if uid == user {
                 match style::list_user(&conn.0, &user) {
@@ -449,7 +450,7 @@ fn schema_get(schema: State<Option<serde_json::value::Value>>) -> Result<Json, s
 
 #[post("/data/features", format="application/json", data="<body>")]
 fn features_action(auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -537,7 +538,7 @@ fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
 
 #[put("/0.6/changeset/create", data="<body>")]
 fn xml_changeset_create(auth: auth::Auth, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -565,7 +566,7 @@ fn xml_changeset_create(auth: auth::Auth, conn: DbConn, body: String) -> Result<
 
 #[put("/0.6/changeset/<id>/close")]
 fn xml_changeset_close(auth: auth::Auth, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
-    match auth::auth(&conn.0, auth) {
+    match auth.validate(&conn.0) {
         Some(_) => Ok(id.to_string()),
         _ => Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!")))
     }
@@ -573,7 +574,7 @@ fn xml_changeset_close(auth: auth::Auth, conn: DbConn, id: i64) -> Result<String
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
 fn xml_changeset_modify(auth: auth::Auth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -619,7 +620,7 @@ fn xml_changeset_modify(auth: auth::Auth, conn: DbConn, delta_id: i64, body: Str
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
 fn xml_changeset_upload(auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
@@ -747,7 +748,7 @@ fn xml_user() -> String {
 
 #[post("/data/feature", format="application/json", data="<body>")]
 fn feature_action(auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
-    let uid = match auth::auth(&conn.0, auth) {
+    let uid = match auth.validate(&conn.0) {
         Some(uid) => uid,
         _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
     };
