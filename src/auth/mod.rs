@@ -243,7 +243,7 @@ impl ValidAuth for CustomAuth {
             None => (),
             Some(ref schema) => { schema.is_valid()?; }
         };
-        
+
         match &self.user {
             None => (),
             Some(ref user) => { user.is_valid()?; }
@@ -278,6 +278,31 @@ impl ValidAuth for CustomAuth {
     }
 }
 
+///
+/// Determines whether the current auth state meets or exceeds the
+/// requirements of an endpoint
+///
+fn auth_met(required: &Option<String>, auth: &Auth) -> Result<bool, status::Custom<String>> {
+    match required {
+        None => Err(not_authed()),
+        Some(req) => match req.as_ref() {
+            "public" => Ok(true),
+            "admin" => {
+                if auth.uid.is_none() || auth.access.is_none() {
+                    return Err(not_authed());
+                } else if auth.access == Some(String::from("admin")) {
+                    return Ok(true);
+                } else {
+                    return Err(not_authed());
+                }
+            },
+            "self" => {
+                Ok(true)
+            },
+            _ => Err(not_authed())
+        }
+    }
+}
 
 impl CustomAuth {
     pub fn new() -> Self {
@@ -326,7 +351,7 @@ impl CustomAuth {
     }
 
     pub fn allows_meta(&self, auth: &Auth) -> Result<bool, status::Custom<String>> {
-        Err(not_authed())
+        auth_met(&self.meta, auth)
     }
 }
 
@@ -412,7 +437,7 @@ impl Auth {
                 SELECT
                     user_tokens.uid,
                     users.access
-                FROM 
+                FROM
                     users_tokens,
                     users
                 WHERE
@@ -427,7 +452,7 @@ impl Auth {
 
                     let uid: i64 = res.get(0).get(0);
                     let access: String = res.get(0).get(1);
-    
+
                     self.secure(Some((uid, access)));
 
                     return Ok(Some(uid));
