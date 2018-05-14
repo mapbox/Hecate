@@ -26,6 +26,8 @@ pub mod xml;
 pub mod user;
 pub mod auth;
 
+use auth::ValidAuth;
+
 //Postgres Connection Pooling
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
