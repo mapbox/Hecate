@@ -320,14 +320,13 @@ impl CustomAuth {
     }
 
     pub fn allows_meta(&self, auth: &Auth) -> Result<bool, status::Custom<String>> {
-
-
         Ok(true)
     }
 }
 
 pub struct Auth {
     pub uid: Option<i64>,
+    pub access: Option<String>,
     pub token: Option<String>,
     pub basic: Option<(String, String)>
 }
@@ -336,6 +335,7 @@ impl Auth {
     pub fn new() -> Self {
         Auth {
             uid: None,
+            access: None,
             token: None,
             basic: None
         }
@@ -347,8 +347,14 @@ impl Auth {
     /// Used as a generic function by validate to ensure future
     /// authentication methods are cleared with each validate
     ///
-    pub fn secure(&mut self, uid: Option<i64>) {
-        self.uid = uid;
+    pub fn secure(&mut self, user: Option<(i64, String)>) {
+        match user {
+            Some(user) => {
+                self.uid = Some(user.0);
+                self.access = Some(user.1);
+            }
+            _ => ()
+        }
         self.token = None;
         self.basic = None;
     }
@@ -367,17 +373,20 @@ impl Auth {
             let (username, password) = self.basic.clone().unwrap();
 
             match conn.query("
-                SELECT id
-                    FROM users
-                    WHERE
-                        username = $1
-                        AND password = crypt($2, password)
+                SELECT
+                    id,
+                    access
+                FROM users
+                WHERE
+                    username = $1
+                    AND password = crypt($2, password)
             ", &[ &username, &password ]) {
                 Ok(res) => {
                     if res.len() != 1 { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Not Authorized!"))); }
                     let uid: i64 = res.get(0).get(0);
+                    let access: String = res.get(0).get(1);
 
-                    self.secure(Some(uid));
+                    self.secure(Some((uid, access)));
 
                     return Ok(Some(uid));
                 },
@@ -392,11 +401,16 @@ impl Auth {
             let token = self.token.clone().unwrap();
 
             match conn.query("
-                SELECT uid
-                FROM users_tokens
+                SELECT
+                    user_tokens.uid,
+                    users.access
+                FROM 
+                    users_tokens,
+                    users
                 WHERE
                     token = $1
                     AND now() < expiry
+                    AND uusers_tokens.uid = users.id
             ", &[ &token ]) {
                 Ok(res) => {
                     if res.len() == 0 {
@@ -405,8 +419,9 @@ impl Auth {
                     }
 
                     let uid: i64 = res.get(0).get(0);
+                    let access: String = res.get(0).get(1);
     
-                    self.secure(Some(uid));
+                    self.secure(Some((uid, access)));
 
                     return Ok(Some(uid));
                 },
