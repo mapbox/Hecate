@@ -197,7 +197,7 @@ fn mvt_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAut
 }
 
 #[get("/tiles/<z>/<x>/<y>/meta")]
-fn mvt_meta(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<String>> {
+fn mvt_meta(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<String>> {
     auth_rules.allows_mvt_meta(&mut auth, &conn.0)?;
 
     if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
@@ -209,7 +209,7 @@ fn mvt_meta(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<
 }
 
 #[get("/tiles/<z>/<x>/<y>/regen")]
-fn mvt_regen(conn: DbConn, mut auth: auth::Auth, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
+fn mvt_regen(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
     auth_rules.allows_mvt_regen(&mut auth, &conn.0)?;
 
     if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
@@ -250,7 +250,9 @@ struct DeltaList {
 }
 
 #[get("/user/create?<user>")]
-fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>> {
+fn user_create(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: User) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_user_create(&mut auth, &conn.0)?;
+
     match user::create(&conn.0, &user.username, &user.password, &user.email) {
         Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
@@ -258,8 +260,10 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
 }
 
 #[get("/user/info")]
-fn user_self(conn: DbConn, mut auth: auth::Auth) -> Result<Json, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn user_self(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_user_info(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     match user::info(&conn.0, &uid) {
         Ok(info) => { Ok(Json(json!(info))) },
@@ -268,8 +272,10 @@ fn user_self(conn: DbConn, mut auth: auth::Auth) -> Result<Json, status::Custom<
 }
 
 #[get("/user/session")]
-fn user_create_session(conn: DbConn, mut auth: auth::Auth, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
-    let uid = auth.validate(&conn.0)?.unwrap();
+fn user_create_session(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_user_create_session(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     match user::create_token(&conn.0, &uid) {
         Ok(token) => {

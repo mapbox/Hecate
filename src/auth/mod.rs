@@ -308,9 +308,17 @@ fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &r2d2::PooledConne
                 }
             },
             "self" => {
+                //Note: This ensures the user is validated,
+                //it is up to the parent caller to ensure
+                //the UID of 'self' matches the requested resource
+
                 auth.validate(conn)?;
 
-                Ok(true)
+                if auth.uid.is_some() {
+                    return Ok(true);
+                } else {
+                    return Err(not_authed());
+                }
             },
             _ => Err(not_authed())
         }
@@ -387,6 +395,27 @@ impl CustomAuth {
             Some(mvt) => auth_met(&mvt.meta, auth, &conn)
         }
     }
+
+    pub fn allows_user_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.user {
+            None => Err(not_authed()),
+            Some(user) => auth_met(&user.create, auth, &conn)
+        }
+    }
+
+    pub fn allows_user_info(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.user {
+            None => Err(not_authed()),
+            Some(user) => auth_met(&user.info, auth, &conn)
+        }
+    }
+
+    pub fn allows_user_create_session(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.user {
+            None => Err(not_authed()),
+            Some(user) => auth_met(&user.create_session, auth, &conn)
+        }
+    }
 }
 
 pub struct Auth {
@@ -412,11 +441,11 @@ impl Auth {
     /// Used as a generic function by validate to ensure future
     /// authentication methods are cleared with each validate
     ///
-    pub fn secure(&mut self, user: Option<(i64, String)>) {
+    pub fn secure(&mut self, user: Option<(i64, Option<String>)>) {
         match user {
             Some(user) => {
                 self.uid = Some(user.0);
-                self.access = Some(user.1);
+                self.access = user.1;
             }
             _ => ()
         }
@@ -452,7 +481,7 @@ impl Auth {
                     }
 
                     let uid: i64 = res.get(0).get(0);
-                    let access: String = res.get(0).get(1);
+                    let access: Option<String> = res.get(0).get(1);
 
                     self.secure(Some((uid, access)));
 
@@ -485,7 +514,7 @@ impl Auth {
                     }
 
                     let uid: i64 = res.get(0).get(0);
-                    let access: String = res.get(0).get(1);
+                    let access: Option<String> = res.get(0).get(1);
 
                     self.secure(Some((uid, access)));
 
