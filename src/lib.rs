@@ -140,7 +140,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
 fn index() -> &'static str { "Hello World!" }
 
 #[get("/")]
-fn meta(auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+fn meta(mut auth: auth::Auth, conn: DbConn, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+    auth.validate(&conn.0)?;
     auth_rules.allows_meta(&auth)?;
 
     Ok(Json(json!({
@@ -186,10 +187,8 @@ fn mvt_meta(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<
 }
 
 #[get("/tiles/<z>/<x>/<y>/regen")]
-fn mvt_regen(conn: DbConn, auth: auth::Auth, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
-    if auth.validate(&conn.0).is_none() {
-        return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!")));
-    };
+fn mvt_regen(conn: DbConn, mut auth: auth::Auth, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
+    auth.validate(&conn.0)?;
 
     if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
 
@@ -255,11 +254,8 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
 }
 
 #[get("/user/info")]
-fn user_self(conn: DbConn, auth: auth::Auth) -> Result<Json, status::Custom<String>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn user_self(conn: DbConn, mut auth: auth::Auth) -> Result<Json, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     match user::info(&conn.0, &uid) {
         Ok(info) => { Ok(Json(json!(info))) },
@@ -268,11 +264,8 @@ fn user_self(conn: DbConn, auth: auth::Auth) -> Result<Json, status::Custom<Stri
 }
 
 #[get("/user/session")]
-fn user_create_session(conn: DbConn, auth: auth::Auth, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn user_create_session(conn: DbConn, mut auth: auth::Auth, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     match user::create_token(&conn.0, &uid) {
         Ok(token) => {
@@ -284,11 +277,8 @@ fn user_create_session(conn: DbConn, auth: auth::Auth, mut cookies: Cookies) -> 
 }
 
 #[post("/style", format="application/json", data="<style>")]
-fn style_create(conn: DbConn, auth: auth::Auth, style: String) -> Result<Json, status::Custom<String>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn style_create(conn: DbConn, mut auth: auth::Auth, style: String) -> Result<Json, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     match style::create(&conn.0, &uid, &style) {
         Ok(style_id) => Ok(Json(json!(style_id))),
@@ -297,11 +287,8 @@ fn style_create(conn: DbConn, auth: auth::Auth, style: String) -> Result<Json, s
 }
 
 #[post("/style/<id>/public")]
-fn style_public(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn style_public(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     match style::access(&conn.0, &uid, &id, true) {
         Ok(updated) => Ok(Json(json!(updated))),
@@ -310,11 +297,8 @@ fn style_public(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status:
 }
 
 #[post("/style/<id>/private")]
-fn style_private(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn style_private(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     match style::access(&conn.0, &uid, &id, false) {
         Ok(updated) => Ok(Json(json!(updated))),
@@ -323,11 +307,8 @@ fn style_private(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status
 }
 
 #[patch("/style/<id>", format="application/json", data="<style>")]
-fn style_patch(conn: DbConn, auth: auth::Auth, id: i64, style: String) -> Result<Json, status::Custom<String>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn style_patch(conn: DbConn, mut auth: auth::Auth, id: i64, style: String) -> Result<Json, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     match style::update(&conn.0, &uid, &id, &style) {
         Ok(updated) => Ok(Json(json!(updated))),
@@ -336,11 +317,8 @@ fn style_patch(conn: DbConn, auth: auth::Auth, id: i64, style: String) -> Result
 }
 
 #[delete("/style/<id>")]
-fn style_delete(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn style_delete(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     match style::delete(&conn.0, &uid, &id) {
         Ok(created) => Ok(Json(json!(created))),
@@ -350,8 +328,8 @@ fn style_delete(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status:
 
 
 #[get("/style/<id>")]
-fn style_get(conn: DbConn, auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid: Option<i64> = auth.validate(&conn.0);
+fn style_get(conn: DbConn, mut auth: auth::Auth, id: i64) -> Result<Json, status::Custom<String>> {
+    let uid: Option<i64> = auth.validate(&conn.0)?;
 
     match style::get(&conn.0, &uid, &id) {
         Ok(style) => Ok(Json(json!(style))),
@@ -368,9 +346,9 @@ fn style_list_public(conn: DbConn) -> Result<Json, status::Custom<String>> {
 }
 
 #[get("/styles/<user>")]
-fn style_list_user(conn: DbConn, auth: auth::Auth, user: i64) -> Result<Json, status::Custom<String>> {
+fn style_list_user(conn: DbConn, mut auth: auth::Auth, user: i64) -> Result<Json, status::Custom<String>> {
     match auth.validate(&conn.0) {
-        Some(uid) => {
+        Ok(Some(uid)) => {
             if uid == user {
                 match style::list_user(&conn.0, &user) {
                     Ok(styles) => Ok(Json(json!(styles))),
@@ -449,11 +427,8 @@ fn schema_get(schema: State<Option<serde_json::value::Value>>) -> Result<Json, s
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
-fn features_action(auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn features_action(mut auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     let mut fc = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
@@ -537,11 +512,8 @@ fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(auth: auth::Auth, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn xml_changeset_create(mut auth: auth::Auth, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     let map = match xml::to_delta(&body) {
         Ok(map) => map,
@@ -565,19 +537,15 @@ fn xml_changeset_create(auth: auth::Auth, conn: DbConn, body: String) -> Result<
 }
 
 #[put("/0.6/changeset/<id>/close")]
-fn xml_changeset_close(auth: auth::Auth, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
-    match auth.validate(&conn.0) {
-        Some(_) => Ok(id.to_string()),
-        _ => Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!")))
-    }
+fn xml_changeset_close(mut auth: auth::Auth, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
+    auth.validate(&conn.0)?;
+
+    Ok(id.to_string())
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(auth: auth::Auth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn xml_changeset_modify(mut auth: auth::Auth, conn: DbConn, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     let trans = conn.0.transaction().unwrap();
 
@@ -591,7 +559,7 @@ fn xml_changeset_modify(auth: auth::Auth, conn: DbConn, delta_id: i64, body: Str
             conflict_response.set_status(HTTPStatus::Conflict);
             conflict_response.set_sized_body(Cursor::new(format!("The changeset {} was closed at previously", &delta_id)));
             conflict_response.set_raw_header("Error", format!("The changeset {} was closed at previously", &delta_id));
-            return Err(conflict_response);
+            return Ok(conflict_response);
         }
     }
 
@@ -600,7 +568,7 @@ fn xml_changeset_modify(auth: auth::Auth, conn: DbConn, delta_id: i64, body: Str
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Ok(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
@@ -609,21 +577,18 @@ fn xml_changeset_modify(auth: auth::Auth, conn: DbConn, delta_id: i64, body: Str
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Ok(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
     trans.commit().unwrap();
 
-    Ok(status::Custom(HTTPStatus::Ok, delta_id.to_string()))
+    Err(status::Custom(HTTPStatus::Ok, delta_id.to_string()))
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn xml_changeset_upload(mut auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     let trans = conn.0.transaction().unwrap();
 
@@ -637,13 +602,13 @@ fn xml_changeset_upload(auth: auth::Auth, conn: DbConn, schema: State<Option<ser
             conflict_response.set_status(HTTPStatus::Conflict);
             conflict_response.set_sized_body(Cursor::new(format!("The changeset {} was closed at previously", &delta_id)));
             conflict_response.set_raw_header("Error", format!("The changeset {} was closed at previously", &delta_id));
-            return Err(conflict_response);
+            return Ok(conflict_response);
         }
     }
 
     let (mut fc, tree) = match xml::to_features(&body) {
         Ok(fctree) => fctree,
-        Err(err) => { return Ok(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())); }
+        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())); }
     };
 
     let mut ids: HashMap<i64, feature::Response> = HashMap::new();
@@ -653,7 +618,7 @@ fn xml_changeset_upload(auth: auth::Auth, conn: DbConn, schema: State<Option<ser
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
-                return Ok(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
+                return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
             },
             Ok(feat_res) => {
                 if feat_res.old.unwrap_or(0) < 0 {
@@ -671,7 +636,7 @@ fn xml_changeset_upload(auth: auth::Auth, conn: DbConn, schema: State<Option<ser
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Ok(status::Custom(HTTPStatus::InternalServerError, String::from("Could not format diffResult XML")));
+            return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not format diffResult XML")));
         },
         Ok(diffres) => diffres
     };
@@ -681,19 +646,19 @@ fn xml_changeset_upload(auth: auth::Auth, conn: DbConn, schema: State<Option<ser
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Ok(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
+            return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
         }
     }
 
     match delta::finalize(&delta_id, &trans) {
         Ok (_) => {
             trans.commit().unwrap();
-            Ok(status::Custom(HTTPStatus::Ok, diffres))
+            Err(status::Custom(HTTPStatus::Ok, diffres))
         },
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            Ok(status::Custom(HTTPStatus::InternalServerError, String::from("Could not close delta")))
+            Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not close delta")))
         }
     }
 }
@@ -747,11 +712,8 @@ fn xml_user() -> String {
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
-    let uid = match auth.validate(&conn.0) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn feature_action(mut auth: auth::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
+    let uid = auth.validate(&conn.0)?.unwrap();
 
     let mut feat = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },

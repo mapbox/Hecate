@@ -10,6 +10,7 @@ use self::rocket::request::{self, FromRequest};
 use self::rocket::http::Status;
 use self::rocket::{Request, Outcome};
 use self::rocket::response::status;
+use self::rocket::http::Status as HTTPStatus;
 
 ///
 /// Allows a category to be null, public, admin, or user
@@ -361,7 +362,7 @@ impl Auth {
     ///
     /// Note: Once validated the token/basic auth used to validate the user will be set to null
     ///
-    pub fn validate(mut self, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Option<i64> {
+    pub fn validate(&mut self, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Option<i64>, status::Custom<String>> {
         if self.basic.is_some() {
             let (username, password) = self.basic.clone().unwrap();
 
@@ -373,14 +374,17 @@ impl Auth {
                         AND password = crypt($2, password)
             ", &[ &username, &password ]) {
                 Ok(res) => {
-                    if res.len() != 1 { return None; }
+                    if res.len() != 1 { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Not Authorized!"))); }
                     let uid: i64 = res.get(0).get(0);
 
                     self.secure(Some(uid));
 
-                    return Some(uid);
+                    return Ok(Some(uid));
                 },
-                Err(_) => ()
+                _ => {
+                    let err: status::Custom<String> = status::Custom(HTTPStatus::BadRequest, String::from("Not Authorized!"));
+                    return Err(err);
+                }
             }
         }
 
@@ -395,18 +399,24 @@ impl Auth {
                     AND now() < expiry
             ", &[ &token ]) {
                 Ok(res) => {
-                    if res.len() == 0 { return None; }
+                    if res.len() == 0 {
+                        let err: status::Custom<String> = status::Custom(HTTPStatus::BadRequest, String::from("Not Authorized!"));
+                        return Err(err);
+                    }
+
                     let uid: i64 = res.get(0).get(0);
     
                     self.secure(Some(uid));
 
-                    return Some(uid);
+                    return Ok(Some(uid));
                 },
-                Err(_) => ()
+                _ => {
+                    return Err(status::Custom(HTTPStatus::BadRequest, String::from("Not Authorized!")));
+                }
             }
-        };
+        }
 
-        None
+        Ok(None)
     }
 }
 
