@@ -94,7 +94,7 @@ pub struct AuthMVT {
     pub meta: Option<String>
 }
 
-impl ValidAuth for AuthSchema {
+impl ValidAuth for AuthMVT {
     fn valid(&self) -> Result<bool, String> {
         is_all("mvt::get", &self.get)?;
         is_all("mvt::regen", &self.regen)?;
@@ -113,7 +113,7 @@ pub struct AuthUser {
 
 impl ValidAuth for AuthUser {
     fn valid(&self) -> Result<bool, String> {
-        is_all("user::create", &self.meta)?;
+        is_all("user::create", &self.create)?;
 
         is_self("user::create_session", &self.create_session)?;
         is_self("user::info", &self.info)?;
@@ -200,7 +200,7 @@ pub struct AuthOSM {
     pub create: Option<String>
 }
 
-impl ValidAuth for AuthBounds {
+impl ValidAuth for AuthOSM {
     fn valid(&self) -> Result<bool, String> {
         is_all("osm::get", &self.get)?;
         is_auth("osm::create", &self.create)?;
@@ -228,6 +228,11 @@ impl CustomAuth {
             meta: Some(String::from("public")),
             schema: Some(AuthSchema {
                 get: Some(String::from("public"))
+            }),
+            mvt: Some(AuthMVT {
+                get: Some(String::from("public")),
+                regen: Some(String::from("user")),
+                meta: Some(String::from("public"))
             }),
             user: Some(AuthUser {
                 info: Some(String::from("self")),
