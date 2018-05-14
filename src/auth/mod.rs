@@ -475,6 +475,20 @@ impl CustomAuth {
             Some(delta) => auth_met(&delta.list, auth, &conn)
         }
     }
+
+    pub fn allows_bounds_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.bounds {
+            None => Err(not_authed()),
+            Some(bounds) => auth_met(&bounds.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_bounds_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.bounds {
+            None => Err(not_authed()),
+            Some(bounds) => auth_met(&bounds.list, auth, &conn)
+        }
+    }
 }
 
 pub struct Auth {
