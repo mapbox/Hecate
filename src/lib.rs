@@ -136,6 +136,25 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
     }
 }
 
+#[error(401)]
+fn not_authorized() -> status::Custom<Json> {
+    status::Custom(HTTPStatus::Unauthorized, Json(json!({
+        "code": 401,
+        "status": "Not Authorized",
+        "reason": "You must be logged in to access this resource"
+    })))
+}
+
+#[error(404)]
+fn not_found() -> Json {
+    Json(json!({
+        "code": 404,
+        "status": "Not Found",
+        "reason": "Resource was not found."
+    }))
+}
+
+
 #[get("/")]
 fn index() -> &'static str { "Hello World!" }
 
@@ -154,7 +173,9 @@ fn staticsrv(file: PathBuf) -> Option<NamedFile> {
 }
 
 #[get("/tiles/<z>/<x>/<y>")]
-fn mvt_get(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
+fn mvt_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
+    auth_rules.allows_mvt_get(&mut auth, &conn.0)?;
+
     if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
 
     let tile = match mvt::get(&conn.0, z, x, y, false) {
@@ -177,6 +198,8 @@ fn mvt_get(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Response<'static>, sta
 
 #[get("/tiles/<z>/<x>/<y>/meta")]
 fn mvt_meta(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_mvt_meta(&mut auth, &conn.0)?;
+
     if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
 
     match mvt::meta(&conn.0, z, x, y) {
@@ -187,7 +210,7 @@ fn mvt_meta(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<
 
 #[get("/tiles/<z>/<x>/<y>/regen")]
 fn mvt_regen(conn: DbConn, mut auth: auth::Auth, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
-    auth.validate(&conn.0)?;
+    auth_rules.allows_mvt_regen(&mut auth, &conn.0)?;
 
     if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
 
@@ -207,24 +230,6 @@ fn mvt_regen(conn: DbConn, mut auth: auth::Auth, z: u8, x: u32, y: u32) -> Resul
     mvt_response.set_sized_body(c);
     mvt_response.set_raw_header("Content-Type", "application/x-protobuf");
     Ok(mvt_response)
-}
-
-#[error(401)]
-fn not_authorized() -> status::Custom<Json> {
-    status::Custom(HTTPStatus::Unauthorized, Json(json!({
-        "code": 401,
-        "status": "Not Authorized",
-        "reason": "You must be logged in to access this resource"
-    })))
-}
-
-#[error(404)]
-fn not_found() -> Json {
-    Json(json!({
-        "code": 404,
-        "status": "Not Found",
-        "reason": "Resource was not found."
-    }))
 }
 
 #[derive(FromForm)]

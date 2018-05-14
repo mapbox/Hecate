@@ -298,6 +298,15 @@ fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &r2d2::PooledConne
                     return Err(not_authed());
                 }
             },
+            "user" => {
+                auth.validate(conn)?;
+
+                if auth.uid.is_some() {
+                    return Ok(true);
+                } else {
+                    return Err(not_authed());
+                }
+            },
             "self" => {
                 auth.validate(conn)?;
 
@@ -356,6 +365,27 @@ impl CustomAuth {
 
     pub fn allows_meta(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
         auth_met(&self.meta, auth, &conn)
+    }
+
+    pub fn allows_mvt_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.mvt {
+            None => Err(not_authed()),
+            Some(mvt) => auth_met(&mvt.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_mvt_regen(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.mvt {
+            None => Err(not_authed()),
+            Some(mvt) => auth_met(&mvt.regen, auth, &conn)
+        }
+    }
+
+    pub fn allows_mvt_meta(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.mvt {
+            None => Err(not_authed()),
+            Some(mvt) => auth_met(&mvt.meta, auth, &conn)
+        }
     }
 }
 
