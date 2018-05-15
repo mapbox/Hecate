@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.21.0
+
+- :tada: Add custom authentication config
+
 ## v0.20.3
 
 - :rocket: Migrate all BoundsStream implementation details into the `bounds` mod for cleaner `lib.rs` file
