@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.21.1
+
+- :rocket: Refector `BoundsStream` into a new generic `PGStream`
+
 ## v0.21.0
 
 - :tada: Add custom authentication config
