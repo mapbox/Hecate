@@ -1,0 +1,42 @@
+{
+    "meta": "public",
+    "schema": {
+        "get": "public"
+    },
+    "mvt": {
+        "get": "",
+        "regen": "",
+        "meta": ""
+    },
+    "user": {
+        "info": "self",
+        "create": "public",
+        "create_session": "self"
+    },
+    "style": {
+        "create": "self",
+        "patch": "self",
+        "set_public": "self",
+        "set_private": "self",
+        "delete": "self",
+        "get": "public",
+        "list": null
+    },
+    "delta": {
+        "get": "",
+        "list": ""
+    },
+    "feature": {
+        "create": "",
+        "get": "",
+        "history": ""
+    },
+    "bounds": {
+        "list": "",
+        "get": ""
+    },
+    "osm": {
+        "get": "",
+        "create": ""
+    }
+}
