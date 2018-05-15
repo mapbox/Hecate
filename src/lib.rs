@@ -21,6 +21,7 @@ pub mod delta;
 pub mod mvt;
 pub mod feature;
 pub mod bounds;
+pub mod clone;
 pub mod stream;
 pub mod style;
 pub mod xml;
