@@ -83,6 +83,27 @@ pub trait ValidAuth {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct AuthClone {
+    pub get: Option<String>
+}
+
+impl AuthClone {
+    fn new() -> Self {
+        AuthClone {
+            get: Some(String::from("user"))
+        }
+    }
+}
+
+impl ValidAuth for AuthClone {
+    fn is_valid(&self) -> Result<bool, String> {
+        is_all("clone::get", &self.get)?;
+
+        Ok(true)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthSchema {
     pub get: Option<String>
 }
@@ -306,6 +327,7 @@ pub struct CustomAuth {
     pub style: Option<AuthStyle>,
     pub delta: Option<AuthDelta>,
     pub bounds: Option<AuthBounds>,
+    pub clone: Option<AuthClone>,
     pub osm: Option<AuthOSM>
 }
 
@@ -346,6 +368,11 @@ impl ValidAuth for CustomAuth {
         match &self.bounds {
             None => (),
             Some(ref bounds) => { bounds.is_valid()?; }
+        };
+
+        match &self.clone {
+            None => (),
+            Some(ref clone) => { clone.is_valid()?; }
         };
 
         match &self.osm {
@@ -411,6 +438,7 @@ impl CustomAuth {
             style: Some(AuthStyle::new()),
             delta: Some(AuthDelta::new()),
             bounds: Some(AuthBounds::new()),
+            clone: Some(AuthClone::new()),
             osm: Some(AuthOSM::new())
         }
     }
@@ -521,6 +549,13 @@ impl CustomAuth {
         match &self.delta {
             None => Err(not_authed()),
             Some(delta) => auth_met(&delta.list, auth, &conn)
+        }
+    }
+
+    pub fn allows_clone_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.clone {
+            None => Err(not_authed()),
+            Some(clone) => auth_met(&clone.get, auth, &conn)
         }
     }
 
