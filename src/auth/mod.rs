@@ -82,7 +82,7 @@ pub trait ValidAuth {
     fn is_valid(&self) -> Result<bool, String>;
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthSchema {
     pub get: Option<String>
 }
@@ -103,7 +103,7 @@ impl ValidAuth for AuthSchema {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthMVT {
     pub get: Option<String>,
     pub regen: Option<String>,
@@ -130,7 +130,7 @@ impl ValidAuth for AuthMVT {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthUser {
     pub info: Option<String>,
     pub create: Option<String>,
@@ -158,7 +158,7 @@ impl ValidAuth for AuthUser {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthStyle {
     pub create: Option<String>,
     pub patch: Option<String>,
@@ -197,7 +197,7 @@ impl ValidAuth for AuthStyle {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthDelta {
     pub get: Option<String>,
     pub list: Option<String>,
@@ -221,7 +221,7 @@ impl ValidAuth for AuthDelta {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthFeature {
     pub create: Option<String>,
     pub get: Option<String>,
@@ -248,7 +248,7 @@ impl ValidAuth for AuthFeature {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthBounds {
     pub list: Option<String>,
     pub get: Option<String>
@@ -272,7 +272,7 @@ impl ValidAuth for AuthBounds {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthOSM {
     pub get: Option<String>,
     pub create: Option<String>
@@ -296,7 +296,7 @@ impl ValidAuth for AuthOSM {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CustomAuth {
     pub meta: Option<String>,
     pub mvt: Option<AuthMVT>,
@@ -581,6 +581,7 @@ impl CustomAuth {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Auth {
     pub uid: Option<i64>,
     pub access: Option<String>,

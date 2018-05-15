@@ -61,8 +61,79 @@ mod test {
         }
 
         {
-            let mut resp = reqwest::get("http://ingalls:yeaheh@localhost:8000/api/schema").unwrap();
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/schema")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "No Schema Validation Enforced");
+        }
+
+        { //Create Point
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
             assert_eq!(resp.text().unwrap(), "true");
+        }
+
+        {
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            assert_eq!(resp.text().unwrap(), "Not Authorized!");
+            assert!(resp.status().is_client_error());
+        }
+
+        {
+            let client = reqwest::Client::new();
+            let resp = client.get("http://localhost:8000/api/data/feature/1")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            assert_eq!(resp.text().unwrap(), "Not Authorized!");
+            assert!(resp.status().is_client_error());
+        }
+
+        {
+            let client = reqwest::Client::new();
+            let resp = client.get("http://localhost:8000/api/deltas")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let mut resp = reqwest::get("http://localhost:8000/api/delta/1").unwrap();
+            assert_eq!(resp.text().unwrap(), "Not Authorized!");
+            assert!(resp.status().is_client_error());
+        }
+
+        {
+            let client = reqwest::Client::new();
+            let resp = client.get("http://localhost:8000/api/delta/1")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
             assert!(resp.status().is_success());
         }
 
