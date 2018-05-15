@@ -54,6 +54,18 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        {
+            let mut resp = reqwest::get("http://localhost:8000/api/schema").unwrap();
+            assert_eq!(resp.text().unwrap(), "Not Authorized!");
+            assert!(resp.status().is_client_error());
+        }
+
+        {
+            let mut resp = reqwest::get("http://ingalls:yeaheh@localhost:8000/api/schema").unwrap();
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
         server.kill().unwrap();
     }
 }

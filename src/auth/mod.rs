@@ -87,6 +87,14 @@ pub struct AuthSchema {
     pub get: Option<String>
 }
 
+impl AuthSchema {
+    fn new() -> Self {
+        AuthSchema {
+            get: Some(String::from("public"))
+        }
+    }
+}
+
 impl ValidAuth for AuthSchema {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("schema::get", &self.get)?;
@@ -100,6 +108,16 @@ pub struct AuthMVT {
     pub get: Option<String>,
     pub regen: Option<String>,
     pub meta: Option<String>
+}
+
+impl AuthMVT {
+    fn new() -> Self {
+        AuthMVT {
+            get: Some(String::from("public")),
+            regen: Some(String::from("user")),
+            meta: Some(String::from("public"))
+        }
+    }
 }
 
 impl ValidAuth for AuthMVT {
@@ -117,6 +135,16 @@ pub struct AuthUser {
     pub info: Option<String>,
     pub create: Option<String>,
     pub create_session: Option<String>
+}
+
+impl AuthUser {
+    fn new() -> Self {
+        AuthUser {
+            info: Some(String::from("self")),
+            create: Some(String::from("public")),
+            create_session: Some(String::from("self"))
+        }
+    }
 }
 
 impl ValidAuth for AuthUser {
@@ -141,6 +169,20 @@ pub struct AuthStyle {
     pub list: Option<String>
 }
 
+impl AuthStyle {
+    fn new() -> Self {
+        AuthStyle {
+            create: Some(String::from("self")),
+            patch: Some(String::from("self")),
+            set_public: Some(String::from("self")),
+            set_private: Some(String::from("self")),
+            delete: Some(String::from("self")),
+            get: Some(String::from("public")),
+            list: Some(String::from("public"))
+        }
+    }
+}
+
 impl ValidAuth for AuthStyle {
     fn is_valid(&self) -> Result<bool, String> {
         is_self("style::create", &self.create)?;
@@ -161,6 +203,15 @@ pub struct AuthDelta {
     pub list: Option<String>,
 }
 
+impl AuthDelta {
+    fn new() -> Self {
+        AuthDelta {
+            get: Some(String::from("public")),
+            list: Some(String::from("public"))
+        }
+    }
+}
+
 impl ValidAuth for AuthDelta {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("delta::get", &self.get)?;
@@ -175,6 +226,16 @@ pub struct AuthFeature {
     pub create: Option<String>,
     pub get: Option<String>,
     pub history: Option<String>
+}
+
+impl AuthFeature {
+    fn new() -> Self {
+        AuthFeature {
+            create: Some(String::from("user")),
+            get: Some(String::from("public")),
+            history: Some(String::from("public"))
+        }
+    }
 }
 
 impl ValidAuth for AuthFeature {
@@ -193,6 +254,15 @@ pub struct AuthBounds {
     pub get: Option<String>
 }
 
+impl AuthBounds {
+    fn new() -> Self {
+        AuthBounds {
+            list: Some(String::from("public")),
+            get: Some(String::from("public"))
+        }
+    }
+}
+
 impl ValidAuth for AuthBounds {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("bounds::list", &self.list)?;
@@ -206,6 +276,15 @@ impl ValidAuth for AuthBounds {
 pub struct AuthOSM {
     pub get: Option<String>,
     pub create: Option<String>
+}
+
+impl AuthOSM {
+    fn new() -> Self {
+        AuthOSM {
+            get: Some(String::from("public")),
+            create: Some(String::from("user"))
+        }
+    }
 }
 
 impl ValidAuth for AuthOSM {
@@ -325,45 +404,14 @@ impl CustomAuth {
     pub fn new() -> Self {
         CustomAuth {
             meta: Some(String::from("public")),
-            schema: Some(AuthSchema {
-                get: Some(String::from("public"))
-            }),
-            mvt: Some(AuthMVT {
-                get: Some(String::from("public")),
-                regen: Some(String::from("user")),
-                meta: Some(String::from("public"))
-            }),
-            user: Some(AuthUser {
-                info: Some(String::from("self")),
-                create: Some(String::from("public")),
-                create_session: Some(String::from("self"))
-            }),
-            feature: Some(AuthFeature {
-                create: Some(String::from("user")),
-                get: Some(String::from("public")),
-                history: Some(String::from("public"))
-            }),
-            style: Some(AuthStyle {
-                create: Some(String::from("self")),
-                patch: Some(String::from("self")),
-                set_public: Some(String::from("self")),
-                set_private: Some(String::from("self")),
-                delete: Some(String::from("self")),
-                get: Some(String::from("public")),
-                list: Some(String::from("public"))
-            }),
-            delta: Some(AuthDelta {
-                get: Some(String::from("public")),
-                list: Some(String::from("public"))
-            }),
-            bounds: Some(AuthBounds {
-                list: Some(String::from("public")),
-                get: Some(String::from("public"))
-            }),
-            osm: Some(AuthOSM {
-                get: Some(String::from("public")),
-                create: Some(String::from("user"))
-            })
+            schema: Some(AuthSchema::new()),
+            mvt: Some(AuthMVT::new()),
+            user: Some(AuthUser::new()),
+            feature: Some(AuthFeature::new()),
+            style: Some(AuthStyle::new()),
+            delta: Some(AuthDelta::new()),
+            bounds: Some(AuthBounds::new()),
+            osm: Some(AuthOSM::new())
         }
     }
 

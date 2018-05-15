@@ -10,7 +10,7 @@
     },
     "user": {
         "info": "self",
-        "create": "user",
+        "create": "public",
         "create_session": "self"
     },
     "style": {
