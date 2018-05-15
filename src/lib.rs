@@ -4,6 +4,7 @@
 static VERSION: &'static str = "0.20.3";
 
 #[macro_use] extern crate serde_json;
+#[macro_use] extern crate serde_derive;
 extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate postgres;
@@ -23,6 +24,9 @@ pub mod bounds;
 pub mod style;
 pub mod xml;
 pub mod user;
+pub mod auth;
+
+use auth::ValidAuth;
 
 //Postgres Connection Pooling
 use r2d2::{Pool, PooledConnection};
@@ -40,12 +44,25 @@ use rocket::request::{self, FromRequest};
 use geojson::GeoJson;
 use rocket_contrib::Json;
 
-pub fn start(database: String, schema: Option<serde_json::value::Value>) {
+pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
     env_logger::init();
+
+    let auth_rules: auth::CustomAuth = match auth {
+        None => auth::CustomAuth::new(),
+        Some(auth) => {
+            match auth.is_valid() {
+                Err(err_msg) => { panic!(err_msg); },
+                Ok(_) => ()
+            };
+
+            auth
+        }
+    };
 
     rocket::ignite()
         .manage(init_pool(&database))
         .manage(schema)
+        .manage(auth_rules)
         .mount("/", routes![
             index
         ])
@@ -54,7 +71,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>) {
         ])
         .mount("/api", routes![
             meta,
-            get_schema,
+            schema_get,
             mvt_get,
             mvt_meta,
             mvt_regen,
@@ -119,14 +136,35 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
     }
 }
 
+#[error(401)]
+fn not_authorized() -> status::Custom<Json> {
+    status::Custom(HTTPStatus::Unauthorized, Json(json!({
+        "code": 401,
+        "status": "Not Authorized",
+        "reason": "You must be logged in to access this resource"
+    })))
+}
+
+#[error(404)]
+fn not_found() -> Json {
+    Json(json!({
+        "code": 404,
+        "status": "Not Found",
+        "reason": "Resource was not found."
+    }))
+}
+
+
 #[get("/")]
 fn index() -> &'static str { "Hello World!" }
 
 #[get("/")]
-fn meta() -> Json {
-    Json(json!({
+fn meta(mut auth: auth::Auth, conn: DbConn, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_meta(&mut auth, &conn.0)?;
+
+    Ok(Json(json!({
         "version": VERSION
-    }))
+    })))
 }
 
 #[get("/<file..>")]
@@ -135,7 +173,9 @@ fn staticsrv(file: PathBuf) -> Option<NamedFile> {
 }
 
 #[get("/tiles/<z>/<x>/<y>")]
-fn mvt_get(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
+fn mvt_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
+    auth_rules.allows_mvt_get(&mut auth, &conn.0)?;
+
     if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
 
     let tile = match mvt::get(&conn.0, z, x, y, false) {
@@ -157,7 +197,9 @@ fn mvt_get(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Response<'static>, sta
 }
 
 #[get("/tiles/<z>/<x>/<y>/meta")]
-fn mvt_meta(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<String>> {
+fn mvt_meta(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_mvt_meta(&mut auth, &conn.0)?;
+
     if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
 
     match mvt::meta(&conn.0, z, x, y) {
@@ -167,10 +209,8 @@ fn mvt_meta(conn: DbConn, z: u8, x: u32, y: u32) -> Result<Json, status::Custom<
 }
 
 #[get("/tiles/<z>/<x>/<y>/regen")]
-fn mvt_regen(conn: DbConn, auth: user::Auth, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
-    if user::auth(&conn.0, auth).is_none() {
-        return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!")));
-    };
+fn mvt_regen(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<String>> {
+    auth_rules.allows_mvt_regen(&mut auth, &conn.0)?;
 
     if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, String::from("Tile Not Found"))); }
 
@@ -192,24 +232,6 @@ fn mvt_regen(conn: DbConn, auth: user::Auth, z: u8, x: u32, y: u32) -> Result<Re
     Ok(mvt_response)
 }
 
-#[error(401)]
-fn not_authorized() -> status::Custom<Json> {
-    status::Custom(HTTPStatus::Unauthorized, Json(json!({
-        "code": 401,
-        "status": "Not Authorized",
-        "reason": "You must be logged in to access this resource"
-    })))
-}
-
-#[error(404)]
-fn not_found() -> Json {
-    Json(json!({
-        "code": 404,
-        "status": "Not Found",
-        "reason": "Resource was not found."
-    }))
-}
-
 #[derive(FromForm)]
 struct User {
     username: String,
@@ -228,7 +250,9 @@ struct DeltaList {
 }
 
 #[get("/user/create?<user>")]
-fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>> {
+fn user_create(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: User) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_user_create(&mut auth, &conn.0)?;
+
     match user::create(&conn.0, &user.username, &user.password, &user.email) {
         Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
@@ -236,11 +260,10 @@ fn user_create(conn: DbConn, user: User) -> Result<Json, status::Custom<String>>
 }
 
 #[get("/user/info")]
-fn user_self(conn: DbConn, auth: user::Auth) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn user_self(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_user_info(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     match user::info(&conn.0, &uid) {
         Ok(info) => { Ok(Json(json!(info))) },
@@ -249,11 +272,10 @@ fn user_self(conn: DbConn, auth: user::Auth) -> Result<Json, status::Custom<Stri
 }
 
 #[get("/user/session")]
-fn user_create_session(conn: DbConn, auth: user::Auth, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn user_create_session(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut cookies: Cookies) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_user_create_session(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     match user::create_token(&conn.0, &uid) {
         Ok(token) => {
@@ -265,11 +287,9 @@ fn user_create_session(conn: DbConn, auth: user::Auth, mut cookies: Cookies) -> 
 }
 
 #[post("/style", format="application/json", data="<style>")]
-fn style_create(conn: DbConn, auth: user::Auth, style: String) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn style_create(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, style: String) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_create(&mut auth, &conn.0)?;
+    let uid = auth.uid.unwrap();
 
     match style::create(&conn.0, &uid, &style) {
         Ok(style_id) => Ok(Json(json!(style_id))),
@@ -278,11 +298,9 @@ fn style_create(conn: DbConn, auth: user::Auth, style: String) -> Result<Json, s
 }
 
 #[post("/style/<id>/public")]
-fn style_public(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn style_public(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_set_public(&mut auth, &conn.0)?;
+    let uid = auth.uid.unwrap();
 
     match style::access(&conn.0, &uid, &id, true) {
         Ok(updated) => Ok(Json(json!(updated))),
@@ -291,11 +309,9 @@ fn style_public(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status:
 }
 
 #[post("/style/<id>/private")]
-fn style_private(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn style_private(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_set_private(&mut auth, &conn.0)?;
+    let uid = auth.uid.unwrap();
 
     match style::access(&conn.0, &uid, &id, false) {
         Ok(updated) => Ok(Json(json!(updated))),
@@ -304,11 +320,9 @@ fn style_private(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status
 }
 
 #[patch("/style/<id>", format="application/json", data="<style>")]
-fn style_patch(conn: DbConn, auth: user::Auth, id: i64, style: String) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn style_patch(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64, style: String) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_patch(&mut auth, &conn.0)?;
+    let uid = auth.uid.unwrap();
 
     match style::update(&conn.0, &uid, &id, &style) {
         Ok(updated) => Ok(Json(json!(updated))),
@@ -317,11 +331,9 @@ fn style_patch(conn: DbConn, auth: user::Auth, id: i64, style: String) -> Result
 }
 
 #[delete("/style/<id>")]
-fn style_delete(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn style_delete(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_delete(&mut auth, &conn.0)?;
+    let uid = auth.uid.unwrap();
 
     match style::delete(&conn.0, &uid, &id) {
         Ok(created) => Ok(Json(json!(created))),
@@ -331,17 +343,19 @@ fn style_delete(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status:
 
 
 #[get("/style/<id>")]
-fn style_get(conn: DbConn, auth: user::Auth, id: i64) -> Result<Json, status::Custom<String>> {
-    let uid: Option<i64> = user::auth(&conn.0, auth);
+fn style_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_get(&mut auth, &conn.0)?;
 
-    match style::get(&conn.0, &uid, &id) {
+    match style::get(&conn.0, &auth.uid, &id) {
         Ok(style) => Ok(Json(json!(style))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }
 
 #[get("/styles")]
-fn style_list_public(conn: DbConn) -> Result<Json, status::Custom<String>> {
+fn style_list_public(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_list(&mut auth, &conn.0)?;
+
     match style::list_public(&conn.0) {
         Ok(styles) => Ok(Json(json!(styles))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
@@ -349,8 +363,10 @@ fn style_list_public(conn: DbConn) -> Result<Json, status::Custom<String>> {
 }
 
 #[get("/styles/<user>")]
-fn style_list_user(conn: DbConn, auth: user::Auth, user: i64) -> Result<Json, status::Custom<String>> {
-    match user::auth(&conn.0, auth) {
+fn style_list_user(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_style_list(&mut auth, &conn.0)?;
+
+    match auth.uid {
         Some(uid) => {
             if uid == user {
                 match style::list_user(&conn.0, &user) {
@@ -374,7 +390,9 @@ fn style_list_user(conn: DbConn, auth: user::Auth, user: i64) -> Result<Json, st
 }
 
 #[get("/deltas")]
-fn delta_list(conn: DbConn) ->  Result<Json, status::Custom<String>> {
+fn delta_list(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) ->  Result<Json, status::Custom<String>> {
+    auth_rules.allows_delta_list(&mut auth, &conn.0)?;
+
     match delta::list_json(&conn.0, None) {
         Ok(deltas) => Ok(Json(deltas)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
@@ -382,7 +400,9 @@ fn delta_list(conn: DbConn) ->  Result<Json, status::Custom<String>> {
 }
 
 #[get("/deltas?<opts>")]
-fn delta_list_offset(conn: DbConn, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
+fn delta_list_offset(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
+    auth_rules.allows_delta_list(&mut auth, &conn.0)?;
+
     match delta::list_json(&conn.0, Some(opts.offset)) {
         Ok(deltas) => Ok(Json(deltas)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
@@ -390,7 +410,9 @@ fn delta_list_offset(conn: DbConn, opts: DeltaList) ->  Result<Json, status::Cus
 }
 
 #[get("/delta/<id>")]
-fn delta(conn: DbConn, id: i64) ->  Result<Json, status::Custom<String>> {
+fn delta(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) ->  Result<Json, status::Custom<String>> {
+    auth_rules.allows_delta_get(&mut auth, &conn.0)?;
+
     match delta::get_json(&conn.0, &id) {
         Ok(delta) => Ok(Json(delta)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
@@ -398,7 +420,9 @@ fn delta(conn: DbConn, id: i64) ->  Result<Json, status::Custom<String>> {
 }
 
 #[get("/data/bounds")]
-fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
+fn bounds_list(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_bounds_list(&mut auth, &conn.0)?;
+
     match bounds::list(&conn.0) {
         Ok(bounds) => Ok(Json(json!(bounds))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
@@ -406,14 +430,18 @@ fn bounds_list(conn: DbConn) -> Result<Json, status::Custom<String>> {
 }
 
 #[get("/data/bounds/<bounds>")]
-fn bounds_get(conn: DbConn, bounds: String) -> Result<Stream<bounds::BoundsStream>, status::Custom<String>> {
+fn bounds_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Stream<bounds::BoundsStream>, status::Custom<String>> {
+    auth_rules.allows_bounds_list(&mut auth, &conn.0)?;
+
     let bs = bounds::BoundsStream::new(conn.0, bounds)?;
 
     Ok(Stream::from(bs))
 }
 
 #[get("/data/features?<map>")]
-fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
+fn features_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_feature_get(&mut auth, &conn.0)?;
+
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
     match feature::get_bbox(&conn.0, bbox) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
@@ -422,7 +450,9 @@ fn features_get(conn: DbConn, map: Map) -> Result<String, status::Custom<String>
 }
 
 #[get("/schema")]
-fn get_schema(schema: State<Option<serde_json::value::Value>>) -> Result<Json, status::Custom<String>> {
+fn schema_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, schema: State<Option<serde_json::value::Value>>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_schema_get(&mut auth, &conn.0)?;
+
     match schema.inner().clone() {
         Some(s) => Ok(Json(json!(s.clone()))),
         None => Err(status::Custom(HTTPStatus::NotFound, String::from("No Schema Validation Enforced")))
@@ -430,11 +460,10 @@ fn get_schema(schema: State<Option<serde_json::value::Value>>) -> Result<Json, s
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
-fn features_action(auth: user::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_feature_create(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     let mut fc = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
@@ -501,7 +530,9 @@ fn features_action(auth: user::Auth, conn: DbConn, schema: State<Option<serde_js
 }
 
 #[get("/0.6/map?<map>")]
-fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
+fn xml_map(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+
     let query: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
 
     let fc = match feature::get_bbox(&conn.0, query) {
@@ -518,11 +549,10 @@ fn xml_map(conn: DbConn, map: Map) -> Result<String, status::Custom<String>> {
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(auth: user::Auth, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     let map = match xml::to_delta(&body) {
         Ok(map) => map,
@@ -546,19 +576,17 @@ fn xml_changeset_create(auth: user::Auth, conn: DbConn, body: String) -> Result<
 }
 
 #[put("/0.6/changeset/<id>/close")]
-fn xml_changeset_close(auth: user::Auth, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
-    match user::auth(&conn.0, auth) {
-        Some(_) => Ok(id.to_string()),
-        _ => Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!")))
-    }
+fn xml_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+
+    Ok(id.to_string())
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(auth: user::Auth, conn: DbConn, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
+    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     let trans = conn.0.transaction().unwrap();
 
@@ -572,7 +600,7 @@ fn xml_changeset_modify(auth: user::Auth, conn: DbConn, delta_id: i64, body: Str
             conflict_response.set_status(HTTPStatus::Conflict);
             conflict_response.set_sized_body(Cursor::new(format!("The changeset {} was closed at previously", &delta_id)));
             conflict_response.set_raw_header("Error", format!("The changeset {} was closed at previously", &delta_id));
-            return Err(conflict_response);
+            return Ok(conflict_response);
         }
     }
 
@@ -581,7 +609,7 @@ fn xml_changeset_modify(auth: user::Auth, conn: DbConn, delta_id: i64, body: Str
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Ok(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
@@ -590,21 +618,20 @@ fn xml_changeset_modify(auth: user::Auth, conn: DbConn, delta_id: i64, body: Str
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Ok(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
     trans.commit().unwrap();
 
-    Ok(status::Custom(HTTPStatus::Ok, delta_id.to_string()))
+    Err(status::Custom(HTTPStatus::Ok, delta_id.to_string()))
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(auth: user::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<status::Custom<String>, Response<'static>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Ok(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
+    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     let trans = conn.0.transaction().unwrap();
 
@@ -618,13 +645,13 @@ fn xml_changeset_upload(auth: user::Auth, conn: DbConn, schema: State<Option<ser
             conflict_response.set_status(HTTPStatus::Conflict);
             conflict_response.set_sized_body(Cursor::new(format!("The changeset {} was closed at previously", &delta_id)));
             conflict_response.set_raw_header("Error", format!("The changeset {} was closed at previously", &delta_id));
-            return Err(conflict_response);
+            return Ok(conflict_response);
         }
     }
 
     let (mut fc, tree) = match xml::to_features(&body) {
         Ok(fctree) => fctree,
-        Err(err) => { return Ok(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())); }
+        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())); }
     };
 
     let mut ids: HashMap<i64, feature::Response> = HashMap::new();
@@ -634,7 +661,7 @@ fn xml_changeset_upload(auth: user::Auth, conn: DbConn, schema: State<Option<ser
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
-                return Ok(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
+                return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
             },
             Ok(feat_res) => {
                 if feat_res.old.unwrap_or(0) < 0 {
@@ -652,7 +679,7 @@ fn xml_changeset_upload(auth: user::Auth, conn: DbConn, schema: State<Option<ser
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Ok(status::Custom(HTTPStatus::InternalServerError, String::from("Could not format diffResult XML")));
+            return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not format diffResult XML")));
         },
         Ok(diffres) => diffres
     };
@@ -662,26 +689,28 @@ fn xml_changeset_upload(auth: user::Auth, conn: DbConn, schema: State<Option<ser
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Ok(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
+            return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
         }
     }
 
     match delta::finalize(&delta_id, &trans) {
         Ok (_) => {
             trans.commit().unwrap();
-            Ok(status::Custom(HTTPStatus::Ok, diffres))
+            Err(status::Custom(HTTPStatus::Ok, diffres))
         },
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            Ok(status::Custom(HTTPStatus::InternalServerError, String::from("Could not close delta")))
+            Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not close delta")))
         }
     }
 }
 
 #[get("/capabilities")]
-fn xml_capabilities() -> String {
-    String::from("
+fn xml_capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+
+    Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
             <api>
                 <version minimum=\"0.6\" maximum=\"0.6\"/>
@@ -692,12 +721,14 @@ fn xml_capabilities() -> String {
                 <status database=\"online\" api=\"online\"/>
             </api>
         </osm>
-    ")
+    "))
 }
 
 #[get("/0.6/capabilities")]
-fn xml_06capabilities() -> String {
-   String::from("
+fn xml_06capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+
+    Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
             <api>
                 <version minimum=\"0.6\" maximum=\"0.6\"/>
@@ -708,12 +739,14 @@ fn xml_06capabilities() -> String {
                 <status database=\"online\" api=\"online\"/>
             </api>
         </osm>
-    ")
+    "))
 }
 
 #[get("/0.6/user/details")]
-fn xml_user() -> String {
-    String::from("
+fn xml_user(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+
+    Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
             <user id=\"1\" display_name=\"user\" account_created=\"2010-06-18T12:34:58Z\">
                 <description></description>
@@ -724,15 +757,14 @@ fn xml_user() -> String {
                 </messages>
             </user>
         </osm>
-    ")
+    "))
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(auth: user::Auth, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
-    let uid = match user::auth(&conn.0, auth) {
-        Some(uid) => uid,
-        _ => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized!"))); }
-    };
+fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_feature_create(&mut auth, &conn.0)?;
+
+    let uid = auth.uid.unwrap();
 
     let mut feat = match body.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Body must be valid GeoJSON Feature"))); },
@@ -805,7 +837,9 @@ fn feature_action(auth: user::Auth, conn: DbConn, schema: State<Option<serde_jso
 }
 
 #[get("/data/feature/<id>")]
-fn feature_get(conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
+fn feature_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_feature_get(&mut auth, &conn.0)?;
+
     match feature::get(&conn.0, &id) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
@@ -813,7 +847,9 @@ fn feature_get(conn: DbConn, id: i64) -> Result<String, status::Custom<String>> 
 }
 
 #[get("/data/feature/<id>/history")]
-fn feature_get_history(conn: DbConn, id: i64) -> Result<Json, status::Custom<String>> {
+fn feature_get_history(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_feature_history(&mut auth, &conn.0)?;
+
     match delta::history(&conn.0, &id) {
         Ok(features) => Ok(Json(features)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
