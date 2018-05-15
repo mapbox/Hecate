@@ -21,6 +21,7 @@ pub mod delta;
 pub mod mvt;
 pub mod feature;
 pub mod bounds;
+pub mod stream;
 pub mod style;
 pub mod xml;
 pub mod user;
@@ -430,12 +431,13 @@ fn bounds_list(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::Custo
 }
 
 #[get("/data/bounds/<bounds>")]
-fn bounds_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Stream<bounds::BoundsStream>, status::Custom<String>> {
+fn bounds_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Stream<stream::PGStream>, status::Custom<String>> {
     auth_rules.allows_bounds_list(&mut auth, &conn.0)?;
 
-    let bs = bounds::BoundsStream::new(conn.0, bounds)?;
-
-    Ok(Stream::from(bs))
+    match bounds::get(conn.0, bounds) {
+        Ok(bs) => Ok(Stream::from(bs)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
 }
 
 #[get("/data/features?<map>")]
