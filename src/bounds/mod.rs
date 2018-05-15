@@ -47,7 +47,7 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
 
 pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<PGStream, BoundsError> {
     match PGStream::new(conn, String::from("next_bounds"), String::from(r#"
-        DELARE next_bounds CURSOR FOR
+        DECLARE next_bounds CURSOR FOR
             SELECT
                 row_to_json(t)::TEXT
             FROM (
