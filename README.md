@@ -25,7 +25,7 @@
     - [Schema](#schema)
     - [Styles](#styles)
     - [Vector Tiles](#vector-tiles)
-    - [Cloneing the Server](#downloading-clone)
+    - [Cloning the Server](#downloading-clone)
     - [Downloading via Boundaries](#downloading-via-boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
     - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
