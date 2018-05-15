@@ -68,27 +68,13 @@ mod test {
             assert_eq!(resp.text().unwrap(), "true");
         }
 
-        { //Create Point
+        { //Get Clone
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
-                .body(r#"{
-                    "type": "Feature",
-                    "action": "create",
-                    "message": "Create Point Outside of Bounds",
-                    "properties": { "indc": false },
-                    "geometry": { "type": "Point", "coordinates": [ -76.94755554199219,38.90385833966778 ] }
-                }"#)
+            let mut resp = client.get("http://localhost:8000/api/data/clone")
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
                 .send()
                 .unwrap();
 
-            assert!(resp.status().is_success());
-            assert_eq!(resp.text().unwrap(), "true");
-        }
-
-        { //Get Clone
-            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds/dc").unwrap();
             let mut body_str = String::from(resp.text().unwrap());
             body_str.pop();
             assert_eq!(&*body_str, r#"{"id":1,"type":"Feature","version":1,"geometry":{"type":"Point","coordinates":[-77.0121002197266,38.9257632323745]},"properties":{"indc": true}}"#);
