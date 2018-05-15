@@ -1,16 +1,16 @@
 {
-    "meta": "public",
+    "meta": "user",
     "schema": {
-        "get": "public"
+        "get": "user"
     },
     "mvt": {
-        "get": "",
-        "regen": "",
-        "meta": ""
+        "get": "user",
+        "regen": "user",
+        "meta": "user"
     },
     "user": {
         "info": "self",
-        "create": "public",
+        "create": "user",
         "create_session": "self"
     },
     "style": {
@@ -19,24 +19,24 @@
         "set_public": "self",
         "set_private": "self",
         "delete": "self",
-        "get": "public",
-        "list": null
+        "get": "user",
+        "list": "user"
     },
     "delta": {
-        "get": "",
-        "list": ""
+        "get": "user",
+        "list": "user"
     },
     "feature": {
-        "create": "",
-        "get": "",
-        "history": ""
+        "create": "user",
+        "get": "user",
+        "history": "user"
     },
     "bounds": {
-        "list": "",
-        "get": ""
+        "list": "user",
+        "get": "user"
     },
     "osm": {
-        "get": "",
-        "create": ""
+        "get": "user",
+        "create": "user"
     }
 }
