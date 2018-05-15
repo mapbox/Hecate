@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.22.0
+
+- :tada: Add data clone API
+
 ## v0.21.1
 
 - :rocket: Refector `BoundsStream` into a new generic `PGStream`
