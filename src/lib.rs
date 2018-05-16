@@ -453,12 +453,12 @@ fn clone_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomA
 }
 
 #[get("/data/features?<map>")]
-fn features_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<String, status::Custom<String>> {
+fn features_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<Stream<stream::PGStream>, status::Custom<String>> {
     auth_rules.allows_feature_get(&mut auth, &conn.0)?;
 
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
-    match feature::get_bbox(&conn.0, bbox) {
-        Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
+    match feature::get_bbox_stream(conn.0, bbox) {
+        Ok(features) => Ok(Stream::from(features)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
     }
 }

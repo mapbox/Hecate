@@ -775,7 +775,7 @@ curl -X GET 'http://localhost:8000/api/data/feature/1542/history
 
 #### `GET` `/api/data/features`
 
-Return a `FeatureCollection` of all features within a given bbox
+Return streaming Line-Delimited GeoJSON within the provided BBOX
 
 *Options*
 

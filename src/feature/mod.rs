@@ -5,6 +5,8 @@ extern crate postgres;
 extern crate serde_json;
 extern crate valico;
 
+use stream::PGStream;
+
 #[derive(PartialEq, Debug)]
 pub enum FeatureError {
     NotFound,
@@ -273,6 +275,33 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
     };
 
     Ok(feat)
+}
+
+pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<PGStream, FeatureError> {
+    if bbox.len() != 4 {
+        return Err(FeatureError::InvalidBBOX);
+    }
+
+    match PGStream::new(conn, String::from("next_features"), String::from(r#"
+        DECLARE next_features CURSOR FOR
+            SELECT
+                row_to_json(f)::TEXT AS feature
+            FROM (
+                SELECT
+                    id AS id,
+                    'Feature' AS type,
+                    version AS version,
+                    ST_AsGeoJSON(geom)::JSON AS geometry,
+                    props AS properties
+                FROM geo
+                WHERE
+                    ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
+                    OR ST_Within(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
+            ) f;
+    "#), &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]]) {
+        Ok(stream) => Ok(stream),
+        Err(_) => Err(FeatureError::NotFound)
+    }
 }
 
 pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, FeatureError> {
