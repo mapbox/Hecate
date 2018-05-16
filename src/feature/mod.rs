@@ -283,20 +283,21 @@ pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConne
     }
 
     match PGStream::new(conn, String::from("next_features"), String::from(r#"
-        SELECT
-            row_to_json(f)::TEXT AS feature
-        FROM (
+        DECLARE next_features CURSOR FOR
             SELECT
-                id AS id,
-                'Feature' AS type,
-                version AS version,
-                ST_AsGeoJSON(geom)::JSON AS geometry,
-                props AS properties
-            FROM geo
-            WHERE
-                ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
-                OR ST_Within(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
-        ) f;
+                row_to_json(f)::TEXT AS feature
+            FROM (
+                SELECT
+                    id AS id,
+                    'Feature' AS type,
+                    version AS version,
+                    ST_AsGeoJSON(geom)::JSON AS geometry,
+                    props AS properties
+                FROM geo
+                WHERE
+                    ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
+                    OR ST_Within(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
+            ) f;
     "#), &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]]) {
         Ok(stream) => Ok(stream),
         Err(_) => Err(FeatureError::NotFound)
