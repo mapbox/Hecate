@@ -12,5 +12,5 @@ All PRs to master _must_ have a corresponding versioned release
 - `git tag v#.#.#`
 - `git push`
 - `git push --tags`
-- `cargo publish`
+- `cargo publish` (Optionally)
 - Via the github interface create a new release and upload the hecate binary
