@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.23.0
+
+- :rocket: Consistent Streaming Line-Delimited GeoJSON Output
+
 ## v0.22.0
 
 - :tada: Add data clone API
