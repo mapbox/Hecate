@@ -23,6 +23,7 @@
     - [Meta](#meta)
     - [Admin Interface](#admin-interface)
     - [Schema](#schema)
+    - [Auth](#Auth)
     - [Styles](#styles)
     - [Vector Tiles](#vector-tiles)
     - [Cloning the Server](#downloading-clone)
@@ -338,6 +339,8 @@ have a map containing the auth for each subkey.
 | `GET /api`                            | `meta`                    | `public`      | All                       |       |
 | **JSON Schema**                       | `schema`                  |               | `null`                    | 2     |
 | `GET /api/schema`                     | `schema::get`             | `public`      | All                       |       |
+| **Custom Auth JSON**                  | `auth`                    |               | `null`                    | 2     |
+| `GET /api/auth`                       | `auth::get`               | `public`      | All                       |       |
 | **Mapbox Vector Tiles**               | `mvt`                     |               | `null`                    | 2     |
 | `GET /api/tiles/<z>/<x>/<y>`          | `mvt::get`                | `public`      | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt::regen`              | `user`        | All                       |       |
@@ -586,6 +589,22 @@ Return a JSON object containing the schema used by the server or return a 404 if
 
 ```bash
 curl -X GET 'http://localhost:8000/api/schema
+```
+
+---
+
+<h3 align='center'>Auth</h3>
+
+#### `GET` `/api/auth`
+
+Returns a JSON object containing the servers auth permissions as defined by the default
+auth rules or the custom JSON auth as defined in the `Custom Authentication` section
+of this guide
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/auth
 ```
 
 ---
