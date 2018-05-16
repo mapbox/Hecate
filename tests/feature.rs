@@ -247,6 +247,12 @@ mod test {
             //TODO check body
         }
 
+        {
+            let resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-30.600094,56.162109,46.377254").unwrap();
+            assert!(resp.status().is_success());
+            //TODO check body
+        }
+
         { //Modify Point
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
