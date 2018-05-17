@@ -261,7 +261,7 @@ window.onload = () => {
                     return cb(err);
                 });
             },
-            style_create:  function(style, name) {
+            style_create: function(style, name) {
                 this.modal.style_set.style = style ? style : '';
                 this.modal.style_set.id = false;
                 this.modal.style_set.username = this.credentials.username;
