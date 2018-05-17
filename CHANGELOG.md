@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.24.0
+
+- :tada: Add `GET /api/auth` endpoint for retrieving overview of auth settings
+
 ## v0.23.0
 
 - :rocket: Consistent Streaming Line-Delimited GeoJSON Output
