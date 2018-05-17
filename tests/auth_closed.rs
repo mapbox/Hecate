@@ -1,5 +1,6 @@
 extern crate reqwest;
 extern crate postgres;
+#[macro_use] extern crate serde_json;
 
 #[cfg(test)]
 mod test {
@@ -11,6 +12,7 @@ mod test {
     use std::time::Duration;
     use std::thread;
     use reqwest;
+    use serde_json::value::Value;
 
     #[test]
     fn auth_closed() {
@@ -134,6 +136,63 @@ mod test {
                 .send()
                 .unwrap();
 
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/auth").send().unwrap();
+
+            let resp_value: Value = resp.json().unwrap();
+
+            assert_eq!(resp_value, json!({
+                "meta": "user",
+                "schema": {
+                    "get": "user"
+                },
+                "mvt": {
+                    "get": "user",
+                    "regen": "user",
+                    "meta": "user"
+                },
+                "user": {
+                    "info": "self",
+                    "create": "public",
+                    "create_session": "self"
+                },
+                "style": {
+                    "create": "self",
+                    "patch": "self",
+                    "set_public": "self",
+                    "set_private": "self",
+                    "delete": "self",
+                    "get": "user",
+                    "list": "user"
+                },  
+                "delta": {
+                    "get": "user",
+                    "list": "user"
+                },
+                "feature": {
+                    "create": "user",
+                    "get": "user",
+                    "history": "user"
+                },  
+                "bounds": {
+                    "list": "user",
+                    "get": "user"
+                },
+                "osm": {
+                    "get": "user",
+                    "create": "user"
+                },
+                "clone": {
+                    "get": "user"
+                },
+                "auth": {
+                    "get": "public"
+                }
+            }));
             assert!(resp.status().is_success());
         }
 

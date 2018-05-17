@@ -41,5 +41,8 @@
     },
     "clone": {
         "get": "user"
+    },
+    "auth": {
+        "get": "public"
     }
 }
