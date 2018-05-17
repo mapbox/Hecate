@@ -726,14 +726,12 @@ impl Auth {
                     return Err(not_authed());
                 }
             }
-        }
-
-        if self.token.is_some() {
+        } else if self.token.is_some() {
             let token = self.token.clone().unwrap();
 
             match conn.query("
                 SELECT
-                    user_tokens.uid,
+                    users_tokens.uid,
                     users.access
                 FROM
                     users_tokens,
@@ -741,7 +739,7 @@ impl Auth {
                 WHERE
                     token = $1
                     AND now() < expiry
-                    AND uusers_tokens.uid = users.id
+                    AND users_tokens.uid = users.id
             ", &[ &token ]) {
                 Ok(res) => {
                     if res.len() == 0 {
