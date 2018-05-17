@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.24.1
+
+- :bug: Fix session token bug preventing style creation
+- :bug: (UI) Fix stringification of function of new style creation
+
 ## v0.24.0
 
 - :tada: Add `GET /api/auth` endpoint for retrieving overview of auth settings
