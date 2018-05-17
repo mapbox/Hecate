@@ -74,6 +74,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
         .mount("/api", routes![
             meta,
             schema_get,
+            auth_get,
             mvt_get,
             mvt_meta,
             mvt_regen,
@@ -471,6 +472,13 @@ fn schema_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::Custom
         Some(s) => Ok(Json(json!(s.clone()))),
         None => Err(status::Custom(HTTPStatus::NotFound, String::from("No Schema Validation Enforced")))
     }
+}
+
+#[get("/auth")]
+fn auth_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<String>> {
+    auth_rules.allows_auth_get(&mut auth, &conn.0)?;
+
+    Ok(Json(auth_rules.to_json()))
 }
 
 #[post("/data/features", format="application/json", data="<body>")]

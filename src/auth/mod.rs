@@ -125,6 +125,27 @@ impl ValidAuth for AuthSchema {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct AuthAuth {
+    pub get: Option<String>
+}
+
+impl AuthAuth {
+    fn new() -> Self {
+        AuthAuth {
+            get: Some(String::from("public"))
+        }
+    }
+}
+
+impl ValidAuth for AuthAuth {
+    fn is_valid(&self) -> Result<bool, String> {
+        is_all("auth::get", &self.get)?;
+
+        Ok(true)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthMVT {
     pub get: Option<String>,
     pub regen: Option<String>,
@@ -322,6 +343,7 @@ pub struct CustomAuth {
     pub meta: Option<String>,
     pub mvt: Option<AuthMVT>,
     pub schema: Option<AuthSchema>,
+    pub auth: Option<AuthAuth>,
     pub user: Option<AuthUser>,
     pub feature: Option<AuthFeature>,
     pub style: Option<AuthStyle>,
@@ -432,6 +454,7 @@ impl CustomAuth {
         CustomAuth {
             meta: Some(String::from("public")),
             schema: Some(AuthSchema::new()),
+            auth: Some(AuthAuth::new()),
             mvt: Some(AuthMVT::new()),
             user: Some(AuthUser::new()),
             feature: Some(AuthFeature::new()),
@@ -441,6 +464,12 @@ impl CustomAuth {
             clone: Some(AuthClone::new()),
             osm: Some(AuthOSM::new())
         }
+    }
+
+    pub fn to_json(&self) -> serde_json::value::Value {
+        let json_auth = serde_json::from_str(serde_json::to_string(&self).unwrap().as_str()).unwrap();
+
+        json_auth
     }
 
     pub fn allows_meta(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
@@ -598,6 +627,13 @@ impl CustomAuth {
         match &self.schema {
             None => Err(not_authed()),
             Some(schema) => auth_met(&schema.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_auth_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<String>> {
+        match &self.auth {
+            None => Err(not_authed()),
+            Some(a) => auth_met(&a.get, auth, &conn)
         }
     }
 
