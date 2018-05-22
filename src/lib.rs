@@ -91,7 +91,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
             style_list_user,
             delta,
             delta_list,
-            delta_list_offset,
+            delta_list_params,
             feature_action,
             features_action,
             feature_get,
@@ -248,11 +248,6 @@ struct Map {
     bbox: String
 }
 
-#[derive(FromForm)]
-struct DeltaList {
-    offset: i64
-}
-
 #[get("/user/create?<user>")]
 fn user_create(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: User) -> Result<Json, status::Custom<String>> {
     auth_rules.allows_user_create(&mut auth, &conn.0)?;
@@ -403,8 +398,13 @@ fn delta_list(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::Custom
     }
 }
 
+#[derive(FromForm)]
+struct DeltaList {
+    offset: i64
+}
+
 #[get("/deltas?<opts>")]
-fn delta_list_offset(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
+fn delta_list_params(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
     auth_rules.allows_delta_list(&mut auth, &conn.0)?;
 
     match delta::list_json(&conn.0, Some(opts.offset)) {
