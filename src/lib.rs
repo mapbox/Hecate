@@ -91,7 +91,6 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
             style_list_user,
             delta,
             delta_list,
-            delta_list_offset,
             feature_action,
             features_action,
             feature_get,
@@ -248,11 +247,6 @@ struct Map {
     bbox: String
 }
 
-#[derive(FromForm)]
-struct DeltaList {
-    offset: i64
-}
-
 #[get("/user/create?<user>")]
 fn user_create(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: User) -> Result<Json, status::Custom<String>> {
     auth_rules.allows_user_create(&mut auth, &conn.0)?;
@@ -393,21 +387,16 @@ fn style_list_user(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::C
     }
 }
 
-#[get("/deltas")]
-fn delta_list(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) ->  Result<Json, status::Custom<String>> {
-    auth_rules.allows_delta_list(&mut auth, &conn.0)?;
-
-    match delta::list_json(&conn.0, None) {
-        Ok(deltas) => Ok(Json(deltas)),
-        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
-    }
+#[derive(FromForm)]
+struct DeltaList {
+    offset: Option<i64>
 }
 
 #[get("/deltas?<opts>")]
-fn delta_list_offset(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
+fn delta_list(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
     auth_rules.allows_delta_list(&mut auth, &conn.0)?;
 
-    match delta::list_json(&conn.0, Some(opts.offset)) {
+    match delta::list_json(&conn.0, opts.offset) {
         Ok(deltas) => Ok(Json(deltas)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
     }
