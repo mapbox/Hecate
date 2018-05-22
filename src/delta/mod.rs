@@ -109,8 +109,8 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
 
 pub fn list_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, offset: Option<i64>) -> Result<serde_json::Value, DeltaError> {
     let offset = match offset {
-        None => 0,
-        Some(offset) => offset
+        None => String::from("Infinity"),
+        Some(offset) => offset.to_string()
     };
 
     match conn.query("
@@ -129,13 +129,14 @@ pub fn list_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
                     users
                 WHERE
                     deltas.uid = users.id
-                    AND deltas.id > $1
+                    AND deltas.id < $1::TEXT::FLOAT8
                 ORDER BY id DESC
                 LIMIT 20
             ) d
         ) djson;
     ", &[&offset]) {
         Err(err) => {
+            println!("{:?}", err);
             match err.as_db() {
                 Some(_e) => { Err(DeltaError::ListFail) },
                 _ => Err(DeltaError::ListFail)
