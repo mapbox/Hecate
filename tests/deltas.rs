@@ -156,7 +156,7 @@ mod test {
             let mut resp = reqwest::get("http://localhost:8000/api/delta/1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
-        
+
             assert_eq!(json_body["affected"], json!([1, 2, 3]));
             assert_eq!(json_body["id"], json!(1));
             assert_eq!(json_body["props"], json!({ "message": "Basic Creation" }));
@@ -170,7 +170,7 @@ mod test {
             let mut resp = reqwest::get("http://localhost:8000/api/delta/2").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
-        
+
             assert_eq!(json_body["affected"], json!([1, 2, 3]));
             assert_eq!(json_body["id"], json!(2));
             assert_eq!(json_body["props"], json!({ "message": "Basic Modify" }));
@@ -184,11 +184,22 @@ mod test {
             let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
-       
+
             assert_eq!(json_body.as_array().unwrap().len(), 2);
 
             assert_eq!(json_body[0]["id"], 2);
             assert_eq!(json_body[1]["id"], 1);
+
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let mut resp = reqwest::get("http://localhost:8000/api/deltas?offset=2").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body.as_array().unwrap().len(), 1);
+            assert_eq!(json_body[0]["id"], json!(1));
 
             assert!(resp.status().is_success());
         }

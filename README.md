@@ -1,5 +1,6 @@
 <h1 align='center'>Hecate</h1>
 
+
 <p align=center>OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange</p>
 
 <p align="center">
@@ -860,7 +861,7 @@ data on the delta. Request a specific delta to get geometric data.
 
 | Option     | Notes |
 | :--------: | ----- |
-| `offset` | `OPTIONAL` Offset the returned 20 values by a given integer |
+| `offset` | `OPTIONAL` Retun the up to 20 deltas before the given delta id |
 
 *Example*
 
