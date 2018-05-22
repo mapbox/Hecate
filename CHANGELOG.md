@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.25.0
+
+- :white_check_mark: Add a bunch of tests around the `deltas` endpoints
+- :bug: change behavior of `?offset=` param to return the anticipated results
+
 ## v0.24.1
 
 - :bug: Fix session token bug preventing style creation

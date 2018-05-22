@@ -1,7 +1,7 @@
 #![feature(plugin, custom_derive, custom_attribute, attr_literals)]
 #![plugin(rocket_codegen)]
 
-static VERSION: &'static str = "0.24.1";
+static VERSION: &'static str = "0.25.0";
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
