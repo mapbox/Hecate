@@ -314,7 +314,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
     match trans.query("
         SELECT
             ARRAY_AGG(id ORDER BY id) AS delta_ids,
-            MAX(feat->>'version') AS max_version
+            MAX(feat->>'version')::BIGINT + 1 AS max_version
         FROM (
             SELECT
                 deltas.id,
@@ -322,19 +322,20 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
             FROM
                 deltas
             WHERE
-                affected @> ARRAY[4]::BIGINT[]
+                affected @> ARRAY[$1]::BIGINT[]
             ORDER BY id DESC
         ) f
         WHERE
-            (feat->>'id')::BIGINT = 4
+            (feat->>'id')::BIGINT = $1
         GROUP BY feat->>'id'
     ", &[&id]) {
         Ok(history) => {
+
             if history.len() != 1 {
                 return Err(FeatureError::RestoreError(format!("Feature id: {} does not exist", &id)));
             }
 
-            let prev_version: Option<i64> = history.get(0).get(0);
+            let prev_version: Option<i64> = history.get(0).get(1);
             match prev_version {
                 None => {
                     return Err(FeatureError::RestoreError(format!("Feature id: {} cannot restore an existing feature", &id)));
@@ -345,6 +346,11 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                     }
                 }
             };
+
+            println!("I AM HISTORY");
+
+
+            let affected: Vec<i64> = history.get(0).get(0);
 
             //Create Delta History Array
             match trans.query("

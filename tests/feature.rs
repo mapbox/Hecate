@@ -465,6 +465,32 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
+        { //Restore Point
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "id": 1,
+                    "type": "Feature",
+                    "version": 3,
+                    "action": "restore",
+                    "message": "Restore previously deleted point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 1, 1 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            assert!(resp.status().is_success());
+        }
+
         server.kill().unwrap();
     }
 }
