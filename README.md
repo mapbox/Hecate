@@ -242,6 +242,8 @@ A feature being uploaded for restoration must have the `action: restore` as well
 Restore places the new given geometry/properties at the id specified. It does not automatically roll back the feature to it's state before deletion, if this is desired, one
 must use the Feature History API to get the state before deletion and then perform the `restore` action.
 
+Note: Restore will throw an error if an feature still exists.
+
 ## Server
 
 This section of the guide goes over various options on has when launching the server
