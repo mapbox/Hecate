@@ -347,27 +347,26 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                 }
             };
 
-            println!("I AM HISTORY");
-
-
             let affected: Vec<i64> = history.get(0).get(0);
 
             //Create Delta History Array
             match trans.query("
                 INSERT INTO geo (id, version, geom, props, deltas)
                     VALUES (
-                        1,
-                        ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
-                        $2::TEXT::JSON,
-                        array[COALESCE($3, currval('deltas_id_seq')::BIGINT)]
+                        $1::BIGINT,
+                        $2::BIGINT + 1,
+                        ST_SetSRID(ST_GeomFromGeoJSON($3), 4326),
+                        $4::TEXT::JSON,
+                        array_append($5::BIGINT[], COALESCE($6, currval('deltas_id_seq')::BIGINT))
                     );
-            ", &[&geom_str, &props_str, &id, &version, &delta]) {
+            ", &[&id, &prev_version, &geom_str, &props_str, &affected, &delta]) {
                 Ok(_) => Ok(Response {
                     old: Some(id),
                     new: Some(id),
                     version: Some(version + 1)
                 }),
                 Err(err) => {
+                    println!("{:?}", err);
                     match err.as_db() {
                         Some(e) => {
                             Err(FeatureError::RestoreError(e.message.clone()))
