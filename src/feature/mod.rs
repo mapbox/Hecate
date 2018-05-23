@@ -19,7 +19,9 @@ pub enum FeatureError {
     DeleteVersionMismatch,
     DeleteError(String),
     ModifyError(String),
+    RestoreError(String),
     ModifyVersionMismatch,
+    RestoreVersionMismatch,
     IdRequired,
     ActionRequired,
     InvalidBBOX,
@@ -30,7 +32,8 @@ pub enum FeatureError {
 pub enum Action {
     Create,
     Modify,
-    Delete
+    Delete,
+    Restore
 }
 
 #[derive(PartialEq, Debug)]
@@ -53,7 +56,9 @@ impl FeatureError {
             FeatureError::DeleteVersionMismatch => String::from("Delete Version Mismatch"),
             FeatureError::DeleteError(ref msg) => format!("Delete Error: {}", msg),
             FeatureError::ModifyVersionMismatch => String::from("Modify Version Mismatch"),
+            FeatureError::RestoreVersionMismatch => String::from("Restore Version Mismatch"),
             FeatureError::ModifyError(ref msg) => format!("Modify Error: {}", msg),
+            FeatureError::RestoreError(ref msg) => format!("Restore Error: {}", msg),
             FeatureError::IdRequired => String::from( "ID Required"),
             FeatureError::ActionRequired => String::from( "Action Required"),
             FeatureError::InvalidBBOX => String::from( "Invalid BBOX"),
@@ -96,6 +101,7 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
                     Some("create") => Ok(Action::Create),
                     Some("modify") => Ok(Action::Modify),
                     Some("delete") => Ok(Action::Delete),
+                    Some("restore") => Ok(Action::Restore),
                     Some(_) => { return Err(FeatureError::ActionRequired); },
                     None => { return Err(FeatureError::ActionRequired); }
                 }
@@ -119,6 +125,7 @@ pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<s
     let res = match action {
         Action::Create => create(&trans, &schema, &feat, &delta)?,
         Action::Modify => modify(&trans, &schema, &feat, &delta)?,
+        Action::Restore => restore(&trans, &schema, &feat, &delta)?,
         Action::Delete => delete(&trans, &feat)?
     };
 
@@ -275,6 +282,99 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
     };
 
     Ok(feat)
+}
+
+pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+    let geom = match feat.geometry {
+        None => { return Err(FeatureError::NoGeometry); },
+        Some(ref geom) => geom
+    };
+
+    let props = match feat.properties {
+        None => { return Err(FeatureError::NoProps); },
+        Some(ref props) => props
+    };
+
+    let valid = match schema {
+        &Some(ref schema) => {
+            schema.validate(&json!(props)).is_valid()
+        },
+        &None => true
+    };
+
+    if !valid { return Err(FeatureError::SchemaMisMatch) };
+
+    let id = get_id(&feat)?;
+    let version = get_version(&feat)?;
+
+    let geom_str = serde_json::to_string(&geom).unwrap();
+    let props_str = serde_json::to_string(&props).unwrap();
+
+    //Get the previous version of a given feature
+    match trans.query("
+        SELECT
+            ARRAY_AGG(id ORDER BY id) AS delta_ids,
+            MAX(feat->>'version') AS max_version
+        FROM (
+            SELECT
+                deltas.id,
+                JSON_Array_Elements((deltas.features -> 'features')::JSON) AS feat 
+            FROM
+                deltas
+            WHERE
+                affected @> ARRAY[4]::BIGINT[]
+            ORDER BY id DESC
+        ) f
+        WHERE
+            (feat->>'id')::BIGINT = 4
+        GROUP BY feat->>'id'
+    ", &[&id]) {
+        Ok(history) => {
+            if history.len() != 1 {
+                return Err(FeatureError::RestoreError(format!("Feature id: {} does not exist", &id)));
+            }
+
+            let prev_version: Option<i64> = history.get(0).get(0);
+            match prev_version {
+                None => {
+                    return Err(FeatureError::RestoreError(format!("Feature id: {} cannot restore an existing feature", &id)));
+                },
+                Some(prev_version) => {
+                    if prev_version != version {
+                        return Err(FeatureError::RestoreVersionMismatch);
+                    }
+                }
+            };
+
+            //Create Delta History Array
+            match trans.query("
+                INSERT INTO geo (id, version, geom, props, deltas)
+                    VALUES (
+                        1,
+                        ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                        $2::TEXT::JSON,
+                        array[COALESCE($3, currval('deltas_id_seq')::BIGINT)]
+                    );
+            ", &[&geom_str, &props_str, &id, &version, &delta]) {
+                Ok(_) => Ok(Response {
+                    old: Some(id),
+                    new: Some(id),
+                    version: Some(version + 1)
+                }),
+                Err(err) => {
+                    match err.as_db() {
+                        Some(e) => {
+                            Err(FeatureError::RestoreError(e.message.clone()))
+                        },
+                        _ => Err(FeatureError::RestoreError(String::from("generic")))
+                    }
+                }
+            }
+        },
+        Err(_) => {
+            Err(FeatureError::RestoreError(format!("Feature history id: {} not found", &id)))
+        }
+    }
 }
 
 pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<PGStream, FeatureError> {
