@@ -128,7 +128,7 @@ server members.
 | :-------: | ----- |
 | `id`      | The unique integer `id` of a given feature. Note that all features get a unique id accross GeoJSON Geometry Type |
 | `version` | The version of a given feature, starts at `1` for a newly created feature |
-| `action`  | Only used for uploads, the desired action to be performed. One of `create`, `modify` or `delete` |
+| `action`  | Only used for uploads, the desired action to be performed. One of `create`, `modify`, `delete`, or `restore` |
 
 
 ### Examples
@@ -218,7 +218,31 @@ A feature being uploaded for deletion must have the `action: delete` as well as 
 
 Note the `properties` and `geometry` attributes must still be included. They can be set to `null` or be their previous value. They will be ignored.
 
-### Samples
+#### Restore Features
+
+```JSON
+{
+    "id": 123,
+    "version": 2,
+    "action": "restore",
+    "type": "Feature",
+    "properties": {
+        "test": true,
+        "random_array": [1, 2, 3]
+    },
+    "geometry": {
+        "type": "Point",
+        "coordinates": [ 12.34, 56.78 ]
+    }
+}
+```
+
+A feature being uploaded for restoration must have the `action: restore` as well as the `id` and `version` properties. A `restore` action is just a `modify` on a deleted feature.
+
+Restore places the new given geometry/properties at the id specified. It does not automatically roll back the feature to it's state before deletion, if this is desired, one
+must use the Feature History API to get the state before deletion and then perform the `restore` action.
+
+Note: Restore will throw an error if an feature still exists.
 
 ## Server
 

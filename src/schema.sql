@@ -43,7 +43,7 @@ DROP TABLE IF EXISTS geo;
 DROP INDEX IF EXISTS geo_gist;
 DROP INDEX IF EXISTS geo_idx;
 CREATE TABLE geo (
-    id          BIGSERIAL,
+    id          BIGSERIAL UNIQUE,
     version     BIGINT,
     geom        GEOMETRY(GEOMETRY, 4326),
     props       JSONB,

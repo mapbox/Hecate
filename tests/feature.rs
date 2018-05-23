@@ -253,6 +253,27 @@ mod test {
             //TODO check body
         }
 
+        { //Restore Point - Feature Exists! (Should be right after create as there is a short circuit for newly created features that are attempted to be restored)
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "id": 1,
+                    "type": "Feature",
+                    "version": 1,
+                    "action": "restore",
+                    "message": "Restore previously deleted point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 1, 1 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "Restore Error: Feature id: 1 cannot restore an existing feature");
+            assert!(resp.status().is_client_error());
+        }
+
         { //Modify Point
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
@@ -278,6 +299,27 @@ mod test {
             let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
             assert!(resp.status().is_success());
             //TODO check body
+        }
+
+        { //Restore Point - Feature Exists! (Should be right after a create & >= 1 Modify - fails due to unique id check)
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "id": 1,
+                    "type": "Feature",
+                    "version": 2,
+                    "action": "restore",
+                    "message": "Restore previously deleted point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 1, 1 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "Restore Error: Feature id: 1 cannot restore an existing feature");
+            assert!(resp.status().is_client_error());
         }
 
         { //Modify MultiPoint
@@ -306,7 +348,7 @@ mod test {
             assert!(resp.status().is_success());
             //TODO check body
         }
-        
+
         { //Modify LineString
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
@@ -360,7 +402,7 @@ mod test {
             assert!(resp.status().is_success());
             //TODO check body
         }
-        
+
         { //Delete Point
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
@@ -412,7 +454,7 @@ mod test {
             let resp = reqwest::get("http://localhost:8000/api/data/feature/2").unwrap();
             assert!(resp.status().is_client_error());
         }
-        
+
         { //Delete LineString
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
@@ -463,6 +505,75 @@ mod test {
         {
             let resp = reqwest::get("http://localhost:8000/api/data/feature/4").unwrap();
             assert!(resp.status().is_client_error());
+        }
+
+        { //Restore Point - Error Wrong Version
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "id": 1,
+                    "type": "Feature",
+                    "version": 2,
+                    "action": "restore",
+                    "message": "Restore previously deleted point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 1, 1 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "Restore Version Mismatch");
+            assert!(resp.status().is_client_error());
+        }
+
+        { //Restore Point - Feature Doesn't Exist
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "id": 1000,
+                    "type": "Feature",
+                    "version": 2,
+                    "action": "restore",
+                    "message": "Restore previously deleted point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 1, 1 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "Restore Error: Feature id: 1000 does not exist");
+            assert!(resp.status().is_client_error());
+        }
+
+
+        { //Restore Point
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "id": 1,
+                    "type": "Feature",
+                    "version": 3,
+                    "action": "restore",
+                    "message": "Restore previously deleted point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 1, 1 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            assert!(resp.status().is_success());
         }
 
         server.kill().unwrap();
