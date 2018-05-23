@@ -335,6 +335,8 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                 return Err(FeatureError::RestoreError(format!("Feature id: {} does not exist", &id)));
             }
 
+            //Version will be None if the feature was created but has never been modified since the
+            //original create does not need a version
             let prev_version: Option<i64> = history.get(0).get(1);
             match prev_version {
                 None => {
@@ -366,18 +368,22 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                     version: Some(version + 1)
                 }),
                 Err(err) => {
-                    println!("{:?}", err);
                     match err.as_db() {
                         Some(e) => {
-                            Err(FeatureError::RestoreError(e.message.clone()))
-                        },
+                            println!("{}", e.message);
+                            if e.message == "duplicate key value violates unique constraint \"geo_id_key\"" {
+                                Err(FeatureError::RestoreError(format!("Feature id: {} cannot restore an existing feature", &id)))
+                            } else {
+                                Err(FeatureError::RestoreError(String::from("generic")))
+                            }
+                        }
                         _ => Err(FeatureError::RestoreError(String::from("generic")))
                     }
                 }
             }
         },
         Err(_) => {
-            Err(FeatureError::RestoreError(format!("Feature history id: {} not found", &id)))
+            Err(FeatureError::RestoreError(format!("Error fetching feature history for: {}", &id)))
         }
     }
 }
