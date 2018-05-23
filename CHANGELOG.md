@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.26.0
+
+- :tada: Add new `action: restore` on Features to be able to restore previously deleted features to the given id
+
 ## v0.25.0
 
 - :white_check_mark: Add a bunch of tests around the `deltas` endpoints
