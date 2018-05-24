@@ -129,7 +129,7 @@ server members.
 | `id`      | The unique integer `id` of a given feature. Note that all features get a unique id accross GeoJSON Geometry Type |
 | `version` | The version of a given feature, starts at `1` for a newly created feature |
 | `action`  | Only used for uploads, the desired action to be performed. One of `create`, `modify`, `delete`, or `restore` |
-
+| `key`     | `[Optional]` A String containing a value that hecate will ensure remains unique accross all features. Can be a natural id (wikidata id, PID, etc), computed property hash, geometry hash etc. The specifics are left up to the client. Should an attempt at importing a Feature with a differing `id` but identical `key` be made, the feature with will be rejected, ensuring the uniqueness of the `key` values. By default this value will be `NULL`. Duplicate `NULL` values are allowed.
 
 ### Examples
 
@@ -138,6 +138,7 @@ server members.
 ```JSON
 {
     "id": 123,
+    "key": "Q1234",
     "version": 2,
     "type": "Feature",
     "properties": {
@@ -159,6 +160,7 @@ Downloaded Features will return the integer `id` of the feature, the current `ve
 ```JSON
 {
     "action": "create",
+    "key": "11-22-33-44-1234",
     "type": "Feature",
     "properties": {
         "shop": true,
@@ -180,6 +182,7 @@ assigned they should be omitted. Should an `id` or `version` be included the ser
 ```JSON
 {
     "id": 123,
+    "key": "Fn4aAsJ30",
     "version": 1,
     "action": "modify",
     "type": "Feature",
@@ -224,6 +227,7 @@ Note the `properties` and `geometry` attributes must still be included. They can
 {
     "id": 123,
     "version": 2,
+    "key": "new-optional-key",
     "action": "restore",
     "type": "Feature",
     "properties": {
