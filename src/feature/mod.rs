@@ -225,7 +225,7 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4, $5);", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
+    match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4, $6);", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
         Ok(_) => Ok(Response {
             old: Some(id),
             new: Some(id),
@@ -380,7 +380,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                         ST_SetSRID(ST_GeomFromGeoJSON($3), 4326),
                         $4::TEXT::JSON,
                         array_append($5::BIGINT[], COALESCE($6, currval('deltas_id_seq')::BIGINT)),
-                        $6
+                        $7
                     );
             ", &[&id, &prev_version, &geom_str, &props_str, &affected, &delta, &key]) {
                 Ok(_) => Ok(Response {
