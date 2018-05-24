@@ -13,6 +13,7 @@ pub enum FeatureError {
     NoProps,
     NoMembers,
     NoGeometry,
+    DuplicateKey,
     VersionRequired,
     SchemaMisMatch,
     CreateError(String),
@@ -50,6 +51,7 @@ impl FeatureError {
             FeatureError::NoProps => String::from("No Properties"),
             FeatureError::NoMembers => String::from("No Members"),
             FeatureError::NoGeometry => String::from("No Geometry"),
+            FeatureError::DuplicateKey => String::from("Duplicate Key Value"),
             FeatureError::VersionRequired => String::from("Version Required"),
             FeatureError::SchemaMisMatch => String::from("Feature properties do not pass schema definition"),
             FeatureError::CreateError(ref msg) => format!("Create Error: {}", msg),
@@ -111,6 +113,20 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     }
 }
 
+pub fn get_key(feat: &geojson::Feature) -> Option<String> {
+    match feat.foreign_members {
+        None => None,
+        Some(ref members) => {
+            match members.get("key") {
+                None => None,
+                Some(key) => {
+                    Some(key.to_string())
+                }
+            }
+        }
+    }
+}
+
 pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<serde_json::value::Value>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let action = get_action(&feat)?;
 
@@ -155,15 +171,18 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
+    let key = get_key(&feat);
+
     match trans.query("
-        INSERT INTO geo (version, geom, props, deltas)
+        INSERT INTO geo (version, geom, props, deltas, key)
             VALUES (
                 1,
                 ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                 $2::TEXT::JSON,
-                array[COALESCE($3, currval('deltas_id_seq')::BIGINT)]
+                array[COALESCE($3, currval('deltas_id_seq')::BIGINT)],
+                $4
             ) RETURNING id;
-    ", &[&geom_str, &props_str, &delta]) {
+    ", &[&geom_str, &props_str, &delta, &key]) {
         Ok(res) => Ok(Response {
             old: match feat.id {
                 Some(ref id) => id.as_i64(),
@@ -174,7 +193,13 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
         }),
         Err(err) => {
             match err.as_db() {
-                Some(e) => { Err(FeatureError::CreateError(e.message.clone())) },
+                Some(e) => {
+                    if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
+                        Err(FeatureError::DuplicateKey)
+                    } else {
+                        Err(FeatureError::CreateError(e.message.clone()))
+                    }
+                },
                 _ => Err(FeatureError::CreateError(String::from("generic")))
             }
         }
@@ -203,11 +228,12 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
 
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
+    let key = get_key(&feat);
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4);", &[&geom_str, &props_str, &id, &version, &delta]) {
+    match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4, $6);", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
         Ok(_) => Ok(Response {
             old: Some(id),
             new: Some(id),
@@ -218,8 +244,10 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
                 Some(e) => {
                     if e.message == "MODIFY: ID or VERSION Mismatch" {
                         Err(FeatureError::ModifyVersionMismatch)
+                    } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
+                        Err(FeatureError::DuplicateKey)
                     } else {
-                        Err(FeatureError::ModifyError(e.message.clone()))
+                        Err(FeatureError::CreateError(e.message.clone()))
                     }
                 },
                 _ => Err(FeatureError::ModifyError(String::from("generic")))
@@ -260,6 +288,7 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
         FROM (
             SELECT
                 id AS id,
+                key AS key,
                 'Feature' AS type,
                 version AS version,
                 ST_AsGeoJSON(geom)::JSON AS geometry,
@@ -306,6 +335,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
 
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
+    let key = get_key(&feat);
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
@@ -353,15 +383,16 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
 
             //Create Delta History Array
             match trans.query("
-                INSERT INTO geo (id, version, geom, props, deltas)
+                INSERT INTO geo (id, version, geom, props, deltas, key)
                     VALUES (
                         $1::BIGINT,
                         $2::BIGINT + 1,
                         ST_SetSRID(ST_GeomFromGeoJSON($3), 4326),
                         $4::TEXT::JSON,
-                        array_append($5::BIGINT[], COALESCE($6, currval('deltas_id_seq')::BIGINT))
+                        array_append($5::BIGINT[], COALESCE($6, currval('deltas_id_seq')::BIGINT)),
+                        $7
                     );
-            ", &[&id, &prev_version, &geom_str, &props_str, &affected, &delta]) {
+            ", &[&id, &prev_version, &geom_str, &props_str, &affected, &delta, &key]) {
                 Ok(_) => Ok(Response {
                     old: Some(id),
                     new: Some(id),
@@ -373,6 +404,8 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                             println!("{}", e.message);
                             if e.message == "duplicate key value violates unique constraint \"geo_id_key\"" {
                                 Err(FeatureError::RestoreError(format!("Feature id: {} cannot restore an existing feature", &id)))
+                            } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
+                                Err(FeatureError::DuplicateKey)
                             } else {
                                 Err(FeatureError::RestoreError(String::from("generic")))
                             }
@@ -400,6 +433,7 @@ pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConne
             FROM (
                 SELECT
                     id AS id,
+                    key AS key,
                     'Feature' AS type,
                     version AS version,
                     ST_AsGeoJSON(geom)::JSON AS geometry,
@@ -426,6 +460,7 @@ pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
         FROM (
             SELECT
                 id AS id,
+                key AS key,
                 'Feature' AS type,
                 version AS version,
                 ST_AsGeoJSON(geom)::JSON AS geometry,

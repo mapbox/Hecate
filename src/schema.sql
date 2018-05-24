@@ -44,6 +44,7 @@ DROP INDEX IF EXISTS geo_gist;
 DROP INDEX IF EXISTS geo_idx;
 CREATE TABLE geo (
     id          BIGSERIAL UNIQUE,
+    key         TEXT UNIQUE,
     version     BIGINT,
     geom        GEOMETRY(GEOMETRY, 4326),
     props       JSONB,
@@ -91,8 +92,8 @@ CREATE OR REPLACE FUNCTION delete_geo(BIGINT, BIGINT)
     END;
     $$ LANGUAGE plpgsql;
 
--- modify_geo( geom_str, props_str, delta, id, version)
-CREATE OR REPLACE FUNCTION modify_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT)
+-- modify_geo( geom_str, props_str, delta, id, version, key )
+CREATE OR REPLACE FUNCTION modify_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT, TEXT)
     RETURNS boolean AS $$
     BEGIN
         UPDATE geo
@@ -100,7 +101,8 @@ CREATE OR REPLACE FUNCTION modify_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT)
                 version = version + 1,
                 geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                 props = $2::TEXT::JSON,
-                deltas = array_append(deltas, $3::BIGINT)
+                deltas = array_append(deltas, $3::BIGINT),
+                key = $6
             WHERE
                 id = $4
                 AND version = $5;

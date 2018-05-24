@@ -77,7 +77,7 @@ mod test {
 
             let mut body_str = String::from(resp.text().unwrap());
             body_str.pop();
-            assert_eq!(&*body_str, r#"{"id":1,"type":"Feature","version":1,"geometry":{"type":"Point","coordinates":[-77.0121002197266,38.9257632323745]},"properties":{"indc": true}}"#);
+            assert_eq!(&*body_str, r#"{"id":1,"key":null,"type":"Feature","version":1,"geometry":{"type":"Point","coordinates":[-77.0121002197266,38.9257632323745]},"properties":{"indc": true}}"#);
             assert!(resp.status().is_success());
         }
 
