@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.27.0
+
+- :tada: Add optional `key` value to allow the user to specify a duplication avoidance policy
+
 ## v0.26.0
 
 - :tada: Add new `action: restore` on Features to be able to restore previously deleted features to the given id
