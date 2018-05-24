@@ -53,6 +53,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
             FROM (
                 SELECT
                     geo.id AS id,
+                    geo.key AS key,
                     'Feature' AS type,
                     geo.version AS version,
                     ST_AsGeoJSON(geo.geom)::JSON AS geometry,
