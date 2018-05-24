@@ -13,6 +13,7 @@ pub enum FeatureError {
     NoProps,
     NoMembers,
     NoGeometry,
+    DuplicateKey,
     VersionRequired,
     SchemaMisMatch,
     CreateError(String),
@@ -50,6 +51,7 @@ impl FeatureError {
             FeatureError::NoProps => String::from("No Properties"),
             FeatureError::NoMembers => String::from("No Members"),
             FeatureError::NoGeometry => String::from("No Geometry"),
+            FeatureError::DuplicateKey => String::from("Duplicate Key Value"),
             FeatureError::VersionRequired => String::from("Version Required"),
             FeatureError::SchemaMisMatch => String::from("Feature properties do not pass schema definition"),
             FeatureError::CreateError(ref msg) => format!("Create Error: {}", msg),
@@ -191,7 +193,13 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
         }),
         Err(err) => {
             match err.as_db() {
-                Some(e) => { Err(FeatureError::CreateError(e.message.clone())) },
+                Some(e) => {
+                    if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
+                        Err(FeatureError::DuplicateKey)
+                    } else {
+                        Err(FeatureError::CreateError(e.message.clone()))
+                    }
+                },
                 _ => Err(FeatureError::CreateError(String::from("generic")))
             }
         }
@@ -236,8 +244,10 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
                 Some(e) => {
                     if e.message == "MODIFY: ID or VERSION Mismatch" {
                         Err(FeatureError::ModifyVersionMismatch)
+                    } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
+                        Err(FeatureError::DuplicateKey)
                     } else {
-                        Err(FeatureError::ModifyError(e.message.clone()))
+                        Err(FeatureError::CreateError(e.message.clone()))
                     }
                 },
                 _ => Err(FeatureError::ModifyError(String::from("generic")))
@@ -394,6 +404,8 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                             println!("{}", e.message);
                             if e.message == "duplicate key value violates unique constraint \"geo_id_key\"" {
                                 Err(FeatureError::RestoreError(format!("Feature id: {} cannot restore an existing feature", &id)))
+                            } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
+                                Err(FeatureError::DuplicateKey)
                             } else {
                                 Err(FeatureError::RestoreError(String::from("generic")))
                             }
