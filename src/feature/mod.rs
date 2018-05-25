@@ -120,7 +120,11 @@ pub fn get_key(feat: &geojson::Feature) -> Option<String> {
             match members.get("key") {
                 None => None,
                 Some(key) => {
-                    Some(key.to_string())
+                    if key.is_null() {
+                        None
+                    } else {
+                        Some(key.to_string())
+                    }
                 }
             }
         }

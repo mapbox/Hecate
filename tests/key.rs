@@ -69,6 +69,12 @@ mod test {
             assert_eq!(resp.text().unwrap(), "true");
         }
 
+        {
+            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            assert!(resp.status().is_success());
+        }
+
+
         { //Create Point 2
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
@@ -90,7 +96,81 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            let resp = reqwest::get("http://localhost:8000/api/data/feature/2").unwrap();
+            assert!(resp.status().is_success());
+        }
+
+        { //Create Point 3 - explicit NULL Key
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "key": null,
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+            assert_eq!(resp.text().unwrap(), "true");
+        }
+
+        {
+            let resp = reqwest::get("http://localhost:8000/api/data/feature/3").unwrap();
+            assert!(resp.status().is_success());
+        }
+
+        { //Create Point 4 - undefined Key
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+            assert_eq!(resp.text().unwrap(), "true");
+        }
+
+        {
+            let resp = reqwest::get("http://localhost:8000/api/data/feature/4").unwrap();
+            assert!(resp.status().is_success());
+        }
+
+        { //Create Point 5 - explicit NULL Key (should pass, duplicate NULLs are allowed)
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "key": null,
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let resp = reqwest::get("http://localhost:8000/api/data/feature/3").unwrap();
             assert!(resp.status().is_success());
         }
 
