@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.27.1
+
+- :bug: A `key: null` JSON property on an uploaded feature should not return a `Duplicate Key Value` error when attempting an upload. Duplicate `null` is allowed
+
 ## v0.27.0
 
 - :tada: Add optional `key` value to allow the user to specify a duplication avoidance policy
