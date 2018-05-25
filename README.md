@@ -174,7 +174,7 @@ Downloaded Features will return the integer `id` of the feature, the current `ve
 ```
 
 A features being uploaded for creation must have the `action: create` property. Since an `id` and `version` have not yet been
-assigned they must be omitted. Should an `id` or `version` be included the server will throw an error.
+assigned they must be omitted. Should an `id` be included it will be ignored. Adding a `version` property will throw an error
 
 #### Modify Features
 

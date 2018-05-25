@@ -147,26 +147,6 @@ mod test {
             assert_eq!(resp.text().unwrap(), "Feature Must have message property for delta");
         }
 
-        { //Create Point - Invalid id
-            let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
-                .body(r#"{
-                    "id": 15,
-                    "type": "Feature",
-                    "action": "create",
-                    "message": "Creating a Point",
-                    "properties": { },
-                    "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
-                }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
-                .send()
-                .unwrap();
-
-            assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Create Error: action:create features should not have an \'id\' property");
-        }
-
         { //Create Point - Invalid version
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
