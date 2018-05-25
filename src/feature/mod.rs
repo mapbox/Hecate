@@ -149,6 +149,16 @@ pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<s
 }
 
 pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+    //Create features should not have an ID or Version
+    if get_id(&feat).is_ok() {
+        return Err(FeatureError::CreateError(String::from("action:create features should not have an 'id' property")));
+    }
+
+    if get_version(&feat).is_ok() {
+        return Err(FeatureError::CreateError(String::from("action:create features should not have an 'version' property")));
+    }
+    
+
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -401,7 +411,6 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                 Err(err) => {
                     match err.as_db() {
                         Some(e) => {
-                            println!("{}", e.message);
                             if e.message == "duplicate key value violates unique constraint \"geo_id_key\"" {
                                 Err(FeatureError::RestoreError(format!("Feature id: {} cannot restore an existing feature", &id)))
                             } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {

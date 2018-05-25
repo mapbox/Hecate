@@ -136,7 +136,6 @@ pub fn list_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
         ) djson;
     ", &[&offset]) {
         Err(err) => {
-            println!("{:?}", err);
             match err.as_db() {
                 Some(_e) => { Err(DeltaError::ListFail) },
                 _ => Err(DeltaError::ListFail)
