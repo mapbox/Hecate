@@ -33,9 +33,17 @@ r2d2 = "0.8.2"
 r2d2_postgres = "0.14.0"
 env_logger = "0.5"
 
+
+[dependencies.chrono]
+version = "0.4"
+features = ["serde"]
+
 [dependencies.postgres]
 version = "0.15.1"
-features = ["with-serde_json"]
+features = [
+    "with-serde_json",
+    "with-chrono"
+]
 
 [dependencies.clap]
 features = ["yaml"]

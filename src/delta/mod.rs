@@ -2,6 +2,7 @@ extern crate geojson;
 extern crate serde_json;
 extern crate r2d2;
 extern crate r2d2_postgres;
+extern crate chrono;
 use postgres;
 
 use std::collections::HashMap;
@@ -107,7 +108,7 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
     }
 }
 
-pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, start: Option<String>, end: Option<String>, limit: Option<i64>) -> Result<serde_json::Value, DeltaError> {
+pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, start: Option<chrono::DateTime<chrono::Utc>>, end: Option<chrono::DateTime<chrono::Utc>>, limit: Option<i64>) -> Result<serde_json::Value, DeltaError> {
     match conn.query("
         SELECT COALESCE(array_to_json(Array_Agg(djson.delta)), '[]')::JSON
         FROM (

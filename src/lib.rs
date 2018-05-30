@@ -16,6 +16,7 @@ extern crate rocket;
 extern crate rocket_contrib;
 extern crate geojson;
 extern crate env_logger;
+extern crate chrono;
 
 pub mod delta;
 pub mod mvt;
@@ -426,7 +427,28 @@ fn delta_list_params(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth:
     }
 
     if opts.start.is_some() || opts.end.is_some() {
-        match delta::list_by_date(&conn.0, opts.start, opts.end, opts.limit) {
+        
+        let start: Option<chrono::DateTime<chrono::Utc>> = match opts.start {
+            None => None,
+            Some(start) => {
+                match start.parse() {
+                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Invalid start timestamp"))); },
+                    Ok(start) => Some(start)
+                }
+            }
+        };
+
+        let end: Option<chrono::DateTime<chrono::Utc>> = match opts.end {
+            None => None,
+            Some(end) => {
+                match end.parse() {
+                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Invalid end timestamp"))); },
+                    Ok(end) => Some(end)
+                }
+            }
+        };
+
+        match delta::list_by_date(&conn.0, start, end, opts.limit) {
             Ok(deltas) => {
                 return Ok(Json(deltas));
             },
