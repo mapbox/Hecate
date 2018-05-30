@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.28.0
+
+- :tada: Add `start`, `end` and `limit` options to delta list API
+
 ## v0.27.2
 
 - :arrow_up: Remove unused `geo` dependency
