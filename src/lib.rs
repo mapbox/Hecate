@@ -416,7 +416,7 @@ fn delta_list_params(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth:
     }
 
     if opts.start.is_some() || opts.end.is_some() {
-        let start: Option<chrono::DateTime<chrono::Utc>> = match opts.start {
+        let start: Option<chrono::NaiveDateTime> = match opts.start {
             None => None,
             Some(start) => {
                 match start.parse() {
@@ -426,7 +426,7 @@ fn delta_list_params(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth:
             }
         };
 
-        let end: Option<chrono::DateTime<chrono::Utc>> = match opts.end {
+        let end: Option<chrono::NaiveDateTime> = match opts.end {
             None => None,
             Some(end) => {
                 match end.parse() {

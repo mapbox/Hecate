@@ -108,7 +108,7 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
     }
 }
 
-pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, start: Option<chrono::DateTime<chrono::Utc>>, end: Option<chrono::DateTime<chrono::Utc>>, limit: Option<i64>) -> Result<serde_json::Value, DeltaError> {
+pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, start: Option<chrono::NaiveDateTime>, end: Option<chrono::NaiveDateTime>, limit: Option<i64>) -> Result<serde_json::Value, DeltaError> {
     match conn.query("
         SELECT COALESCE(array_to_json(Array_Agg(djson.delta)), '[]')::JSON
         FROM (
@@ -126,16 +126,16 @@ pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                 WHERE
                     deltas.uid = users.id
                     AND ((
-                        $1 IS NOT NULL
-                        AND $2 IS NOT NULL
-                        AND deltas.created < $1
-                        AND deltas.created > $2
+                        $1::TIMESTAMP IS NOT NULL
+                        AND $2::TIMESTAMP IS NOT NULL
+                        AND deltas.created < $1::TIMESTAMP
+                        AND deltas.created > $2::TIMESTAMP
                     ) OR (
-                        $1 IS NOT NULL
-                        AND deltas.created < $1
+                        $1::TIMESTAMP IS NOT NULL
+                        AND deltas.created < $1::TIMESTAMP
                     ) OR (
-                        $2 IS NOT NULL
-                        AND deltas.created > $2
+                        $2::TIMESTAMP IS NOT NULL
+                        AND deltas.created > $2::TIMESTAMP
                     ))
                 ORDER BY id DESC
                 LIMIT $3
@@ -143,6 +143,7 @@ pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
         ) djson;
     ", &[&start, &end, &limit]) {
         Err(err) => {
+            println!("{}", err);
             match err.as_db() {
                 Some(_e) => { Err(DeltaError::ListFail) },
                 _ => Err(DeltaError::ListFail)
