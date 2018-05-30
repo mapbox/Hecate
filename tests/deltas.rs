@@ -193,8 +193,31 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { //Test limit param
+            let mut resp = reqwest::get("http://localhost:8000/api/deltas?limit=1").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body.as_array().unwrap().len(), 1);
+
+            assert_eq!(json_body[0]["id"], 2);
+
+            assert!(resp.status().is_success());
+        }
+
         {
             let mut resp = reqwest::get("http://localhost:8000/api/deltas?offset=2").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body.as_array().unwrap().len(), 1);
+            assert_eq!(json_body[0]["id"], json!(1));
+
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let mut resp = reqwest::get("http://localhost:8000/api/deltas?offset=2&limit=1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
