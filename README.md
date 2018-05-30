@@ -901,6 +901,17 @@ Return the last `n` deltas starting at the specified `offset`.
 
 Return deltas between a given `start` and `end` parameter.
 
+The `start` parameter should be the most recent TIMESTAMP, while the `end` parameter
+should be the furthest back in time.
+
+IE: `start` > `end`.
+
+```
+   |---------|------|
+Current    start   end
+ Time
+```
+
 - If both `start` and `end` are specified, return all deltas by default
 - If `start` or `end` is specified, return last 20 deltas or the number specified by `limit`
 

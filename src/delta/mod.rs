@@ -125,7 +125,18 @@ pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                     users
                 WHERE
                     deltas.uid = users.id
-                    AND deltas.created < $1::TEXT::FLOAT8
+                    AND ((
+                        $1 IS NOT NULL
+                        AND $2 IS NOT NULL
+                        AND deltas.created < $1
+                        AND deltas.created > $2
+                    ) OR (
+                        $1 IS NOT NULL
+                        AND deltas.created < $1
+                    ) OR (
+                        $2 IS NOT NULL
+                        AND deltas.created > $2
+                    ))
                 ORDER BY id DESC
                 LIMIT $3
             ) d
@@ -150,11 +161,6 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
         Some(offset) => offset.to_string()
     };
 
-    let limit = match limit {
-        None => 20,
-        Some(limit) => limit
-    };
-
     match conn.query("
         SELECT COALESCE(array_to_json(Array_Agg(djson.delta)), '[]')::JSON
         FROM (
@@ -173,7 +179,7 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
                     deltas.uid = users.id
                     AND deltas.id < $1::TEXT::FLOAT8
                 ORDER BY id DESC
-                LIMIT $2
+                LIMIT COALESCE($2, 20)
             ) d
         ) djson;
     ", &[&offset, &limit]) {
