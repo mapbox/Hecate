@@ -161,6 +161,17 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
         Some(offset) => offset.to_string()
     };
 
+    let limit = match limit {
+        None => limit = Some(20),
+        Some(limit) => {
+            if limit > 100 {
+                Some(100)
+            } else {
+                Some(limit)
+            }
+        }
+    };
+
     match conn.query("
         SELECT COALESCE(array_to_json(Array_Agg(djson.delta)), '[]')::JSON
         FROM (
@@ -179,7 +190,7 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
                     deltas.uid = users.id
                     AND deltas.id < $1::TEXT::FLOAT8
                 ORDER BY id DESC
-                LIMIT COALESCE($2, 20)
+                LIMIT $2
             ) d
         ) djson;
     ", &[&offset, &limit]) {

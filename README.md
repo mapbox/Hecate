@@ -892,10 +892,12 @@ for these two modes are mutually exclusive.
 
 Return the last `n` deltas starting at the specified `offset`.
 
+Where `n` defaults to 20 and can be up to 100 by utilizing the `limit` parameter
+
 | Option              | Notes |
 | :-----------------: | ----- |
-| `offset=<delta id>` | Returns the last `limit` 20 deltas before the given delta id |
-| `limit=<limit>`     | `OPTIONAL` Increase or decrease the max number of returned deltas |
+| `offset=<delta id>` | Returns the last `n` deltas before the given delta id |
+| `limit=<limit>`     | `OPTIONAL` Increase or decrease the max number of returned deltas (Max 100) |
 
 *Date Options*
 
@@ -919,7 +921,7 @@ Current    start   end
 | :--------: | ----- |
 | `start`    | `OPTIONAL` Return deltas after n time - ISO 8601 compatible timestamp |
 | `end`      | `OPTIONAL` Return deltas before n time - ISO 8601 compatible timestamp |
-| `limit`    | `OPTIONAL`  Increase or decrease the max number of returned deltas |
+| `limit`    | `OPTIONAL`  Increase or decrease the max number of returned deltas (Max 100) |
 
 *Example*
 
