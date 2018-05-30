@@ -132,9 +132,11 @@ pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                         AND deltas.created > $2::TIMESTAMP
                     ) OR (
                         $1::TIMESTAMP IS NOT NULL
+                        AND $2::TIMESTAMP IS NULL
                         AND deltas.created < $1::TIMESTAMP
                     ) OR (
-                        $2::TIMESTAMP IS NOT NULL
+                        $1::TIMESTAMP IS NULL
+                        AND $2::TIMESTAMP IS NOT NULL
                         AND deltas.created > $2::TIMESTAMP
                     ))
                 ORDER BY id DESC
