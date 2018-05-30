@@ -162,7 +162,7 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
     };
 
     let limit = match limit {
-        None => limit = Some(20),
+        None => Some(20),
         Some(limit) => {
             if limit > 100 {
                 Some(100)

@@ -415,19 +415,7 @@ fn delta_list_params(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth:
         return Err(status::Custom(HTTPStatus::BadRequest, String::from("Offset cannot be used with start or end")));
     }
 
-    if opts.offset.is_some() {
-        match delta::list_by_offset(&conn.0, opts.offset, opts.limit) {
-            Ok(deltas) => {
-                return Ok(Json(deltas));
-            },
-            Err(err) => {
-                return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
-            }
-        }
-    }
-
     if opts.start.is_some() || opts.end.is_some() {
-        
         let start: Option<chrono::DateTime<chrono::Utc>> = match opts.start {
             None => None,
             Some(start) => {
@@ -456,8 +444,16 @@ fn delta_list_params(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth:
                 return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
             }
         }
+    } else if opts.offset.is_some() || opts.limit.is_some() {
+        match delta::list_by_offset(&conn.0, opts.offset, opts.limit) {
+            Ok(deltas) => {
+                return Ok(Json(deltas));
+            },
+            Err(err) => {
+                return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+            }
+        }
     }
-
     Err(status::Custom(HTTPStatus::BadRequest, String::from("Query Param Error")))
 }
 
