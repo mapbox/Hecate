@@ -107,10 +107,51 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
     }
 }
 
-pub fn list_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, offset: Option<i64>) -> Result<serde_json::Value, DeltaError> {
+pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, start: Option<String>, end: Option<String>, limit: Option<i64>) -> Result<serde_json::Value, DeltaError> {
+    match conn.query("
+        SELECT COALESCE(array_to_json(Array_Agg(djson.delta)), '[]')::JSON
+        FROM (
+            SELECT row_to_json(d) as delta
+            FROM (
+                SELECT
+                    deltas.id,
+                    deltas.uid,
+                    users.username,
+                    deltas.created,
+                    deltas.props
+                FROM
+                    deltas,
+                    users
+                WHERE
+                    deltas.uid = users.id
+                    AND deltas.created < $1::TEXT::FLOAT8
+                ORDER BY id DESC
+                LIMIT $3
+            ) d
+        ) djson;
+    ", &[&start, &end, &limit]) {
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => { Err(DeltaError::ListFail) },
+                _ => Err(DeltaError::ListFail)
+            }
+        },
+        Ok(res) => {
+            let d_json: serde_json::Value = res.get(0).get(0);
+            Ok(d_json)
+        }
+    }
+}
+
+pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, offset: Option<i64>, limit: Option<i64>) -> Result<serde_json::Value, DeltaError> {
     let offset = match offset {
         None => String::from("Infinity"),
         Some(offset) => offset.to_string()
+    };
+
+    let limit = match limit {
+        None => 20,
+        Some(limit) => limit
     };
 
     match conn.query("
@@ -131,12 +172,11 @@ pub fn list_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
                     deltas.uid = users.id
                     AND deltas.id < $1::TEXT::FLOAT8
                 ORDER BY id DESC
-                LIMIT 20
+                LIMIT $2
             ) d
         ) djson;
-    ", &[&offset]) {
+    ", &[&offset, &limit]) {
         Err(err) => {
-            println!("{:?}", err);
             match err.as_db() {
                 Some(_e) => { Err(DeltaError::ListFail) },
                 _ => Err(DeltaError::ListFail)
