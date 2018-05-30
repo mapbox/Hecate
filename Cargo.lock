@@ -415,7 +415,7 @@ dependencies = [
 
 [[package]]
 name = "hecate"
-version = "0.27.1"
+version = "0.27.2"
 dependencies = [
  "base64 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.31.2 (registry+https://github.com/rust-lang/crates.io-index)",

@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.27.2
+
+- :arrow_up: Remove unused `geo` dependency
+
 ## v0.27.1
 
 - :bug: A `key: null` JSON property on an uploaded feature should not return a `Duplicate Key Value` error when attempting an upload. Duplicate `null` is allowed
