@@ -227,6 +227,38 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { //Test Start Value
+            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            let start = String::from(json_body[0]["created"].as_str().unwrap());
+
+            let mut resp = reqwest::get(&*format!("http://localhost:8000/api/deltas?start={}", &start)).unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body.as_array().unwrap().len(), 1);
+            assert_eq!(json_body[0]["id"], json!(1));
+
+            assert!(resp.status().is_success());
+
+        }
+
+        { //Test End Value
+            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            let end = String::from(json_body[1]["created"].as_str().unwrap());
+
+            let mut resp = reqwest::get(&*format!("http://localhost:8000/api/deltas?end={}", &end)).unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body.as_array().unwrap().len(), 1);
+            assert_eq!(json_body[0]["id"], json!(2));
+
+            assert!(resp.status().is_success());
+
+        }
+
         server.kill().unwrap();
     }
 }
