@@ -882,14 +882,33 @@ curl \
 
 #### `GET` `/api/deltas`
 
-Returns an array of the last 20 deltas with their corresponding metadata. Does not include geometric
+Returns an array of the last `limit` defined number of deltas (default: 20). with their corresponding metadata. Does not include geometric
 data on the delta. Request a specific delta to get geometric data.
 
-*Options*
+The deltas endpoint has 2 modes. The first is a fixed list of the last `n` deltas. The second is listing deltas by time stamp. the query parameters
+for these two modes are mutually exclusive.
+
+*Limit Options*
+
+Return the last `n` deltas starting at the specified `offset`.
+
+| Option              | Notes |
+| :-----------------: | ----- |
+| `offset=<delta id>` | Returns the last `limit` 20 deltas before the given delta id |
+| `limit=<limit>`     | `OPTIONAL` Increase or decrease the max number of returned deltas |
+
+*Date Options*
+
+Return deltas between a given `start` and `end` parameter.
+
+- If both `start` and `end` are specified, return all deltas by default
+- If `start` or `end` is specified, return last 20 deltas or the number specified by `limit`
 
 | Option     | Notes |
 | :--------: | ----- |
-| `offset` | `OPTIONAL` Retun the up to 20 deltas before the given delta id |
+| `start`    | `OPTIONAL` Return deltas after n time - ISO 8601 compatible timestamp |
+| `end`      | `OPTIONAL` Return deltas before n time - ISO 8601 compatible timestamp |
+| `limit`    | `OPTIONAL`  Increase or decrease the max number of returned deltas |
 
 *Example*
 
@@ -899,6 +918,10 @@ curl -X GET 'http://localhost:8000/api/deltas
 
 ```bash
 curl -X GET 'http://localhost:8000/api/deltas?offset=3
+```
+
+```bash
+curl -X GET 'http://localhost:8000/api/deltas?offset=3&limit=100
 ```
 
 ---
