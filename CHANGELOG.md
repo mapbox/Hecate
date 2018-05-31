@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.30.0
+
+- :bug: Ensure `affected` array is the actual feature id on create and not the user specified id
+- :rocket: Throw an error if a `version` is provided on create
+
 ## v0.29.0
 
 - :rocket: Allow querying features by `key` value in addition to their assigned id.
