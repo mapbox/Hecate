@@ -10,6 +10,22 @@
 
 # Version History
 
+## v0.29.0
+
+- :rocket: Allow querying features by `key` value in addition to their assigned id.
+
+## v0.28.0
+
+- :tada: Add `start`, `end` and `limit` options to delta list API
+
+## v0.27.2
+
+- :arrow_up: Remove unused `geo` dependency
+
+## v0.27.1
+
+- :bug: A `key: null` JSON property on an uploaded feature should not return a `Duplicate Key Value` error when attempting an upload. Duplicate `null` is allowed
+
 ## v0.27.0
 
 - :tada: Add optional `key` value to allow the user to specify a duplication avoidance policy

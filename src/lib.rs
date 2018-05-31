@@ -1,7 +1,7 @@
 #![feature(plugin, custom_derive, custom_attribute, attr_literals)]
 #![plugin(rocket_codegen)]
 
-static VERSION: &'static str = "0.27.0";
+static VERSION: &'static str = "0.29.0";
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
@@ -16,6 +16,7 @@ extern crate rocket;
 extern crate rocket_contrib;
 extern crate geojson;
 extern crate env_logger;
+extern crate chrono;
 
 pub mod delta;
 pub mod mvt;
@@ -95,6 +96,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
             feature_action,
             features_action,
             feature_get,
+            feature_query,
             feature_get_history,
             features_get,
             bounds_list,
@@ -392,7 +394,7 @@ fn style_list_user(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::C
 fn delta_list(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) ->  Result<Json, status::Custom<String>> {
     auth_rules.allows_delta_list(&mut auth, &conn.0)?;
 
-    match delta::list_json(&conn.0, None) {
+    match delta::list_by_offset(&conn.0, None, None) {
         Ok(deltas) => Ok(Json(deltas)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
     }
@@ -400,17 +402,60 @@ fn delta_list(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::Custom
 
 #[derive(FromForm)]
 struct DeltaList {
-    offset: i64
+    offset: Option<i64>,
+    limit: Option<i64>,
+    start: Option<String>,
+    end: Option<String>
 }
 
 #[get("/deltas?<opts>")]
 fn delta_list_params(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json, status::Custom<String>> {
     auth_rules.allows_delta_list(&mut auth, &conn.0)?;
 
-    match delta::list_json(&conn.0, Some(opts.offset)) {
-        Ok(deltas) => Ok(Json(deltas)),
-        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()))
+    if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
+        return Err(status::Custom(HTTPStatus::BadRequest, String::from("Offset cannot be used with start or end")));
     }
+
+    if opts.start.is_some() || opts.end.is_some() {
+        let start: Option<chrono::NaiveDateTime> = match opts.start {
+            None => None,
+            Some(start) => {
+                match start.parse() {
+                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Invalid start timestamp"))); },
+                    Ok(start) => Some(start)
+                }
+            }
+        };
+
+        let end: Option<chrono::NaiveDateTime> = match opts.end {
+            None => None,
+            Some(end) => {
+                match end.parse() {
+                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Invalid end timestamp"))); },
+                    Ok(end) => Some(end)
+                }
+            }
+        };
+
+        match delta::list_by_date(&conn.0, start, end, opts.limit) {
+            Ok(deltas) => {
+                return Ok(Json(deltas));
+            },
+            Err(err) => {
+                return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+            }
+        }
+    } else if opts.offset.is_some() || opts.limit.is_some() {
+        match delta::list_by_offset(&conn.0, opts.offset, opts.limit) {
+            Ok(deltas) => {
+                return Ok(Json(deltas));
+            },
+            Err(err) => {
+                return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+            }
+        }
+    }
+    Err(status::Custom(HTTPStatus::BadRequest, String::from("Query Param Error")))
 }
 
 #[get("/delta/<id>")]
@@ -865,6 +910,25 @@ fn feature_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::Custo
     match feature::get(&conn.0, &id) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[derive(FromForm)]
+struct FeatureQuery {
+    key: Option<String>
+}
+
+#[get("/data/feature?<fquery>")]
+fn feature_query(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: FeatureQuery) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_feature_get(&mut auth, &conn.0)?;
+
+    if fquery.key.is_some() {
+        match feature::query_by_key(&conn.0, &fquery.key.unwrap()) {
+            Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
+            Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+        }
+    } else {
+        Err(status::Custom(HTTPStatus::BadRequest, String::from("At least 1 query parameter must be specified")))
     }
 }
 
