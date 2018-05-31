@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.30.1
+
+- :arrow_up: Update to latest deps
+
 ## v0.30.0
 
 - :bug: Ensure `affected` array is the actual feature id on create and not the user specified id
