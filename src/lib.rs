@@ -572,7 +572,9 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
                 return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
             },
             Ok(res) => {
-                if res.old == None { feat.id = Some(json!(res.new)); }
+                if res.new != None {
+                    feat.id = Some(json!(res.new))
+                }
             }
         }
     }
