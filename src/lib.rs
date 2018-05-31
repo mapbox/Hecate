@@ -921,7 +921,7 @@ struct FeatureQuery {
 #[get("/data/feature?<fquery>")]
 fn feature_query(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: FeatureQuery) -> Result<String, status::Custom<String>> {
     auth_rules.allows_feature_get(&mut auth, &conn.0)?;
-    
+
     if fquery.key.is_some() {
         match feature::query_by_key(&conn.0, &fquery.key.unwrap()) {
             Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),

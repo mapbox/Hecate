@@ -123,7 +123,7 @@ pub fn get_key(feat: &geojson::Feature) -> Option<String> {
                     if key.is_null() {
                         None
                     } else {
-                        Some(key.to_string())
+                        Some(String::from(key.as_str().unwrap()))
                     }
                 }
             }
@@ -437,7 +437,6 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                 Err(err) => {
                     match err.as_db() {
                         Some(e) => {
-                            println!("{}", e.message);
                             if e.message == "duplicate key value violates unique constraint \"geo_id_key\"" {
                                 Err(FeatureError::RestoreError(format!("Feature id: {} cannot restore an existing feature", &id)))
                             } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {

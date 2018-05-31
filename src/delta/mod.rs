@@ -145,7 +145,6 @@ pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
         ) djson;
     ", &[&start, &end, &limit]) {
         Err(err) => {
-            println!("{}", err);
             match err.as_db() {
                 Some(_e) => { Err(DeltaError::ListFail) },
                 _ => Err(DeltaError::ListFail)
