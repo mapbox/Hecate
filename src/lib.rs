@@ -572,7 +572,9 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
                 return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string()));
             },
             Ok(res) => {
-                if res.old == None { feat.id = Some(json!(res.new)); }
+                if res.new != None {
+                    feat.id = Some(json!(res.new))
+                }
             }
         }
     }
@@ -724,6 +726,15 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
     let mut ids: HashMap<i64, feature::Response> = HashMap::new();
 
     for feat in &mut fc.features {
+        match feature::get_action(&feat) {
+            Ok(action) => {
+                if action == feature::Action::Create {
+                    feature::del_version(feat);
+                }
+            },
+            _ => ()
+        }
+
         let feat_res = match feature::action(&trans, &schema.inner(), &feat, &Some(delta_id)) {
             Err(err) => {
                 trans.set_rollback();

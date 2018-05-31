@@ -69,6 +69,15 @@ impl FeatureError {
     }
 }
 
+pub fn del_version(feat: &mut geojson::Feature) {
+    match feat.foreign_members {
+        None => (),
+        Some(ref mut members) => {
+            members.remove("version");
+        }
+    }
+}
+
 pub fn get_version(feat: &geojson::Feature) -> Result<i64, FeatureError> {
     match feat.foreign_members {
         None => { return Err(FeatureError::VersionRequired); },
@@ -153,6 +162,10 @@ pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<s
 }
 
 pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
+    if get_version(&feat).is_ok() {
+        return Err(FeatureError::CreateError(String::from("Should not have 'version' property")));
+    }
+
     let geom = match feat.geometry {
         None => { return Err(FeatureError::NoGeometry); },
         Some(ref geom) => geom
@@ -177,6 +190,11 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
 
     let key = get_key(&feat);
 
+    let id: Option<i64> = match get_id(&feat) {
+        Err(_) => None,
+        Ok(id) => Some(id)
+    };
+
     match trans.query("
         INSERT INTO geo (version, geom, props, deltas, key)
             VALUES (
@@ -188,10 +206,7 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
             ) RETURNING id;
     ", &[&geom_str, &props_str, &delta, &key]) {
         Ok(res) => Ok(Response {
-            old: match feat.id {
-                Some(ref id) => id.as_i64(),
-                _ => None
-            },
+            old: id,
             new: Some(res.get(0).get(0)),
             version: Some(1)
         }),
