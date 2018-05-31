@@ -164,7 +164,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Create Error: action:create features should not have an \'version\' property");
+            assert_eq!(resp.text().unwrap(), "Create Error: Should not have \'version\' property");
         }
 
         { //Create Point

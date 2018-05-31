@@ -69,6 +69,15 @@ impl FeatureError {
     }
 }
 
+pub fn del_version(feat: &mut geojson::Feature) {
+    match feat.foreign_members {
+        None => (),
+        Some(ref mut members) => {
+            members.remove("version");
+        }
+    }
+}
+
 pub fn get_version(feat: &geojson::Feature) -> Result<i64, FeatureError> {
     match feat.foreign_members {
         None => { return Err(FeatureError::VersionRequired); },
