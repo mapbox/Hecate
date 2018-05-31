@@ -783,6 +783,24 @@ curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
 
 <h3 align='center'>Downloading Individual Features</h3>
 
+#### `GET` `/api/data/feature`
+
+Return a single GeoJSON `Feature` given a query parameter
+
+*Options*
+
+| Option      | Notes                                                |
+| :----:      | ---------------------------------------------------- |
+| `key=<key>` | `Optional` Key value to retrieve a given feature by  |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/features?key=123
+```
+
+---
+
 #### `GET` `/api/data/feature/<id>`
 
 Return a single GeoJSON `Feature` given its' ID.

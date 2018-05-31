@@ -285,6 +285,38 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
+pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<geojson::Feature, FeatureError> {
+    let res = conn.query("
+        SELECT
+            row_to_json(f)::TEXT AS feature
+        FROM (
+            SELECT
+                id AS id,
+                key AS key,
+                'Feature' AS type,
+                version AS version,
+                ST_AsGeoJSON(geom)::JSON AS geometry,
+                props AS properties
+            FROM geo
+            WHERE key = $1
+        ) f;
+    ", &[&key]).unwrap();
+
+    if res.len() != 1 { return Err(FeatureError::NotFound); }
+
+    let feat: postgres::rows::Row = res.get(0);
+    let feat: String = feat.get(0);
+    let feat: geojson::Feature = match feat.parse() {
+        Ok(feat) => match feat {
+            geojson::GeoJson::Feature(feat) => feat,
+            _ => { return Err(FeatureError::InvalidFeature); }
+        },
+        Err(_) => { return Err(FeatureError::InvalidFeature); }
+    };
+
+    Ok(feat)
+}
+
 pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {
     let res = conn.query("
         SELECT

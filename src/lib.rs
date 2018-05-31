@@ -96,6 +96,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
             feature_action,
             features_action,
             feature_get,
+            feature_query,
             feature_get_history,
             features_get,
             bounds_list,
@@ -909,6 +910,25 @@ fn feature_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::Custo
     match feature::get(&conn.0, &id) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+    }
+}
+
+#[derive(FromForm)]
+struct FeatureQuery {
+    key: Option<String>
+}
+
+#[get("/data/feature?<fquery>")]
+fn feature_query(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: FeatureQuery) -> Result<String, status::Custom<String>> {
+    auth_rules.allows_feature_get(&mut auth, &conn.0)?;
+    
+    if fquery.key.is_some() {
+        match feature::query_by_key(&conn.0, &fquery.key.unwrap()) {
+            Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
+            Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.to_string()))
+        }
+    } else {
+        Err(status::Custom(HTTPStatus::BadRequest, String::from("At least 1 query parameter must be specified")))
     }
 }
 
