@@ -1,5 +1,6 @@
 extern crate reqwest;
 extern crate postgres;
+#[macro_use] extern crate serde_json;
 
 #[cfg(test)]
 mod test {
@@ -10,6 +11,7 @@ mod test {
     use std::time::Duration;
     use std::thread;
     use reqwest;
+    use serde_json;
 
     #[test]
     fn key() {
@@ -69,11 +71,39 @@ mod test {
             assert_eq!(resp.text().unwrap(), "true");
         }
 
-        {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+        { //Check Point 1
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 1,
+                "type": "Feature",
+                "key": "Q1233",
+                "version": 1,
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 0.0, 0.0 ] }
+            }));
+
             assert!(resp.status().is_success());
         }
 
+        { //Check Point 1 - Key API
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?key=Q1233").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 1,
+                "type": "Feature",
+                "key": "Q1233",
+                "version": 1,
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 0.0, 0.0 ] }
+            }));
+
+            assert!(resp.status().is_success());
+        }
 
         { //Create Point 2
             let client = reqwest::Client::new();
@@ -95,8 +125,37 @@ mod test {
             assert_eq!(resp.text().unwrap(), "true");
         }
 
-        {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/2").unwrap();
+        { //Check Point 2
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/2").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 2,
+                "type": "Feature",
+                "key": "Rando",
+                "version": 1,
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 0.0, 0.0 ] }
+            }));
+
+            assert!(resp.status().is_success());
+        }
+
+        { //Check Point 2 - Key API
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?key=Rando").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 2,
+                "type": "Feature",
+                "key": "Rando",
+                "version": 1,
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 0.0, 0.0 ] }
+            }));
+
             assert!(resp.status().is_success());
         }
 
@@ -120,8 +179,20 @@ mod test {
             assert_eq!(resp.text().unwrap(), "true");
         }
 
-        {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/3").unwrap();
+        { //Check Point 3
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/3").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 3,
+                "type": "Feature",
+                "key": null,
+                "version": 1,
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 0.0, 0.0 ] }
+            }));
+
             assert!(resp.status().is_success());
         }
 
@@ -144,8 +215,20 @@ mod test {
             assert_eq!(resp.text().unwrap(), "true");
         }
 
-        {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/4").unwrap();
+        { //Check Point 4
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/4").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 4,
+                "type": "Feature",
+                "key": null,
+                "version": 1,
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 0.0, 0.0 ] }
+            }));
+
             assert!(resp.status().is_success());
         }
 
@@ -169,8 +252,20 @@ mod test {
             assert!(resp.status().is_success());
         }
 
-        {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/3").unwrap();
+        { //Check Point 5
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/5").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 5,
+                "type": "Feature",
+                "key": null,
+                "version": 1,
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 0.0, 0.0 ] }
+            }));
+
             assert!(resp.status().is_success());
         }
 
@@ -217,10 +312,21 @@ mod test {
             assert!(resp.status().is_success());
         }
 
-        {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+        { //Check Point 1
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 1,
+                "type": "Feature",
+                "key": "12-34",
+                "version": 2,
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 1.0, 1.0 ] }
+            }));
+
             assert!(resp.status().is_success());
-            //TODO check body
         }
 
         { //Modify Point - Duplicate Key Error

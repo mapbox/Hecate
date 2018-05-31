@@ -123,7 +123,7 @@ pub fn get_key(feat: &geojson::Feature) -> Option<String> {
                     if key.is_null() {
                         None
                     } else {
-                        Some(key.to_string())
+                        Some(String::from(key.as_str().unwrap()))
                     }
                 }
             }
@@ -285,6 +285,38 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
+pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<geojson::Feature, FeatureError> {
+    let res = conn.query("
+        SELECT
+            row_to_json(f)::TEXT AS feature
+        FROM (
+            SELECT
+                id AS id,
+                key AS key,
+                'Feature' AS type,
+                version AS version,
+                ST_AsGeoJSON(geom)::JSON AS geometry,
+                props AS properties
+            FROM geo
+            WHERE key = $1
+        ) f;
+    ", &[&key]).unwrap();
+
+    if res.len() != 1 { return Err(FeatureError::NotFound); }
+
+    let feat: postgres::rows::Row = res.get(0);
+    let feat: String = feat.get(0);
+    let feat: geojson::Feature = match feat.parse() {
+        Ok(feat) => match feat {
+            geojson::GeoJson::Feature(feat) => feat,
+            _ => { return Err(FeatureError::InvalidFeature); }
+        },
+        Err(_) => { return Err(FeatureError::InvalidFeature); }
+    };
+
+    Ok(feat)
+}
+
 pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {
     let res = conn.query("
         SELECT
@@ -405,7 +437,6 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                 Err(err) => {
                     match err.as_db() {
                         Some(e) => {
-                            println!("{}", e.message);
                             if e.message == "duplicate key value violates unique constraint \"geo_id_key\"" {
                                 Err(FeatureError::RestoreError(format!("Feature id: {} cannot restore an existing feature", &id)))
                             } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
