@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.29.0
+
+- :rocket: Allow querying features by `key` value in addition to their assigned id.
+
 ## v0.28.0
 
 - :tada: Add `start`, `end` and `limit` options to delta list API
