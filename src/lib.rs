@@ -599,7 +599,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 }
 
 #[get("/0.6/map?<map>")]
-fn xml_map(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<String, status::Custom<Json>> {
+fn xml_map(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<String, status::Custom<String>> {
     auth_rules.allows_osm_get(&mut auth, &conn.0)?;
 
     let query: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
@@ -618,7 +618,7 @@ fn xml_map(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAut
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, body: String) -> Result<String, status::Custom<Json>> {
+fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
     auth_rules.allows_osm_create(&mut auth, &conn.0)?;
 
     let uid = auth.uid.unwrap();
@@ -645,14 +645,14 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 }
 
 #[put("/0.6/changeset/<id>/close")]
-fn xml_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, id: i64) -> Result<String, status::Custom<Json>> {
+fn xml_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
     auth_rules.allows_osm_create(&mut auth, &conn.0)?;
 
     Ok(id.to_string())
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<Json>> {
+fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
     auth_rules.allows_osm_create(&mut auth, &conn.0)?;
 
     let uid = auth.uid.unwrap();
@@ -697,7 +697,7 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<Json>> {
+fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
     auth_rules.allows_osm_create(&mut auth, &conn.0)?;
 
     let uid = auth.uid.unwrap();
@@ -785,7 +785,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 }
 
 #[get("/capabilities")]
-fn xml_capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<Json>> {
+fn xml_capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
     auth_rules.allows_osm_get(&mut auth, &conn.0)?;
 
     Ok(String::from("
@@ -803,7 +803,7 @@ fn xml_capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::
 }
 
 #[get("/0.6/capabilities")]
-fn xml_06capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<Json>> {
+fn xml_06capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
     auth_rules.allows_osm_get(&mut auth, &conn.0)?;
 
     Ok(String::from("
@@ -821,7 +821,7 @@ fn xml_06capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth
 }
 
 #[get("/0.6/user/details")]
-fn xml_user(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<Json>> {
+fn xml_user(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
     auth_rules.allows_osm_get(&mut auth, &conn.0)?;
 
     Ok(String::from("

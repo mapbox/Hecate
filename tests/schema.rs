@@ -76,7 +76,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Feature properties do not pass schema definition");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"create\",\"geometry\":{\"coordinates\":[0.0,0.0],\"type\":\"Point\"},\"message\":\"Creating a Point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\"},\"id\":null,\"message\":\"Failed to Match Schema\"}");
         }
 
         { //Create Point Almost Passing Schema Validation
@@ -99,7 +99,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Feature properties do not pass schema definition");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"create\",\"geometry\":{\"coordinates\":[0.0,0.0],\"type\":\"Point\"},\"message\":\"Creating a Point\",\"properties\":{\"number\":\"123\",\"source\":\"Test Data\",\"street\":[{\"test\":\"123\"}]},\"type\":\"Feature\"},\"id\":null,\"message\":\"Failed to Match Schema\"}");
         }
 
         { //Create Point Passing Schema Validation
@@ -153,7 +153,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), "Feature properties do not pass schema definition");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"create\",\"geometry\":{\"coordinates\":[0.0,0.0],\"type\":\"Point\"},\"id\":-1,\"properties\":{\"number\":123,\"source\":\"Test Data\",\"street\":[{\"test\":\"123\"}]},\"type\":\"Feature\"},\"id\":-1,\"message\":\"Failed to Match Schema\"}");
             assert!(resp.status().is_client_error());
         }
 

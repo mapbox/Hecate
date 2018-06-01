@@ -61,7 +61,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Body must be valid GeoJSON Feature");
+            assert_eq!(resp.text().unwrap(), "\"Body must be valid GeoJSON Feature\"");
         }
 
         { //Create Point - No Geometry
@@ -77,7 +77,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Body must be valid GeoJSON Feature");
+            assert_eq!(resp.text().unwrap(), "\"Body must be valid GeoJSON Feature\"");
         }
 
         { //Create Point - No Props
@@ -92,7 +92,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Body must be valid GeoJSON Feature");
+            assert_eq!(resp.text().unwrap(), "\"Body must be valid GeoJSON Feature\"");
         }
 
         { //Create Point - No Geom
@@ -108,7 +108,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Body must be valid GeoJSON Feature");
+            assert_eq!(resp.text().unwrap(), "\"Body must be valid GeoJSON Feature\"");
         }
 
         { //Create Point - No Props - Geom
@@ -127,7 +127,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Body must be valid GeoJSON Feature");
+            assert_eq!(resp.text().unwrap(), "\"Body must be valid GeoJSON Feature\"");
         }
 
         { //Create Point - No Message
@@ -144,7 +144,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Feature Must have message property for delta");
+            assert_eq!(resp.text().unwrap(), "\"Feature Must have message property for delta\"");
         }
 
         { //Create Point - Invalid version
@@ -164,7 +164,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Create Error: Should not have \'version\' property");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"create\",\"geometry\":{\"coordinates\":[0.0,0.0],\"type\":\"Point\"},\"message\":\"Creating a Point\",\"properties\":{},\"type\":\"Feature\",\"version\":15},\"id\":null,\"message\":\"Cannot have Version\"}");
         }
 
         { //Create Point
@@ -290,7 +290,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "Restore Error: Feature id: 1 cannot restore an existing feature");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"restore\",\"geometry\":{\"coordinates\":[1.0,1.0],\"type\":\"Point\"},\"id\":1,\"message\":\"Restore previously deleted point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\",\"version\":1},\"id\":1,\"message\":\"Feature Not In Deleted State\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -338,7 +338,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "Restore Error: Feature id: 1 cannot restore an existing feature");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"restore\",\"geometry\":{\"coordinates\":[1.0,1.0],\"type\":\"Point\"},\"id\":1,\"message\":\"Restore previously deleted point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\",\"version\":2},\"id\":1,\"message\":\"Feature Not In Deleted State\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -544,7 +544,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "Restore Version Mismatch");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"restore\",\"geometry\":{\"coordinates\":[1.0,1.0],\"type\":\"Point\"},\"id\":1,\"message\":\"Restore previously deleted point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\",\"version\":2},\"id\":1,\"message\":\"Restore Version Mismatch\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -565,7 +565,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "Restore Error: Feature id: 1000 does not exist");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"restore\",\"geometry\":{\"coordinates\":[1.0,1.0],\"type\":\"Point\"},\"id\":1000,\"message\":\"Restore previously deleted point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\",\"version\":2},\"id\":1000,\"message\":\"Feature Not Found\"}");
             assert!(resp.status().is_client_error());
         }
 
