@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.31.0
+
+- :rocket: `Feature` and `FeatureCollection` uploads now will return the specific feature/id if there is an error
+
 ## v0.30.1
 
 - :arrow_up: Update to latest deps
