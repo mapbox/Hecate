@@ -11,9 +11,9 @@ use serde_json::value::Value;
 #[derive(PartialEq, Debug)]
 pub enum FeatureError {
     NotFound,
-    ImportError(Value),
     InvalidBBOX,
-    InvalidFeature
+    InvalidFeature,
+    ImportError(Value)
 }
 
 #[derive(PartialEq, Debug)]
@@ -32,12 +32,12 @@ pub struct Response {
 }
 
 impl FeatureError {
-    pub fn to_string(&self) -> String {
+    pub fn as_json(&self) -> Value {
         match *self {
-            FeatureError::NotFound => String::from("Feature Not Found"),
-            FeatureError::ImportError(ref value) => format!("Import Error: {}", value["error"]),
-            FeatureError::InvalidBBOX => String::from("Invalid BBOX"),
-            FeatureError::InvalidFeature => String::from("Invalid Feature")
+            FeatureError::NotFound => json!("Feature Not Found"),
+            FeatureError::ImportError(ref value) => json!(value),
+            FeatureError::InvalidBBOX => json!("Invalid BBOX"),
+            FeatureError::InvalidFeature => json!("Invalid Feature")
         }
     }
 }
