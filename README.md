@@ -130,6 +130,7 @@ server members.
 | `version` | The version of a given feature, starts at `1` for a newly created feature |
 | `action`  | Only used for uploads, the desired action to be performed. One of `create`, `modify`, `delete`, or `restore` |
 | `key`     | `[Optional]` A String containing a value that hecate will ensure remains unique accross all features. Can be a natural id (wikidata id, PID, etc), computed property hash, geometry hash etc. The specifics are left up to the client. Should an attempt at importing a Feature with a differing `id` but identical `key` be made, the feature with will be rejected, ensuring the uniqueness of the `key` values. By default this value will be `NULL`. Duplicate `NULL` values are allowed.
+| `force`   | `[Optional]` Boolean allowing a user to override version locking and force UPSERT a feature. Disabled by default |
 
 ### Examples
 
