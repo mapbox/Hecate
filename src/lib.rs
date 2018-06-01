@@ -600,18 +600,21 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 
 #[get("/0.6/map?<map>")]
 fn xml_map(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<String, status::Custom<String>> {
-    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+    match auth_rules.allows_osm_get(&mut auth, &conn.0) {
+        Ok(_) => (),
+        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    };
 
     let query: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
 
     let fc = match feature::get_bbox(&conn.0, query) {
         Ok(features) => features,
-        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json()))) }
+        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json().to_string())) }
     };
 
     let xml_str = match xml::from_features(&fc) {
         Ok(xml_str) => xml_str,
-        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(json!(err.to_string())))) }
+        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())) }
     };
 
     Ok(xml_str)
@@ -619,13 +622,16 @@ fn xml_map(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAut
 
 #[put("/0.6/changeset/create", data="<body>")]
 fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, body: String) -> Result<String, status::Custom<String>> {
-    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+    match auth_rules.allows_osm_get(&mut auth, &conn.0) {
+        Ok(_) => (),
+        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    };
 
     let uid = auth.uid.unwrap();
 
     let map = match xml::to_delta(&body) {
         Ok(map) => map,
-        Err(err) => { return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string())))); }
+        Err(err) => { return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); }
     };
 
     let trans = conn.0.transaction().unwrap();
@@ -635,7 +641,7 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
@@ -646,14 +652,20 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
 #[put("/0.6/changeset/<id>/close")]
 fn xml_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, id: i64) -> Result<String, status::Custom<String>> {
-    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+    match auth_rules.allows_osm_get(&mut auth, &conn.0) {
+        Ok(_) => (),
+        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    };
 
     Ok(id.to_string())
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
 fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
-    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+    match auth_rules.allows_osm_get(&mut auth, &conn.0) {
+        Ok(_) => (),
+        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    };
 
     let uid = auth.uid.unwrap();
 
@@ -678,7 +690,7 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
@@ -687,18 +699,21 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
     trans.commit().unwrap();
 
-    Err(status::Custom(HTTPStatus::Ok, Json(json!(delta_id))))
+    Err(status::Custom(HTTPStatus::Ok, delta_id.to_string()))
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
 fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: DbConn, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
-    auth_rules.allows_osm_create(&mut auth, &conn.0)?;
+    match auth_rules.allows_osm_get(&mut auth, &conn.0) {
+        Ok(_) => (),
+        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    };
 
     let uid = auth.uid.unwrap();
 
@@ -720,7 +735,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let (mut fc, tree) = match xml::to_features(&body) {
         Ok(fctree) => fctree,
-        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(json!(err.to_string())))); }
+        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())); }
     };
 
     let mut ids: HashMap<i64, feature::Response> = HashMap::new();
@@ -739,7 +754,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
-                return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
+                return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json().to_string()));
             },
             Ok(feat_res) => {
                 if feat_res.old.unwrap_or(0) < 0 {
@@ -757,7 +772,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not format diffResult XML"))));
+            return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not format diffResult XML")));
         },
         Ok(diffres) => diffres
     };
@@ -767,26 +782,29 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not create delta"))));
+            return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
         }
     }
 
     match delta::finalize(&delta_id, &trans) {
         Ok (_) => {
             trans.commit().unwrap();
-            Err(status::Custom(HTTPStatus::Ok, Json(json!(diffres))))
+            Err(status::Custom(HTTPStatus::Ok, diffres))
         },
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not close delta"))))
+            Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not close delta")))
         }
     }
 }
 
 #[get("/capabilities")]
 fn xml_capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
-    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+    match auth_rules.allows_osm_get(&mut auth, &conn.0) {
+        Ok(_) => (),
+        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    };
 
     Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
@@ -804,7 +822,10 @@ fn xml_capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::
 
 #[get("/0.6/capabilities")]
 fn xml_06capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
-    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+    match auth_rules.allows_osm_get(&mut auth, &conn.0) {
+        Ok(_) => (),
+        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    };
 
     Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
@@ -822,7 +843,10 @@ fn xml_06capabilities(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth
 
 #[get("/0.6/user/details")]
 fn xml_user(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
-    auth_rules.allows_osm_get(&mut auth, &conn.0)?;
+    match auth_rules.allows_osm_get(&mut auth, &conn.0) {
+        Ok(_) => (),
+        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    };
 
     Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
