@@ -2,31 +2,18 @@ extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate geojson;
 extern crate postgres;
-extern crate serde_json;
 extern crate valico;
+extern crate serde_json;
 
 use stream::PGStream;
+use serde_json::value::Value;
 
 #[derive(PartialEq, Debug)]
 pub enum FeatureError {
     NotFound,
-    NoProps,
-    NoMembers,
-    NoGeometry,
-    DuplicateKey,
-    VersionRequired,
-    SchemaMisMatch,
-    CreateError(String),
-    DeleteVersionMismatch,
-    DeleteError(String),
-    ModifyError(String),
-    RestoreError(String),
-    ModifyVersionMismatch,
-    RestoreVersionMismatch,
-    IdRequired,
-    ActionRequired,
     InvalidBBOX,
-    InvalidFeature
+    InvalidFeature,
+    ImportError(Value)
 }
 
 #[derive(PartialEq, Debug)]
@@ -45,28 +32,22 @@ pub struct Response {
 }
 
 impl FeatureError {
-    pub fn to_string(&self) -> String {
+    pub fn as_json(&self) -> Value {
         match *self {
-            FeatureError::NotFound => String::from("Feature Not Found"),
-            FeatureError::NoProps => String::from("No Properties"),
-            FeatureError::NoMembers => String::from("No Members"),
-            FeatureError::NoGeometry => String::from("No Geometry"),
-            FeatureError::DuplicateKey => String::from("Duplicate Key Value"),
-            FeatureError::VersionRequired => String::from("Version Required"),
-            FeatureError::SchemaMisMatch => String::from("Feature properties do not pass schema definition"),
-            FeatureError::CreateError(ref msg) => format!("Create Error: {}", msg),
-            FeatureError::DeleteVersionMismatch => String::from("Delete Version Mismatch"),
-            FeatureError::DeleteError(ref msg) => format!("Delete Error: {}", msg),
-            FeatureError::ModifyVersionMismatch => String::from("Modify Version Mismatch"),
-            FeatureError::RestoreVersionMismatch => String::from("Restore Version Mismatch"),
-            FeatureError::ModifyError(ref msg) => format!("Modify Error: {}", msg),
-            FeatureError::RestoreError(ref msg) => format!("Restore Error: {}", msg),
-            FeatureError::IdRequired => String::from( "ID Required"),
-            FeatureError::ActionRequired => String::from( "Action Required"),
-            FeatureError::InvalidBBOX => String::from( "Invalid BBOX"),
-            FeatureError::InvalidFeature => String::from( "Invalid Feature")
+            FeatureError::NotFound => json!("Feature Not Found"),
+            FeatureError::ImportError(ref value) => json!(value),
+            FeatureError::InvalidBBOX => json!("Invalid BBOX"),
+            FeatureError::InvalidFeature => json!("Invalid Feature")
         }
     }
+}
+
+pub fn import_error(feat: &geojson::Feature, error: &str) -> FeatureError {
+    FeatureError::ImportError(json!({
+        "id": feat.id.clone(),
+        "message": error,
+        "feature": feat.clone()
+    }))
 }
 
 pub fn del_version(feat: &mut geojson::Feature) {
@@ -80,32 +61,32 @@ pub fn del_version(feat: &mut geojson::Feature) {
 
 pub fn get_version(feat: &geojson::Feature) -> Result<i64, FeatureError> {
     match feat.foreign_members {
-        None => { return Err(FeatureError::VersionRequired); },
+        None => { return Err(import_error(&feat, "Version Required")); },
         Some(ref members) => match members.get("version") {
             Some(version) => {
                 match version.as_i64() {
                     Some(version) => Ok(version),
-                    None => { return Err(FeatureError::VersionRequired); },
+                    None => { return Err(import_error(&feat, "Version Required")); },
                 }
             },
-            None => { return Err(FeatureError::VersionRequired); },
+            None => { return Err(import_error(&feat, "Version Required")); },
         }
     }
 }
 
 pub fn get_id(feat: &geojson::Feature) -> Result<i64, FeatureError> {
     match feat.id {
-        None => { return Err(FeatureError::IdRequired); },
+        None => { return Err(import_error(&feat, "ID Required")); },
         Some(ref id) => match id.as_i64() {
             Some(id) => Ok(id),
-            None => { return Err(FeatureError::IdRequired); },
+            None => { return Err(import_error(&feat, "ID Required")); },
         }
     }
 }
 
 pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     match feat.foreign_members {
-        None => { return Err(FeatureError::ActionRequired); },
+        None => { return Err(import_error(&feat, "Action Required")); },
         Some(ref members) => match members.get("action") {
             Some(action) => {
                 match action.as_str() {
@@ -113,11 +94,11 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
                     Some("modify") => Ok(Action::Modify),
                     Some("delete") => Ok(Action::Delete),
                     Some("restore") => Ok(Action::Restore),
-                    Some(_) => { return Err(FeatureError::ActionRequired); },
-                    None => { return Err(FeatureError::ActionRequired); }
+                    Some(_) => { return Err(import_error(&feat, "Action Required")); },
+                    None => { return Err(import_error(&feat, "Action Required")); }
                 }
             },
-            None => { return Err(FeatureError::ActionRequired); },
+            None => { return Err(import_error(&feat, "Action Required")); },
         }
     }
 }
@@ -163,16 +144,16 @@ pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<s
 
 pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     if get_version(&feat).is_ok() {
-        return Err(FeatureError::CreateError(String::from("Should not have 'version' property")));
+        return Err(import_error(&feat, "Cannot have Version"));
     }
 
     let geom = match feat.geometry {
-        None => { return Err(FeatureError::NoGeometry); },
+        None => { return Err(import_error(&feat, "Geometry Required")); },
         Some(ref geom) => geom
     };
 
     let props = match feat.properties {
-        None => { return Err(FeatureError::NoProps); },
+        None => { return Err(import_error(&feat, "Properties Required")); },
         Some(ref props) => props
     };
 
@@ -183,7 +164,7 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
         &None => true
     };
 
-    if !valid { return Err(FeatureError::SchemaMisMatch) };
+    if !valid { return Err(import_error(&feat, "Failed to Match Schema")) };
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
@@ -214,12 +195,12 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
             match err.as_db() {
                 Some(e) => {
                     if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
-                        Err(FeatureError::DuplicateKey)
+                        Err(import_error(&feat, "Duplicate Key Value"))
                     } else {
-                        Err(FeatureError::CreateError(e.message.clone()))
+                        Err(import_error(&feat, &*e.message.clone()))
                     }
                 },
-                _ => Err(FeatureError::CreateError(String::from("generic")))
+                _ => Err(import_error(&feat, "Generic Error"))
             }
         }
     }
@@ -227,12 +208,12 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
 
 pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let geom = match feat.geometry {
-        None => { return Err(FeatureError::NoGeometry); },
+        None => { return Err(import_error(&feat, "Geometry Required")); },
         Some(ref geom) => geom
     };
 
     let props = match feat.properties {
-        None => { return Err(FeatureError::NoProps); },
+        None => { return Err(import_error(&feat, "Properties Required")); },
         Some(ref props) => props
     };
 
@@ -243,7 +224,7 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
         &None => true
     };
 
-    if !valid { return Err(FeatureError::SchemaMisMatch) };
+    if !valid { return Err(import_error(&feat, "Failed to Match Schema")) };
 
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
@@ -262,14 +243,14 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
             match err.as_db() {
                 Some(e) => {
                     if e.message == "MODIFY: ID or VERSION Mismatch" {
-                        Err(FeatureError::ModifyVersionMismatch)
+                        Err(import_error(&feat, "Modify Version Mismatch"))
                     } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
-                        Err(FeatureError::DuplicateKey)
+                        Err(import_error(&feat, "Duplicate Key Value"))
                     } else {
-                        Err(FeatureError::CreateError(e.message.clone()))
+                        Err(import_error(&feat, &*e.message.clone()))
                     }
                 },
-                _ => Err(FeatureError::ModifyError(String::from("generic")))
+                _ => Err(import_error(&feat, "Generic Error"))
             }
         }
     }
@@ -289,12 +270,12 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
             match err.as_db() {
                 Some(e) => {
                     if e.message == "DELETE: ID or VERSION Mismatch" {
-                        Err(FeatureError::DeleteVersionMismatch)
+                        Err(import_error(&feat, "Delete Version Mismatch"))
                     } else {
-                        Err(FeatureError::DeleteError(e.message.clone()))
+                        Err(import_error(&feat, &*e.message.clone()))
                     }
                 },
-                _ => Err(FeatureError::DeleteError(String::from("generic")))
+                _ => Err(import_error(&feat, "Generic Error"))
             }
         }
     }
@@ -366,12 +347,12 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
 
 pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
     let geom = match feat.geometry {
-        None => { return Err(FeatureError::NoGeometry); },
+        None => { return Err(import_error(&feat, "Geometry Required")); },
         Some(ref geom) => geom
     };
 
     let props = match feat.properties {
-        None => { return Err(FeatureError::NoProps); },
+        None => { return Err(import_error(&feat, "Properties Required")); },
         Some(ref props) => props
     };
 
@@ -382,7 +363,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
         &None => true
     };
 
-    if !valid { return Err(FeatureError::SchemaMisMatch) };
+    if !valid { return Err(import_error(&feat, "Failed to Match Schema")) };
 
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
@@ -413,7 +394,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
         Ok(history) => {
 
             if history.len() != 1 {
-                return Err(FeatureError::RestoreError(format!("Feature id: {} does not exist", &id)));
+                return Err(import_error(&feat, "Feature Not Found"));
             }
 
             //Version will be None if the feature was created but has never been modified since the
@@ -421,11 +402,11 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
             let prev_version: Option<i64> = history.get(0).get(1);
             match prev_version {
                 None => {
-                    return Err(FeatureError::RestoreError(format!("Feature id: {} cannot restore an existing feature", &id)));
+                    return Err(import_error(&feat, "Feature Not In Deleted State"));
                 },
                 Some(prev_version) => {
                     if prev_version != version {
-                        return Err(FeatureError::RestoreVersionMismatch);
+                        return Err(import_error(&feat, "Restore Version Mismatch"));
                     }
                 }
             };
@@ -453,20 +434,20 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                     match err.as_db() {
                         Some(e) => {
                             if e.message == "duplicate key value violates unique constraint \"geo_id_key\"" {
-                                Err(FeatureError::RestoreError(format!("Feature id: {} cannot restore an existing feature", &id)))
+                                Err(import_error(&feat, "Feature Not In Deleted State"))
                             } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
-                                Err(FeatureError::DuplicateKey)
+                                Err(import_error(&feat, "Duplicate Key Value"))
                             } else {
-                                Err(FeatureError::RestoreError(String::from("generic")))
+                                Err(import_error(&feat, "Generic Error"))
                             }
                         }
-                        _ => Err(FeatureError::RestoreError(String::from("generic")))
+                        _ => Err(import_error(&feat, "Generic Error"))
                     }
                 }
             }
         },
         Err(_) => {
-            Err(FeatureError::RestoreError(format!("Error fetching feature history for: {}", &id)))
+            Err(import_error(&feat, "Error Fetching History"))
         }
     }
 }

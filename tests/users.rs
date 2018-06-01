@@ -51,7 +51,7 @@ mod test {
 
         { //Create Username
             let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
-            assert_eq!(resp.text().unwrap(), "Could not create user: duplicate key value violates unique constraint \"users_username_key\"");
+            assert_eq!(resp.text().unwrap(), "\"Could not create user: duplicate key value violates unique constraint \\\"users_username_key\\\"\"");
             assert!(resp.status().is_client_error());
         }
 
@@ -70,7 +70,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Not Authorized!");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
         }
 
         { //Feature Upload with bad username
@@ -89,7 +89,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Not Authorized!");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
         }
 
         { //Feature Upload with bad password
@@ -108,7 +108,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "Not Authorized!");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
         }
 
         { //Feature Upload with correct creds

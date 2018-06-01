@@ -108,7 +108,7 @@ mod test {
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0/regen").send().unwrap();
 
-            assert_eq!(resp.text().unwrap(), "Not Authorized!");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
             assert!(resp.status().is_client_error());
         }
 

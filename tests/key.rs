@@ -286,7 +286,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "Duplicate Key Value");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"create\",\"geometry\":{\"coordinates\":[0.0,0.0],\"type\":\"Point\"},\"key\":\"Q1233\",\"message\":\"Creating a Point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\"},\"id\":null,\"message\":\"Duplicate Key Value\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -347,7 +347,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "Duplicate Key Value");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"modify\",\"geometry\":{\"coordinates\":[1.0,1.0],\"type\":\"Point\"},\"id\":2,\"key\":\"12-34\",\"message\":\"Modify a point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\",\"version\":1},\"id\":2,\"message\":\"Duplicate Key Value\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -396,7 +396,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "Duplicate Key Value");
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"restore\",\"geometry\":{\"coordinates\":[1.0,1.0],\"type\":\"Point\"},\"id\":1,\"key\":\"Rando\",\"message\":\"Restore previously deleted point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\",\"version\":3},\"id\":1,\"message\":\"Duplicate Key Value\"}");
             assert!(resp.status().is_client_error());
         }
 
