@@ -235,6 +235,89 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { //Create Point - Force Success FeatureCollection
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/features")
+                .body(r#"{
+                    "type": "FeatureCollection",
+                    "message": "Testing Force Option",
+                    "features": [{
+                        "key": "1",
+                        "type": "Feature",
+                        "action": "create",
+                        "force": true,
+                        "properties": {
+                            "street": "I AM AN EVEN NEWER FEAT"
+                        },
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [1, 1]
+                        }
+                    }]
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/data/feature/1")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 1,
+                "key": "1",
+                "type": "Feature",
+                "version": 3,
+                "properties": {
+                    "street": "I AM AN EVEN NEWER FEAT"
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [ 1.0, 1.0 ]
+                }
+            }));
+
+            assert!(resp.status().is_success());
+        }
+        
+        { //Create Point - Force Missing Key - FeatureCollection
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/features")
+                .body(r#"{
+                    "type": "FeatureCollection",
+                    "message": "Testing Force Option",
+                    "features": [{
+                        "type": "Feature",
+                        "action": "create",
+                        "force": true,
+                        "properties": {
+                            "street": "I AM AN EVEN NEWER FEAT"
+                        },
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [1, 1]
+                        }
+                    }]
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"create\",\"force\":true,\"geometry\":{\"coordinates\":[1.0,1.0],\"type\":\"Point\"},\"properties\":{\"street\":\"I AM AN EVEN NEWER FEAT\"},\"type\":\"Feature\"},\"id\":null,\"message\":\"force can only be used with a key value\"}");
+            assert!(resp.status().is_client_error());
+        }
+
         server.kill().unwrap();
     }
 }
