@@ -174,6 +174,7 @@ mod test {
                     "list": "user"
                 },
                 "feature": {
+                    "force": "user",
                     "create": "user",
                     "get": "user",
                     "history": "user"
