@@ -50,6 +50,22 @@ pub fn import_error(feat: &geojson::Feature, error: &str) -> FeatureError {
     }))
 }
 
+pub fn is_force(feat: &geojson::Feature) -> bool {
+    match feat.foreign_members {
+        None => false,
+        Some(ref members) => match members.get("force") {
+            Some(version) => {
+                if version.is_boolean() {
+                    version.as_bool().unwrap()
+                } else {
+                    false
+                }
+            },
+            None => false
+        }
+    }
+}
+
 pub fn del_version(feat: &mut geojson::Feature) {
     match feat.foreign_members {
         None => (),
