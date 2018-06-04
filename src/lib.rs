@@ -565,9 +565,14 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
     };
 
     for feat in &mut fc.features {
-        if feature::is_force(&feat) {
-            auth_rules.allows_feature_force(&mut auth, &conn.0)?;
-        }
+        match feature::is_force(&feat) {
+            Err(err) => {
+                return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
+            },
+            Ok(_) => {
+                auth_rules.allows_feature_force(&mut auth, &conn.0)?;
+            }
+        };
 
         match feature::action(&trans, &schema.inner(), &feat, &None) {
             Err(err) => {
@@ -880,9 +885,14 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
         }
     };
 
-    if feature::is_force(&feat) {
-        auth_rules.allows_feature_force(&mut auth, &conn.0)?;
-    }
+    match feature::is_force(&feat) {
+        Err(err) => {
+            return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
+        },
+        Ok(_) => {
+            auth_rules.allows_feature_force(&mut auth, &conn.0)?;
+        }
+    };
 
     let delta_message = match feat.foreign_members {
         None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Feature Must have message property for delta")))); }

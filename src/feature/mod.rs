@@ -60,20 +60,20 @@ pub fn is_force(feat: &geojson::Feature) -> Result<bool, FeatureError> {
         Some(ref members) => match members.get("force") {
             Some(version) => {
                 if version.is_boolean() && version.as_bool().unwrap() == true {
-                    if get_action(&feat) != Action::Create {
-                        return Err(import_error(&feat, "force can only be used on create")); },
+                    if get_action(&feat)? != Action::Create {
+                        return Err(import_error(&feat, "force can only be used on create"));
                     }
-                
+
                     match get_key(&feat) {
                         None => {
-                            return Err(import_error(&feat, "force can only be used with a key value"));
+                            Err(import_error(&feat, "force can only be used with a key value"))
                         },
                         Some(_) => {
-                            return Ok(true);
+                            Ok(true)
                         }
                     }
                 } else {
-                    return Err(import_error(&feat, "force must be a boolean")); },
+                    Err(import_error(&feat, "force must be a boolean"))
                 }
             },
             None => Ok(false)
@@ -411,7 +411,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
         FROM (
             SELECT
                 deltas.id,
-                JSON_Array_Elements((deltas.features -> 'features')::JSON) AS feat 
+                JSON_Array_Elements((deltas.features -> 'features')::JSON) AS feat
             FROM
                 deltas
             WHERE
