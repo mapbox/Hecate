@@ -616,6 +616,13 @@ impl CustomAuth {
         }
     }
 
+    pub fn allows_feature_force(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.feature {
+            None => Err(not_authed()),
+            Some(feature) => auth_met(&feature.force, auth, &conn)
+        }
+    }
+
     pub fn allows_feature_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
         match &self.feature {
             None => Err(not_authed()),
