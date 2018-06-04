@@ -278,7 +278,7 @@ pub struct AuthFeature {
 impl AuthFeature {
     fn new() -> Self {
         AuthFeature {
-            force: Some(String::from("user")),
+            force: Some(String::from("none")),
             create: Some(String::from("user")),
             get: Some(String::from("public")),
             history: Some(String::from("public"))
