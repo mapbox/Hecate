@@ -269,6 +269,7 @@ impl ValidAuth for AuthDelta {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthFeature {
+    pub force: Option<String>,
     pub create: Option<String>,
     pub get: Option<String>,
     pub history: Option<String>
@@ -277,6 +278,7 @@ pub struct AuthFeature {
 impl AuthFeature {
     fn new() -> Self {
         AuthFeature {
+            force: Some(String::from("none")),
             create: Some(String::from("user")),
             get: Some(String::from("public")),
             history: Some(String::from("public"))
@@ -287,6 +289,7 @@ impl AuthFeature {
 impl ValidAuth for AuthFeature {
     fn is_valid(&self) -> Result<bool, String> {
         is_auth("feature::create", &self.create)?;
+        is_auth("feature::force", &self.force)?;
         is_all("feature::get", &self.get)?;
         is_all("feature::history", &self.history)?;
 
@@ -610,6 +613,13 @@ impl CustomAuth {
         match &self.feature {
             None => Err(not_authed()),
             Some(feature) => auth_met(&feature.create, auth, &conn)
+        }
+    }
+
+    pub fn allows_feature_force(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.feature {
+            None => Err(not_authed()),
+            Some(feature) => auth_met(&feature.force, auth, &conn)
         }
     }
 

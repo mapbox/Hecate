@@ -130,6 +130,7 @@ server members.
 | `version` | The version of a given feature, starts at `1` for a newly created feature |
 | `action`  | Only used for uploads, the desired action to be performed. One of `create`, `modify`, `delete`, or `restore` |
 | `key`     | `[Optional]` A String containing a value that hecate will ensure remains unique accross all features. Can be a natural id (wikidata id, PID, etc), computed property hash, geometry hash etc. The specifics are left up to the client. Should an attempt at importing a Feature with a differing `id` but identical `key` be made, the feature with will be rejected, ensuring the uniqueness of the `key` values. By default this value will be `NULL`. Duplicate `NULL` values are allowed.
+| `force`   | `[Optional]` Boolean allowing a user to override version locking and force UPSERT a feature. Disabled by default |
 
 ### Examples
 
@@ -175,6 +176,15 @@ Downloaded Features will return the integer `id` of the feature, the current `ve
 
 A features being uploaded for creation must have the `action: create` property. Since an `id` and `version` have not yet been
 assigned they must be omitted. Should an `id` be included it will be ignored. Adding a `version` property will throw an error
+
+Optionally create actions can use the `force: true` option to perform an `UPSERT` like option. In this mode the uploader must
+specify the `key` value. Hecate will then `INSERT` the feature if the `key` value is new, if the `key` is already existing, the
+existing feature will be overwritten with the forced feature. Note that this mode ignores version checks and is therefore unsafe.
+
+Force Prerequisites
+- Disabled by default, must be explicitly enabled via [Custom Authentication](#custom-authentication)
+- Can only be performed on a feature with `action: create`
+- Must specify a valid `key`
 
 #### Modify Features
 
@@ -392,6 +402,7 @@ have a map containing the auth for each subkey.
 | `POST /api/data/feature(s)`           | `feature::create`         | `user`        | `user`, `admin`, `null`   |       |
 | `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |
 | `GET /api/data/feature/<id>/history`  | `feature::history`        | `public`      | All                       |       |
+| `POST /api/data/feature(s) w/ `force` | `feature::force`          | `admin`       | `user`, `admin`, `null`   |       |
 | **Clone**                             | `clone`                   |               | `null`                    | 2     |
 | `GET /api/data/clone`                 | `clone::get`              | `user`        | All                       |       |
 | **Bounds**                            | `bounds`                  |               | `null`                    | 2     |

@@ -565,6 +565,17 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
     };
 
     for feat in &mut fc.features {
+        match feature::is_force(&feat) {
+            Err(err) => {
+                return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
+            },
+            Ok(force) => {
+                if force {
+                    auth_rules.allows_feature_force(&mut auth, &conn.0)?;
+                }
+            }
+        };
+
         match feature::action(&trans, &schema.inner(), &feat, &None) {
             Err(err) => {
                 trans.set_rollback();
@@ -873,6 +884,17 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
         Ok(geo) => match geo {
             GeoJson::Feature(feat) => feat,
             _ => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); }
+        }
+    };
+
+    match feature::is_force(&feat) {
+        Err(err) => {
+            return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
+        },
+        Ok(force) => {
+            if force {
+                auth_rules.allows_feature_force(&mut auth, &conn.0)?;
+            }
         }
     };
 

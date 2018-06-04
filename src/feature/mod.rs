@@ -50,6 +50,37 @@ pub fn import_error(feat: &geojson::Feature, error: &str) -> FeatureError {
     }))
 }
 
+///
+/// Check if the feature has the force: true flag set and if so
+/// validate that it meets the force:true acceptions
+///
+pub fn is_force(feat: &geojson::Feature) -> Result<bool, FeatureError> {
+    match feat.foreign_members {
+        None => Ok(false),
+        Some(ref members) => match members.get("force") {
+            Some(version) => {
+                if version.is_boolean() && version.as_bool().unwrap() == true {
+                    if get_action(&feat)? != Action::Create {
+                        return Err(import_error(&feat, "force can only be used on create"));
+                    }
+
+                    match get_key(&feat) {
+                        None => {
+                            Err(import_error(&feat, "force can only be used with a key value"))
+                        },
+                        Some(_) => {
+                            Ok(true)
+                        }
+                    }
+                } else {
+                    Err(import_error(&feat, "force must be a boolean"))
+                }
+            },
+            None => Ok(false)
+        }
+    }
+}
+
 pub fn del_version(feat: &mut geojson::Feature) {
     match feat.foreign_members {
         None => (),
@@ -176,31 +207,65 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
         Ok(id) => Some(id)
     };
 
-    match trans.query("
-        INSERT INTO geo (version, geom, props, deltas, key)
-            VALUES (
-                1,
-                ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
-                $2::TEXT::JSON,
-                array[COALESCE($3, currval('deltas_id_seq')::BIGINT)],
-                $4
-            ) RETURNING id;
-    ", &[&geom_str, &props_str, &delta, &key]) {
-        Ok(res) => Ok(Response {
-            old: id,
-            new: Some(res.get(0).get(0)),
-            version: Some(1)
-        }),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => {
-                    if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
-                        Err(import_error(&feat, "Duplicate Key Value"))
-                    } else {
+    if is_force(&feat)? == true {
+        match trans.query("
+            INSERT INTO geo (version, geom, props, deltas, key)
+                VALUES (
+                    1,
+                    ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                    $2::TEXT::JSON,
+                    array[COALESCE($3, currval('deltas_id_seq')::BIGINT)],
+                    $4
+                )
+                ON CONFLICT (key) DO UPDATE
+                    SET
+                        version = geo.version + 1,
+                        geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                        props = $2::TEXT::JSON,
+                        deltas = array_append(geo.deltas, COALESCE($3, currval('deltas_id_seq')::BIGINT))
+                RETURNING id;
+        ", &[&geom_str, &props_str, &delta, &key]) {
+            Ok(res) => Ok(Response {
+                old: id,
+                new: Some(res.get(0).get(0)),
+                version: Some(1)
+            }),
+            Err(err) => {
+                match err.as_db() {
+                    Some(e) => {
                         Err(import_error(&feat, &*e.message.clone()))
-                    }
-                },
-                _ => Err(import_error(&feat, "Generic Error"))
+                    },
+                    _ => Err(import_error(&feat, "Generic Error"))
+                }
+            }
+        }
+    } else {
+        match trans.query("
+            INSERT INTO geo (version, geom, props, deltas, key)
+                VALUES (
+                    1,
+                    ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                    $2::TEXT::JSON,
+                    array[COALESCE($3, currval('deltas_id_seq')::BIGINT)],
+                    $4
+                ) RETURNING id;
+        ", &[&geom_str, &props_str, &delta, &key]) {
+            Ok(res) => Ok(Response {
+                old: id,
+                new: Some(res.get(0).get(0)),
+                version: Some(1)
+            }),
+            Err(err) => {
+                match err.as_db() {
+                    Some(e) => {
+                        if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
+                            Err(import_error(&feat, "Duplicate Key Value"))
+                        } else {
+                            Err(import_error(&feat, &*e.message.clone()))
+                        }
+                    },
+                    _ => Err(import_error(&feat, "Generic Error"))
+                }
             }
         }
     }
@@ -380,7 +445,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
         FROM (
             SELECT
                 deltas.id,
-                JSON_Array_Elements((deltas.features -> 'features')::JSON) AS feat 
+                JSON_Array_Elements((deltas.features -> 'features')::JSON) AS feat
             FROM
                 deltas
             WHERE
