@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.32.0
+
+- :tada: Add `force: true` option for force overwriting `create` features.
+
 ## v0.31.0
 
 - :rocket: `Feature` and `FeatureCollection` uploads now will return the specific feature/id if there is an error
