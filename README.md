@@ -177,6 +177,15 @@ Downloaded Features will return the integer `id` of the feature, the current `ve
 A features being uploaded for creation must have the `action: create` property. Since an `id` and `version` have not yet been
 assigned they must be omitted. Should an `id` be included it will be ignored. Adding a `version` property will throw an error
 
+Optionally create actions can use the `force: true` option to perform an `UPSERT` like option. In this mode the uploader must
+specify the `key` value. Hecate will then `INSERT` the feature if the `key` value is new, if the `key` is already existing, the
+existing feature will be overwritten with the forced feature. Note that this mode ignores version checks and is therefore unsafe.
+
+Force Prerequisites
+- Disabled by default, must be explicitly enabled via [Custom Authentication](#custom-authentication)
+- Can only be performed on a feature with `action: create`
+- Must specify a valid `key`
+
 #### Modify Features
 
 ```JSON

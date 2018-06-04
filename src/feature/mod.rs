@@ -50,18 +50,33 @@ pub fn import_error(feat: &geojson::Feature, error: &str) -> FeatureError {
     }))
 }
 
-pub fn is_force(feat: &geojson::Feature) -> bool {
+///
+/// Check if the feature has the force: true flag set and if so
+/// validate that it meets the force:true acceptions
+///
+pub fn is_force(feat: &geojson::Feature) -> Result<bool, FeatureError> {
     match feat.foreign_members {
-        None => false,
+        None => Ok(false),
         Some(ref members) => match members.get("force") {
             Some(version) => {
-                if version.is_boolean() {
-                    version.as_bool().unwrap()
+                if version.is_boolean() && version.as_bool().unwrap() == true {
+                    if get_action(&feat) != Action::Create {
+                        return Err(import_error(&feat, "force can only be used on create")); },
+                    }
+                
+                    match get_key(&feat) {
+                        None => {
+                            return Err(import_error(&feat, "force can only be used with a key value"));
+                        },
+                        Some(_) => {
+                            return Ok(true);
+                        }
+                    }
                 } else {
-                    false
+                    return Err(import_error(&feat, "force must be a boolean")); },
                 }
             },
-            None => false
+            None => Ok(false)
         }
     }
 }
