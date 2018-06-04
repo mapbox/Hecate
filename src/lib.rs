@@ -565,6 +565,10 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
     };
 
     for feat in &mut fc.features {
+        if feature::is_force(&feat) {
+            auth_rules.allows_feature_force(&mut auth, &conn.0)?;
+        }
+
         match feature::action(&trans, &schema.inner(), &feat, &None) {
             Err(err) => {
                 trans.set_rollback();
@@ -875,6 +879,10 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
             _ => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); }
         }
     };
+
+    if feature::is_force(&feat) {
+        auth_rules.allows_feature_force(&mut auth, &conn.0)?;
+    }
 
     let delta_message = match feat.foreign_members {
         None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Feature Must have message property for delta")))); }
