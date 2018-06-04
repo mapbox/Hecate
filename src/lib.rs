@@ -569,8 +569,10 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
             Err(err) => {
                 return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
             },
-            Ok(_) => {
-                auth_rules.allows_feature_force(&mut auth, &conn.0)?;
+            Ok(force) => {
+                if force {
+                    auth_rules.allows_feature_force(&mut auth, &conn.0)?;
+                }
             }
         };
 
@@ -889,8 +891,10 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
         Err(err) => {
             return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
         },
-        Ok(_) => {
-            auth_rules.allows_feature_force(&mut auth, &conn.0)?;
+        Ok(force) => {
+            if force {
+                auth_rules.allows_feature_force(&mut auth, &conn.0)?;
+            }
         }
     };
 
