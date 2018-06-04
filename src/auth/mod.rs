@@ -269,6 +269,7 @@ impl ValidAuth for AuthDelta {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthFeature {
+    pub force: Option<String>,
     pub create: Option<String>,
     pub get: Option<String>,
     pub history: Option<String>
@@ -277,6 +278,7 @@ pub struct AuthFeature {
 impl AuthFeature {
     fn new() -> Self {
         AuthFeature {
+            force: Some(String::from("user")),
             create: Some(String::from("user")),
             get: Some(String::from("public")),
             history: Some(String::from("public"))
@@ -287,6 +289,7 @@ impl AuthFeature {
 impl ValidAuth for AuthFeature {
     fn is_valid(&self) -> Result<bool, String> {
         is_auth("feature::create", &self.create)?;
+        is_auth("feature::force", &self.force)?;
         is_all("feature::get", &self.get)?;
         is_all("feature::history", &self.history)?;
 

@@ -393,6 +393,7 @@ have a map containing the auth for each subkey.
 | `POST /api/data/feature(s)`           | `feature::create`         | `user`        | `user`, `admin`, `null`   |       |
 | `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |
 | `GET /api/data/feature/<id>/history`  | `feature::history`        | `public`      | All                       |       |
+| `POST /api/data/feature(s) w/ `force` | `feature::force`          | `admin`       | `user`, `admin`, `null`   |       |
 | **Clone**                             | `clone`                   |               | `null`                    | 2     |
 | `GET /api/data/clone`                 | `clone::get`              | `user`        | All                       |       |
 | **Bounds**                            | `bounds`                  |               | `null`                    | 2     |
