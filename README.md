@@ -405,6 +405,7 @@ have a map containing the auth for each subkey.
 | `POST /api/data/feature(s) w/ `force` | `feature::force`          | `admin`       | `user`, `admin`, `null`   |       |
 | **Clone**                             | `clone`                   |               | `null`                    | 2     |
 | `GET /api/data/clone`                 | `clone::get`              | `user`        | All                       |       |
+| `GET /api/data/query`                 | `clone::query`            | `user`        | All                       |       |
 | **Bounds**                            | `bounds`                  |               | `null`                    | 2     |
 | `GET /api/bounds`                     | `bounds::list`            | `public`      | All                       |       |
 | `GET /api/bounds/<id>`                | `bounds::get`             | `public`      | All                       |       |

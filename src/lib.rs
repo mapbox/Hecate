@@ -102,6 +102,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
             bounds_list,
             bounds_get,
             clone_get,
+            query_get,
             xml_capabilities,
             xml_06capabilities,
             xml_user,
@@ -484,6 +485,16 @@ fn bounds_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::Custom
 
     match bounds::get(conn.0, bounds) {
         Ok(bs) => Ok(Stream::from(bs)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[get("/data/query")]
+fn query_get(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Stream<stream::PGStream>, status::Custom<Json>> {
+    auth_rules.allows_clone_get(&mut auth, &conn.0)?;
+
+    match clone::get(conn.0) {
+        Ok(clone) => Ok(Stream::from(clone)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }

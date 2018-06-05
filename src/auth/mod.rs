@@ -88,13 +88,15 @@ pub trait ValidAuth {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthClone {
-    pub get: Option<String>
+    pub get: Option<String>,
+    pub query: Option<String>
 }
 
 impl AuthClone {
     fn new() -> Self {
         AuthClone {
-            get: Some(String::from("user"))
+            get: Some(String::from("user")),
+            query: Some(String::from("user"))
         }
     }
 }
@@ -102,6 +104,7 @@ impl AuthClone {
 impl ValidAuth for AuthClone {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("clone::get", &self.get)?;
+        is_all("clone::query", &self.query)?;
 
         Ok(true)
     }
