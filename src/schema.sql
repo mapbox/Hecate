@@ -128,6 +128,6 @@ DO $$DECLARE count int;
         END IF;
     END$$;
 DROP ROLE IF EXISTS hecate_read;
-CREATE ROLE hecate_read WITH LOGIN;
+CREATE ROLE hecate_read WITH LOGIN NOINHERIT;
 GRANT SELECT ON geo TO hecate_read;
 -- -----------------------------------

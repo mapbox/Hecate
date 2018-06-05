@@ -41,7 +41,10 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     }
 }
 
-pub fn query(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &String) -> Result<PGStream, CloneError> {
+pub fn query(query: &String) -> Result<PGStream, CloneError> {
+    /*
+    let conn = Connection::connect("postgres://postgres@localhost:5433", TlsMode::None).unwrap();
+
     match PGStream::new(conn, String::from("next_clone_query"), format!(r#"
 
         DECLARE next_clone CURSOR FOR
@@ -63,4 +66,6 @@ pub fn query(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
         Ok(stream) => Ok(stream),
         Err(_) =>  Err(CloneError::GetError)
     }
+    */
+    Err(CloneError::GetError)
 }

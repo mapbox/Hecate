@@ -17,6 +17,7 @@ extern crate rocket_contrib;
 extern crate geojson;
 extern crate env_logger;
 extern crate chrono;
+extern crate regex;
 
 pub mod delta;
 pub mod mvt;
@@ -46,6 +47,7 @@ use rocket::response::{Response, status, Stream, NamedFile};
 use rocket::request::{self, FromRequest};
 use geojson::GeoJson;
 use rocket_contrib::Json;
+use regex::Regex;
 
 pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
     env_logger::init();
@@ -62,8 +64,11 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
         }
     };
 
+    let db_read = Db_ReadOnly::new(&database);
+
     rocket::ignite()
         .manage(init_pool(&database))
+        .manage(db_read)
         .manage(schema)
         .manage(auth_rules)
         .mount("/", routes![
@@ -128,6 +133,24 @@ fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionMana
     match r2d2::Pool::builder().max_size(15).build(manager) {
         Ok(pool) => pool,
         Err(_) => { panic!("Failed to connect to database"); }
+    }
+}
+
+//Stores Connection String
+pub struct Db_ReadOnly(pub String); //Read Only DB connection string
+impl Db_ReadOnly {
+    fn new(database: &String) -> Self {
+        let re = Regex::new(r"^(?P<user>.*?)(:(?P<pass>.*?))?@(?P<host>.*?):(?P<port>\d+)/(?P<db>.*?)$").unwrap();
+
+        let db_parsed = re.captures(&database).unwrap();
+
+        println!("{:?}", &db_parsed["pass"]);
+        Db_ReadOnly(String::from(format!("{}@{}:{}/{}",
+            &db_parsed["user"],
+            &db_parsed["host"],
+            &db_parsed["port"],
+            &db_parsed["db"]
+        )))
     }
 }
 
@@ -498,7 +521,7 @@ struct CloneQuery {
 fn clone_query(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: CloneQuery) -> Result<Stream<stream::PGStream>, status::Custom<Json>> {
     auth_rules.allows_clone_query(&mut auth, &conn.0)?;
 
-    match clone::query(conn.0, &cquery.query) {
+    match clone::query(&cquery.query) {
         Ok(clone) => Ok(Stream::from(clone)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
