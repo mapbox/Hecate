@@ -64,7 +64,7 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
         }
     };
 
-    let db_read = Db_ReadOnly::new(&database);
+    let db_read = DbReadOnly::new(&database);
 
     rocket::ignite()
         .manage(init_pool(&database))
@@ -137,16 +137,14 @@ fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionMana
 }
 
 //Stores Connection String
-pub struct Db_ReadOnly(pub String); //Read Only DB connection string
-impl Db_ReadOnly {
+pub struct DbReadOnly(pub String); //Read Only DB connection string
+impl DbReadOnly {
     fn new(database: &String) -> Self {
         let re = Regex::new(r"^(?P<user>.*?)(:(?P<pass>.*?))?@(?P<host>.*?):(?P<port>\d+)/(?P<db>.*?)$").unwrap();
 
         let db_parsed = re.captures(&database).unwrap();
 
-        println!("{:?}", &db_parsed["pass"]);
-        Db_ReadOnly(String::from(format!("{}@{}:{}/{}",
-            &db_parsed["user"],
+        DbReadOnly(String::from(format!("hecate_read@{}:{}/{}",
             &db_parsed["host"],
             &db_parsed["port"],
             &db_parsed["db"]
@@ -518,10 +516,10 @@ struct CloneQuery {
 }
 
 #[get("/data/query?<cquery>")]
-fn clone_query(conn: DbConn, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: CloneQuery) -> Result<Stream<stream::PGStream>, status::Custom<Json>> {
+fn clone_query(conn: DbConn, read_conn: State<DbReadOnly>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: CloneQuery) -> Result<Stream<stream::PGStream>, status::Custom<Json>> {
     auth_rules.allows_clone_query(&mut auth, &conn.0)?;
 
-    match clone::query(&cquery.query) {
+    match clone::query(&read_conn.0, &cquery.query) {
         Ok(clone) => Ok(Stream::from(clone)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }

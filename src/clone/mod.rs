@@ -41,7 +41,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     }
 }
 
-pub fn query(query: &String) -> Result<PGStream, CloneError> {
+pub fn query(read_conn: &String, query: &String) -> Result<PGStream, CloneError> {
     /*
     let conn = Connection::connect("postgres://postgres@localhost:5433", TlsMode::None).unwrap();
 
