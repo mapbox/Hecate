@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.32.1
+
+- :white_check_mark: Add `FeatureCollection` force tests
+
 ## v0.32.0
 
 - :tada: Add `force: true` option for force overwriting `create` features.
