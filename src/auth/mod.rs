@@ -598,6 +598,13 @@ impl CustomAuth {
         }
     }
 
+    pub fn allows_clone_query(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.clone {
+            None => Err(not_authed()),
+            Some(clone) => auth_met(&clone.query, auth, &conn)
+        }
+    }
+
     pub fn allows_bounds_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
         match &self.bounds {
             None => Err(not_authed()),
