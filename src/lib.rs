@@ -144,7 +144,7 @@ impl DbReadOnly {
 
         let db_parsed = re.captures(&database).unwrap();
 
-        DbReadOnly(String::from(format!("hecate_read@{}:{}/{}",
+        DbReadOnly(String::from(format!("postgres://hecate_read@{}:{}/{}",
             &db_parsed["host"],
             &db_parsed["port"],
             &db_parsed["db"]
