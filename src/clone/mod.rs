@@ -42,7 +42,8 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
 }
 
 pub fn query(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &String) -> Result<PGStream, CloneError> {
-    match PGStream::new(conn, String::from("next_clone"), String::from(r#"
+    match PGStream::new(conn, String::from("next_clone_query"), format!(r#"
+
         DECLARE next_clone CURSOR FOR
             SELECT
                 row_to_json(t)::TEXT
@@ -57,6 +58,7 @@ pub fn query(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
                 FROM
                     geo
             ) t
+
     "#), &[]) {
         Ok(stream) => Ok(stream),
         Err(_) =>  Err(CloneError::GetError)

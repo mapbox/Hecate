@@ -116,3 +116,18 @@ CREATE OR REPLACE FUNCTION modify_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT, TEXT)
     $$ LANGUAGE plpgsql;
 
 COMMIT;
+
+
+-- ------- Hecate Read User ----------
+DO $$DECLARE count int;
+    BEGIN
+        SELECT count(*) INTO count FROM pg_roles WHERE rolname = 'hecate_read';
+
+        IF count > 0 THEN
+                EXECUTE 'REVOKE ALL PRIVILEGES ON "geo" FROM hecate_read';
+        END IF;
+    END$$;
+DROP ROLE IF EXISTS hecate_read;
+CREATE ROLE hecate_read WITH LOGIN;
+GRANT SELECT ON geo TO hecate_read;
+-- -----------------------------------
