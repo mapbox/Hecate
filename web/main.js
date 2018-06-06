@@ -27,7 +27,8 @@ window.onload = () => {
                     body: ''
                 },
                 query: {
-                    query: ''
+                    query: '',
+                    results: []
                 },
                 ok: {
                     header: '',
@@ -204,6 +205,16 @@ window.onload = () => {
                     return this.ok('Failed to Login', 'Failed to login with given credentials');
                 });
 
+            },
+            query: function(query) {
+                fetch(`http://${window.location.host}/api/data/query?query=${encodeURIComponent(this.modal.query.query)}`, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                }).then((response) => {
+                      return response.text();
+                }).then((body) => {
+                    this.modal.query.results = body.split('\n');
+                });
             },
             login_show: function() {
                 if (!this.credentials.authed) this.modal.type = 'login';

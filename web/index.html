@@ -369,18 +369,23 @@
                                     <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
                                 </div>
 
-                                <div class='col col--12'>
-                                    <textarea :readonly="!credentials.uid" class='textarea w-full h360' v-model="modal.query.query" placeholder="Query SQL"></textarea>
-                                </div>
+                                <template v-if='!modal.query.results.length'>
+                                    <div class='col col--12'>
+                                        <textarea :readonly="!credentials.uid" class='textarea w-full h360' v-model="modal.query.query" placeholder="Query SQL"></textarea>
+                                    </div>
 
-                                <div class='col col--12'>
-                                    <div class='grid grid--gut12'>
-                                        <div class='col col--8 py12'></div>
-                                        <div class='col col--4 py12'>
-                                            <button class='btn round btn--stroke w-full'>Query</button>
+                                    <div class='col col--12'>
+                                        <div class='grid grid--gut12'>
+                                            <div class='col col--8 py12'></div>
+                                            <div class='col col--4 py12'>
+                                                <button @click="query(modal.query.query)" class='btn round btn--stroke w-full'>Query</button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </template>
+                                <template v-else>
+                                    Hello World
+                                </template>
                             </div>
                         </div>
                     </div>
