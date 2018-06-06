@@ -26,6 +26,9 @@ window.onload = () => {
                     header: '',
                     body: ''
                 },
+                query: {
+                    query: ''
+                },
                 ok: {
                     header: '',
                     body: ''

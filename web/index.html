@@ -370,7 +370,7 @@
                                 </div>
 
                                 <div class='col col--12'>
-                                    <textarea :readonly="credentials.uid !== modal.style_set.uid" class='textarea w-full h360' v-model="modal.style_set.style" placeholder="Query SQL"></textarea>
+                                    <textarea :readonly="!credentials.uid" class='textarea w-full h360' v-model="modal.query.query" placeholder="Query SQL"></textarea>
                                 </div>
 
                                 <div class='col col--12'>
