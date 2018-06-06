@@ -24,8 +24,19 @@
     <body class='h-full'>
         <div id="app" class="h-full relative">
             <div class='viewport-full relative scroll-hidden'>
+                <!-- Map -->
                 <div id="map" class='h-full bg-darken10 viewport-twothirds viewport-full-ml absolute top left right bottom'></div>
+
+                <!-- Left Panel -->
                 <div class='absolute top-ml left bottom z1 w-full w240-ml hmax-full px12 py12-ml' style="pointer-events: none;">
+
+                    <!-- Toolbar -->
+                    <div class='bg-white round mb12' style='height: 40px; pointer-events:auto;'>
+                        <div @click=""class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                            <svg class='icon'><use xlink:href='#icon-inspect'/></svg>
+                        </div>
+                    </div>
+
                     <div v-if="feature" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
                         <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
 
