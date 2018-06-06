@@ -63,10 +63,10 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
         }
     };
 
-    let re = Regex::new(r"^(?P<user>.*?)(:(?P<pass>.*?))?@(?P<host>.*?):(?P<port>\d+)/(?P<db>.*?)$").unwrap();
-    let db_parsed = re.captures(&database).unwrap();
+    let db_parsed = Regex::new(r"^(?P<user>.*?)(:(?P<pass>.*?))?@(?P<host>.*?):(?P<port>\d+)/(?P<db>.*?)$").unwrap()
+        .captures(&database).unwrap();
 
-    let database_read: String = format!("postgres://hecate_read@{}:{}/{}", &db_parsed["host"], &db_parsed["port"], &db_parsed["db"]);
+    let database_read: String = format!("hecate_read@{}:{}/{}", &db_parsed["host"], &db_parsed["port"], &db_parsed["db"]);
 
     rocket::ignite()
         .manage(DbReadWrite::new(init_pool(&database)))
