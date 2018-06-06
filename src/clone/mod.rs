@@ -41,9 +41,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     }
 }
 
-pub fn query(read_conn: &str, query: &String) -> Result<PGStream, CloneError> {
-    let conn = postgres::Connection::connect(read_conn, postgres::TlsMode::None).unwrap();
-
+pub fn query(read_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &String) -> Result<PGStream, CloneError> {
     /*
     match PGStream::new(conn, String::from("next_clone_query"), format!(r#"
 
