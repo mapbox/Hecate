@@ -556,14 +556,15 @@ fn bounds_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
 #[derive(FromForm)]
 struct CloneQuery {
-    query: String
+    query: String,
+    limit: Option<i64>
 }
 
 #[get("/data/query?<cquery>")]
 fn clone_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: CloneQuery) -> Result<Stream<stream::PGStream>, status::Custom<Json>> {
     auth_rules.allows_clone_query(&mut auth, &conn.get()?)?;
 
-    match clone::query(read_conn.get()?, &cquery.query) {
+    match clone::query(read_conn.get()?, &cquery.query, &cquery.limit) {
         Ok(clone) => Ok(Stream::from(clone)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
