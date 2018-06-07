@@ -384,8 +384,8 @@
                                     </div>
                                 </template>
                                 <template v-else>
-                                    <div class='col col--11'>
-                                        <button @click="modal.query.results = []" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
+                                    <div class='pb12 col col--11'>
+                                        <button @click="modal.query.results = ''" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
                                         <h3 class='fl pl12 txt-m txt-bold fl'>SQL Results Viewer</h3>
                                     </div>
 
@@ -394,7 +394,7 @@
                                     </div>
 
                                     <div class='col col--12'>
-                                        <textarea class='textarea w-full h360' v-model="modal.query.results" placeholder="SQL Results"></textarea>
+                                        <textarea readonly class='textarea w-full h360' v-model="modal.query.results" placeholder="SQL Results"></textarea>
                                     </div>
                                 </template>
                             </div>
