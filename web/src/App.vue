@@ -355,6 +355,9 @@
                             </div>
 
                             <div class='col col--12'>
+                                <p>Note the web UI only supports querying up to 100 features</p>
+                            </div>
+                            <div class='col col--12'>
                                 <div class='grid grid--gut12'>
                                     <div class='col col--8 py12'></div>
                                     <div class='col col--4 py12'>
@@ -572,7 +575,7 @@ export default {
 
         },
         query: function(query) {
-            fetch(`http://${window.location.host}/api/data/query?query=${encodeURIComponent(this.modal.query.query.replace(/;/g, ''))}`, {
+            fetch(`http://${window.location.host}/api/data/query?limit=100&query=${encodeURIComponent(this.modal.query.query.replace(/;/g, ''))}`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
