@@ -5,6 +5,7 @@ extern crate std;
 extern crate rocket;
 
 use postgres::types::ToSql;
+use std::io::{Error, ErrorKind};
 
 use std::mem;
 
@@ -26,7 +27,12 @@ impl std::io::Read for PGStream {
                 write = self.pending.clone().unwrap();
                 self.pending = None;
             } else {
-                let rows = self.trans.query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[]).unwrap();
+                let rows = match self.trans.query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[]) {
+                    Ok(rows) => rows,
+                    Err(err) => {
+                        return Err(Error::new(ErrorKind::Other, format!("{:?}", err)))
+                    }
+                };
 
                 if rows.len() != 0 {
                     for row_it in 0..rows.len() {
@@ -74,7 +80,9 @@ impl PGStream {
     pub fn new(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, rocket::response::status::Custom<String>> {
         let pg_conn = Box::new(conn);
 
-        let trans: postgres::transaction::Transaction = unsafe { mem::transmute(pg_conn.transaction().unwrap()) };
+        let trans: postgres::transaction::Transaction = unsafe {
+            mem::transmute(pg_conn.transaction().unwrap())
+        };
 
         trans.execute(&*query, params).unwrap();
 

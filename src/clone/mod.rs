@@ -3,18 +3,22 @@ extern crate r2d2_postgres;
 extern crate postgres;
 extern crate std;
 extern crate rocket;
+extern crate serde_json;
 
 use stream::PGStream;
+use serde_json::value::Value;
 
 #[derive(PartialEq, Debug)]
 pub enum CloneError {
-    GetError
+    GetError,
+    QueryError(Value)
 }
 
 impl CloneError {
-    pub fn to_string(&self) -> String {
+    pub fn as_json(&self) -> Value {
         match *self {
-            CloneError::GetError => String::from("Failed to clone")
+            CloneError::GetError => json!("Failed to clone"),
+            CloneError::QueryError(ref value) => json!(value)
         }
     }
 }
@@ -53,6 +57,10 @@ pub fn query(read_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnection
 
     "#, query), &[&limit]) {
         Ok(stream) => Ok(stream),
-        Err(_) =>  Err(CloneError::GetError)
+        Err(err) =>  {
+            Err(CloneError::QueryError(json!({
+                "message": format!("{:?}", err)
+            })))
+        }
     }
 }
