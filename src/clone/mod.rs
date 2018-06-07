@@ -7,6 +7,8 @@ extern crate serde_json;
 
 use stream::PGStream;
 use serde_json::value::Value;
+use rocket::response::content::Json;
+use rocket::response::status;
 
 #[derive(PartialEq, Debug)]
 pub enum CloneError {
@@ -45,8 +47,8 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     }
 }
 
-pub fn query(read_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &String, limit: &Option<i64>) -> Result<PGStream, CloneError> {
-    match PGStream::new(read_conn, String::from("next_clone_query"), format!(r#"
+pub fn query(read_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &String, limit: &Option<i64>) -> Result<PGStream, status::Custom<Json>> {
+    Ok(PGStream::new(read_conn, String::from("next_clone_query"), format!(r#"
         DECLARE next_clone_query CURSOR FOR
             SELECT
                 row_to_json(t)::TEXT
@@ -55,12 +57,5 @@ pub fn query(read_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnection
             ) t
             LIMIT $1
 
-    "#, query), &[&limit]) {
-        Ok(stream) => Ok(stream),
-        Err(err) =>  {
-            Err(CloneError::QueryError(json!({
-                "message": format!("{:?}", err)
-            })))
-        }
-    }
+    "#, query), &[&limit])?)
 }

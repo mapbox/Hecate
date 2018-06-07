@@ -566,7 +566,7 @@ fn clone_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: aut
 
     match clone::query(read_conn.get()?, &cquery.query, &cquery.limit) {
         Ok(clone) => Ok(Stream::from(clone)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
+        Err(err) => Err(Json(err))
     }
 }
 

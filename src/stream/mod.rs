@@ -3,9 +3,14 @@ extern crate r2d2_postgres;
 extern crate postgres;
 extern crate std;
 extern crate rocket;
+extern crate serde_json;
 
 use postgres::types::ToSql;
+use rocket::response::status;
+use rocket::http::Status as HTTPStatus;
+use rocket_contrib::json::Json;
 use std::io::{Error, ErrorKind};
+use serde_json::value::Value;
 
 use std::mem;
 
@@ -77,20 +82,29 @@ impl std::io::Read for PGStream {
 }
 
 impl PGStream {
-    pub fn new(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, rocket::response::status::Custom<String>> {
+    pub fn new(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, rocket::response::status::Custom<Value>> {
         let pg_conn = Box::new(conn);
 
         let trans: postgres::transaction::Transaction = unsafe {
             mem::transmute(pg_conn.transaction().unwrap())
         };
 
-        trans.execute(&*query, params).unwrap();
-
-        Ok(PGStream {
-            cursor: cursor,
-            pending: None,
-            trans: trans,
-            conn: pg_conn
-        })
+        match trans.execute(&*query, params) {
+            Ok(_) => {
+                Ok(PGStream {
+                    cursor: cursor,
+                    pending: None,
+                    trans: trans,
+                    conn: pg_conn
+                })
+            },
+            Err(err) => {
+                Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
+                    "code": 500, 
+                    "status": "Internal Server Error",
+                    "reason": format!("{:?}", err)
+                }))))
+            }
+        }
     }
 }
