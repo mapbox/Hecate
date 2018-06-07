@@ -207,7 +207,7 @@ fn meta(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::
 
 #[get("/<file..>")]
 fn staticsrv(file: PathBuf) -> Option<NamedFile> {
-    NamedFile::open(Path::new("web/").join(file)).ok()
+    NamedFile::open(Path::new("web/dist/").join(file)).ok()
 }
 
 #[get("/tiles/<z>/<x>/<y>")]
