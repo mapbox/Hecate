@@ -207,7 +207,7 @@ window.onload = () => {
 
             },
             query: function(query) {
-                fetch(`http://${window.location.host}/api/data/query?query=${encodeURIComponent(this.modal.query.query)}`, {
+                fetch(`http://${window.location.host}/api/data/query?query=${encodeURIComponent(this.modal.query.query.replace(/;/g, ''))}`, {
                     method: 'GET',
                     credentials: 'same-origin'
                 }).then((response) => {
