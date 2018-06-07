@@ -394,9 +394,10 @@
 </template>
 
 <script>
-import Heading from './Heading.vue'
-import Panel from './Panel.vue'
-import Foot from './Foot.vue'
+import Heading from './Heading.vue';
+import Panel from './Panel.vue';
+import Foot from './Foot.vue';
+import Moment from 'moment';
 
 export default {
     name: 'app',
@@ -481,6 +482,8 @@ export default {
         }
     },
     mounted: function(e) {
+        this.moment = Moment;
+
         mapboxgl.accessToken = this.credentials.map.key;
         this.map = new mapboxgl.Map({
             container: 'map',

@@ -6,7 +6,11 @@
   "author": "Nick Ingalls <ingalls@protonmail.com>",
   "license": "MIT",
   "private": false,
+  "scripts": {
+    "build": "parcel build index.html --public-url='/admin/'"
+  },
   "dependencies": {
+    "moment": "^2.22.2",
     "vue": "^2.5.16"
   },
   "devDependencies": {

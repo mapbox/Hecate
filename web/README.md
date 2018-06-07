@@ -9,5 +9,5 @@ If you want to make changes or rebuild run the following:
 ```
 yarn install
 
-parcel build index.html --public-url='/admin/'
+yarn build
 ```
