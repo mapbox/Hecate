@@ -213,7 +213,7 @@ window.onload = () => {
                 }).then((response) => {
                       return response.text();
                 }).then((body) => {
-                    this.modal.query.results = body.split('\n');
+                    this.modal.query.results = body;
                 });
             },
             login_show: function() {
