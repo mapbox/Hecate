@@ -9,7 +9,7 @@
             <!-- Toolbar -->
             <div class='bg-white round mb12' style='height: 40px; pointer-events:auto;'>
                 <div @click="modal.type = 'query'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
-                    <svg class='icon'><use xlink:href='#icon-inspect'/></svg>
+                    <svg class='icon'><use href='#icon-inspect'/></svg>
                 </div>
             </div>
 
@@ -17,7 +17,7 @@
                 <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
 
                 <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
-                    <button @click="feature = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
+                    <button @click="feature = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use href='#icon-arrow-left'/></button>
                     <div class="px12 py3 txt-bold fl">Feature <span v-text="feature.id"></span></div>
                 </div>
 
@@ -60,19 +60,19 @@
                 <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
 
                 <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
-                    <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
+                    <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use href='#icon-arrow-left'/></button>
                     <div class="px12 py3 txt-bold fl">Delta <span v-text="delta.id"></span></div>
                 </div>
                 <div class="flex-child py12 px12 bg-gray-faint txt-s align-center"><span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span></div>
 
                 <div class="flex-child scroll-auto">
                     <div v-for="(feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                        <span v-if="feat.geometry.type === 'Point'" class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-marker'/></span>
-                        <span v-if="feat.geometry.type === 'MultiPoint'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-marker'/></span>
-                        <span v-if="feat.geometry.type === 'LineString'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polyline'/></span>
-                        <span v-if="feat.geometry.type === 'MultiLineString'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polyline'/></span>
-                        <span v-if="feat.geometry.type === 'Polygon'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polygon'/></span>
-                        <span v-if="feat.geometry.type === 'MultiPolygon'" class="fl px6 py6"><svg class='icon'><use xlink:href='#icon-polygon'/></span>
+                        <span v-if="feat.geometry.type === 'Point'" class="fl py6 px6"><svg class='icon'><use href='#icon-marker'/></span>
+                        <span v-if="feat.geometry.type === 'MultiPoint'" class="fl px6 py6"><svg class='icon'><use href='#icon-marker'/></span>
+                        <span v-if="feat.geometry.type === 'LineString'" class="fl px6 py6"><svg class='icon'><use href='#icon-polyline'/></span>
+                        <span v-if="feat.geometry.type === 'MultiLineString'" class="fl px6 py6"><svg class='icon'><use href='#icon-polyline'/></span>
+                        <span v-if="feat.geometry.type === 'Polygon'" class="fl px6 py6"><svg class='icon'><use href='#icon-polygon'/></span>
+                        <span v-if="feat.geometry.type === 'MultiPolygon'" class="fl px6 py6"><svg class='icon'><use href='#icon-polygon'/></span>
 
                         <span class="fl" v-text="feat.id"></span>
                         <span class="fl px6" v-text="feat.action"></span>
@@ -86,7 +86,7 @@
 
                 <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
                     <template><panel v-model="panel"/></template>
-                    <button @click="bounds_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
+                    <button @click="bounds_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
                 </div>
 
                 <div class="flex-child scroll-auto">
@@ -96,7 +96,7 @@
 
                     <div v-for="(bound, bound_it) in bounds" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
                         <a v-bind:href="`/api/data/bounds/${bound}`" target="_blank" class="w-full clearfix">
-                            <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-database'/></span>
+                            <span class="fl py6 px6"><svg class='icon'><use href='#icon-database'/></span>
                             <span class="fl" v-text="bound"></span>
                         </a>
                     </div>
@@ -109,7 +109,7 @@
 
                 <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
                     <template><panel v-model="panel"/></template>
-                    <button @click="styles_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
+                    <button @click="styles_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
 
                     <template v-if="credentials.authed">
                         <button @click="style_create()" class='fr btn mx6 btn--s round align-center'>New</button>
@@ -123,7 +123,7 @@
 
                     <div v-for="(style, style_it) in pstyles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
                         <div @click="style_set_modal(style.id)" class="w-full clearfix">
-                            <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-lock'/></span>
+                            <span class="fl py6 px6"><svg class='icon'><use href='#icon-lock'/></span>
                             <div class="fl">
                                 <span v-text="style.username"></span>/<span v-text="style.name"></span>
                             </div>
@@ -132,7 +132,7 @@
 
                     <div v-for="(style, style_it) in styles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
                         <div @click="style_set_modal(style.id)" class="w-full clearfix">
-                            <span class="fl py6 px6"><svg class='icon'><use xlink:href='#icon-paint'/></span>
+                            <span class="fl py6 px6"><svg class='icon'><use href='#icon-paint'/></span>
                             <div class="fl">
                                 <span v-text="style.username"></span>/<span v-text="style.name"></span>
                             </div>
@@ -147,7 +147,7 @@
 
                 <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
                     <template><panel v-model="panel"/></template>
-                    <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use xlink:href='#icon-refresh'/></button>
+                    <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
                 </div>
 
                 <div v-if="!deltas.length" class="px12 py3 clearfix bg-white">
@@ -182,7 +182,7 @@
                             <h3 class='fl py6 txt-m txt-bold w-full'>Hecate Login</h3>
                         </div>
                         <div class='col col--4'>
-                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                         </div>
 
                         <div class='col col--12 py12'>
@@ -222,7 +222,7 @@
                             <h3 class='fl py6 txt-m txt-bold w-full'>Hecate Register</h3>
                         </div>
                         <div class='col col--4'>
-                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                         </div>
 
                         <div class='col col--12 py12'>
@@ -275,7 +275,7 @@
                         </div>
 
                         <div class='col col--1'>
-                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                         </div>
 
                         <div class='col col--12'>
@@ -319,7 +319,7 @@
                             <h3 class='fl py6 txt-m txt-bold w-full' v-text='modal.ok.header'></h3>
                         </div>
                         <div class='col col--4'>
-                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                         </div>
 
                         <div class='col col--12 py24' v-text='modal.ok.body'></div>
@@ -347,7 +347,7 @@
                             </div>
 
                             <div class='col col--1'>
-                                <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                                <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </div>
 
                             <div class='col col--12'>
@@ -365,12 +365,12 @@
                         </template>
                         <template v-else>
                             <div class='pb12 col col--11'>
-                                <button @click="modal.query.results = ''" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use xlink:href='#icon-arrow-left'/></button>
+                                <button @click="modal.query.results = ''" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use href='#icon-arrow-left'/></button>
                                 <h3 class='fl pl12 txt-m txt-bold fl'>SQL Results Viewer</h3>
                             </div>
 
                             <div class='col col--1'>
-                                <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use xlink:href='#icon-close'/></svg></button>
+                                <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </div>
 
                             <div class='col col--12'>

@@ -13,7 +13,7 @@
 export default {
     name: 'panel',
     render: h => h(App),
-    data: function() {
+    data: () => {
         return {
             panel: 'Deltas'
         };
@@ -22,6 +22,6 @@ export default {
         panel: function() {
             this.$emit('input', this.panel);
         }
-    },
+    }
 }
 </script>
