@@ -287,6 +287,20 @@ cargo run -- --database "<USER>:<PASSWORD>@<HOST>/<DATABASE>"
 cargo run -- --database "<USER>@<HOST>/<DATABASE>"
 ```
 
+Although optional, it is recommended that a second role is created with read-only privleges on the
+`geo` table. Users can then run queries using this account via the `/api/data/query` endpoint.
+
+If this flag is not provided, the `query` endpoint will be disabled.
+
+Note: It is up to the DB Admin to ensure the permissions are limited in scope for this user. Hecate will
+expose access to this user via the query endpoint.
+
+```bash
+cargo run -- --database_read "<USER>:<PASSWORD>@<HOST>/<DATABASE>"
+
+cargo run -- --database_read "<USER>@<HOST>/<DATABASE>"
+```
+
 ### JSON Validation
 
 By default Hecate will allow any property on a given GeoJSON feature, including nestled arrays, maps, etc.

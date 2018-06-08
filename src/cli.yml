@@ -11,10 +11,9 @@ args:
         takes_value: true
 
     - database_read:
-        short: dr
         long: database_read
         value_name: DATABASE_READ
-        help: Specify the read user account for the database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
+        help: \[optional\] Specify the read user account for the database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
         takes_value: true
 
     - schema:

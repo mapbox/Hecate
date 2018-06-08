@@ -48,7 +48,7 @@ use geojson::GeoJson;
 use rocket_contrib::Json;
 use regex::Regex;
 
-pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
+pub fn start(database: String, database_read: Option<String>, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
     env_logger::init();
 
     let auth_rules: auth::CustomAuth = match auth {
