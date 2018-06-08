@@ -10,7 +10,6 @@ use rocket::response::status;
 use rocket::http::Status as HTTPStatus;
 use rocket_contrib::json::Json;
 use std::io::{Error, ErrorKind};
-use serde_json::value::Value;
 
 use std::mem;
 
@@ -82,7 +81,7 @@ impl std::io::Read for PGStream {
 }
 
 impl PGStream {
-    pub fn new(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, rocket::response::status::Custom<Value>> {
+    pub fn new(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, rocket::response::status::Custom<Json>> {
         let pg_conn = Box::new(conn);
 
         let trans: postgres::transaction::Transaction = unsafe {

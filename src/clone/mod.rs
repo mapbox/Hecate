@@ -7,7 +7,7 @@ extern crate serde_json;
 
 use stream::PGStream;
 use serde_json::value::Value;
-use rocket::response::content::Json;
+use rocket_contrib::Json;
 use rocket::response::status;
 
 #[derive(PartialEq, Debug)]
