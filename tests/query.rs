@@ -139,7 +139,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert!(resp.status().is_client_error());
+            assert!(resp.status().is_server_error());
         }
 
         { //Get Query - Failed Delete
@@ -149,7 +149,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert!(resp.status().is_client_error());
+            assert!(resp.status().is_server_error());
         }
 
         server.kill().unwrap();
