@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.33.0
+
+- :tada: Add arbitrary SQL query endpoint
+
 ## v0.32.1
 
 - :white_check_mark: Add `FeatureCollection` force tests
