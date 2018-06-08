@@ -27,8 +27,9 @@
     - [Auth](#Auth)
     - [Styles](#styles)
     - [Vector Tiles](#vector-tiles)
-    - [Cloning the Server](#downloading-clone)
-    - [Downloading via Boundaries](#downloading-via-boundaries)
+    - [Downloading Via Clone](#downloading-via-clone)
+    - [Downloading Via Query](#downloading-via-query)
+    - [Downloading Via Boundaries](#downloading-via-boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
     - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
     - [Feature Creation](#feature-creation)
@@ -405,6 +406,7 @@ have a map containing the auth for each subkey.
 | `POST /api/data/feature(s) w/ `force` | `feature::force`          | `admin`       | `user`, `admin`, `null`   |       |
 | **Clone**                             | `clone`                   |               | `null`                    | 2     |
 | `GET /api/data/clone`                 | `clone::get`              | `user`        | All                       |       |
+| `GET /api/data/query`                 | `clone::query`            | `user`        | All                       |       |
 | **Bounds**                            | `bounds`                  |               | `null`                    | 2     |
 | `GET /api/bounds`                     | `bounds::list`            | `public`      | All                       |       |
 | `GET /api/bounds/<id>`                | `bounds::get`             | `public`      | All                       |       |
@@ -745,7 +747,7 @@ curl -X GET 'http://username:password@localhost:8000/api/user/session
 
 ---
 
-<h3 align='center'>Downloading Clone</h3>
+<h3 align='center'>Downloading via Clone</h3>
 
 #### `GET` `/api/data/clone`
 
@@ -755,6 +757,44 @@ Return a Line-Delimited GeoJSON stream of all features currently stored on the s
 
 ```bash
 curl -X GET 'http://localhost:8000/api/data/clone
+```
+
+---
+
+<h3 align='center'>Downloading via Query</h3>
+
+#### `GET` `/api/data/query`
+
+Return a Line-Delimited GeoJSON stream of all features that match the given query.
+
+The query must be a valid SQL query against the `geo` table. Note that the `geo` is
+the only table that this endpoint can access. Only read operations are permitted.
+
+IE:
+
+```SQL
+SELECT count(*) FROM geo
+```
+
+```SQL
+SELECT props FROM geo WHERE id = 1
+```
+
+*Options*
+
+| Option          | Notes                                                        |
+| :-------------: | ------------------------------------------------------------ |
+| `query=<query>` | SQL Query to run against Geometries                          |
+| `limit=<limit>` | `[optional]` Optionally limit the number of returned results |
+
+*Examples*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20count(*)%20FROM%20geo
+```
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20geo%20WHERE%20id%20%3D%201
 ```
 
 ---

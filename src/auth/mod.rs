@@ -88,13 +88,15 @@ pub trait ValidAuth {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthClone {
-    pub get: Option<String>
+    pub get: Option<String>,
+    pub query: Option<String>
 }
 
 impl AuthClone {
     fn new() -> Self {
         AuthClone {
-            get: Some(String::from("user"))
+            get: Some(String::from("user")),
+            query: Some(String::from("user"))
         }
     }
 }
@@ -102,6 +104,7 @@ impl AuthClone {
 impl ValidAuth for AuthClone {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("clone::get", &self.get)?;
+        is_all("clone::query", &self.query)?;
 
         Ok(true)
     }
@@ -592,6 +595,13 @@ impl CustomAuth {
         match &self.clone {
             None => Err(not_authed()),
             Some(clone) => auth_met(&clone.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_clone_query(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.clone {
+            None => Err(not_authed()),
+            Some(clone) => auth_met(&clone.query, auth, &conn)
         }
     }
 

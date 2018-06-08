@@ -1,0 +1,23 @@
+{
+  "name": "hecate-ui",
+  "version": "1.0.0",
+  "description": "Default Hecate Web UI",
+  "repository": "https://github.com/mapbox/Hecate",
+  "author": "Nick Ingalls <ingalls@protonmail.com>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "build": "parcel build index.html --public-url='/admin/'"
+  },
+  "dependencies": {
+    "moment": "^2.22.2",
+    "vue": "^2.5.16"
+  },
+  "devDependencies": {
+    "@vue/component-compiler-utils": "1.3.1",
+    "babel-preset-env": "^1.7.0",
+    "parcel-bundler": "^1.8.1",
+    "vue-hot-reload-api": "^2.3.0",
+    "vue-template-compiler": "^2.5.16"
+  }
+}

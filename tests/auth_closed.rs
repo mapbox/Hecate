@@ -188,7 +188,8 @@ mod test {
                     "create": "user"
                 },
                 "clone": {
-                    "get": "user"
+                    "get": "user",
+                    "query": "user"
                 },
                 "auth": {
                     "get": "public"

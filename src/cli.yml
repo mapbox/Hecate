@@ -7,7 +7,7 @@ args:
         short: d
         long: database
         value_name: DATABASE
-        help: Specify an alternate database in format USER@HOST:PORT/DATABASE
+        help: Specify an alternate database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
         takes_value: true
 
     - schema:
