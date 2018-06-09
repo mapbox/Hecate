@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.34.0
+
+- :rocket: Add CLI option for manually specifying read only db connection
+
 ## v0.33.0
 
 - :tada: Add arbitrary SQL query endpoint
