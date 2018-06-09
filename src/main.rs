@@ -12,7 +12,12 @@ fn main() {
     let cli_cnf = load_yaml!("cli.yml");
     let matched = App::from_yaml(cli_cnf).get_matches();
 
-    let database = matched.value_of("database").unwrap_or("postgres@localhost:5432/hecate");
+    let database = String::from(matched.value_of("database").unwrap_or("postgres@localhost:5432/hecate"));
+
+    let database_read = match matched.value_of("database_read") {
+        None => None,
+        Some(db_read) => Some(String::from(db_read))
+    };
 
     let schema: Option<serde_json::value::Value> = match matched.value_of("schema") {
         Some(schema_path) => {
@@ -48,5 +53,5 @@ fn main() {
         None => None
     };
 
-    hecate::start(String::from(database), schema, auth);
+    hecate::start(database, database_read, schema, auth);
 }

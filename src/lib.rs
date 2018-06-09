@@ -17,7 +17,6 @@ extern crate rocket_contrib;
 extern crate geojson;
 extern crate env_logger;
 extern crate chrono;
-extern crate regex;
 
 pub mod delta;
 pub mod mvt;
@@ -46,9 +45,8 @@ use rocket::{State};
 use rocket::response::{Response, status, Stream, NamedFile};
 use geojson::GeoJson;
 use rocket_contrib::Json;
-use regex::Regex;
 
-pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
+pub fn start(database: String, database_read: Option<String>, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
     env_logger::init();
 
     let auth_rules: auth::CustomAuth = match auth {
@@ -63,14 +61,14 @@ pub fn start(database: String, schema: Option<serde_json::value::Value>, auth: O
         }
     };
 
-    let db_parsed = Regex::new(r"^(?P<user>.*?)(:(?P<pass>.*?))?@(?P<host>.*?):(?P<port>\d+)/(?P<db>.*?)$").unwrap()
-        .captures(&database).unwrap();
-
-    let database_read: String = format!("hecate_read@{}:{}/{}", &db_parsed["host"], &db_parsed["port"], &db_parsed["db"]);
+    let db_read: DbRead = match database_read {
+        None => DbRead::new(None),
+        Some(db) => DbRead::new(Some(init_pool(&db)))
+    };
 
     rocket::ignite()
         .manage(DbReadWrite::new(init_pool(&database)))
-        .manage(DbRead::new(init_pool(&database_read)))
+        .manage(db_read)
         .manage(schema)
         .manage(auth_rules)
         .mount("/", routes![
@@ -138,20 +136,29 @@ fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionMana
     }
 }
 
-pub struct DbRead(pub r2d2::Pool<r2d2_postgres::PostgresConnectionManager>);
+pub struct DbRead(pub Option<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>);
 impl DbRead {
-    fn new(database: r2d2::Pool<r2d2_postgres::PostgresConnectionManager>) -> Self {
+    fn new(database: Option<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>) -> Self {
         DbRead(database)
     }
 
     fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, status::Custom<Json>> {
-        match self.0.get() {
-            Ok(conn) => Ok(conn),
-            Err(_) => Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
+        match self.0 {
+            None => Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
                 "code": 503,
                 "status": "Service Unavailable",
-                "reason": "Could not connect to database"
-            }))))
+                "reason": "No Database Read Connection"
+            })))),
+            Some(ref db_read) => {
+                match db_read.get() {
+                    Ok(conn) => Ok(conn),
+                    Err(_) => Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
+                        "code": 503,
+                        "status": "Service Unavailable",
+                        "reason": "Could not connect to database"
+                    }))))
+                }
+            }
         }
     }
 }
