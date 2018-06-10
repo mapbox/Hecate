@@ -409,9 +409,9 @@
 </template>
 
 <script>
-import Heading from './Heading.vue';
-import Panel from './Panel.vue';
-import Foot from './Foot.vue';
+import Heading from './components/Heading.vue';
+import Panel from './components/Panel.vue';
+import Foot from './components/Foot.vue';
 import Moment from 'moment';
 
 export default {
