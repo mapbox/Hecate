@@ -25,98 +25,12 @@
                 </div>
             </div>
 
-            <div v-if="feature" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
+            <deltas/>
+            <feature/>
+            <bounds/>
+            <styles/>
 
-                <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
-                    <button @click="feature = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use href='#icon-arrow-left'/></button>
-                    <div class="px12 py3 txt-bold fl">Feature <span v-text="feature.id"></span></div>
-                </div>
-
-                <div class="flex-child scroll-auto">
-                    <table class='table txt-xs'>
-                        <thead><tr><th>Key</th><th>Value</th></tr></thead>
-                        <tbody>
-                            <tr v-for="prop in Object.keys(feature.properties)">
-                                <td v-text="prop"></td>
-
-                                <!-- element: (Array) -->
-                                <td v-if="Array.isArray(feature.properties[prop])">
-                                    <template v-for="element in feature.properties[prop]" style="border-bottom: dotted;">
-                                        <!-- element: Array: (Object) -->
-                                        <template v-if="typeof element === 'object' && !Array.isArray(element)">
-                                            <tr v-for="key in Object.keys(element)">
-                                                <td v-text="key"></td>
-                                                <td v-text="element[key]"></td>
-                                            </tr>
-                                        </template>
-                                        <!-- element: Array: (Array, String, Number) -->
-                                        <template v-else>
-                                            <td v-text="JSON.stringify(element)"></td>
-                                        </template>
-
-                                        <div style="border-bottom: solid #CBCBCB 1px;"></div>
-                                    </template>
-                                </td>
-
-                                <!-- element: (Object, String, Number) -->
-                                <td v-else v-text="JSON.stringify(feature.properties[prop])"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <foot/>
-            </div>
-            <div v-else-if="delta" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
-
-                <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
-                    <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use href='#icon-arrow-left'/></button>
-                    <div class="px12 py3 txt-bold fl">Delta <span v-text="delta.id"></span></div>
-                </div>
-                <div class="flex-child py12 px12 bg-gray-faint txt-s align-center"><span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span></div>
-
-                <div class="flex-child scroll-auto">
-                    <div v-for="(feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                        <span v-if="feat.geometry.type === 'Point'" class="fl py6 px6"><svg class='icon'><use href='#icon-marker'/></span>
-                        <span v-if="feat.geometry.type === 'MultiPoint'" class="fl px6 py6"><svg class='icon'><use href='#icon-marker'/></span>
-                        <span v-if="feat.geometry.type === 'LineString'" class="fl px6 py6"><svg class='icon'><use href='#icon-polyline'/></span>
-                        <span v-if="feat.geometry.type === 'MultiLineString'" class="fl px6 py6"><svg class='icon'><use href='#icon-polyline'/></span>
-                        <span v-if="feat.geometry.type === 'Polygon'" class="fl px6 py6"><svg class='icon'><use href='#icon-polygon'/></span>
-                        <span v-if="feat.geometry.type === 'MultiPolygon'" class="fl px6 py6"><svg class='icon'><use href='#icon-polygon'/></span>
-
-                        <span class="fl" v-text="feat.id"></span>
-                        <span class="fl px6" v-text="feat.action"></span>
-                    </div>
-                </div>
-
-                <foot/>
-            </div>
-            <div v-else-if="panel == 'Bounds'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Bounds'></heading>
-
-                <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-                    <template><panel v-model="panel"/></template>
-                    <button @click="bounds_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
-                </div>
-
-                <div class="flex-child scroll-auto">
-                    <div v-if="!bounds.length" class="px12 py3 clearfix bg-white">
-                        <div align="center">No Boundaries</div>
-                    </div>
-
-                    <div v-for="(bound, bound_it) in bounds" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                        <a v-bind:href="`/api/data/bounds/${bound}`" target="_blank" class="w-full clearfix">
-                            <span class="fl py6 px6"><svg class='icon'><use href='#icon-database'/></span>
-                            <span class="fl" v-text="bound"></span>
-                        </a>
-                    </div>
-                </div>
-
-                <foot/>
-            </div>
-            <div v-else-if="panel == 'Styles'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+            <div v-if="panel == 'Styles'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
                 <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Styles'></heading>
 
                 <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
@@ -154,32 +68,6 @@
 
                 <foot/>
             </div>
-            <div v-else class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
-
-                <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-                    <template><panel v-model="panel"/></template>
-                    <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
-                </div>
-
-                <div v-if="!deltas.length" class="px12 py3 clearfix bg-white">
-                    <div align="center">No Deltas</div>
-                </div>
-
-                <div class="flex-child scroll-auto">
-                    <div v-for="delta in deltas" @click="delta_get(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer wfull">
-                        <div class="clearfix">
-                            <div class="fl txt-bold" v-text="delta.username"></div>
-                            <div class="fr txt-em" v-text="moment(delta.created).add(moment().utcOffset(), 'minutes').fromNow()"></div>
-                        </div>
-                        <span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span>
-                        <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
-                    </div>
-                </div>
-
-                <foot/>
-            </div>
-
         </div>
 
         <!-- Modal Opaque -->
@@ -412,6 +300,10 @@
 import Heading from './components/Heading.vue';
 import Panel from './components/Panel.vue';
 import Foot from './components/Foot.vue';
+import Deltas from './panels/Deltas.vue';
+import Feature from './panels/Feature.vue';
+import Bounds from './panels/Bounds.vue';
+import Styles from './panels/Styles.vue';
 import Moment from 'moment';
 
 export default {
