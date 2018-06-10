@@ -25,7 +25,7 @@
                 </div>
             </div>
 
-            <deltas/>
+            <deltas modal_type="modal.type"/>
             <feature/>
             <bounds/>
             <styles/>
@@ -365,7 +365,10 @@ export default {
     components: {
         heading: Heading,
         panel: Panel,
-        foot: Foot
+        foot: Foot,
+        deltas: Deltas,
+        feature: Feature,
+        styles: Styles
     },
     created: function() {
         this.logout();
