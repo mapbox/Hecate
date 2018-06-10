@@ -8,8 +8,20 @@
 
             <!-- Toolbar -->
             <div class='bg-white round mb12' style='height: 40px; pointer-events:auto;'>
+                <div @click="modal.type = 'settings'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                    <svg class='icon'><use href='#icon-sprocket'/></svg>
+                </div>
+                <div @click="modal.type = 'deltas'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                    <svg class='icon'><use href='#icon-clock'/></svg>
+                </div>
+                <div @click="modal.type = 'styles'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                    <svg class='icon'><use href='#icon-paint'/></svg>
+                </div>
                 <div @click="modal.type = 'query'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-inspect'/></svg>
+                </div>
+                <div @click="modal.type = 'download'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                    <svg class='icon'><use href='#icon-arrow-down'/></svg>
                 </div>
             </div>
 
@@ -423,6 +435,10 @@ export default {
             style: false, //Store the id of the current style - false for generic style
             modal: {
                 type: false,
+                settings: {
+                    header: '',
+                    body: ''
+                },
                 error: {
                     header: '',
                     body: ''
