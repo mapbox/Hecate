@@ -25,95 +25,17 @@
                 </div>
             </div>
 
-            <deltas modal_type="modal.type"/>
-            <feature/>
-            <bounds/>
-            <styles/>
-
-            <div v-if="panel == 'Styles'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-                <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Styles'></heading>
-
-                <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-                    <template><panel v-model="panel"/></template>
-                    <button @click="styles_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
-
-                    <template v-if="credentials.authed">
-                        <button @click="style_create()" class='fr btn mx6 btn--s round align-center'>New</button>
-                    </template>
-                </div>
-
-                <div class="flex-child scroll-auto">
-                    <div v-if="!styles.length" class="px12 py3 clearfix bg-white">
-                        <div align="center">No Custom Styles</div>
-                    </div>
-
-                    <div v-for="(style, style_it) in pstyles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                        <div @click="style_set_modal(style.id)" class="w-full clearfix">
-                            <span class="fl py6 px6"><svg class='icon'><use href='#icon-lock'/></span>
-                            <div class="fl">
-                                <span v-text="style.username"></span>/<span v-text="style.name"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div v-for="(style, style_it) in styles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                        <div @click="style_set_modal(style.id)" class="w-full clearfix">
-                            <span class="fl py6 px6"><svg class='icon'><use href='#icon-paint'/></span>
-                            <div class="fl">
-                                <span v-text="style.username"></span>/<span v-text="style.name"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <foot/>
-            </div>
+            <deltas  panel='panel'/>
+            <feature panel='panel'/>
+            <bounds  panel='panel'/>
+            <styles  panel='panel'/>
         </div>
 
         <!-- Modal Opaque -->
         <div v-if='modal.type' class='absolute top left bottom right z2 bg-black opacity75' style="pointer-events: none;"></div>
 
-        <!-- MODALS -->
-        <div v-if='modal.type === "login"' class='absolute top left bottom right z3' style="pointer-events: none;">
-            <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
-                <div class="flex-child px12 py12 w600 h300 bg-white round-ml shadow-darken10">
-                    <div class='grid w-full'>
-                        <div class='col col--8'>
-                            <h3 class='fl py6 txt-m txt-bold w-full'>Hecate Login</h3>
-                        </div>
-                        <div class='col col--4'>
-                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
-                        </div>
+        <!--Modals here-->
 
-                        <div class='col col--12 py12'>
-                            <label>
-                                Username:
-                                <input v-model='modal.login.username' class='input py12' placeholder='username'/>
-                            </label>
-                        </div>
-
-                        <div class='col col--12 py12'>
-                            <label>
-                                Password:
-                                <input v-model='modal.login.password' type='password' class='input py12' placeholder='password'/>
-                            </label>
-                        </div>
-
-                        <div class='col col--12'>
-                            <div class='grid grid--gut12'>
-                                <div class='col col--6 py12'>
-                                    <button @click='register_show' class='btn round bg-gray w-full'>Register</button>
-                                </div>
-
-                                <div class='col col--6 py12'>
-                                    <button @click='login' class='btn round w-full'>Login</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
         <div v-if='modal.type === "register"' class='absolute top left bottom right z3' style="pointer-events: none;">
             <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
                 <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
@@ -297,14 +219,21 @@
 </template>
 
 <script>
+// === Libraries ===
+import Moment from 'moment';
+
+// === Components ===
 import Heading from './components/Heading.vue';
 import Panel from './components/Panel.vue';
 import Foot from './components/Foot.vue';
+
+// === Panels ===
 import Deltas from './panels/Deltas.vue';
 import Feature from './panels/Feature.vue';
 import Bounds from './panels/Bounds.vue';
 import Styles from './panels/Styles.vue';
-import Moment from 'moment';
+
+// === Modals ===
 
 export default {
     name: 'app',

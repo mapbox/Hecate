@@ -1,5 +1,5 @@
 <template>
-<div v-if="modal_type === 'deltas'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+<div v-if="panel === 'Deltas'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
     <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
 
     <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
@@ -30,6 +30,6 @@
 export default {
     name: 'deltas',
     render: h => h(App),
-    props: [ 'modal_type' ]
+    props: [ 'panel' ]
 }
 </script>
