@@ -8,27 +8,27 @@
 
             <!-- Toolbar -->
             <div class='bg-white round mb12' style='height: 40px; pointer-events:auto;'>
-                <div @click="modal.type = 'settings'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
-                    <svg class='icon'><use href='#icon-sprocket'/></svg>
-                </div>
-                <div @click="panel === 'deltas'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel === 'deltas' ? panel = false : panel = 'deltas'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-clock'/></svg>
                 </div>
-                <div @click="panel = 'Styles'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel === 'styles' ? panel = false : panel = 'styles'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-paint'/></svg>
                 </div>
                 <div @click="modal.type = 'query'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-inspect'/></svg>
                 </div>
-                <div @click="panel = 'Bounds'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-arrow-down'/></svg>
+                </div>
+                <div @click="modal.type = 'settings'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                    <svg class='icon'><use href='#icon-sprocket'/></svg>
                 </div>
             </div>
 
-            <template v-if='panel=="Deltas"'><deltas :map='map'/></template>
-            <template v-else-if='panel=="Bounds"'><bounds/></template>
+            <template v-if='panel === "deltas"'><deltas :map='map'/></template>
+            <template v-else-if='panel === "bounds"'><bounds/></template>
+            <template v-else-if='panel === "styles"'><styles/></template>
             <!--<feature :panel='panel'/>-->
-            <!--<styles  :panel='panel'/>-->
         </div>
 
         <!-- Modal Opaque -->
@@ -316,7 +316,7 @@ export default {
                     this.layers = [];
                 }
             },
-            panel: 'Deltas', //Store the current panel view (Deltas, Styles, Bounds, etc)
+            panel: false, //Store the current panel view (Deltas, Styles, Bounds, etc)
             feature: false, //Store the currently selected feature - overides panel view
             pstyles: [], //If the user is authenticated, store a list of their private styles
             styles: [], //Store a list of public styles
