@@ -362,6 +362,7 @@ export default {
     components: {
         foot: Foot,
         deltas: Deltas,
+        bounds: Bounds,
         feature: Feature,
         styles: Styles
     },

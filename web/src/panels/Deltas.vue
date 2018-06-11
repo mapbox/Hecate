@@ -53,6 +53,7 @@
 
 <script>
 import Moment from 'moment';
+import Foot from '../components/Foot.vue';
 
 export default {
     name: 'deltas',
@@ -67,6 +68,9 @@ export default {
     },
     created: function() {
         this.getDeltas();
+    },
+    components: {
+        foot: Foot
     },
     methods: {
         getDeltas: function() {

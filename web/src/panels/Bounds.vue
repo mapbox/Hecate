@@ -2,11 +2,7 @@
 <div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
     <div class='flex-child px12 py12'>
         <h3 class='fl py6 txt-m txt-bold'>Bounds</h3>
-    </div>
-
-    <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-        <template><panel v-model="panel"/></template>
-        <button @click="bounds_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
+        <button @click="getBounds" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
     </div>
 
     <div class="flex-child scroll-auto">
@@ -27,13 +23,20 @@
 </template>
 
 <script>
+import Foot from '../components/Foot.vue';
+
 export default {
     name: 'bounds',
     data: function() {
-        bounds: []
+        return {
+            bounds: []
+        }
     },
     created: function() {
         this.getBounds();
+    },
+    components: {
+        foot: Foot
     },
     methods: {
         getBounds: function() {
