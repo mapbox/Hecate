@@ -36,7 +36,7 @@
         </div>
 
         <div class="flex-child scroll-auto">
-            <div v-for="delta in deltas" @click="delta_get(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer wfull">
+            <div v-for="delta in deltas" @click="getDelta(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer wfull">
                 <div class="clearfix">
                     <div class="fl txt-bold" v-text="delta.username"></div>
                     <div class="fr txt-em" v-text="moment(delta.created).add(moment().utcOffset(), 'minutes').fromNow()"></div>

@@ -242,7 +242,82 @@ export default {
                 username: '',
                 uid: false
             },
-            map: false,
+            map: {
+                gl: false,
+                layers: [],
+                default: function() {
+                    const foregroundColor = '#FF0000';
+
+                    this.layers.push('hecate-data-polygons');
+                    this.gl.addLayer({
+                        id: 'hecate-data-polygons',
+                        type: 'fill',
+                        source: 'hecate-data',
+                        'source-layer': 'data',
+                        filter: ['==', '$type', 'Polygon'],
+                        paint: {
+                            'fill-opacity': 0.1,
+                            'fill-color': foregroundColor
+                        }
+                    });
+
+                    this.layers.push('hecate-data-polygon-outlines');
+                    this.gl.addLayer({
+                        id: 'hecate-data-polygon-outlines',
+                        type: 'line',
+                        source: 'hecate-data',
+                        'source-layer': 'data',
+                        filter: ['==', '$type', 'Polygon'],
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-color': foregroundColor,
+                            'line-width': 0.75,
+                            'line-opacity': 0.75
+                        }
+                    })
+
+                    this.layers.push('hecate-data-lines');
+                    this.gl.addLayer({
+                        id: 'hecate-data-lines',
+                        type: 'line',
+                        source: 'hecate-data',
+                        'source-layer': 'data',
+                        filter: ['==', '$type', 'LineString'],
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-color': foregroundColor,
+                            'line-width': 1.25,
+                            'line-opacity': 0.75
+                        }
+                    });
+
+                    this.layers.push('hecate-data-points');
+                    this.gl.addLayer({
+                        id: 'hecate-data-points',
+                        type: 'circle',
+                        source: 'hecate-data',
+                        'source-layer': 'data',
+                        filter: ['==', '$type', 'Point'],
+                        paint: {
+                            'circle-color': foregroundColor,
+                            'circle-radius': 4,
+                            'circle-opacity': 0.85
+                        }
+                    });
+                },
+                unstyle: function() {
+                    for (let layer of this.layers) {
+                        this.gl.removeLayer(layer);
+                    }
+                    this.layers = [];
+                }
+            },
             panel: 'Deltas', //Store the current panel view (Deltas, Styles, Bounds, etc)
             feature: false, //Store the currently selected feature - overides panel view
             bounds: [], //Store a list of all bounds
@@ -303,7 +378,7 @@ export default {
     },
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
-        this.map = new mapboxgl.Map({
+        this.map.gl = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/satellite-v9',
             center: [-96, 37.8],
@@ -312,29 +387,29 @@ export default {
             zoom: 3
         });
 
-        this.map.on('load', () => {
-            this.map.addSource('hecate-data', {
+        this.map.gl.on('load', () => {
+            this.map.gl.addSource('hecate-data', {
                 type: 'vector',
                 maxzoom: 14,
                 tiles: [ `http://${window.location.host}/api/tiles/{z}/{x}/{y}` ]
             });
 
-            this.map.addSource('hecate-delta', {
+            this.map.gl.addSource('hecate-delta', {
                 type: 'geojson',
                 data: { type: 'FeatureCollection', features: [] }
             });
 
-            this.map_default_style();
+            this.map.default();
         });
 
-        this.map.addControl(new MapboxGeocoder({
+        this.map.gl.addControl(new MapboxGeocoder({
             accessToken: mapboxgl.accessToken,
         }));
 
-        this.map.on('click', (e) => {
+        this.map.gl.on('click', (e) => {
             if (this.delta) return; //Don't currently support showing features within a delta
 
-            let clicked = this.map.queryRenderedFeatures(e.point)[0];
+            let clicked = this.map.gl.queryRenderedFeatures(e.point)[0];
 
             if (clicked && clicked.properties['hecate:id']) this.feature_get(clicked.properties['hecate:id']);
         });
@@ -530,20 +605,20 @@ export default {
             if (!style.version || style.version !== 8) return this.ok('Style Not Applied', 'The selected style could not be applied. The style version must be 8');
             if (!style.layers || style.layers.length === 0) return this.ok('Style Not Applied', 'The selected style could not be applied. The style must contain at least 1 layer');
 
-            this.map_unstyle();
+            this.map.unstyle();
 
             for (let layer of style.layers) {
                 if (!layer.id) {
-                    this.map_unstyle();
-                    this.map_default_style();
+                    this.map.unstyle();
+                    this.map.default();
                     return this.ok('Style Not Applied', 'Every layer in the style must have a unique id');
                 }
 
                 layer.source = 'hecate-data';
                 layer['source-layer'] = 'data',
 
-                this.layers.push(layer.id);
-                this.map.addLayer(layer);
+                this.map.layers.push(layer.id);
+                this.map.gl.addLayer(layer);
             }
 
             this.modal.type = false;
@@ -576,8 +651,8 @@ export default {
             let action_modify = '#FFFF00';
             let action_delete = '#FF0000';
            
-            this.layers.push('hecate-delta-polygons');
-            this.map.addLayer({
+            this.map.layers.push('hecate-delta-polygons');
+            this.map.gl.addLayer({
                 id: 'hecate-delta-polygons',
                 type: 'fill',
                 source: 'hecate-delta',
@@ -588,8 +663,8 @@ export default {
                 }
             });
 
-            this.layers.push('hecate-delta-polygon-outlines');
-            this.map.addLayer({
+            this.map.layers.push('hecate-delta-polygon-outlines');
+            this.map.gl.addLayer({
                 id: 'hecate-delta-polygon-outlines',
                 type: 'line',
                 source: 'hecate-delta',
@@ -604,8 +679,8 @@ export default {
                 }
             })
 
-            this.layers.push('hecate-delta-lines');
-            this.map.addLayer({
+            this.map.layers.push('hecate-delta-lines');
+            this.map.gl.addLayer({
                 id: 'hecate-delta-lines',
                 type: 'line',
                 source: 'hecate-delta',
@@ -620,8 +695,8 @@ export default {
                 }
             });
 
-            this.layers.push('hecate-delta-points');
-            this.map.addLayer({
+            this.map.layers.push('hecate-delta-points');
+            this.map.gl.addLayer({
                 id: 'hecate-delta-points',
                 type: 'circle',
                 source: 'hecate-delta',
@@ -629,79 +704,6 @@ export default {
                 paint: {
                     'circle-color': [ 'match', [ 'get', '_action' ], 'create', action_create, 'modify', action_modify, 'delete', action_delete, action_create ],
                     'circle-radius': 4
-                }
-            });
-
-        },
-        map_unstyle: function() {
-            for (let layer of this.layers) {
-                this.map.removeLayer(layer);
-            }
-            this.layers = [];
-        },
-        map_default_style: function() {
-            const foregroundColor = '#FF0000';
-
-            this.layers.push('hecate-data-polygons');
-            this.map.addLayer({
-                id: 'hecate-data-polygons',
-                type: 'fill',
-                source: 'hecate-data',
-                'source-layer': 'data',
-                filter: ['==', '$type', 'Polygon'],
-                paint: {
-                    'fill-opacity': 0.1,
-                    'fill-color': foregroundColor
-                }
-            });
-
-            this.layers.push('hecate-data-polygon-outlines');
-            this.map.addLayer({
-                id: 'hecate-data-polygon-outlines',
-                type: 'line',
-                source: 'hecate-data',
-                'source-layer': 'data',
-                filter: ['==', '$type', 'Polygon'],
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': foregroundColor,
-                    'line-width': 0.75,
-                    'line-opacity': 0.75
-                }
-            })
-
-            this.layers.push('hecate-data-lines');
-            this.map.addLayer({
-                id: 'hecate-data-lines',
-                type: 'line',
-                source: 'hecate-data',
-                'source-layer': 'data',
-                filter: ['==', '$type', 'LineString'],
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': foregroundColor,
-                    'line-width': 1.25,
-                    'line-opacity': 0.75
-                }
-            });
-
-            this.layers.push('hecate-data-points');
-            this.map.addLayer({
-                id: 'hecate-data-points',
-                type: 'circle',
-                source: 'hecate-data',
-                'source-layer': 'data',
-                filter: ['==', '$type', 'Point'],
-                paint: {
-                    'circle-color': foregroundColor,
-                    'circle-radius': 4,
-                    'circle-opacity': 0.85
                 }
             });
 
