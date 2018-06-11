@@ -89,23 +89,81 @@ export default {
                 });
                 this.delta = body;
             });
+        },
+        style: function() {
+            let action_create = '#008000';
+            let action_modify = '#FFFF00';
+            let action_delete = '#FF0000';
+
+            this.map.layers.push('hecate-delta-polygons');
+            this.map.gl.addLayer({
+                id: 'hecate-delta-polygons',
+                type: 'fill',
+                source: 'hecate-delta',
+                filter: ['==', '$type', 'Polygon'],
+                paint: {
+                    'fill-opacity': 0.4,
+                    'fill-color': [ 'match', [ 'get', '_action' ], 'create', action_create, 'modify', action_modify, 'delete', action_delete, action_create ]
+                }
+            });
+            this.map.layers.push('hecate-delta-polygon-outlines');
+            this.map.gl.addLayer({
+                id: 'hecate-delta-polygon-outlines',
+                type: 'line',
+                source: 'hecate-delta',
+                filter: ['==', '$type', 'Polygon'],
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': [ 'match', [ 'get', '_action' ], 'create', action_create, 'modify', action_modify, 'delete', action_delete, action_create ],
+                    'line-width': 0.75
+                }
+            })
+            this.map.layers.push('hecate-delta-lines');
+            this.map.gl.addLayer({
+                id: 'hecate-delta-lines',
+                type: 'line',
+                source: 'hecate-delta',
+                filter: ['==', '$type', 'LineString'],
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': [ 'match', [ 'get', '_action' ], 'create', action_create, 'modify', action_modify, 'delete', action_delete, action_create ],
+                    'line-width': 1.25
+                }
+            });
+            this.map.layers.push('hecate-delta-points');
+            this.map.gl.addLayer({
+                id: 'hecate-delta-points',
+                type: 'circle',
+                source: 'hecate-delta',
+                filter: ['==', '$type', 'Point'],
+                paint: {
+                    'circle-color': [ 'match', [ 'get', '_action' ], 'create', action_create, 'modify', action_modify, 'delete', action_delete, action_create ],
+                    'circle-radius': 4
+                }
+            });
         }
     },
     watch: {
         delta: function() {
             //Reset Normal Map
             if (!this.delta) {
-                this.map_unstyle();
-                this.map_default_style();
+                this.map.unstyle();
+                this.map.default();
 
-                this.map.getSource('hecate-delta').setData({ type: 'FeatureCollection', features: [] });
+                this.map.gl.getSource('hecate-delta').setData({ type: 'FeatureCollection', features: [] });
             } else {
-                this.map.getSource('hecate-delta').setData(this.delta.features);
-                this.map_unstyle();
-                this.map_delta_style();
+                this.map.gl.getSource('hecate-delta').setData(this.delta.features);
+                this.map.unstyle();
+                this.style();
 
                 this.delta.bbox = turf.bbox(this.delta.features);
-                this.map.fitBounds(this.delta.bbox);
+                this.map.gl.fitBounds(this.delta.bbox);
             }
         }
     },
