@@ -25,7 +25,7 @@
                 </div>
             </div>
 
-            <deltas  :panel='panel' :delta='delta'/>
+            <deltas  :panel='panel' :map='map'/>
             <feature :panel='panel'/>
             <bounds  :panel='panel'/>
             <styles  :panel='panel'/>
@@ -219,9 +219,6 @@
 </template>
 
 <script>
-// === Libraries ===
-import Moment from 'moment';
-
 // === Components ===
 import Panel from './components/Panel.vue';
 import Foot from './components/Foot.vue';
@@ -244,10 +241,9 @@ export default {
                 username: '',
                 uid: false
             },
+            map: false,
             panel: 'Deltas', //Store the current panel view (Deltas, Styles, Bounds, etc)
             feature: false, //Store the currently selected feature - overides panel view
-            delta: false, //Store the currently selected delta - overrides panel view
-            deltas: [], //Store a list of the most recent deltas
             bounds: [], //Store a list of all bounds
             pstyles: [], //If the user is authenticated, store a list of their private styles
             styles: [], //Store a list of public styles
@@ -299,32 +295,13 @@ export default {
     },
     created: function() {
         this.logout();
-        this.deltas_refresh();
     },
     watch: {
         panel: function() {
             this.refresh();
-        },
-        delta: function() {
-            //Reset Normal Map
-            if (!this.delta) {
-                this.map_unstyle();
-                this.map_default_style();
-
-                this.map.getSource('hecate-delta').setData({ type: 'FeatureCollection', features: [] });
-            } else {
-                this.map.getSource('hecate-delta').setData(this.delta.features);
-                this.map_unstyle();
-                this.map_delta_style();
-
-                this.delta.bbox = turf.bbox(this.delta.features);
-                this.map.fitBounds(this.delta.bbox);
-            }
         }
     },
     mounted: function(e) {
-        this.moment = Moment;
-
         mapboxgl.accessToken = this.credentials.map.key;
         this.map = new mapboxgl.Map({
             container: 'map',
@@ -378,8 +355,6 @@ export default {
                 this.bounds_refresh();
             } else if (this.panel === 'Styles') {
                 this.styles_refresh();
-            } else if (this.panel === 'Deltas') {
-                this.deltas_refresh();
             }
         },
         login: function() {
@@ -585,27 +560,6 @@ export default {
                 this.modal.style_set.public = style.public;
 
                 this.modal.type = 'style_set';
-            });
-        },
-        deltas_refresh: function() {
-            fetch(`http://${window.location.host}/api/deltas`).then((response) => {
-                  return response.json();
-            }).then((body) => {
-                this.deltas.splice(0, this.deltas.length);
-                this.deltas = this.deltas.concat(body);
-            });
-        },
-        delta_get: function(delta_id) {
-            if (!delta_id) return;
-
-            fetch(`http://${window.location.host}/api/delta/${delta_id}`).then((response) => {
-                  return response.json();
-            }).then((body) => {
-                body.features.features = body.features.features.map(feat => {
-                    feat.properties._action = feat.action;
-                    return feat;
-                });
-                this.delta = body;
             });
         },
         feature_get: function(feature_id) {

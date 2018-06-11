@@ -7,7 +7,7 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build": "parcel build index.html --public-url='/admin/'"
+    "build": "parcel build index.html --no-minify --public-url='/admin/'"
   },
   "dependencies": {
     "moment": "^2.22.2",
