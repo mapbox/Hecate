@@ -1,6 +1,8 @@
 <template>
 <div v-if="panel === 'Deltas'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-    <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Deltas'></heading>
+    <div class='flex-child px12 py12'>
+        <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
+    </div>
 
     <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
         <button @click="delta = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use href='#icon-arrow-left'/></button>
@@ -30,6 +32,6 @@
 export default {
     name: 'deltas',
     render: h => h(App),
-    props: [ 'panel' ]
+    props: [ 'panel', 'delta' ]
 }
 </script>

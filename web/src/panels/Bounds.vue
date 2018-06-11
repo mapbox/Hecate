@@ -1,6 +1,8 @@
 <template>
 <div v-if="panel === 'Bounds'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
-   <heading :is_authed='credentials.authed' :login_show='login_show' :logout='logout' title='Hecate Bounds'></heading>
+    <div class='flex-child px12 py12'>
+        <h3 class='fl py6 txt-m txt-bold'>Hecate Bounds</h3>
+    </div>
 
     <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
         <template><panel v-model="panel"/></template>

@@ -25,10 +25,10 @@
                 </div>
             </div>
 
-            <deltas  panel='panel'/>
-            <feature panel='panel'/>
-            <bounds  panel='panel'/>
-            <styles  panel='panel'/>
+            <deltas  :panel='panel' :delta='delta'/>
+            <feature :panel='panel'/>
+            <bounds  :panel='panel'/>
+            <styles  :panel='panel'/>
         </div>
 
         <!-- Modal Opaque -->
@@ -223,7 +223,6 @@
 import Moment from 'moment';
 
 // === Components ===
-import Heading from './components/Heading.vue';
 import Panel from './components/Panel.vue';
 import Foot from './components/Foot.vue';
 
@@ -292,7 +291,6 @@ export default {
         }
     },
     components: {
-        heading: Heading,
         panel: Panel,
         foot: Foot,
         deltas: Deltas,
