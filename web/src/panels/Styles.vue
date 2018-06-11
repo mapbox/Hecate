@@ -2,7 +2,7 @@
 <div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
     <div class='flex-child px12 py12'>
         <h3 class='fl py6 txt-m txt-bold'>Styles</h3>
-        <button @click="styles_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
+        <button @click="styles_refresh()" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
 
         <template v-if="credentials.authed">
             <button @click="style_create()" class='fr btn mx6 btn--s round align-center'>New</button>
@@ -48,8 +48,35 @@ export default {
             pstyles: []
         }
     },
+    created: function() {
+        this.getStyles();
+    },
     components: {
         foot: Foot
+    },
+    methods: {
+        getStyles: function() {
+            fetch(`http://${window.location.host}/api/styles`).then((response) => {
+                  return response.json();
+            }).then((body) => {
+                this.styles = body;
+            });
+
+            if (this.credentials.authed) {
+                fetch(`http://${window.location.host}/api/styles/${this.credentials.uid}`, {
+                    credentials: 'same-origin'
+                }).then((response) => {
+                      return response.json();
+                }).then((body) => {
+                    this.pstyles = body.filter((style) => {
+                        if (style.public) return false;
+                        return true;
+                    });
+                });
+            } else {
+                this.pstyles = [];
+            }
+        }
     },
     render: h => h(App),
     props: ['credentials']

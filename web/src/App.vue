@@ -364,14 +364,6 @@ export default {
         feature: Feature,
         styles: Styles
     },
-    created: function() {
-        this.logout();
-    },
-    watch: {
-        panel: function() {
-            this.refresh();
-        }
-    },
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
         this.map.gl = new mapboxgl.Map({
@@ -419,12 +411,7 @@ export default {
         logout: function() {
             this.credentials.authed = false;
             document.cookie = 'session=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'
-            this.refresh();
-        },
-        refresh: function() {
-            if (this.panel === 'Styles') {
-                this.styles_refresh();
-            }
+            window.location.reload();
         },
         login: function() {
             fetch(`http://${window.location.host}/api/user/session`, {
@@ -446,7 +433,7 @@ export default {
                             password: ''
                         };
 
-                        this.refresh(); //Refresh the current panel as loggin in may reveal private data/styles
+                        this.panel = false;
                     });
                 } else {
                     return this.ok('Failed to Login', 'Failed to login with given credentials');
@@ -485,28 +472,6 @@ export default {
         register_show: function() {
             this.modal.type = 'register';
         },
-        styles_refresh: function() {
-            fetch(`http://${window.location.host}/api/styles`).then((response) => {
-                  return response.json();
-            }).then((body) => {
-                this.styles = body;
-            });
-
-            if (this.credentials.authed) {
-                fetch(`http://${window.location.host}/api/styles/${this.credentials.uid}`, {
-                    credentials: 'same-origin'
-                }).then((response) => {
-                      return response.json();
-                }).then((body) => {
-                    this.pstyles = body.filter((style) => {
-                        if (style.public) return false;
-                        return true;
-                    });
-                });
-            } else {
-                this.pstyles = [];
-            }
-        },
         style_get: function(style_id, cb) {
             fetch(`http://${window.location.host}/api/style/${style_id}`, {
                 credentials: 'same-origin'
@@ -542,7 +507,6 @@ export default {
                     })
                 }).then((response) => {
                     if (response.status === 200) {
-                        this.refresh();
                         this.style_set(style_id, style);
                     } else {
                         return this.ok('Failed to push style', 'Failed to update style');
@@ -571,14 +535,12 @@ export default {
                         }).then((response) => {
                             if (response.status !== 200) return this.ok('Failed to push style', 'Failed to update style');
 
-                            this.refresh();
                             this.style_set(style_id, style);
                         }).catch((err) => {
                             console.error(err);
                             return this.ok('Failed to push style', 'Failed to update style');
                         });
                     } else {
-                        this.refresh();
                         this.style_set(style_id, style);
                     }
                 }).catch((err) => {
