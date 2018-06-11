@@ -1,7 +1,7 @@
 <template>
-<div v-if="panel === 'Bounds'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+<div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
     <div class='flex-child px12 py12'>
-        <h3 class='fl py6 txt-m txt-bold'>Hecate Bounds</h3>
+        <h3 class='fl py6 txt-m txt-bold'>Bounds</h3>
     </div>
 
     <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
@@ -29,7 +29,22 @@
 <script>
 export default {
     name: 'bounds',
+    data: function() {
+        bounds: []
+    },
+    created: function() {
+        this.getBounds();
+    },
+    methods: {
+        getBounds: function() {
+            fetch(`http://${window.location.host}/api/data/bounds`).then((response) => {
+                  return response.json();
+            }).then((body) => {
+                this.bounds = body;
+            });
+        }
+    },
     render: h => h(App),
-    props: ['panel']
+    props: []
 }
 </script>
