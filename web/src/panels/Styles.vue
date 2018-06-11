@@ -1,11 +1,7 @@
 <template>
 <div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
     <div class='flex-child px12 py12'>
-        <h3 class='fl py6 txt-m txt-bold'>Hecate Bounds</h3>
-    </div>
-
-    <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-        <template><panel v-model="panel"/></template>
+        <h3 class='fl py6 txt-m txt-bold'>Styles</h3>
         <button @click="styles_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
 
         <template v-if="credentials.authed">
@@ -42,9 +38,20 @@
 </template>
 
 <script>
+import Foot from '../components/Foot.vue';
+
 export default {
     name: 'styles',
+    data: function() {
+        return {
+            styles: [],
+            pstyles: []
+        }
+    },
+    components: {
+        foot: Foot
+    },
     render: h => h(App),
-    props: ['panel']
+    props: ['credentials']
 }
 </script>

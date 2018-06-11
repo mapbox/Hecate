@@ -27,7 +27,7 @@
 
             <template v-if='panel === "deltas"'><deltas :map='map'/></template>
             <template v-else-if='panel === "bounds"'><bounds/></template>
-            <template v-else-if='panel === "styles"'><styles/></template>
+            <template v-else-if='panel === "styles"'><styles :credentials='credentials'/></template>
             <!--<feature :panel='panel'/>-->
         </div>
 
@@ -318,8 +318,6 @@ export default {
             },
             panel: false, //Store the current panel view (Deltas, Styles, Bounds, etc)
             feature: false, //Store the currently selected feature - overides panel view
-            pstyles: [], //If the user is authenticated, store a list of their private styles
-            styles: [], //Store a list of public styles
             layers: [], //Store list of GL layer names so they can be easily removed
             style: false, //Store the id of the current style - false for generic style
             modal: {
