@@ -14,13 +14,13 @@
                 <div @click="panel === 'styles' ? panel = false : panel = 'styles'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-paint'/></svg>
                 </div>
-                <div @click="modal.type = 'query'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; modal.type = 'query'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-inspect'/></svg>
                 </div>
                 <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-arrow-down'/></svg>
                 </div>
-                <div @click="modal.type = 'settings'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; modal.type = 'settings'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-sprocket'/></svg>
                 </div>
             </div>
