@@ -13,12 +13,13 @@
 
         <div class="flex-child scroll-auto">
             <div v-for="(feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                <span v-if="feat.geometry.type === 'Point'" class="fl py6 px6"><svg class='icon'><use href='#icon-marker'/></span>
-                <span v-if="feat.geometry.type === 'MultiPoint'" class="fl px6 py6"><svg class='icon'><use href='#icon-marker'/></span>
-                <span v-if="feat.geometry.type === 'LineString'" class="fl px6 py6"><svg class='icon'><use href='#icon-polyline'/></span>
-                <span v-if="feat.geometry.type === 'MultiLineString'" class="fl px6 py6"><svg class='icon'><use href='#icon-polyline'/></span>
-                <span v-if="feat.geometry.type === 'Polygon'" class="fl px6 py6"><svg class='icon'><use href='#icon-polygon'/></span>
-                <span v-if="feat.geometry.type === 'MultiPolygon'" class="fl px6 py6"><svg class='icon'><use href='#icon-polygon'/></span>
+                <span v-if="feat.geometry && feat.geometry.type === 'Point'" class="fl py6 px6"><svg class='icon'><use href='#icon-marker'/></span>
+                <span v-else-if="feat.geometry && feat.geometry.type === 'MultiPoint'" class="fl px6 py6"><svg class='icon'><use href='#icon-marker'/></span>
+                <span v-else-if="feat.geometry && feat.geometry.type === 'LineString'" class="fl px6 py6"><svg class='icon'><use href='#icon-polyline'/></span>
+                <span v-else-if="feat.geometry && feat.geometry.type === 'MultiLineString'" class="fl px6 py6"><svg class='icon'><use href='#icon-polyline'/></span>
+                <span v-else-if="feat.geometry && feat.geometry.type === 'Polygon'" class="fl px6 py6"><svg class='icon'><use href='#icon-polygon'/></span>
+                <span v-else-if="feat.geometry && feat.geometry.type === 'MultiPolygon'" class="fl px6 py6"><svg class='icon'><use href='#icon-polygon'/></span>
+                <span v-else class="fl px6 py6"><svg class='icon'><use href='#icon-circle'/></span>
 
                 <span class="fl" v-text="feat.id"></span>
                 <span class="fl px6" v-text="feat.action"></span>
@@ -158,11 +159,23 @@ export default {
 
                 this.map.gl.getSource('hecate-delta').setData({ type: 'FeatureCollection', features: [] });
             } else {
-                this.map.gl.getSource('hecate-delta').setData(this.delta.features);
+                //Deletes don't have a geometry property and as such
+                //should not be dislayed or used to calc. bbox
+                const noDeletes = {
+                    type: 'FeatureCollection',
+                    features: this.delta.features.features.filter((feat) => {
+                        if (!feat.geometry) return false;
+
+                        return true;
+                    })
+                };
+
+                this.map.gl.getSource('hecate-delta').setData(noDeletes);
+
                 this.map.unstyle();
                 this.style();
 
-                this.delta.bbox = turf.bbox(this.delta.features);
+                this.delta.bbox = turf.bbox(noDeletes);
                 this.map.gl.fitBounds(this.delta.bbox);
             }
         }
