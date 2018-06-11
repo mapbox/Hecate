@@ -1,8 +1,8 @@
 <template>
-<div v-if="panel === 'Deltas'" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+<div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
     <template v-if='delta'>
         <div class='flex-child px12 py12'>
-            <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
+            <h3 class='fl py6 txt-m txt-bold'>Hecate Delta</h3>
         </div>
 
         <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
@@ -26,9 +26,9 @@
         </div>
     </template>
     <template v-else>
-        <div class='flex-child px12 py12 bg-gray-faint round-b-ml txt-s'>
-            <template><panel v-model="panel"/></template>
-            <button @click="deltas_refresh" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
+        <div class='flex-child px12 py12 border--gray-light border-b'>
+            <h3 class='fl py6 txt-m txt-bold'>Hecate Deltas</h3>
+            <button @click="getDeltas" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
         </div>
 
         <div v-if="!deltas.length" class="px12 py3 clearfix bg-white">
@@ -61,6 +61,12 @@ export default {
             deltas: [],
             delta: false
         }
+    },
+    mounted: function() {
+        this.moment = Moment;
+    },
+    created: function() {
+        this.getDeltas();
     },
     methods: {
         getDeltas: function() {
@@ -103,11 +109,7 @@ export default {
             }
         }
     },
-    created: function() {
-        this.moment = Moment;
-        this.getDeltas();
-    },
     render: h => h(App),
-    props: [ 'panel', 'map' ]
+    props: [ 'map' ]
 }
 </script>

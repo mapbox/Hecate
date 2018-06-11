@@ -25,10 +25,12 @@
                 </div>
             </div>
 
-            <deltas  :panel='panel' :map='map'/>
-            <feature :panel='panel'/>
-            <bounds  :panel='panel'/>
-            <styles  :panel='panel'/>
+            <template v-if='panel=="Deltas"'>
+                <deltas  :map='map'/>
+            </template>
+            <!--<feature :panel='panel'/>-->
+            <!--<bounds  :panel='panel'/>-->
+            <!--<styles  :panel='panel'/>-->
         </div>
 
         <!-- Modal Opaque -->
@@ -220,7 +222,6 @@
 
 <script>
 // === Components ===
-import Panel from './components/Panel.vue';
 import Foot from './components/Foot.vue';
 
 // === Panels ===
@@ -287,7 +288,6 @@ export default {
         }
     },
     components: {
-        panel: Panel,
         foot: Foot,
         deltas: Deltas,
         feature: Feature,
