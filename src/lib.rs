@@ -40,13 +40,14 @@ use std::io::{Cursor};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use rocket::http::Status as HTTPStatus;
+use rocket::config::{Config, Environment, LoggingLevel, Limits};
 use rocket::http::{Cookie, Cookies};
 use rocket::{State};
 use rocket::response::{Response, status, Stream, NamedFile};
 use geojson::GeoJson;
 use rocket_contrib::Json;
 
-pub fn start(database: String, database_read: Option<String>, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
+pub fn start(database: String, database_read: Option<String>, port: Option<u16>, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
     env_logger::init();
 
     let auth_rules: auth::CustomAuth = match auth {
@@ -66,7 +67,19 @@ pub fn start(database: String, database_read: Option<String>, schema: Option<ser
         Some(db) => DbRead::new(Some(init_pool(&db)))
     };
 
-    rocket::ignite()
+    let limits = Limits::new()
+        .limit("json", 20971520)
+        .limit("forms", 131072);
+
+    let config = Config::build(Environment::Production)
+        .address("127.0.0.1")
+        .log_level(LoggingLevel::Debug)
+        .port(port.unwrap_or(8000))
+        .limits(limits)
+        .workers(12)
+        .unwrap();
+
+    rocket::custom(config, true)
         .manage(DbReadWrite::new(init_pool(&database)))
         .manage(db_read)
         .manage(schema)

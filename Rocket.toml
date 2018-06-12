@@ -1,8 +1,0 @@
-[global]
-address = "127.0.0.1"
-log = "normal"
-port = 8000
-
-[global.limits]
-forms = 131072
-json = 20971520
