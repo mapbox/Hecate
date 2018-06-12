@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.35.2
+
+- :bug: Take 2 - Use `0.0.0.0` to make docker a happy camper
+
 ## v0.35.1
 
 - :bug: Use `localhost` to make docker a happy camper
