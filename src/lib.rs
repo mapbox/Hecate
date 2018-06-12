@@ -72,7 +72,7 @@ pub fn start(database: String, database_read: Option<String>, port: Option<u16>,
         .limit("forms", 131072);
 
     let config = Config::build(Environment::Production)
-        .address("localhost")
+        .address("0.0.0.0")
         .log_level(LoggingLevel::Debug)
         .port(port.unwrap_or(8000))
         .limits(limits)
