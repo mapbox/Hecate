@@ -16,15 +16,21 @@ args:
         help: \[optional\] Specify the read user account for the database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
         takes_value: true
 
+    - port:
+        short: p
+        long: port
+        value_name: PORT
+        help: \[optional\] Specify a custom port
+
     - schema:
         short: s
         long: schema
         value_name: SCHEMA
-        help: Specify a JSON Validation Schema for data in the hecate database
+        help: \[optional\] Specify a JSON Validation Schema for data in the hecate database
         takes_value: true
 
     - auth:
         long: auth
         value_name: AUTH
-        help: Specify a custom authentication schema to apply to the API
+        help: \[optional\] Specify a custom authentication schema to apply to the API
         takes_value: true
