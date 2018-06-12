@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.35.0
+
+- :rocket: Remove `Rocket.toml`, replacing with CLI options
+
 ## v0.34.0
 
 - :rocket: Add CLI option for manually specifying read only db connection

@@ -1,6 +1,6 @@
 [package]
 name = "hecate"
-version = "0.34.0"
+version = "0.35.0"
 authors = ["ingalls <ingalls@protonmail.com>"]
 license = "MIT"
 description = "OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange"
