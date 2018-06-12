@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.35.1
+
+- :bug: Use `localhost` to make docker a happy camper
+
 ## v0.35.0
 
 - :rocket: Remove `Rocket.toml`, replacing with CLI options
