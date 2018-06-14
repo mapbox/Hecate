@@ -56,54 +56,10 @@
                 v-on:uid='credentials.uid = $event'
             />
         </template>
+        <template v-if='modal.type === "register"'>
+            <register v-on:close='modal.type = false' />
+        </template>
 
-        <div v-if='modal.type === "register"' class='absolute top left bottom right z3' style="pointer-events: none;">
-            <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
-                <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
-                    <div class='grid w-full'>
-                        <div class='col col--8'>
-                            <h3 class='fl py6 txt-m txt-bold w-full'>Hecate Register</h3>
-                        </div>
-                        <div class='col col--4'>
-                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
-                        </div>
-
-                        <div class='col col--12 py12'>
-                            <label>
-                                Username:
-                                <input v-model="modal.register.username" class='input py12' placeholder='username'/>
-                            </label>
-                        </div>
-
-                        <div class='col col--12 py12'>
-                            <label>
-                                Email:
-                                <input v-model='modal.register.email' class='input py12' placeholder='email'/>
-                            </label>
-                        </div>
-
-                        <div class='col col--12 py12'>
-                            <label>
-                                Password:
-                                <input v-model='modal.register.password' type='password' class='input py12' placeholder='password'/>
-                            </label>
-                        </div>
-
-                        <div class='col col--12'>
-                            <div class='grid grid--gut12'>
-                                <div class='col col--6 py12'>
-                                    <button @click='modal.type = false' class='btn round bg-gray w-full'>Cancel</button>
-                                </div>
-
-                                <div class='col col--6 py12'>
-                                    <button @click='register' class='btn round w-full'>Register</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
         <div v-if='modal.type === "style_set"' class='absolute top left bottom right z3' style="pointer-events: none;">
             <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
                 <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
@@ -251,6 +207,7 @@ import Styles from './panels/Styles.vue';
 
 // === Modals ===
 import Login from './modals/Login.vue';
+import Register from './modals/Register.vue';
 
 export default {
     name: 'app',
@@ -362,11 +319,6 @@ export default {
                     uid: false,
                     public: false,
                     name: ''
-                },
-                register: {
-                    username: '',
-                    password: '',
-                    email: ''
                 }
             }
         }
@@ -377,7 +329,8 @@ export default {
         bounds: Bounds,
         feature: Feature,
         styles: Styles,
-        login: Login
+        login: Login,
+        register: Register
     },
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
@@ -437,22 +390,6 @@ export default {
             }).then((body) => {
                 this.modal.query.results = body;
             });
-        },
-        register: function() {
-            fetch(`http://${window.location.host}/api/user/create?username=${this.modal.register.username}&password=${this.modal.register.password}&email=${this.modal.register.email}`).then((response) => {
-                  return response.json();
-            }).then((body) => {
-                this.modal.register = {
-                    username: '',
-                    password: '',
-                    email: ''
-                };
-
-                this.ok('Account Created', 'Your account has been created! You can login now');
-            });
-        },
-        register_show: function() {
-            this.modal.type = 'register';
         },
         style_get: function(style_id, cb) {
             fetch(`http://${window.location.host}/api/style/${style_id}`, {
