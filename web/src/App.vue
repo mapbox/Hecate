@@ -31,6 +31,15 @@
             <!--<feature :panel='panel'/>-->
         </div>
 
+        <!-- Login Panel -->
+        <div class='absolute top-ml left bottom z1 ml240 hmax-full py12-ml' style="pointer-events: none;">
+            <div class='bg-white round' style='height: 40px; pointer-events:auto;'>
+                <div @click="panel = false; modal.type = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                    <svg class='icon'><use href='#icon-user'/></svg>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal Opaque -->
         <div v-if='modal.type' class='absolute top left bottom right z2 bg-black opacity75' style="pointer-events: none;"></div>
 
