@@ -32,7 +32,7 @@
         </div>
 
         <!-- Login Panel -->
-        <div class='absolute top-ml left bottom z1 ml240 hmax-full py12-ml' style="pointer-events: none;">
+        <div class='none block-ml absolute top-ml left bottom z1 ml240 hmax-full py12-ml' style="pointer-events: none;">
             <div class='bg-white round' style='height: 40px; pointer-events:auto;'>
                 <div @click="panel = false; modal.type = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-user'/></svg>
