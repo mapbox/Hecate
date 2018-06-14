@@ -44,6 +44,15 @@
         <div v-if='modal.type' class='absolute top left bottom right z2 bg-black opacity75' style="pointer-events: none;"></div>
 
         <!--Modals here-->
+        <template v-if='modal.type === "login"'>
+            <login
+                v-on:login='modal.type = false; credentials.authed = true'
+                v-on:close='modal.type = false'
+                v-on:register='modal.type = "register"'
+                v-on:username='credentials.username = $event'
+                v-on:uid='credentials.uid = $event'
+            />
+        </template>
 
         <div v-if='modal.type === "register"' class='absolute top left bottom right z3' style="pointer-events: none;">
             <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
@@ -238,6 +247,7 @@ import Bounds from './panels/Bounds.vue';
 import Styles from './panels/Styles.vue';
 
 // === Modals ===
+import Login from './modals/Login.vue';
 
 export default {
     name: 'app',
@@ -335,10 +345,6 @@ export default {
                     header: '',
                     body: ''
                 },
-                error: {
-                    header: '',
-                    body: ''
-                },
                 query: {
                     query: '',
                     results: []
@@ -354,10 +360,6 @@ export default {
                     public: false,
                     name: ''
                 },
-                login: {
-                    username: '',
-                    password: ''
-                },
                 register: {
                     username: '',
                     password: '',
@@ -371,7 +373,8 @@ export default {
         deltas: Deltas,
         bounds: Bounds,
         feature: Feature,
-        styles: Styles
+        styles: Styles,
+        login: Login
     },
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
@@ -422,36 +425,6 @@ export default {
             document.cookie = 'session=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'
             window.location.reload();
         },
-        login: function() {
-            fetch(`http://${window.location.host}/api/user/session`, {
-                method: 'GET',
-                credentials: 'same-origin',
-                headers: new Headers({
-                    'Authorization': 'Basic '+ btoa(`${this.modal.login.username}:${this.modal.login.password}`)
-                })
-            }).then((response) => {
-                if (response.status === 200) {
-                    response.json().then((response) => {
-                        this.modal.type = false;
-
-                        this.credentials.authed = true;
-                        this.credentials.username = this.modal.login.username;
-                        this.credentials.uid = parseInt(response);
-                        this.modal.login = {
-                            username: '',
-                            password: ''
-                        };
-
-                        this.panel = false;
-                    });
-                } else {
-                    return this.ok('Failed to Login', 'Failed to login with given credentials');
-                }
-            }).catch((err) => {
-                return this.ok('Failed to Login', 'Failed to login with given credentials');
-            });
-
-        },
         query: function(query) {
             fetch(`http://${window.location.host}/api/data/query?limit=100&query=${encodeURIComponent(this.modal.query.query.replace(/;/g, ''))}`, {
                 method: 'GET',
@@ -461,9 +434,6 @@ export default {
             }).then((body) => {
                 this.modal.query.results = body;
             });
-        },
-        login_show: function() {
-            if (!this.credentials.authed) this.modal.type = 'login';
         },
         register: function() {
             fetch(`http://${window.location.host}/api/user/create?username=${this.modal.register.username}&password=${this.modal.register.password}&email=${this.modal.register.email}`).then((response) => {
