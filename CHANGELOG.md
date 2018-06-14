@@ -10,6 +10,18 @@
 
 # Version History
 
+## v0.35.2
+
+- :bug: Take 2 - Use `0.0.0.0` to make docker a happy camper
+
+## v0.35.1
+
+- :bug: Use `localhost` to make docker a happy camper
+
+## v0.35.0
+
+- :rocket: Remove `Rocket.toml`, replacing with CLI options
+
 ## v0.34.0
 
 - :rocket: Add CLI option for manually specifying read only db connection
