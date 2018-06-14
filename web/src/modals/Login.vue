@@ -1,7 +1,27 @@
 <template>
-    <div class='absolute top left bottom right z3' style="pointer-events: none;">
-        <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events: auto;">
-            <div class="flex-child px12 py12 w600 h300 bg-white round-ml shadow-darken10">
+<div class='absolute top left bottom right z3' style="pointer-events: none;">
+    <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events: auto;">
+        <template v-if='error'>
+            <div class="flex-child px12 py12 w600 h180 bg-white round-ml shadow-darken10">
+                <div class='grid w-full'>
+                    <div class='col col--8'>
+                        <h3 class='fl py6 txt-m txt-bold w-full'>Error Logging In</h3>
+                    </div>
+
+                    <div class='col col--12'>
+                        <div class='grid grid--gut12'>
+                            <div class='col col--6 py12'></div>
+
+                            <div class='col col--6 py12'>
+                                <button @click='error = ""' class='btn round w-full'>OK</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+        <template v-else>
+            <div class="flex-child px12 py12 w600 h180 bg-white round-ml shadow-darken10">
                 <div class='grid w-full'>
                     <div class='col col--8'>
                         <h3 class='fl py6 txt-m txt-bold w-full'>Hecate Login</h3>
@@ -10,18 +30,21 @@
                         <button @click='close()' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                     </div>
 
-                    <div class='col col--12 py12'>
-                        <label>
-                            Username:
-                            <input v-model='username' class='input py12' placeholder='username'/>
-                        </label>
-                    </div>
-
-                    <div class='col col--12 py12'>
-                        <label>
-                            Password:
-                            <input v-model='password' type='password' class='input py12' placeholder='password'/>
-                        </label>
+                    <div class='col col--12'>
+                        <div class='grid grid--gut12'>
+                            <div class='col col--6'>
+                                <label>
+                                    Username:
+                                    <input v-model='username' class='input py12' placeholder='username'/>
+                                </label>
+                            </div>
+                            <div class='col col--6'>
+                                <label>
+                                    Password:
+                                    <input v-model='password' type='password' class='input py12' placeholder='password'/>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class='col col--12'>
@@ -36,7 +59,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </template>
         </div>
     </div>
 </template>
@@ -46,6 +69,7 @@ export default {
     name: 'login',
     data: function() {
         return {
+            error: '',
             username: '',
             password: ''
         }
@@ -74,16 +98,17 @@ export default {
 
                         self.password = '';
                         self.username = '';
+                        self.error = '';
 
                         self.$emit('login');
                     }).catch((err) => {
-                        self.$emit('fail');
+                        self.error = 'Failed to parse login response';
                     });
                 } else {
-                    self.$emit('fail');
+                    self.error = 'Incorrect Username/Password';
                 }
             }).catch((err) => {
-                self.$emit('fail');
+                self.error = 'Incorrect Username/Password';
             });
         }
     },
