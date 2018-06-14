@@ -102,12 +102,15 @@ export default {
 
                         self.$emit('login');
                     }).catch((err) => {
+                        self.password = '';
                         self.error = 'Failed to parse login response';
                     });
                 } else {
+                    self.password = '';
                     self.error = 'Incorrect Username/Password';
                 }
             }).catch((err) => {
+                self.password = '';
                 self.error = 'Incorrect Username/Password';
             });
         }
