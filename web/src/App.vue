@@ -34,8 +34,11 @@
         <!-- Login Panel -->
         <div class='none block-ml absolute top-ml left bottom z1 ml240 hmax-full py12-ml' style="pointer-events: none;">
             <div class='bg-white round' style='height: 40px; pointer-events:auto;'>
-                <div @click="panel = false; modal.type = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; logout(); modal.type = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-user'/></svg>
+                </div>
+                <div v-if='credentials.authed' @click="logout(true)" class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                    <svg class='icon'><use href='#icon-logout'/></svg>
                 </div>
             </div>
         </div>
@@ -420,10 +423,10 @@ export default {
             this.modal.ok.body = body;
             this.modal.type = 'ok';
         },
-        logout: function() {
+        logout: function(reload) {
             this.credentials.authed = false;
             document.cookie = 'session=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'
-            window.location.reload();
+            if (reload) window.location.reload();
         },
         query: function(query) {
             fetch(`http://${window.location.host}/api/data/query?limit=100&query=${encodeURIComponent(this.modal.query.query.replace(/;/g, ''))}`, {
