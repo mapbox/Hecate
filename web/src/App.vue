@@ -28,7 +28,7 @@
             <template v-if='panel === "deltas"'><deltas :map='map'/></template>
             <template v-else-if='panel === "bounds"'><bounds/></template>
             <template v-else-if='panel === "styles"'><styles :credentials='credentials'/></template>
-            <template v-else-if='feature'><feature :map='map' :feature='feature' v-on:close='feature = false'/></template>
+            <template v-else-if='feature'><feature :map='map' :id='feature' v-on:close='feature = false'/></template>
         </div>
 
         <!-- Login Panel -->
@@ -368,7 +368,9 @@ export default {
 
             let clicked = this.map.gl.queryRenderedFeatures(e.point)[0];
 
-            if (clicked && clicked.properties['hecate:id']) this.feature = clicked.properties['hecate:id'];
+            if (clicked && clicked.properties['hecate:id']) {
+                this.feature = clicked.properties['hecate:id'];
+            }
         });
     },
     methods: {
