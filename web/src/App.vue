@@ -28,7 +28,7 @@
             <template v-if='panel === "deltas"'><deltas :map='map'/></template>
             <template v-else-if='panel === "bounds"'><bounds/></template>
             <template v-else-if='panel === "styles"'><styles :credentials='credentials'/></template>
-            <!--<feature :panel='panel'/>-->
+            <template v-else-if='feature'><feature :map='map' :feature='feature' v-on:close='feature = false'/></template>
         </div>
 
         <!-- Login Panel -->
@@ -300,8 +300,8 @@ export default {
                 }
             },
             panel: false, //Store the current panel view (Deltas, Styles, Bounds, etc)
-            feature: false, //Store the currently selected feature - overides panel view
             layers: [], //Store list of GL layer names so they can be easily removed
+            feature: false, //Store the id of a clicked feature
             style: false, //Store the id of the current style - false for generic style
             modal: {
                 type: false,
@@ -368,7 +368,7 @@ export default {
 
             let clicked = this.map.gl.queryRenderedFeatures(e.point)[0];
 
-            if (clicked && clicked.properties['hecate:id']) this.feature_get(clicked.properties['hecate:id']);
+            if (clicked && clicked.properties['hecate:id']) this.feature = clicked.properties['hecate:id'];
         });
     },
     methods: {
@@ -504,15 +504,6 @@ export default {
                 this.modal.style_set.public = style.public;
 
                 this.modal.type = 'style_set';
-            });
-        },
-        feature_get: function(feature_id) {
-            if (!feature_id) return;
-
-            fetch(`http://${window.location.host}/api/data/feature/${feature_id}`).then((response) => {
-                  return response.json();
-            }).then((body) => {
-                this.feature = body;
             });
         }
     }

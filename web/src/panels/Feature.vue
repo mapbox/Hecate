@@ -1,12 +1,8 @@
 <template>
-<div v-if="feature" class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+<div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
     <div class='flex-child px12 py12'>
-        <h3 class='fl py6 txt-m txt-bold'>Hecate Bounds</h3>
-    </div>
-
-    <div class='flex-child clearfix px12 py12 bg-gray-faint round-b-ml txt-s'>
-        <button @click="feature = false" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use href='#icon-arrow-left'/></button>
-        <div class="px12 py3 txt-bold fl">Feature <span v-text="feature.id"></span></div>
+        <h3 class='fl py6 txt-m txt-bold'>Feature <span v-text='feature.id'></span></h3>
+        <button @click='close()' class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-close'/></button>
     </div>
 
     <div class="flex-child scroll-auto">
@@ -49,7 +45,26 @@
 <script>
 export default {
     name: 'feature',
+    watch: {
+        feature: function() {
+            this.get(this.feature);
+        }
+    },
+    methods: {
+        close: function() {
+            this.$emit('close');
+        },
+        get: function(feature_id) {
+            if (!feature_id) return;
+
+            fetch(`http://${window.location.host}/api/data/feature/${feature_id}`).then((response) => {
+                  return response.json();
+            }).then((body) => {
+                this.feature = body;
+            });
+        }
+    },
     render: h => h(App),
-    props: ['feature']
+    props: ['feature', 'map']
 }
 </script>
