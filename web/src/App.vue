@@ -56,8 +56,11 @@
                 v-on:uid='credentials.uid = $event'
             />
         </template>
-        <template v-if='modal.type === "register"'>
+        <template v-else-if='modal.type === "register"'>
             <register v-on:close='modal.type = false' />
+        </template>
+        <template v-else-if='modal.type === "settings"'>
+            <settings v-on:close='modal.type = false' />
         </template>
 
         <div v-if='modal.type === "style_set"' class='absolute top left bottom right z3' style="pointer-events: none;">
@@ -208,6 +211,7 @@ import Styles from './panels/Styles.vue';
 // === Modals ===
 import Login from './modals/Login.vue';
 import Register from './modals/Register.vue';
+import Settings from './modals/Settings.vue';
 
 export default {
     name: 'app',
@@ -301,10 +305,6 @@ export default {
             style: false, //Store the id of the current style - false for generic style
             modal: {
                 type: false,
-                settings: {
-                    header: '',
-                    body: ''
-                },
                 query: {
                     query: '',
                     results: []
@@ -330,7 +330,8 @@ export default {
         feature: Feature,
         styles: Styles,
         login: Login,
-        register: Register
+        register: Register,
+        settings: Settings
     },
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
