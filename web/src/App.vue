@@ -139,62 +139,6 @@
                 </div>
             </div>
         </div>
-        <div v-if='modal.type === "query"' class='absolute top left bottom right z3' style="pointer-events: none;">
-            <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
-                <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
-                    <div class='grid w-full'>
-                        <template v-if='!modal.query.results.length'>
-                            <div class='pb12 col col--11'>
-                                <h3 class='fl txt-m txt-bold fl'>SQL Query Editor</h3>
-                            </div>
-
-                            <div class='col col--1'>
-                                <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
-                            </div>
-
-                            <div class='col col--12'>
-                                <textarea :readonly="!credentials.uid" class='textarea w-full h360' v-model="modal.query.query" placeholder="Query SQL"></textarea>
-                            </div>
-
-                            <div class='col col--12'>
-                                <p>Note the web UI only supports querying up to 100 features</p>
-                            </div>
-                            <div class='col col--12'>
-                                <div class='grid grid--gut12'>
-                                    <div class='col col--8 py12'></div>
-                                    <div class='col col--4 py12'>
-                                        <button @click="query(modal.query.query)" class='btn round btn--stroke w-full'>Query</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                        <template v-else>
-                            <div class='pb12 col col--11'>
-                                <button @click="modal.query.results = ''" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use href='#icon-arrow-left'/></button>
-                                <h3 class='fl pl12 txt-m txt-bold fl'>SQL Results Viewer</h3>
-                            </div>
-
-                            <div class='col col--1'>
-                                <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
-                            </div>
-
-                            <div class='col col--12'>
-                                <textarea readonly class='textarea w-full h360' v-model="modal.query.results" placeholder="SQL Results"></textarea>
-                            </div>
-
-                            <div class='col col--12'>
-                                <div class='grid grid--gut12'>
-                                    <div class='col col--8 py12'></div>
-                                    <div class='col col--4 py12'>
-                                        <button @click="modal.type = false" class='btn round btn--stroke w-full'>Close</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -212,6 +156,7 @@ import Styles from './panels/Styles.vue';
 import Login from './modals/Login.vue';
 import Register from './modals/Register.vue';
 import Settings from './modals/Settings.vue';
+import Query from './modals/Query.vue';
 
 export default {
     name: 'app',
@@ -305,10 +250,6 @@ export default {
             style: false, //Store the id of the current style - false for generic style
             modal: {
                 type: false,
-                query: {
-                    query: '',
-                    results: []
-                },
                 ok: {
                     header: '',
                     body: ''
@@ -331,7 +272,8 @@ export default {
         styles: Styles,
         login: Login,
         register: Register,
-        settings: Settings
+        settings: Settings,
+        query: Query
     },
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
@@ -387,16 +329,6 @@ export default {
                 credentials: 'same-origin'
             }).then((response) => {
                 if (reload) window.location.reload();
-            });
-        },
-        query: function(query) {
-            fetch(`http://${window.location.host}/api/data/query?limit=100&query=${encodeURIComponent(this.modal.query.query.replace(/;/g, ''))}`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                  return response.text();
-            }).then((body) => {
-                this.modal.query.results = body;
             });
         },
         style_get: function(style_id, cb) {
