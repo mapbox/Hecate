@@ -361,7 +361,10 @@ fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
             let token = String::from(session.value());
 
             match user::destroy_token(&conn, &uid, &token) {
-                _ => Ok(Json(json!(true)))
+                _ => {
+                    cookies.remove_private(session); 
+                    Ok(Json(json!(true)))
+                }
             }
         },
         None => Ok(Json(json!(true)))
