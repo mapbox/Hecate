@@ -364,7 +364,7 @@ export default {
         }));
 
         this.map.gl.on('click', (e) => {
-            if (this.delta) return; //Don't currently support showing features within a delta
+            if (this.modal.type === 'delta') return; //Don't currently support showing features within a delta
 
             let clicked = this.map.gl.queryRenderedFeatures(e.point)[0];
 
@@ -464,14 +464,12 @@ export default {
 
                             this.style_set(style_id, style);
                         }).catch((err) => {
-                            console.error(err);
                             return this.ok('Failed to push style', 'Failed to update style');
                         });
                     } else {
                         this.style_set(style_id, style);
                     }
                 }).catch((err) => {
-                    console.error(err);
                     return this.ok('Failed to push style', 'Failed to update style');
                 });
             
