@@ -62,6 +62,9 @@
         <template v-else-if='modal.type === "settings"'>
             <settings v-on:close='modal.type = false' />
         </template>
+        <template v-else-if='modal.type === "query"'>
+            <query v-on:close='modal.type = false' :credentials='credentials' />
+        </template>
 
         <div v-if='modal.type === "style_set"' class='absolute top left bottom right z3' style="pointer-events: none;">
             <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
