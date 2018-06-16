@@ -89,11 +89,13 @@ pub fn create_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
     }
 }
 
-pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, token: &String) -> Result<bool, UserError> {
+pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, token: &String) -> Result<bool, UserError> {
     match conn.query("
         DELETE FROM users_tokens
-            WHERE token = $1;
-    ", &[ &token ]) {
+            WHERE
+                token = $1
+                AND uid = $2;
+    ", &[ &token, &uid ]) {
         Ok(_) => Ok(true),
         Err(_) => Err(UserError::NotFound)
     }

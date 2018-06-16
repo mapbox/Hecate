@@ -347,6 +347,26 @@ fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
     }
 }
 
+#[delete("/user/session")]
+fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut cookies: Cookies) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_user_create_session(&mut auth, &conn)?;
+
+    let uid = auth.uid.unwrap();
+
+    match cookies.get_private("session") {
+        Some(session) => {
+            let token = String::from(session.value());
+
+            match user::destroy_token(&conn, &uid, &token) {
+                _ => Ok(Json(json!(true)))
+            }
+        },
+        None => Ok(Json(json!(true)))
+    }
+}
+
 #[post("/style", format="application/json", data="<style>")]
 fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, style: String) -> Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;
