@@ -381,8 +381,13 @@ export default {
         },
         logout: function(reload) {
             this.credentials.authed = false;
-            document.cookie = 'session=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'
-            if (reload) window.location.reload();
+
+            fetch(`http://${window.location.host}/api/user/session`, {
+                method: 'DELETE',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (reload) window.location.reload();
+            });
         },
         query: function(query) {
             fetch(`http://${window.location.host}/api/data/query?limit=100&query=${encodeURIComponent(this.modal.query.query.replace(/;/g, ''))}`, {
