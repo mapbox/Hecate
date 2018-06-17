@@ -25,10 +25,17 @@
                 </div>
             </div>
 
-            <template v-if='panel === "deltas"'><deltas :map='map'/></template>
-            <template v-else-if='panel === "bounds"'><bounds/></template>
-            <template v-else-if='panel === "styles"'><styles :credentials='credentials' v-on:style='modal = "style"; style = $event'/></template>
-            <template v-else-if='feature'><feature :map='map' :id='feature' v-on:close='feature = false'/></template>
+            <template v-if='panel === "deltas"'>
+                <deltas :map='map'/></template>
+            <template v-else-if='panel === "bounds"'>
+                <bounds/>
+            </template>
+            <template v-else-if='panel === "styles"'>
+                <styles :credentials='credentials' v-on:style='modal = "style"; style_id = $event'/>
+            </template>
+            <template v-else-if='feature'>
+                <feature :map='map' :id='feature' v-on:close='feature = false'/>
+            </template>
         </div>
 
         <!-- Login Panel -->
@@ -64,6 +71,9 @@
         </template>
         <template v-else-if='modal === "query"'>
             <query v-on:close='modal = false' :credentials='credentials' />
+        </template>
+        <template v-else-if='modal === "style"'>
+            <stylem v-on:close='modal = false' :style='style_id' :credentials='credentials' />
         </template>
     </div>
 </template>
@@ -174,7 +184,7 @@ export default {
             panel: false, //Store the current panel view (Deltas, Styles, Bounds, etc)
             layers: [], //Store list of GL layer names so they can be easily removed
             feature: false, //Store the id of a clicked feature
-            style: false, //Store the id of the current style - false for generic style
+            style_id: false, //Store the id of the current style - false for generic style
             modal: false
         }
     },
@@ -188,7 +198,7 @@ export default {
         register: Register,
         settings: Settings,
         query: Query,
-        style: Style
+        stylem: Style
     },
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
