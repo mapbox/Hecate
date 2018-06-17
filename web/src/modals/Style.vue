@@ -73,12 +73,12 @@ export default {
             });
         },
         createStyle: function(style, name) {
-            this.modal.style_set.style = style ? style : '';
-            this.modal.style_set.id = false;
-            this.modal.style_set.username = this.credentials.username;
-            this.modal.style_set.uid = this.credentials.uid;
-            this.modal.style_set.name = name ? `Copy of ${name}` : '';
-            this.modal.style_set.public = false;
+            this.style = style ? style : '';
+            this.id = false;
+            this.username = this.credentials.username;
+            this.uid = this.credentials.uid;
+            this.name = name ? `Copy of ${name}` : '';
+            this.public = false;
         },
         updateStyle: function(style_id, style_name, style) {
             if (!style_id) { //Create new style
@@ -163,6 +163,6 @@ export default {
         }
     },
     render: h => h(App),
-    props: []
+    props: ['style']
 }
 </script>

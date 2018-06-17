@@ -14,27 +14,27 @@
                 <div @click="panel === 'styles' ? panel = false : panel = 'styles'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-paint'/></svg>
                 </div>
-                <div @click="panel = false; modal.type = 'query'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; modal = 'query'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-inspect'/></svg>
                 </div>
                 <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-arrow-down'/></svg>
                 </div>
-                <div @click="panel = false; modal.type = 'settings'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; modal = 'settings'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-sprocket'/></svg>
                 </div>
             </div>
 
             <template v-if='panel === "deltas"'><deltas :map='map'/></template>
             <template v-else-if='panel === "bounds"'><bounds/></template>
-            <template v-else-if='panel === "styles"'><styles :credentials='credentials'/></template>
+            <template v-else-if='panel === "styles"'><styles :credentials='credentials' v-on:style='modal = "style"; style = $event'/></template>
             <template v-else-if='feature'><feature :map='map' :id='feature' v-on:close='feature = false'/></template>
         </div>
 
         <!-- Login Panel -->
         <div class='none block-ml absolute top-ml left bottom z1 ml240 hmax-full py12-ml' style="pointer-events: none;">
             <div class='bg-white round' style='height: 40px; pointer-events:auto;'>
-                <div @click="panel = false; logout(); modal.type = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; logout(); modal = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
                     <svg class='icon'><use href='#icon-user'/></svg>
                 </div>
                 <div v-if='credentials.authed' @click="logout(true)" class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
@@ -44,54 +44,27 @@
         </div>
 
         <!-- Modal Opaque -->
-        <div v-if='modal.type' class='absolute top left bottom right z2 bg-black opacity75' style="pointer-events: none;"></div>
+        <div v-if='modal' class='absolute top left bottom right z2 bg-black opacity75' style="pointer-events: none;"></div>
 
         <!--Modals here-->
-        <template v-if='modal.type === "login"'>
+        <template v-if='modal === "login"'>
             <login
-                v-on:login='modal.type = false; credentials.authed = true'
-                v-on:close='modal.type = false'
-                v-on:register='modal.type = "register"'
+                v-on:login='modal = false; credentials.authed = true'
+                v-on:close='modal = false'
+                v-on:register='modal = "register"'
                 v-on:username='credentials.username = $event'
                 v-on:uid='credentials.uid = $event'
             />
         </template>
-        <template v-else-if='modal.type === "register"'>
-            <register v-on:close='modal.type = false' />
+        <template v-else-if='modal === "register"'>
+            <register v-on:close='modal = false' />
         </template>
-        <template v-else-if='modal.type === "settings"'>
-            <settings v-on:close='modal.type = false' />
+        <template v-else-if='modal === "settings"'>
+            <settings v-on:close='modal = false' />
         </template>
-        <template v-else-if='modal.type === "query"'>
-            <query v-on:close='modal.type = false' :credentials='credentials' />
+        <template v-else-if='modal === "query"'>
+            <query v-on:close='modal = false' :credentials='credentials' />
         </template>
-
-        <div v-if='modal.type === "ok"' class='absolute top left bottom right z3' style="pointer-events: none;">
-            <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
-                <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
-                    <div class='grid w-full'>
-                        <div class='col col--8'>
-                            <h3 class='fl py6 txt-m txt-bold w-full' v-text='modal.ok.header'></h3>
-                        </div>
-                        <div class='col col--4'>
-                            <button @click='modal.type = false'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
-                        </div>
-
-                        <div class='col col--12 py24' v-text='modal.ok.body'></div>
-
-                        <div class='col col--12'>
-                            <div class='grid grid--gut12'>
-                                <div class='col col--6 py12'></div>
-
-                                <div class='col col--6 py12'>
-                                    <button @click='modal.type = false' class='btn round w-full'>OK</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -202,20 +175,7 @@ export default {
             layers: [], //Store list of GL layer names so they can be easily removed
             feature: false, //Store the id of a clicked feature
             style: false, //Store the id of the current style - false for generic style
-            modal: {
-                type: false,
-                ok: {
-                    header: '',
-                    body: ''
-                },
-                style_set: {
-                    style: '',
-                    username: '',
-                    uid: false,
-                    public: false,
-                    name: ''
-                }
-            }
+            modal: false
         }
     },
     components: {
@@ -261,7 +221,7 @@ export default {
         }));
 
         this.map.gl.on('click', (e) => {
-            if (this.modal.type === 'delta') return; //Don't currently support showing features within a delta
+            if (this.modal === 'delta') return; //Don't currently support showing features within a delta
 
             let clicked = this.map.gl.queryRenderedFeatures(e.point)[0];
 
@@ -271,11 +231,6 @@ export default {
         });
     },
     methods: {
-        ok: function(header, body) {
-            this.modal.ok.header = header;
-            this.modal.ok.body = body;
-            this.modal.type = 'ok';
-        },
         logout: function(reload) {
             this.credentials.authed = false;
 
@@ -284,118 +239,6 @@ export default {
                 credentials: 'same-origin'
             }).then((response) => {
                 if (reload) window.location.reload();
-            });
-        },
-        style_get: function(style_id, cb) {
-            fetch(`http://${window.location.host}/api/style/${style_id}`, {
-                credentials: 'same-origin'
-            }).then((response) => {
-                  return response.json();
-            }).then((body) => {
-                return cb(null, body);
-            }).catch((err) => {
-                return cb(err);
-            });
-        },
-        style_create: function(style, name) {
-            this.modal.style_set.style = style ? style : '';
-            this.modal.style_set.id = false;
-            this.modal.style_set.username = this.credentials.username;
-            this.modal.style_set.uid = this.credentials.uid;
-            this.modal.style_set.name = name ? `Copy of ${name}` : '';
-            this.modal.style_set.public = false;
-
-            this.modal.type = 'style_set';
-        },
-        style_update: function(style_id, style_name, style) {
-            if (!style_id) { //Create new style
-                fetch(`http://${window.location.host}/api/style`, {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: new Headers({
-                        'Content-Type': 'application/json'
-                    }),
-                    body: JSON.stringify({
-                        name: style_name,
-                        style: style
-                    })
-                }).then((response) => {
-                    if (response.status === 200) {
-                        this.style_set(style_id, style);
-                    } else {
-                        return this.ok('Failed to push style', 'Failed to update style');
-                    }
-                }).catch((err) => {
-                    return this.ok('Failed to push style', 'Failed to update style');
-                });
-            } else { //Update Existing Style
-                fetch(`http://${window.location.host}/api/style/${style_id}`, {
-                    method: 'PATCH',
-                    credentials: 'same-origin',
-                    headers: new Headers({
-                        'Content-Type': 'application/json'
-                    }),
-                    body: JSON.stringify({
-                        name: style_name,
-                        style: style
-                    })
-                }).then((response) => {
-                    if (response.status !== 200) return this.ok('Failed to push style', 'Failed to update style');
-
-                    if (this.credentials.authed && this.modal.style_set.id) {
-                        fetch(`http://${window.location.host}/api/style/${style_id}/${this.modal.style_set.public ? 'public' : 'private'}`, {
-                            method: 'POST',
-                            credentials: 'same-origin'
-                        }).then((response) => {
-                            if (response.status !== 200) return this.ok('Failed to push style', 'Failed to update style');
-
-                            this.style_set(style_id, style);
-                        }).catch((err) => {
-                            return this.ok('Failed to push style', 'Failed to update style');
-                        });
-                    } else {
-                        this.style_set(style_id, style);
-                    }
-                }).catch((err) => {
-                    return this.ok('Failed to push style', 'Failed to update style');
-                });
-            
-            }
-        },
-        style_set: function(style_id, style) {
-            if (!style.version || style.version !== 8) return this.ok('Style Not Applied', 'The selected style could not be applied. The style version must be 8');
-            if (!style.layers || style.layers.length === 0) return this.ok('Style Not Applied', 'The selected style could not be applied. The style must contain at least 1 layer');
-
-            this.map.unstyle();
-
-            for (let layer of style.layers) {
-                if (!layer.id) {
-                    this.map.unstyle();
-                    this.map.default();
-                    return this.ok('Style Not Applied', 'Every layer in the style must have a unique id');
-                }
-
-                layer.source = 'hecate-data';
-                layer['source-layer'] = 'data',
-
-                this.map.layers.push(layer.id);
-                this.map.gl.addLayer(layer);
-            }
-
-            this.modal.type = false;
-        },
-        style_set_modal: function(style_id) {
-            this.style_get(style_id, (err, style) => {
-                if (err) return this.ok('Failed to retrieve style', err.message);
-
-                this.modal.style_set.style = JSON.stringify(style.style, null, 4);
-                this.modal.style_set.id = style.id;
-                this.modal.style_set.username = style.username;
-                this.modal.style_set.uid = style.uid;
-                this.modal.style_set.name = style.name;
-                this.modal.style_set.public = style.public;
-
-                this.modal.type = 'style_set';
             });
         }
     }

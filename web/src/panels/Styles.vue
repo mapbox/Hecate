@@ -15,7 +15,7 @@
         </div>
 
         <div v-for="(style, style_it) in pstyles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-            <div @click="style_set_modal(style.id)" class="w-full clearfix">
+            <div @click="styleModal(style.id)" class="w-full clearfix">
                 <span class="fl py6 px6"><svg class='icon'><use href='#icon-lock'/></span>
                 <div class="fl">
                     <span v-text="style.username"></span>/<span v-text="style.name"></span>
@@ -24,7 +24,7 @@
         </div>
 
         <div v-for="(style, style_it) in styles" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-            <div @click="style_set_modal(style.id)" class="w-full clearfix">
+            <div @click="styleModal(style.id)" class="w-full clearfix">
                 <span class="fl py6 px6"><svg class='icon'><use href='#icon-paint'/></span>
                 <div class="fl">
                     <span v-text="style.username"></span>/<span v-text="style.name"></span>
@@ -55,6 +55,9 @@ export default {
         foot: Foot
     },
     methods: {
+        styleModal: function(id) {
+            this.$emit('style', id);
+        },
         getStyles: function() {
             fetch(`http://${window.location.host}/api/styles`).then((response) => {
                   return response.json();
