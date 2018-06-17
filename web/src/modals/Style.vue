@@ -5,7 +5,7 @@
             <div class='grid w-full'>
                 <div class='col col--11'>
                     <template v-if="credentials.uid === uid">
-                        <input class='input my12' v-model="name" placeholder="Style Name"/>
+                        <input class='input mb12' v-model="name" placeholder="Style Name"/>
                     </template>
                     <template v-else>
                         <h3 class='fl py6 txt-m txt-bold fl'><span v-text='`${username}/${name}`'></span></h3>
