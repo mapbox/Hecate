@@ -38,13 +38,13 @@
 
 ## Build Environment
 
-- Start by installing Rust from rust-lang.org, this will install the current stagle version
+- Start by installing Rust from [rust-lang.org](https://www.rust-lang.org/en-US/), this will install the current stable version
 
 ```bash
 curl https://sh.rustup.rs -sSf | sh
 ```
 
-- Source your bashrc/bash_profile to update your `PATH` variable
+- Source your `bashrc/bash_profile` to update your `PATH` variable
 
 ```bash
 source ~/.bashrc        # Most Linux Distros, some OSX
@@ -130,7 +130,7 @@ server members.
 | `id`      | The unique integer `id` of a given feature. Note that all features get a unique id accross GeoJSON Geometry Type |
 | `version` | The version of a given feature, starts at `1` for a newly created feature |
 | `action`  | Only used for uploads, the desired action to be performed. One of `create`, `modify`, `delete`, or `restore` |
-| `key`     | `[Optional]` A String containing a value that hecate will ensure remains unique accross all features. Can be a natural id (wikidata id, PID, etc), computed property hash, geometry hash etc. The specifics are left up to the client. Should an attempt at importing a Feature with a differing `id` but identical `key` be made, the feature with will be rejected, ensuring the uniqueness of the `key` values. By default this value will be `NULL`. Duplicate `NULL` values are allowed.
+| `key`     | `[Optional]` A String containing a value that hecate will ensure remains unique across all features. Can be a natural id (wikidata id, PID, etc), computed property hash, geometry hash etc. The specifics are left up to the client. Should an attempt at importing a Feature with a differing `id` but identical `key` be made, the feature with will be rejected, ensuring the uniqueness of the `key` values. By default this value will be `NULL`. Duplicate `NULL` values are allowed.
 | `force`   | `[Optional]` Boolean allowing a user to override version locking and force UPSERT a feature. Disabled by default |
 
 ### Examples
@@ -176,7 +176,7 @@ Downloaded Features will return the integer `id` of the feature, the current `ve
 ```
 
 A features being uploaded for creation must have the `action: create` property. Since an `id` and `version` have not yet been
-assigned they must be omitted. Should an `id` be included it will be ignored. Adding a `version` property will throw an error
+assigned they must be omitted. Should an `id` be included it will be ignored. Adding a `version` property will throw an error.
 
 Optionally create actions can use the `force: true` option to perform an `UPSERT` like option. In this mode the uploader must
 specify the `key` value. Hecate will then `INSERT` the feature if the `key` value is new, if the `key` is already existing, the
