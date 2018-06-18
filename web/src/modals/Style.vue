@@ -5,12 +5,12 @@
             <div class="flex-child px12 py12 w600 h80 bg-white round-ml shadow-darken10">
                 <div class='grid w-full'>
                     <div class='col col--8'>
-                        <h3 class='fl py6 txt-m txt-bold w-full'>Login Error!</h3>
-                        <p class='color-red' v-text='error'></p>
+                        <h3 class='fl py6 txt-m txt-bold w-full'><span v-text='error.title'></span></h3>
+                        <p class='color-red' v-text='error.body'></p>
                     </div>
 
                     <div class='col col--4'>
-                        <button @click='error = ""' class='mt24 btn round w-full'>OK</button>
+                        <button @click='error = false' class='mt24 btn round w-full'>OK</button>
                     </div>
                 </div>
             </div>
@@ -78,8 +78,7 @@ export default {
             username: false,
             name: '',
             style: '',
-
-
+            error: false
         }
     },
     created: function() {
@@ -91,6 +90,12 @@ export default {
         }
     },
     methods: {
+        ok: function(title, body) {
+            this.error = {
+                title: title,
+                body: body
+            };
+        },
         close: function() {
             this.$emit('close');
         },
