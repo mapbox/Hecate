@@ -24,7 +24,7 @@
                     <div class='grid grid--gut12'>
                         <div class='col col--8 py12'>
                             <template v-if="credentials.authed && credentials.uid !== uid">
-                                <button @click='style_create(style, name)' class='btn round btn--stroke w-full'>Clone &amp; Edit</button>
+                                <button @click='cloneStyle(style, name)' class='btn round btn--stroke w-full'>Clone &amp; Edit</button>
                             </template>
                             <template v-else-if="credentials.authed && id">
                                 <label class='switch-container my6'>
@@ -67,11 +67,11 @@ export default {
         }
     },
     created: function() {
-        this.getStyle(this.id);
+        this.id ? this.getStyle(this.id) : this.createStyle();
     },
     watch: {
         style: function() {
-            this.getStyle(this.id);
+            this.id ? this.getStyle(this.id) : this.createStyle();
         }
     },
     methods: {
@@ -93,7 +93,15 @@ export default {
                 this.username = body.username;
             })
         },
-        createStyle: function(style, name) {
+        createStyle: function() {
+            this.style = '';
+            this.id = false;
+            this.username = this.credentials.username;
+            this.uid = this.credentials.uid;
+            this.name = '';
+            this.public = false;
+        },
+        cloneStyle: function(style, name) {
             this.style = style ? style : '';
             this.id = false;
             this.username = this.credentials.username;
@@ -170,17 +178,6 @@ export default {
                 this.map.gl.addLayer(layer);
             }
             this.$emit('close');
-        },
-        setStyleModal: function(style_id) {
-            this.getStyle(style_id, (err, style) => {
-                if (err) return this.ok('Failed to retrieve style', err.message);
-                this.style = JSON.stringify(style.style, null, 4);
-                this.id = style.id;
-                this.username = style.username;
-                this.uid = style.uid;
-                this.name = style.name;
-                this.public = style.public;
-            });
         }
     },
     render: h => h(App),

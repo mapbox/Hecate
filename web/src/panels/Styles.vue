@@ -5,7 +5,7 @@
         <button @click="getStyles()" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
 
         <template v-if="credentials.authed">
-            <button @click="style_create()" class='fr btn mx6 btn--s round align-center'>New</button>
+            <button @click="styleModal(false)" class='fr btn mx6 btn--s round align-center'>New</button>
         </template>
     </div>
 
