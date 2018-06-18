@@ -39,7 +39,7 @@
                         <div class='grid grid--gut12'>
                             <div class='col col--8 py12'>
                                 <template v-if="credentials.authed && credentials.uid !== uid">
-                                    <button @click='cloneStyle(style, name)' class='btn round btn--stroke w-full'>Clone &amp; Edit</button>
+                                    <button @click='cloneStyle()' class='btn round btn--stroke w-full'>Clone &amp; Edit</button>
                                 </template>
                                 <template v-else-if="credentials.authed && id">
                                     <label class='switch-container my6'>
@@ -84,11 +84,6 @@ export default {
     created: function() {
         this.id ? this.getStyle(this.id) : this.createStyle();
     },
-    watch: {
-        id: function() {
-            this.id ? this.getStyle(this.id) : this.createStyle();
-        }
-    },
     methods: {
         ok: function(title, body) {
             this.error = {
@@ -123,11 +118,10 @@ export default {
             this.public = false;
         },
         cloneStyle: function(style, name) {
-            this.style = style ? style : '';
             this.id = false;
             this.username = this.credentials.username;
             this.uid = this.credentials.uid;
-            this.name = name ? `Copy of ${name}` : '';
+            this.name = `Copy of ${this.name}`;
             this.public = false;
         },
         updateStyle: function(style_id, style_name, style) {
