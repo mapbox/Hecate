@@ -100,6 +100,7 @@ pub fn start(database: String, database_read: Option<String>, port: Option<u16>,
             user_self,
             user_create,
             user_create_session,
+            user_delete_session,
             style_create,
             style_patch,
             style_public,
@@ -344,6 +345,29 @@ fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
             Ok(Json(json!(uid)))
         },
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[delete("/user/session")]
+fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut cookies: Cookies) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_user_create_session(&mut auth, &conn)?;
+
+    let uid = auth.uid.unwrap();
+
+    match cookies.get_private("session") {
+        Some(session) => {
+            let token = String::from(session.value());
+
+            match user::destroy_token(&conn, &uid, &token) {
+                _ => {
+                    cookies.remove_private(session); 
+                    Ok(Json(json!(true)))
+                }
+            }
+        },
+        None => Ok(Json(json!(true)))
     }
 }
 
