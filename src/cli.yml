@@ -1,7 +1,7 @@
 name: Hecate
-version: "0.1.0"
 author: Nicholas Ingalls <ingalls@protonmail.com>
 about: Data Storage Backend Focused on Speed and GeoJSON Interchange
+version: 0.36.0
 args:
     - database:
         short: d

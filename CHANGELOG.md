@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.36.0
+
+- :rocket: Rewrite web UI to use Vue Components for better readability
+- :tada: Add logout endpoint for deletion of session token
+
 ## v0.35.2
 
 - :bug: Take 2 - Use `0.0.0.0` to make docker a happy camper
