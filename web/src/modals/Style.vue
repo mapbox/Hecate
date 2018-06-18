@@ -1,52 +1,68 @@
 <template>
 <div class='absolute top left bottom right z3' style="pointer-events: none;">
     <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events:auto;">
-        <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
-            <div class='grid w-full'>
-                <div class='col col--11'>
-                    <template v-if="credentials.uid === uid">
-                        <input class='input mb12' v-model="name" placeholder="Style Name"/>
-                    </template>
-                    <template v-else>
-                        <h3 class='fl py6 txt-m txt-bold fl'><span v-text='`${username}/${name}`'></span></h3>
-                    </template>
+        <template v-if='error'>
+            <div class="flex-child px12 py12 w600 h80 bg-white round-ml shadow-darken10">
+                <div class='grid w-full'>
+                    <div class='col col--8'>
+                        <h3 class='fl py6 txt-m txt-bold w-full'>Login Error!</h3>
+                        <p class='color-red' v-text='error'></p>
+                    </div>
+
+                    <div class='col col--4'>
+                        <button @click='error = ""' class='mt24 btn round w-full'>OK</button>
+                    </div>
                 </div>
+            </div>
+        </template>
+        <template v-else>
+            <div class="flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10">
+                <div class='grid w-full'>
+                    <div class='col col--11'>
+                        <template v-if="credentials.uid === uid">
+                            <input class='input mb12' v-model="name" placeholder="Style Name"/>
+                        </template>
+                        <template v-else>
+                            <h3 class='fl py6 txt-m txt-bold fl'><span v-text='`${username}/${name}`'></span></h3>
+                        </template>
+                    </div>
 
-                <div class='col col--1'>
-                    <button @click='close()'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
-                </div>
+                    <div class='col col--1'>
+                        <button @click='close()'class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                    </div>
 
-                <div class='col col--12'>
-                    <textarea :readonly="credentials.uid !== uid" class='textarea w-full h360' v-model="style" placeholder="Style JSON"></textarea>
-                </div>
+                    <div class='col col--12'>
+                        <textarea :readonly="credentials.uid !== uid" class='textarea w-full h360' v-model="style" placeholder="Style JSON"></textarea>
+                    </div>
 
-                <div class='col col--12'>
-                    <div class='grid grid--gut12'>
-                        <div class='col col--8 py12'>
-                            <template v-if="credentials.authed && credentials.uid !== uid">
-                                <button @click='cloneStyle(style, name)' class='btn round btn--stroke w-full'>Clone &amp; Edit</button>
-                            </template>
-                            <template v-else-if="credentials.authed && id">
-                                <label class='switch-container my6'>
-                                    <input type='checkbox' v-model="public"/>
-                                    <div class='switch mr6'></div>
-                                    Public Style
-                                </label>
-                            </template>
-                        </div>
+                    <div class='col col--12'>
+                        <div class='grid grid--gut12'>
+                            <div class='col col--8 py12'>
+                                <template v-if="credentials.authed && credentials.uid !== uid">
+                                    <button @click='cloneStyle(style, name)' class='btn round btn--stroke w-full'>Clone &amp; Edit</button>
+                                </template>
+                                <template v-else-if="credentials.authed && id">
+                                    <label class='switch-container my6'>
+                                        <input type='checkbox' v-model="public"/>
+                                        <div class='switch mr6'></div>
+                                        Public Style
+                                    </label>
+                                </template>
+                            </div>
 
-                        <div class='col col--4 py12'>
-                            <template v-if="credentials.uid === uid">
-                                <button @click='style_update(id, name, JSON.parse(style))' class='btn round btn--stroke w-full'>Save &amp; Apply Style</button>
-                            </template>
-                            <template v-else>
-                                <button @click='setStyle(id, JSON.parse(style))' class='btn round btn--stroke w-full'>Apply Style</button>
-                            </template>
+                            <div class='col col--4 py12'>
+                                <template v-if="credentials.uid === uid">
+                                    <button @click='updateStyle(id, name, JSON.parse(style))' class='btn round btn--stroke w-full'>Save &amp; Apply Style</button>
+                                </template>
+                                <template v-else>
+                                    <button @click='setStyle(id, JSON.parse(style))' class='btn round btn--stroke w-full'>Apply Style</button>
+                                </template>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </template>
     </div>
 </div>
 </template>
@@ -70,7 +86,7 @@ export default {
         this.id ? this.getStyle(this.id) : this.createStyle();
     },
     watch: {
-        style: function() {
+        id: function() {
             this.id ? this.getStyle(this.id) : this.createStyle();
         }
     },
