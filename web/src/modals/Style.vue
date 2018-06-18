@@ -40,7 +40,7 @@
                                 <button @click='style_update(id, name, JSON.parse(style))' class='btn round btn--stroke w-full'>Save &amp; Apply Style</button>
                             </template>
                             <template v-else>
-                                <button @click='style_set(id, JSON.parse(style))' class='btn round btn--stroke w-full'>Apply Style</button>
+                                <button @click='setStyle(id, JSON.parse(style))' class='btn round btn--stroke w-full'>Apply Style</button>
                             </template>
                         </div>
                     </div>
@@ -66,20 +66,32 @@ export default {
 
         }
     },
+    created: function() {
+        this.getStyle(this.id);
+    },
+    watch: {
+        style: function() {
+            this.getStyle(this.id);
+        }
+    },
     methods: {
         close: function() {
             this.$emit('close');
         },
-        getStyle: function(style_id, cb) {
+        getStyle: function(style_id) {
+            if (!style_id) return;
             fetch(`http://${window.location.host}/api/style/${style_id}`, {
                 credentials: 'same-origin'
             }).then((response) => {
                   return response.json();
             }).then((body) => {
-                return cb(null, body);
-            }).catch((err) => {
-                return cb(err);
-            });
+                this.style = JSON.stringify(body.style, null, 4);
+                this.id = body.id;
+                this.name = body.name;
+                this.public = body.public;
+                this.uid = body.uid;
+                this.username = body.username;
+            })
         },
         createStyle: function(style, name) {
             this.style = style ? style : '';
@@ -103,7 +115,7 @@ export default {
                     })
                 }).then((response) => {
                     if (response.status === 200) {
-                        this.style_set(style_id, style);
+                        this.setStyle(style_id, style);
                     } else {
                         return this.ok('Failed to push style', 'Failed to update style');
                     }
@@ -129,12 +141,12 @@ export default {
                             credentials: 'same-origin'
                         }).then((response) => {
                             if (response.status !== 200) return this.ok('Failed to push style', 'Failed to update style');
-                            this.style_set(style_id, style);
+                            this.setStyle(style_id, style);
                         }).catch((err) => {
                             return this.ok('Failed to push style', 'Failed to update style');
                         });
                     } else {
-                        this.style_set(style_id, style);
+                        this.setStyle(style_id, style);
                     }
                 }).catch((err) => {
                     return this.ok('Failed to push style', 'Failed to update style');
@@ -172,6 +184,6 @@ export default {
         }
     },
     render: h => h(App),
-    props: ['style', 'credentials']
+    props: ['id', 'map', 'credentials']
 }
 </script>

@@ -73,7 +73,7 @@
             <query v-on:close='modal = false' :credentials='credentials' />
         </template>
         <template v-else-if='modal === "style"'>
-            <stylem v-on:close='modal = false' :style='style_id' :credentials='credentials' />
+            <stylem v-on:close='modal = false' :id='style_id' :credentials='credentials' :map='map' />
         </template>
     </div>
 </template>
