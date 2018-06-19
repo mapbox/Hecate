@@ -42,11 +42,18 @@
                                     <button @click='cloneStyle()' class='btn round btn--stroke w-full'>Clone &amp; Edit</button>
                                 </template>
                                 <template v-else-if="credentials.authed && id">
-                                    <label class='switch-container my6'>
-                                        <input type='checkbox' v-model="public"/>
-                                        <div class='switch mr6'></div>
-                                        Public Style
-                                    </label>
+                                    <div class='col col--12 grid grid--gut12'>
+                                        <div class='col col--6'>
+                                            <button @click='deleteStyle()' class='btn round btn--stroke btn--red w-full'>Delete</button>
+                                        </div>
+                                        <div class='col col--6'>
+                                            <label class='switch-container my6 fr'>
+                                                Public Style
+                                                <input type='checkbox' v-model="public"/>
+                                                <div class='switch ml6'></div>
+                                            </label>
+                                        </div>
+                                    </div>
                                 </template>
                             </div>
 
@@ -123,6 +130,18 @@ export default {
             this.uid = this.credentials.uid;
             this.name = `Copy of ${this.name}`;
             this.public = false;
+        },
+        deleteStyle:  function() {
+            fetch(`http://${window.location.host}/api/style/${this.id}`, {
+                method: 'DELETE',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status === 200) return this.$emit('close');
+
+                return this.ok('Delete Failure', 'Failed to delete style');
+            }).catch((err) => {
+                return this.ok('Delete Failure', 'Failed to delete style');
+            });
         },
         updateStyle: function(style_id, style_name, style) {
             if (!style_id) { //Create new style
