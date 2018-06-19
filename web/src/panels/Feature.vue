@@ -53,7 +53,7 @@ export default {
         }
     },
     watch: {
-        feature: function() {
+        id: function() {
             this.get(this.id);
         }
     },
