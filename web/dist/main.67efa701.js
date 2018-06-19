@@ -12215,7 +12215,7 @@ exports.default = {
         };
     },
     watch: {
-        feature: function feature() {
+        id: function id() {
             this.get(this.id);
         }
     },
@@ -13531,4 +13531,4 @@ window.onload = function () {
     });
 };
 },{"vue":4,"./App.vue":3}]},{},[2], null)
-//# sourceMappingURL=/admin/main.0872e509.map
+//# sourceMappingURL=/admin/main.67efa701.map
