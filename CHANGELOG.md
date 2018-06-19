@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.36.1
+
+- :rocket: [UI] Add style deletion 
+- :bug: [UI] Ensure feature requests didn't poll infinitely
+
 ## v0.36.0
 
 - :rocket: Rewrite web UI to use Vue Components for better readability
