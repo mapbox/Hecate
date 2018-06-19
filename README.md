@@ -1,6 +1,5 @@
 <h1 align='center'>Hecate</h1>
 
-
 <p align=center>OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange</p>
 
 <p align="center">
@@ -51,11 +50,11 @@ source ~/.bashrc        # Most Linux Distros, some OSX
 source ~/.bash_profile  # Most OSX, some Linux Distros
 ```
 
-- Install the `nightly-2018-01-13` build of rust, `Rocket`, the web-framework relies on some advanced compiler options not yet included in the default build.
+- Install the `nightly-2018-05-05` build of rust, `Rocket`, the web-framework relies on some advanced compiler options not yet included in the default build.
 
 ```bash
-rustup install nightly-2018-01-13
-rustup default nightly-2018-01-13
+rustup install nightly-2018-05-05
+rustup default nightly-2018-05-05
 ```
 
 - Download and compile the project and all of it's libraries
