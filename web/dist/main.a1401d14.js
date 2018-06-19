@@ -98,7 +98,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({4:[function(require,module,exports) {
+})({5:[function(require,module,exports) {
 var global = arguments[3];
 'use strict';
 
@@ -7379,7 +7379,7 @@ if (inBrowser) {
 /*  */
 
 exports.default = Vue;
-},{}],5:[function(require,module,exports) {
+},{}],8:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -7417,7 +7417,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],17:[function(require,module,exports) {
+},{}],22:[function(require,module,exports) {
 var define;
 var global = arguments[3];
 //! moment.js
@@ -11927,7 +11927,7 @@ var global = arguments[3];
 
 })));
 
-},{}],6:[function(require,module,exports) {
+},{}],9:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12154,7 +12154,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"moment":17,"../components/Foot.vue":5}],7:[function(require,module,exports) {
+},{"moment":22,"../components/Foot.vue":8}],10:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12262,7 +12262,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],8:[function(require,module,exports) {
+},{}],11:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12346,7 +12346,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"../components/Foot.vue":5}],9:[function(require,module,exports) {
+},{"../components/Foot.vue":8}],12:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12464,7 +12464,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"../components/Foot.vue":5}],10:[function(require,module,exports) {
+},{"../components/Foot.vue":8}],13:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12606,7 +12606,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],11:[function(require,module,exports) {
+},{}],14:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12745,7 +12745,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],12:[function(require,module,exports) {
+},{}],15:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12804,7 +12804,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],13:[function(require,module,exports) {
+},{}],16:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12919,12 +12919,19 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],14:[function(require,module,exports) {
+},{}],17:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -13053,8 +13060,22 @@ exports.default = {
             this.name = 'Copy of ' + this.name;
             this.public = false;
         },
-        updateStyle: function updateStyle(style_id, style_name, style) {
+        deleteStyle: function deleteStyle() {
             var _this2 = this;
+
+            fetch('http://' + window.location.host + '/api/style/' + this.id, {
+                method: 'DELETE',
+                credentials: 'same-origin'
+            }).then(function (response) {
+                if (response.status === 200) return _this2.$emit('close');
+
+                return _this2.ok('Delete Failure', 'Failed to delete style');
+            }).catch(function (err) {
+                return _this2.ok('Delete Failure', 'Failed to delete style');
+            });
+        },
+        updateStyle: function updateStyle(style_id, style_name, style) {
+            var _this3 = this;
 
             if (!style_id) {
                 //Create new style
@@ -13070,12 +13091,12 @@ exports.default = {
                     })
                 }).then(function (response) {
                     if (response.status === 200) {
-                        _this2.setStyle(style_id, style);
+                        _this3.setStyle(style_id, style);
                     } else {
-                        return _this2.ok('Failed to push style', 'Failed to update style');
+                        return _this3.ok('Failed to push style', 'Failed to update style');
                     }
                 }).catch(function (err) {
-                    return _this2.ok('Failed to push style', 'Failed to update style');
+                    return _this3.ok('Failed to push style', 'Failed to update style');
                 });
             } else {
                 //Update Existing Style
@@ -13090,22 +13111,22 @@ exports.default = {
                         style: style
                     })
                 }).then(function (response) {
-                    if (response.status !== 200) return _this2.ok('Failed to push style', 'Failed to update style');
-                    if (_this2.credentials.authed && _this2.id) {
-                        fetch('http://' + window.location.host + '/api/style/' + style_id + '/' + (_this2.public ? 'public' : 'private'), {
+                    if (response.status !== 200) return _this3.ok('Failed to push style', 'Failed to update style');
+                    if (_this3.credentials.authed && _this3.id) {
+                        fetch('http://' + window.location.host + '/api/style/' + style_id + '/' + (_this3.public ? 'public' : 'private'), {
                             method: 'POST',
                             credentials: 'same-origin'
                         }).then(function (response) {
-                            if (response.status !== 200) return _this2.ok('Failed to push style', 'Failed to update style');
-                            _this2.setStyle(style_id, style);
+                            if (response.status !== 200) return _this3.ok('Failed to push style', 'Failed to update style');
+                            _this3.setStyle(style_id, style);
                         }).catch(function (err) {
-                            return _this2.ok('Failed to push style', 'Failed to update style');
+                            return _this3.ok('Failed to push style', 'Failed to update style');
                         });
                     } else {
-                        _this2.setStyle(style_id, style);
+                        _this3.setStyle(style_id, style);
                     }
                 }).catch(function (err) {
-                    return _this2.ok('Failed to push style', 'Failed to update style');
+                    return _this3.ok('Failed to push style', 'Failed to update style');
                 });
             }
         },
@@ -13160,7 +13181,7 @@ exports.default = {
     
         /* template */
         Object.assign($6fc9bf, (function () {
-          var render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"absolute top left bottom right z3",staticStyle:{"pointer-events":"none"}},[_c('div',{staticClass:"flex-parent flex-parent--center-main flex-parent--center-cross h-full",staticStyle:{"pointer-events":"auto"}},[(_vm.error)?[_c('div',{staticClass:"flex-child px12 py12 w600 h80 bg-white round-ml shadow-darken10"},[_c('div',{staticClass:"grid w-full"},[_c('div',{staticClass:"col col--8"},[_c('h3',{staticClass:"fl py6 txt-m txt-bold w-full"},[_c('span',{domProps:{"textContent":_vm._s(_vm.error.title)}})]),_vm._v(" "),_c('p',{staticClass:"color-red",domProps:{"textContent":_vm._s(_vm.error.body)}})]),_vm._v(" "),_c('div',{staticClass:"col col--4"},[_c('button',{staticClass:"mt24 btn round w-full",on:{"click":function($event){_vm.error = false}}},[_vm._v("OK")])])])])]:[_c('div',{staticClass:"flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10"},[_c('div',{staticClass:"grid w-full"},[_c('div',{staticClass:"col col--11"},[(_vm.credentials.uid === _vm.uid)?[_c('input',{directives:[{name:"model",rawName:"v-model",value:(_vm.name),expression:"name"}],staticClass:"input mb12",attrs:{"placeholder":"Style Name"},domProps:{"value":(_vm.name)},on:{"input":function($event){if($event.target.composing){ return; }_vm.name=$event.target.value}}})]:[_c('h3',{staticClass:"fl py6 txt-m txt-bold fl"},[_c('span',{domProps:{"textContent":_vm._s((_vm.username + "/" + _vm.name))}})])]],2),_vm._v(" "),_c('div',{staticClass:"col col--1"},[_c('button',{staticClass:"fr btn round bg-white color-black bg-darken25-on-hover",on:{"click":function($event){_vm.close()}}},[_c('svg',{staticClass:"icon"},[_c('use',{attrs:{"href":"#icon-close"}})])])]),_vm._v(" "),_c('div',{staticClass:"col col--12"},[_c('textarea',{directives:[{name:"model",rawName:"v-model",value:(_vm.style),expression:"style"}],staticClass:"textarea w-full h360",attrs:{"readonly":_vm.credentials.uid !== _vm.uid,"placeholder":"Style JSON"},domProps:{"value":(_vm.style)},on:{"input":function($event){if($event.target.composing){ return; }_vm.style=$event.target.value}}})]),_vm._v(" "),_c('div',{staticClass:"col col--12"},[_c('div',{staticClass:"grid grid--gut12"},[_c('div',{staticClass:"col col--8 py12"},[(_vm.credentials.authed && _vm.credentials.uid !== _vm.uid)?[_c('button',{staticClass:"btn round btn--stroke w-full",on:{"click":function($event){_vm.cloneStyle()}}},[_vm._v("Clone & Edit")])]:(_vm.credentials.authed && _vm.id)?[_c('label',{staticClass:"switch-container my6"},[_c('input',{directives:[{name:"model",rawName:"v-model",value:(_vm.public),expression:"public"}],attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.public)?_vm._i(_vm.public,null)>-1:(_vm.public)},on:{"change":function($event){var $$a=_vm.public,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.public=$$a.concat([$$v]))}else{$$i>-1&&(_vm.public=$$a.slice(0,$$i).concat($$a.slice($$i+1)))}}else{_vm.public=$$c}}}}),_vm._v(" "),_c('div',{staticClass:"switch mr6"}),_vm._v("\n                                        Public Style\n                                    ")])]:_vm._e()],2),_vm._v(" "),_c('div',{staticClass:"col col--4 py12"},[(_vm.credentials.uid === _vm.uid)?[_c('button',{staticClass:"btn round btn--stroke w-full",on:{"click":function($event){_vm.updateStyle(_vm.id, _vm.name, JSON.parse(_vm.style))}}},[_vm._v("Save & Apply Style")])]:[_c('button',{staticClass:"btn round btn--stroke w-full",on:{"click":function($event){_vm.setStyle(_vm.id, JSON.parse(_vm.style))}}},[_vm._v("Apply Style")])]],2)])])])])]],2)])}
+          var render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"absolute top left bottom right z3",staticStyle:{"pointer-events":"none"}},[_c('div',{staticClass:"flex-parent flex-parent--center-main flex-parent--center-cross h-full",staticStyle:{"pointer-events":"auto"}},[(_vm.error)?[_c('div',{staticClass:"flex-child px12 py12 w600 h80 bg-white round-ml shadow-darken10"},[_c('div',{staticClass:"grid w-full"},[_c('div',{staticClass:"col col--8"},[_c('h3',{staticClass:"fl py6 txt-m txt-bold w-full"},[_c('span',{domProps:{"textContent":_vm._s(_vm.error.title)}})]),_vm._v(" "),_c('p',{staticClass:"color-red",domProps:{"textContent":_vm._s(_vm.error.body)}})]),_vm._v(" "),_c('div',{staticClass:"col col--4"},[_c('button',{staticClass:"mt24 btn round w-full",on:{"click":function($event){_vm.error = false}}},[_vm._v("OK")])])])])]:[_c('div',{staticClass:"flex-child px12 py12 w600 h400 bg-white round-ml shadow-darken10"},[_c('div',{staticClass:"grid w-full"},[_c('div',{staticClass:"col col--11"},[(_vm.credentials.uid === _vm.uid)?[_c('input',{directives:[{name:"model",rawName:"v-model",value:(_vm.name),expression:"name"}],staticClass:"input mb12",attrs:{"placeholder":"Style Name"},domProps:{"value":(_vm.name)},on:{"input":function($event){if($event.target.composing){ return; }_vm.name=$event.target.value}}})]:[_c('h3',{staticClass:"fl py6 txt-m txt-bold fl"},[_c('span',{domProps:{"textContent":_vm._s((_vm.username + "/" + _vm.name))}})])]],2),_vm._v(" "),_c('div',{staticClass:"col col--1"},[_c('button',{staticClass:"fr btn round bg-white color-black bg-darken25-on-hover",on:{"click":function($event){_vm.close()}}},[_c('svg',{staticClass:"icon"},[_c('use',{attrs:{"href":"#icon-close"}})])])]),_vm._v(" "),_c('div',{staticClass:"col col--12"},[_c('textarea',{directives:[{name:"model",rawName:"v-model",value:(_vm.style),expression:"style"}],staticClass:"textarea w-full h360",attrs:{"readonly":_vm.credentials.uid !== _vm.uid,"placeholder":"Style JSON"},domProps:{"value":(_vm.style)},on:{"input":function($event){if($event.target.composing){ return; }_vm.style=$event.target.value}}})]),_vm._v(" "),_c('div',{staticClass:"col col--12"},[_c('div',{staticClass:"grid grid--gut12"},[_c('div',{staticClass:"col col--8 py12"},[(_vm.credentials.authed && _vm.credentials.uid !== _vm.uid)?[_c('button',{staticClass:"btn round btn--stroke w-full",on:{"click":function($event){_vm.cloneStyle()}}},[_vm._v("Clone & Edit")])]:(_vm.credentials.authed && _vm.id)?[_c('div',{staticClass:"col col--12 grid grid--gut12"},[_c('div',{staticClass:"col col--6"},[_c('button',{staticClass:"btn round btn--stroke btn--red w-full",on:{"click":function($event){_vm.deleteStyle()}}},[_vm._v("Delete")])]),_vm._v(" "),_c('div',{staticClass:"col col--6"},[_c('label',{staticClass:"switch-container my6 fr"},[_vm._v("\n                                                Public Style\n                                                "),_c('input',{directives:[{name:"model",rawName:"v-model",value:(_vm.public),expression:"public"}],attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.public)?_vm._i(_vm.public,null)>-1:(_vm.public)},on:{"change":function($event){var $$a=_vm.public,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.public=$$a.concat([$$v]))}else{$$i>-1&&(_vm.public=$$a.slice(0,$$i).concat($$a.slice($$i+1)))}}else{_vm.public=$$c}}}}),_vm._v(" "),_c('div',{staticClass:"switch ml6"})])])])]:_vm._e()],2),_vm._v(" "),_c('div',{staticClass:"col col--4 py12"},[(_vm.credentials.uid === _vm.uid)?[_c('button',{staticClass:"btn round btn--stroke w-full",on:{"click":function($event){_vm.updateStyle(_vm.id, _vm.name, JSON.parse(_vm.style))}}},[_vm._v("Save & Apply Style")])]:[_c('button',{staticClass:"btn round btn--stroke w-full",on:{"click":function($event){_vm.setStyle(_vm.id, JSON.parse(_vm.style))}}},[_vm._v("Apply Style")])]],2)])])])])]],2)])}
 var staticRenderFns = []
 
           return {
@@ -13509,7 +13530,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"./components/Foot.vue":5,"./panels/Deltas.vue":6,"./panels/Feature.vue":7,"./panels/Bounds.vue":8,"./panels/Styles.vue":9,"./modals/Login.vue":10,"./modals/Register.vue":11,"./modals/Settings.vue":12,"./modals/Query.vue":13,"./modals/Style.vue":14}],2:[function(require,module,exports) {
+},{"./components/Foot.vue":8,"./panels/Deltas.vue":9,"./panels/Feature.vue":10,"./panels/Bounds.vue":11,"./panels/Styles.vue":12,"./modals/Login.vue":13,"./modals/Register.vue":14,"./modals/Settings.vue":15,"./modals/Query.vue":16,"./modals/Style.vue":17}],2:[function(require,module,exports) {
 'use strict';
 
 var _vue = require('vue');
@@ -13530,5 +13551,5 @@ window.onload = function () {
         }
     });
 };
-},{"vue":4,"./App.vue":3}]},{},[2], null)
-//# sourceMappingURL=/admin/main.67efa701.map
+},{"vue":5,"./App.vue":3}]},{},[2], null)
+//# sourceMappingURL=/admin/main.a1401d14.map
