@@ -95,7 +95,10 @@ export default {
         register: function() {
             const self = this;
 
-            fetch(`http://${window.location.host}/api/user/create?username=${this.username}&password=${this.password}&email=${this.email}`).then((response) => {
+            fetch(`http://${window.location.host}/api/user/create?username=${this.username}&password=${this.password}&email=${this.email}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
                 if (response.status === 200) {
                     self.error = '';
                     self.ok = true;
