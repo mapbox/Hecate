@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.37.0
+
+- :rocket: Ensure app API requests include domain cookies
+
 ## v0.36.1
 
 - :rocket: [UI] Add style deletion 
