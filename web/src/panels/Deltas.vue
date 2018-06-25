@@ -74,7 +74,10 @@ export default {
     },
     methods: {
         getDeltas: function() {
-            fetch(`http://${window.location.host}/api/deltas`).then((response) => {
+            fetch(`http://${window.location.host}/api/deltas`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
                   return response.json();
             }).then((body) => {
                 this.deltas.splice(0, this.deltas.length);
@@ -84,7 +87,10 @@ export default {
         getDelta: function(delta_id) {
             if (!delta_id) return;
 
-            fetch(`http://${window.location.host}/api/delta/${delta_id}`).then((response) => {
+            fetch(`http://${window.location.host}/api/delta/${delta_id}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
                   return response.json();
             }).then((body) => {
                 body.features.features = body.features.features.map(feat => {

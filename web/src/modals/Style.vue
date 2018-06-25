@@ -104,6 +104,7 @@ export default {
         getStyle: function(style_id) {
             if (!style_id) return;
             fetch(`http://${window.location.host}/api/style/${style_id}`, {
+                method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
                   return response.json();

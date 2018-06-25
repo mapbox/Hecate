@@ -67,7 +67,10 @@ export default {
         get: function(id) {
             if (!id) return;
 
-            fetch(`http://${window.location.host}/api/data/feature/${id}`).then((response) => {
+            fetch(`http://${window.location.host}/api/data/feature/${id}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
                   return response.json();
             }).then((body) => {
                 this.feature = body;

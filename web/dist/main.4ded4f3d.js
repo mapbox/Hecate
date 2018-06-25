@@ -98,7 +98,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({5:[function(require,module,exports) {
+})({4:[function(require,module,exports) {
 var global = arguments[3];
 'use strict';
 
@@ -7379,7 +7379,7 @@ if (inBrowser) {
 /*  */
 
 exports.default = Vue;
-},{}],8:[function(require,module,exports) {
+},{}],5:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -7417,7 +7417,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],22:[function(require,module,exports) {
+},{}],15:[function(require,module,exports) {
 var define;
 var global = arguments[3];
 //! moment.js
@@ -11927,7 +11927,7 @@ var global = arguments[3];
 
 })));
 
-},{}],9:[function(require,module,exports) {
+},{}],6:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12019,7 +12019,10 @@ exports.default = {
         getDeltas: function getDeltas() {
             var _this = this;
 
-            fetch('http://' + window.location.host + '/api/deltas').then(function (response) {
+            fetch('http://' + window.location.host + '/api/deltas', {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then(function (response) {
                 return response.json();
             }).then(function (body) {
                 _this.deltas.splice(0, _this.deltas.length);
@@ -12031,7 +12034,10 @@ exports.default = {
 
             if (!delta_id) return;
 
-            fetch('http://' + window.location.host + '/api/delta/' + delta_id).then(function (response) {
+            fetch('http://' + window.location.host + '/api/delta/' + delta_id, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then(function (response) {
                 return response.json();
             }).then(function (body) {
                 body.features.features = body.features.features.map(function (feat) {
@@ -12154,7 +12160,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"moment":22,"../components/Foot.vue":8}],10:[function(require,module,exports) {
+},{"moment":15,"../components/Foot.vue":5}],7:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12231,7 +12237,10 @@ exports.default = {
 
             if (!id) return;
 
-            fetch('http://' + window.location.host + '/api/data/feature/' + id).then(function (response) {
+            fetch('http://' + window.location.host + '/api/data/feature/' + id, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then(function (response) {
                 return response.json();
             }).then(function (body) {
                 _this.feature = body;
@@ -12262,7 +12271,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],11:[function(require,module,exports) {
+},{}],8:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12292,7 +12301,10 @@ exports.default = {
         getBounds: function getBounds() {
             var _this = this;
 
-            fetch('http://' + window.location.host + '/api/data/bounds').then(function (response) {
+            fetch('http://' + window.location.host + '/api/data/bounds', {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then(function (response) {
                 return response.json();
             }).then(function (body) {
                 _this.bounds = body;
@@ -12346,7 +12358,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"../components/Foot.vue":8}],12:[function(require,module,exports) {
+},{"../components/Foot.vue":5}],9:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12380,7 +12392,10 @@ exports.default = {
         getStyles: function getStyles() {
             var _this = this;
 
-            fetch('http://' + window.location.host + '/api/styles').then(function (response) {
+            fetch('http://' + window.location.host + '/api/styles', {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then(function (response) {
                 return response.json();
             }).then(function (body) {
                 _this.styles = body;
@@ -12388,6 +12403,7 @@ exports.default = {
 
             if (this.credentials.authed) {
                 fetch('http://' + window.location.host + '/api/styles/' + this.credentials.uid, {
+                    method: 'GET',
                     credentials: 'same-origin'
                 }).then(function (response) {
                     return response.json();
@@ -12464,7 +12480,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"../components/Foot.vue":8}],13:[function(require,module,exports) {
+},{"../components/Foot.vue":5}],10:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12606,7 +12622,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],14:[function(require,module,exports) {
+},{}],11:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12709,7 +12725,10 @@ exports.default = {
         register: function register() {
             var self = this;
 
-            fetch('http://' + window.location.host + '/api/user/create?username=' + this.username + '&password=' + this.password + '&email=' + this.email).then(function (response) {
+            fetch('http://' + window.location.host + '/api/user/create?username=' + this.username + '&password=' + this.password + '&email=' + this.email, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then(function (response) {
                 if (response.status === 200) {
                     self.error = '';
                     self.ok = true;
@@ -12745,7 +12764,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],15:[function(require,module,exports) {
+},{}],12:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12804,7 +12823,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],16:[function(require,module,exports) {
+},{}],13:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12919,7 +12938,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],17:[function(require,module,exports) {
+},{}],14:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -13033,6 +13052,7 @@ exports.default = {
 
             if (!style_id) return;
             fetch('http://' + window.location.host + '/api/style/' + style_id, {
+                method: 'GET',
                 credentials: 'same-origin'
             }).then(function (response) {
                 return response.json();
@@ -13530,7 +13550,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"./components/Foot.vue":8,"./panels/Deltas.vue":9,"./panels/Feature.vue":10,"./panels/Bounds.vue":11,"./panels/Styles.vue":12,"./modals/Login.vue":13,"./modals/Register.vue":14,"./modals/Settings.vue":15,"./modals/Query.vue":16,"./modals/Style.vue":17}],2:[function(require,module,exports) {
+},{"./components/Foot.vue":5,"./panels/Deltas.vue":6,"./panels/Feature.vue":7,"./panels/Bounds.vue":8,"./panels/Styles.vue":9,"./modals/Login.vue":10,"./modals/Register.vue":11,"./modals/Settings.vue":12,"./modals/Query.vue":13,"./modals/Style.vue":14}],2:[function(require,module,exports) {
 'use strict';
 
 var _vue = require('vue');
@@ -13551,5 +13571,5 @@ window.onload = function () {
         }
     });
 };
-},{"vue":5,"./App.vue":3}]},{},[2], null)
-//# sourceMappingURL=/admin/main.a1401d14.map
+},{"vue":4,"./App.vue":3}]},{},[2], null)
+//# sourceMappingURL=/admin/main.4ded4f3d.map
