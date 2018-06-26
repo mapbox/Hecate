@@ -58,8 +58,8 @@ pub fn is_force(feat: &geojson::Feature) -> Result<bool, FeatureError> {
     match feat.foreign_members {
         None => Ok(false),
         Some(ref members) => match members.get("force") {
-            Some(version) => {
-                if version.is_boolean() && version.as_bool().unwrap() == true {
+            Some(force) => {
+                if force.is_boolean() && force.as_bool().unwrap() == true {
                     if get_action(&feat)? != Action::Create {
                         return Err(import_error(&feat, "force can only be used on create"));
                     }
