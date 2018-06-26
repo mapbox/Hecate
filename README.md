@@ -7,9 +7,14 @@
   <a href="https://crates.io/crates/hecate"><img src="https://img.shields.io/crates/v/hecate.svg"/></a>
 </p>
 
+## Why Use Hecate?
+
+
+
 ## Table Of Contents
 
 1. [Brief](#brief)
+1. [Why Use Hecate](#why-use-hecate)
 2. [Table of Contents](#table-of-contents)
 3. [Build Environment](#build-environment)
 3. [Docker File](#docker-file-coverage-tests)
