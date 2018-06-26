@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.37.1
+
+- :white_check_mark: Add test for missing Action on features
+- :bug: :white_check_mark: Ensure non-string `key` values error gracefully
+
 ## v0.37.0
 
 - :rocket: Ensure app API requests include domain cookies
