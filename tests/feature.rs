@@ -147,7 +147,7 @@ mod test {
             assert_eq!(resp.text().unwrap(), "\"Feature Must have message property for delta\"");
         }
 
-        { //Create Point - Invalid version
+        { //Create Point - Invalid version on create
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
                 .body(r#"{

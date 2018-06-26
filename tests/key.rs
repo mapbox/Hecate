@@ -51,6 +51,26 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { //Key Value Must Be A String
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "key": 1243,
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"create\",\"geometry\":{\"coordinates\":[0.0,0.0],\"type\":\"Point\"},\"key\":1243,\"message\":\"Creating a Point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\"},\"id\":null,\"message\":\"key must be a string value\"}");
+        }
+
         { //Create Point
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
