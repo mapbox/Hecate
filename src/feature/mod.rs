@@ -58,13 +58,13 @@ pub fn is_force(feat: &geojson::Feature) -> Result<bool, FeatureError> {
     match feat.foreign_members {
         None => Ok(false),
         Some(ref members) => match members.get("force") {
-            Some(version) => {
-                if version.is_boolean() && version.as_bool().unwrap() == true {
+            Some(force) => {
+                if force.is_boolean() && force.as_bool().unwrap() == true {
                     if get_action(&feat)? != Action::Create {
                         return Err(import_error(&feat, "force can only be used on create"));
                     }
 
-                    match get_key(&feat) {
+                    match get_key(&feat)? {
                         None => {
                             Err(import_error(&feat, "force can only be used with a key value"))
                         },
@@ -134,17 +134,18 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, FeatureError> {
     }
 }
 
-pub fn get_key(feat: &geojson::Feature) -> Option<String> {
+pub fn get_key(feat: &geojson::Feature) -> Result<Option<String>, FeatureError> {
     match feat.foreign_members {
-        None => None,
+        None => Ok(None),
         Some(ref members) => {
             match members.get("key") {
-                None => None,
+                None => Ok(None),
                 Some(key) => {
-                    if key.is_null() {
-                        None
-                    } else {
-                        Some(String::from(key.as_str().unwrap()))
+                    if key.is_null() { return Ok(None); }
+
+                    match key.as_str() {
+                        Some(ref key) => Ok(Some(String::from(*key))),
+                        None => Err(import_error(&feat, "key must be a string value"))
                     }
                 }
             }
@@ -200,7 +201,7 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
 
-    let key = get_key(&feat);
+    let key = get_key(&feat)?;
 
     let id: Option<i64> = match get_id(&feat) {
         Err(_) => None,
@@ -293,7 +294,7 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
 
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
-    let key = get_key(&feat);
+    let key = get_key(&feat)?;
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();
@@ -432,7 +433,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
 
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
-    let key = get_key(&feat);
+    let key = get_key(&feat)?;
 
     let geom_str = serde_json::to_string(&geom).unwrap();
     let props_str = serde_json::to_string(&props).unwrap();

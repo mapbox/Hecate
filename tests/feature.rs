@@ -147,7 +147,7 @@ mod test {
             assert_eq!(resp.text().unwrap(), "\"Feature Must have message property for delta\"");
         }
 
-        { //Create Point - Invalid version
+        { //Create Point - Invalid version on create
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
                 .body(r#"{
@@ -165,6 +165,24 @@ mod test {
 
             assert!(resp.status().is_client_error());
             assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"create\",\"geometry\":{\"coordinates\":[0.0,0.0],\"type\":\"Point\"},\"message\":\"Creating a Point\",\"properties\":{},\"type\":\"Feature\",\"version\":15},\"id\":null,\"message\":\"Cannot have Version\"}");
+        }
+
+        { //Create Point - Missing Action
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+            assert_eq!(resp.text().unwrap(), "{\"feature\":{\"geometry\":{\"coordinates\":[0.0,0.0],\"type\":\"Point\"},\"message\":\"Creating a Point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\"},\"id\":null,\"message\":\"Action Required\"}");
         }
 
         { //Create Point
