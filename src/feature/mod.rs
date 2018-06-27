@@ -13,6 +13,7 @@ pub enum FeatureError {
     NotFound,
     InvalidBBOX,
     InvalidFeature,
+    SchemaError,
     ImportError(Value)
 }
 
@@ -37,6 +38,7 @@ impl FeatureError {
             FeatureError::NotFound => json!("Feature Not Found"),
             FeatureError::ImportError(ref value) => json!(value),
             FeatureError::InvalidBBOX => json!("Invalid BBOX"),
+            FeatureError::SchemaError => json!("Failed to compile or apply schema"),
             FeatureError::InvalidFeature => json!("Invalid Feature")
         }
     }
@@ -59,21 +61,23 @@ pub fn is_force(feat: &geojson::Feature) -> Result<bool, FeatureError> {
         None => Ok(false),
         Some(ref members) => match members.get("force") {
             Some(force) => {
-                if force.is_boolean() && force.as_bool().unwrap() == true {
-                    if get_action(&feat)? != Action::Create {
-                        return Err(import_error(&feat, "force can only be used on create"));
-                    }
-
-                    match get_key(&feat)? {
-                        None => {
-                            Err(import_error(&feat, "force can only be used with a key value"))
-                        },
-                        Some(_) => {
-                            Ok(true)
+                match force.as_bool() {
+                    Some(true) => {
+                        if get_action(&feat)? != Action::Create {
+                            return Err(import_error(&feat, "force can only be used on create"));
                         }
-                    }
-                } else {
-                    Err(import_error(&feat, "force must be a boolean"))
+
+                        match get_key(&feat)? {
+                            None => {
+                                Err(import_error(&feat, "force can only be used with a key value"))
+                            },
+                            Some(_) => {
+                                Ok(true)
+                            }
+                        }
+                    },
+                    Some(false) => Ok(false),
+                    None => Err(import_error(&feat, "force must be a boolean"))
                 }
             },
             None => Ok(false)
@@ -159,7 +163,10 @@ pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<s
     let mut scope = valico::json_schema::Scope::new();
     let schema = match schema_json {
         &Some(ref schema) => {
-            Some(scope.compile_and_return(schema.clone(), false).unwrap())
+            match scope.compile_and_return(schema.clone(), false) {
+                Ok(schema) => Some(schema),
+                Err(_) => { return Err(FeatureError::SchemaError); }
+            }
         },
         &None => None
     };
@@ -198,8 +205,14 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
 
     if !valid { return Err(import_error(&feat, "Failed to Match Schema")) };
 
-    let geom_str = serde_json::to_string(&geom).unwrap();
-    let props_str = serde_json::to_string(&props).unwrap();
+    let geom_str = match serde_json::to_string(&geom) {
+        Ok(geom) => geom,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify geometry")) }
+    };
+    let props_str = match serde_json::to_string(&props) {
+        Ok(props) => props,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
+    };
 
     let key = get_key(&feat)?;
 
@@ -296,8 +309,14 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
     let version = get_version(&feat)?;
     let key = get_key(&feat)?;
 
-    let geom_str = serde_json::to_string(&geom).unwrap();
-    let props_str = serde_json::to_string(&props).unwrap();
+    let geom_str = match serde_json::to_string(&geom) {
+        Ok(geom) => geom,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify geometry")) }
+    };
+    let props_str = match serde_json::to_string(&props) {
+        Ok(props) => props,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
+    };
 
     match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4, $6);", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
         Ok(_) => Ok(Response {
@@ -348,7 +367,7 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
 }
 
 pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<geojson::Feature, FeatureError> {
-    let res = conn.query("
+    match conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature
         FROM (
@@ -362,25 +381,28 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
             FROM geo
             WHERE key = $1
         ) f;
-    ", &[&key]).unwrap();
+    ", &[&key]) {
+        Ok(res) => {
+            if res.len() != 1 { return Err(FeatureError::NotFound); }
 
-    if res.len() != 1 { return Err(FeatureError::NotFound); }
+            let feat: postgres::rows::Row = res.get(0);
+            let feat: String = feat.get(0);
+            let feat: geojson::Feature = match feat.parse() {
+                Ok(feat) => match feat {
+                    geojson::GeoJson::Feature(feat) => feat,
+                    _ => { return Err(FeatureError::InvalidFeature); }
+                },
+                Err(_) => { return Err(FeatureError::InvalidFeature); }
+            };
 
-    let feat: postgres::rows::Row = res.get(0);
-    let feat: String = feat.get(0);
-    let feat: geojson::Feature = match feat.parse() {
-        Ok(feat) => match feat {
-            geojson::GeoJson::Feature(feat) => feat,
-            _ => { return Err(FeatureError::InvalidFeature); }
+            Ok(feat)
         },
-        Err(_) => { return Err(FeatureError::InvalidFeature); }
-    };
-
-    Ok(feat)
+        Err(_) => Err(FeatureError::InvalidFeature)
+    }
 }
 
 pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {
-    let res = conn.query("
+    match conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature
         FROM (
@@ -394,21 +416,24 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
             FROM geo
             WHERE id = $1
         ) f;
-    ", &[&id]).unwrap();
+    ", &[&id]) {
+        Ok(res) => {
+            if res.len() != 1 { return Err(FeatureError::NotFound); }
 
-    if res.len() != 1 { return Err(FeatureError::NotFound); }
+            let feat: postgres::rows::Row = res.get(0);
+            let feat: String = feat.get(0);
+            let feat: geojson::Feature = match feat.parse() {
+                Ok(feat) => match feat {
+                    geojson::GeoJson::Feature(feat) => feat,
+                    _ => { return Err(FeatureError::InvalidFeature); }
+                },
+                Err(_) => { return Err(FeatureError::InvalidFeature); }
+            };
 
-    let feat: postgres::rows::Row = res.get(0);
-    let feat: String = feat.get(0);
-    let feat: geojson::Feature = match feat.parse() {
-        Ok(feat) => match feat {
-            geojson::GeoJson::Feature(feat) => feat,
-            _ => { return Err(FeatureError::InvalidFeature); }
+            Ok(feat)
         },
-        Err(_) => { return Err(FeatureError::InvalidFeature); }
-    };
-
-    Ok(feat)
+        Err(_) => Err(FeatureError::InvalidFeature)
+    }
 }
 
 pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
@@ -435,8 +460,14 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
     let version = get_version(&feat)?;
     let key = get_key(&feat)?;
 
-    let geom_str = serde_json::to_string(&geom).unwrap();
-    let props_str = serde_json::to_string(&props).unwrap();
+    let geom_str = match serde_json::to_string(&geom) {
+        Ok(geom) => geom,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify geometry")) }
+    };
+    let props_str = match serde_json::to_string(&props) {
+        Ok(props) => props,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
+    };
 
     //Get the previous version of a given feature
     match trans.query("
@@ -551,7 +582,7 @@ pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
         return Err(FeatureError::InvalidBBOX);
     }
 
-    let res = conn.query("
+    match conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature
         FROM (
@@ -567,23 +598,26 @@ pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
                 ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
                 OR ST_Within(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
         ) f;
-    ", &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]]).unwrap();
+    ", &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]]) {
+        Ok(res) => {
+            let mut fc = geojson::FeatureCollection {
+                bbox: None,
+                features: vec![],
+                foreign_members: None
+            };
 
-    let mut fc = geojson::FeatureCollection {
-        bbox: None,
-        features: vec![],
-        foreign_members: None
-    };
+            for row in res.iter() {
+                let feat: String = row.get(0);
+                let feat: geojson::Feature = match feat.parse() {
+                    Ok(geojson::GeoJson::Feature(feat)) => feat,
+                    _ => { return Err(FeatureError::InvalidFeature); }
+                };
 
-    for row in res.iter() {
-        let feat: String = row.get(0);
-        let feat: geojson::Feature = match feat.parse().unwrap() {
-            geojson::GeoJson::Feature(feat) => feat,
-            _ => { return Err(FeatureError::InvalidFeature); }
-        };
+                fc.features.push(feat);
+            }
 
-        fc.features.push(feat);
+            Ok(fc)
+        },
+        Err(_) => Err(FeatureError::InvalidFeature)
     }
-
-    Ok(fc)
 }
