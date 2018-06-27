@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.37.2
+
+- :rocket: remove all `unwrap()` `feature` mod
+
 ## v0.37.1
 
 - :white_check_mark: Add test for missing Action on features
