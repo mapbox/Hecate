@@ -13,6 +13,7 @@ pub enum FeatureError {
     NotFound,
     InvalidBBOX,
     InvalidFeature,
+    SchemaError,
     ImportError(Value)
 }
 
@@ -37,6 +38,7 @@ impl FeatureError {
             FeatureError::NotFound => json!("Feature Not Found"),
             FeatureError::ImportError(ref value) => json!(value),
             FeatureError::InvalidBBOX => json!("Invalid BBOX"),
+            FeatureError::SchemaError => json!("Failed to compile or apply schema"),
             FeatureError::InvalidFeature => json!("Invalid Feature")
         }
     }
@@ -161,7 +163,10 @@ pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<s
     let mut scope = valico::json_schema::Scope::new();
     let schema = match schema_json {
         &Some(ref schema) => {
-            Some(scope.compile_and_return(schema.clone(), false).unwrap())
+            match scope.compile_and_return(schema.clone(), false) {
+                Ok(schema) => Some(schema),
+                Err(_) => { return Err(FeatureError::SchemaError); }
+            }
         },
         &None => None
     };
@@ -577,7 +582,7 @@ pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
         return Err(FeatureError::InvalidBBOX);
     }
 
-    let res = conn.query("
+    match conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature
         FROM (
@@ -593,23 +598,26 @@ pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
                 ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
                 OR ST_Within(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
         ) f;
-    ", &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]]).unwrap();
+    ", &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]]) {
+        Ok(res) => {
+            let mut fc = geojson::FeatureCollection {
+                bbox: None,
+                features: vec![],
+                foreign_members: None
+            };
 
-    let mut fc = geojson::FeatureCollection {
-        bbox: None,
-        features: vec![],
-        foreign_members: None
-    };
+            for row in res.iter() {
+                let feat: String = row.get(0);
+                let feat: geojson::Feature = match feat.parse() {
+                    Ok(geojson::GeoJson::Feature(feat)) => feat,
+                    _ => { return Err(FeatureError::InvalidFeature); }
+                };
 
-    for row in res.iter() {
-        let feat: String = row.get(0);
-        let feat: geojson::Feature = match feat.parse().unwrap() {
-            geojson::GeoJson::Feature(feat) => feat,
-            _ => { return Err(FeatureError::InvalidFeature); }
-        };
+                fc.features.push(feat);
+            }
 
-        fc.features.push(feat);
+            Ok(fc)
+        },
+        Err(_) => Err(FeatureError::InvalidFeature)
     }
-
-    Ok(fc)
 }
