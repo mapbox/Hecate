@@ -377,7 +377,7 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
             WHERE key = $1
         ) f;
     ", &[&key]) {
-        Some(res) => {
+        Ok(res) => {
             if res.len() != 1 { return Err(FeatureError::NotFound); }
 
             let feat: postgres::rows::Row = res.get(0);
@@ -392,7 +392,8 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
 
             Ok(feat)
         },
-        Err(_) => { return Err(FeatureError::InvalidFeature); }
+        Err(_) => Err(FeatureError::InvalidFeature)
+    }
 }
 
 pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {
@@ -411,7 +412,7 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
             WHERE id = $1
         ) f;
     ", &[&id]) {
-        Some(res) = {
+        Ok(res) => {
             if res.len() != 1 { return Err(FeatureError::NotFound); }
 
             let feat: postgres::rows::Row = res.get(0);
@@ -426,7 +427,7 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
 
             Ok(feat)
         },
-        Err(_) => { return Err(FeatureError::InvalidFeature); }
+        Err(_) => Err(FeatureError::InvalidFeature)
     }
 }
 
