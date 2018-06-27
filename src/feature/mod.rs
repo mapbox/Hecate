@@ -304,8 +304,14 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
     let version = get_version(&feat)?;
     let key = get_key(&feat)?;
 
-    let geom_str = serde_json::to_string(&geom).unwrap();
-    let props_str = serde_json::to_string(&props).unwrap();
+    let geom_str = match serde_json::to_string(&geom) {
+        Ok(geom) => geom,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify geometry")) }
+    };
+    let props_str = match serde_json::to_string(&props) {
+        Ok(props) => props,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
+    };
 
     match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4, $6);", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
         Ok(_) => Ok(Response {
@@ -356,7 +362,7 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
 }
 
 pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<geojson::Feature, FeatureError> {
-    let res = conn.query("
+    match conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature
         FROM (
@@ -370,25 +376,27 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
             FROM geo
             WHERE key = $1
         ) f;
-    ", &[&key]).unwrap();
+    ", &[&key]) {
+        Some(res) => {
+            if res.len() != 1 { return Err(FeatureError::NotFound); }
 
-    if res.len() != 1 { return Err(FeatureError::NotFound); }
+            let feat: postgres::rows::Row = res.get(0);
+            let feat: String = feat.get(0);
+            let feat: geojson::Feature = match feat.parse() {
+                Ok(feat) => match feat {
+                    geojson::GeoJson::Feature(feat) => feat,
+                    _ => { return Err(FeatureError::InvalidFeature); }
+                },
+                Err(_) => { return Err(FeatureError::InvalidFeature); }
+            };
 
-    let feat: postgres::rows::Row = res.get(0);
-    let feat: String = feat.get(0);
-    let feat: geojson::Feature = match feat.parse() {
-        Ok(feat) => match feat {
-            geojson::GeoJson::Feature(feat) => feat,
-            _ => { return Err(FeatureError::InvalidFeature); }
+            Ok(feat)
         },
         Err(_) => { return Err(FeatureError::InvalidFeature); }
-    };
-
-    Ok(feat)
 }
 
 pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, FeatureError> {
-    let res = conn.query("
+    match conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature
         FROM (
@@ -402,21 +410,24 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
             FROM geo
             WHERE id = $1
         ) f;
-    ", &[&id]).unwrap();
+    ", &[&id]) {
+        Some(res) = {
+            if res.len() != 1 { return Err(FeatureError::NotFound); }
 
-    if res.len() != 1 { return Err(FeatureError::NotFound); }
+            let feat: postgres::rows::Row = res.get(0);
+            let feat: String = feat.get(0);
+            let feat: geojson::Feature = match feat.parse() {
+                Ok(feat) => match feat {
+                    geojson::GeoJson::Feature(feat) => feat,
+                    _ => { return Err(FeatureError::InvalidFeature); }
+                },
+                Err(_) => { return Err(FeatureError::InvalidFeature); }
+            };
 
-    let feat: postgres::rows::Row = res.get(0);
-    let feat: String = feat.get(0);
-    let feat: geojson::Feature = match feat.parse() {
-        Ok(feat) => match feat {
-            geojson::GeoJson::Feature(feat) => feat,
-            _ => { return Err(FeatureError::InvalidFeature); }
+            Ok(feat)
         },
         Err(_) => { return Err(FeatureError::InvalidFeature); }
-    };
-
-    Ok(feat)
+    }
 }
 
 pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, FeatureError> {
@@ -443,8 +454,14 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
     let version = get_version(&feat)?;
     let key = get_key(&feat)?;
 
-    let geom_str = serde_json::to_string(&geom).unwrap();
-    let props_str = serde_json::to_string(&props).unwrap();
+    let geom_str = match serde_json::to_string(&geom) {
+        Ok(geom) => geom,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify geometry")) }
+    };
+    let props_str = match serde_json::to_string(&props) {
+        Ok(props) => props,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
+    };
 
     //Get the previous version of a given feature
     match trans.query("
