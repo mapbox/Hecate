@@ -200,8 +200,14 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
 
     if !valid { return Err(import_error(&feat, "Failed to Match Schema")) };
 
-    let geom_str = serde_json::to_string(&geom).unwrap();
-    let props_str = serde_json::to_string(&props).unwrap();
+    let geom_str = match serde_json::to_string(&geom) {
+        Ok(geom) => geom,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify geometry")) }
+    };
+    let props_str = match serde_json::to_string(&props) {
+        Ok(props) => props,
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
+    };
 
     let key = get_key(&feat)?;
 
