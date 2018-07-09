@@ -612,7 +612,7 @@ fn clone_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: aut
 fn clone_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Stream<stream::PGStream>, status::Custom<Json>> {
     auth_rules.allows_clone_get(&mut auth, &conn.get()?)?;
 
-    match clone::get(&read_conn.get()?) {
+    match clone::get(read_conn.get()?) {
         Ok(clone) => Ok(Stream::from(clone)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
     }
