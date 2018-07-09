@@ -36,6 +36,8 @@ use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 use mvt::Encode;
 
+use rand::prelude::*;
+
 use std::io::{Cursor};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
@@ -164,7 +166,10 @@ impl DbRead {
                 "reason": "No Database Read Connection"
             })))),
             Some(ref db_read) => {
-                match db_read.get(0).unwrap().get() {
+                let mut rng = thread_rng();
+                let db_read_it = rng.gen_range(0, db_read.len());
+
+                match db_read.get(db_read_it).unwrap().get() {
                     Ok(conn) => Ok(conn),
                     Err(_) => Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
                         "code": 503,
