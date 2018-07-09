@@ -1144,10 +1144,11 @@ fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: a
 }
 
 #[get("/data/feature/<id>/history")]
-fn feature_get_history(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<Json>> {
-    auth_rules.allows_feature_history(&mut auth, &conn.get()?)?;
+fn feature_get_history(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_feature_history(&mut auth, &conn)?;
 
-    match delta::history(&read_conn.get()?, &id) {
+    match delta::history(&conn, &id) {
         Ok(features) => Ok(Json(features)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
