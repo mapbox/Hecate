@@ -64,7 +64,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
 
     let db_read: DbRead = match database_read {
         None => DbRead::new(None),
-        Some(db) => DbRead::new(Some(init_pool(&db[0])))
+        Some(dbs) => DbRead::new(Some(dbs.iter().map(|db| init_pool(&db)).collect()))
     };
 
     let limits = Limits::new()
@@ -150,9 +150,9 @@ fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionMana
     }
 }
 
-pub struct DbRead(pub Option<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>);
+pub struct DbRead(pub Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>);
 impl DbRead {
-    fn new(database: Option<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>) -> Self {
+    fn new(database: Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>) -> Self {
         DbRead(database)
     }
 
@@ -164,7 +164,7 @@ impl DbRead {
                 "reason": "No Database Read Connection"
             })))),
             Some(ref db_read) => {
-                match db_read.get() {
+                match db_read.get(0).unwrap().get() {
                     Ok(conn) => Ok(conn),
                     Err(_) => Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
                         "code": 503,
