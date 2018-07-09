@@ -14,7 +14,7 @@ mod test {
     use serde_json;
 
     #[test]
-    fn features() {
+    fn deltas() {
         {
             let conn = Connection::connect("postgres://postgres@localhost:5432", TlsMode::None).unwrap();
 
