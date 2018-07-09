@@ -15,6 +15,7 @@ args:
         value_name: DATABASE_READ
         help: \[optional\] Specify the read user account for the database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
         takes_value: true
+        multiple: true
 
     - port:
         short: p
