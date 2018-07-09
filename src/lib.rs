@@ -496,10 +496,12 @@ fn style_list_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: S
 }
 
 #[get("/deltas")]
-fn delta_list(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) ->  Result<Json, status::Custom<Json>> {
-    auth_rules.allows_delta_list(&mut auth, &conn.get()?)?;
+fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) ->  Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
 
-    match delta::list_by_offset(&read_conn.get()?, None, None) {
+    auth_rules.allows_delta_list(&mut auth, &conn)?;
+
+    match delta::list_by_offset(&conn, None, None) {
         Ok(deltas) => Ok(Json(deltas)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
     }
@@ -514,8 +516,10 @@ struct DeltaList {
 }
 
 #[get("/deltas?<opts>")]
-fn delta_list_params(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json, status::Custom<Json>> {
-    auth_rules.allows_delta_list(&mut auth, &conn.get()?)?;
+fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_delta_list(&mut auth, &conn)?;
 
     if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
         return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Offset cannot be used with start or end"))));
@@ -542,7 +546,7 @@ fn delta_list_params(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut aut
             }
         };
 
-        match delta::list_by_date(&read_conn.get()?, start, end, opts.limit) {
+        match delta::list_by_date(&conn, start, end, opts.limit) {
             Ok(deltas) => {
                 return Ok(Json(deltas));
             },
@@ -551,7 +555,7 @@ fn delta_list_params(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut aut
             }
         }
     } else if opts.offset.is_some() || opts.limit.is_some() {
-        match delta::list_by_offset(&read_conn.get()?, opts.offset, opts.limit) {
+        match delta::list_by_offset(&conn, opts.offset, opts.limit) {
             Ok(deltas) => {
                 return Ok(Json(deltas));
             },
@@ -564,10 +568,11 @@ fn delta_list_params(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut aut
 }
 
 #[get("/delta/<id>")]
-fn delta(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) ->  Result<Json, status::Custom<Json>> {
-    auth_rules.allows_delta_get(&mut auth, &conn.get()?)?;
+fn delta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) ->  Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_delta_get(&mut auth, &conn)?;
 
-    match delta::get_json(&read_conn.get()?, &id) {
+    match delta::get_json(&conn, &id) {
         Ok(delta) => Ok(Json(delta)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
     }
