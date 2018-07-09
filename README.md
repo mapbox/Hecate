@@ -287,7 +287,8 @@ cargo run -- --database "<USER>@<HOST>/<DATABASE>"
 ```
 
 A second read-only account should also be created with permissions to SELECT from the
-`geo` table. All query endpoints - query, clone, bbox, etc will use this readonly connection
+`geo` & `deltas` table. All query endpoints - query, clone, bbox, etc will use this readonly connection
+A sample implementation can be found in the `schema.sql` document
 
 If this flag is not provided, `query` endpoints will be disabled.
 
