@@ -46,7 +46,8 @@ mod test {
         let mut server = Command::new("cargo").args(&[
             "run",
             "--",
-            "--auth", env::current_dir().unwrap().join("tests/fixtures/auth.closed.json").to_str().unwrap()
+            "--auth", env::current_dir().unwrap().join("tests/fixtures/auth.closed.json").to_str().unwrap(),
+            "--database_read", "hecate_read@localhost:5432/hecate"
         ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 

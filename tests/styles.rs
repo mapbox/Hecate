@@ -40,7 +40,11 @@ mod test {
             conn.batch_execute(&*table_sql).unwrap();
         }
 
-        let mut server = Command::new("cargo").arg("run").spawn().unwrap();
+        let mut server = Command::new("cargo").args(&[
+            "run",
+            "--",
+            "--database_read", "hecate_read@localhost:5432/hecate"
+        ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username (ingalls)
