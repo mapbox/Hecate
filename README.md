@@ -286,18 +286,23 @@ cargo run -- --database "<USER>:<PASSWORD>@<HOST>/<DATABASE>"
 cargo run -- --database "<USER>@<HOST>/<DATABASE>"
 ```
 
-Although optional, it is recommended that a second role is created with read-only privleges on the
-`geo` table. Users can then run queries using this account via the `/api/data/query` endpoint.
+A second read-only account should also be created with permissions to SELECT from the
+`geo` & `deltas` table. All query endpoints - query, clone, bbox, etc will use this readonly connection
+A sample implementation can be found in the `schema.sql` document
 
-If this flag is not provided, the `query` endpoint will be disabled.
+If this flag is not provided, `query` endpoints will be disabled.
 
 Note: It is up to the DB Admin to ensure the permissions are limited in scope for this user. Hecate will
 expose access to this user via the query endpoint.
+
+If multiple instances of `database_read` are present, hecate will load balance accross the multiple read instances.
 
 ```bash
 cargo run -- --database_read "<USER>:<PASSWORD>@<HOST>/<DATABASE>"
 
 cargo run -- --database_read "<USER>@<HOST>/<DATABASE>"
+
+cargo run -- --database_read "<USER>@<HOST>/<DATABASE>" --database_read "<USER>@<HOST>/<DATABASE>"
 ```
 
 ### JSON Validation

@@ -131,4 +131,5 @@ DO $$DECLARE count int;
 
 CREATE ROLE hecate_read WITH LOGIN NOINHERIT;
 GRANT SELECT ON geo TO hecate_read;
+GRANT SELECT ON deltas TO hecate_read;
 -- -----------------------------------

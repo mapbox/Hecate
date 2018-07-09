@@ -14,9 +14,9 @@ fn main() {
 
     let database = String::from(matched.value_of("database").unwrap_or("postgres@localhost:5432/hecate"));
 
-    let database_read = match matched.value_of("database_read") {
+    let database_read = match matched.values_of("database_read") {
         None => None,
-        Some(db_read) => Some(String::from(db_read))
+        Some(db_read) => Some(db_read.map(|db| String::from(db)).collect())
     };
 
     let schema: Option<serde_json::value::Value> = match matched.value_of("schema") {

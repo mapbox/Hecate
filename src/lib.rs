@@ -36,6 +36,8 @@ use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 use mvt::Encode;
 
+use rand::prelude::*;
+
 use std::io::{Cursor};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
@@ -47,7 +49,7 @@ use rocket::response::{Response, status, Stream, NamedFile};
 use geojson::GeoJson;
 use rocket_contrib::Json;
 
-pub fn start(database: String, database_read: Option<String>, port: Option<u16>, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
+pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<u16>, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
     env_logger::init();
 
     let auth_rules: auth::CustomAuth = match auth {
@@ -64,7 +66,7 @@ pub fn start(database: String, database_read: Option<String>, port: Option<u16>,
 
     let db_read: DbRead = match database_read {
         None => DbRead::new(None),
-        Some(db) => DbRead::new(Some(init_pool(&db)))
+        Some(dbs) => DbRead::new(Some(dbs.iter().map(|db| init_pool(&db)).collect()))
     };
 
     let limits = Limits::new()
@@ -150,9 +152,9 @@ fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionMana
     }
 }
 
-pub struct DbRead(pub Option<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>);
+pub struct DbRead(pub Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>);
 impl DbRead {
-    fn new(database: Option<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>) -> Self {
+    fn new(database: Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>) -> Self {
         DbRead(database)
     }
 
@@ -164,7 +166,10 @@ impl DbRead {
                 "reason": "No Database Read Connection"
             })))),
             Some(ref db_read) => {
-                match db_read.get() {
+                let mut rng = thread_rng();
+                let db_read_it = rng.gen_range(0, db_read.len());
+
+                match db_read.get(db_read_it).unwrap().get() {
                     Ok(conn) => Ok(conn),
                     Err(_) => Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
                         "code": 503,
@@ -565,7 +570,6 @@ fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
 #[get("/delta/<id>")]
 fn delta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) ->  Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;
-
     auth_rules.allows_delta_get(&mut auth, &conn)?;
 
     match delta::get_json(&conn, &id) {
@@ -615,25 +619,21 @@ fn clone_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: aut
 }
 
 #[get("/data/clone")]
-fn clone_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Stream<stream::PGStream>, status::Custom<Json>> {
-    let conn = conn.get()?; 
+fn clone_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Stream<stream::PGStream>, status::Custom<Json>> {
+    auth_rules.allows_clone_get(&mut auth, &conn.get()?)?;
 
-    auth_rules.allows_clone_get(&mut auth, &conn)?;
-
-    match clone::get(conn) {
+    match clone::get(read_conn.get()?) {
         Ok(clone) => Ok(Stream::from(clone)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
     }
 }
 
 #[get("/data/features?<map>")]
-fn features_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<Stream<stream::PGStream>, status::Custom<Json>> {
-    let conn = conn.get()?; 
-
-    auth_rules.allows_feature_get(&mut auth, &conn)?;
+fn features_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<Stream<stream::PGStream>, status::Custom<Json>> {
+    auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
-    match feature::get_bbox_stream(conn, bbox) {
+    match feature::get_bbox_stream(read_conn.get()?, bbox) {
         Ok(features) => Ok(Stream::from(features)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
     }
@@ -1115,12 +1115,10 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
 }
 
 #[get("/data/feature/<id>")]
-fn feature_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<String, status::Custom<Json>> {
-    let conn = conn.get()?;
+fn feature_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<String, status::Custom<Json>> {
+    auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
-    auth_rules.allows_feature_get(&mut auth, &conn)?;
-
-    match feature::get(&conn, &id) {
+    match feature::get(&read_conn.get()?, &id) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
     }
@@ -1132,13 +1130,11 @@ struct FeatureQuery {
 }
 
 #[get("/data/feature?<fquery>")]
-fn feature_query(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: FeatureQuery) -> Result<String, status::Custom<Json>> {
-    let conn = conn.get()?;
-
-    auth_rules.allows_feature_get(&mut auth, &conn)?;
+fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: FeatureQuery) -> Result<String, status::Custom<Json>> {
+    auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
     if fquery.key.is_some() {
-        match feature::query_by_key(&conn, &fquery.key.unwrap()) {
+        match feature::query_by_key(&read_conn.get()?, &fquery.key.unwrap()) {
             Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
             Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
         }
@@ -1150,7 +1146,6 @@ fn feature_query(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
 #[get("/data/feature/<id>/history")]
 fn feature_get_history(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;
-
     auth_rules.allows_feature_history(&mut auth, &conn)?;
 
     match delta::history(&conn, &id) {
