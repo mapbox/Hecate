@@ -259,7 +259,7 @@ Note: Restore will throw an error if an feature still exists.
 
 ## Server
 
-This section of the guide goes over various options on has when launching the server
+This section of the guide goes over various options for launching the server
 
 Hecate can be launched with default options with
 
@@ -434,7 +434,7 @@ have a map containing the auth for each subkey.
 
 *Notes*
 
-1. This only affectes `public` styles. The `private` attribute on a style overrides this. A `private` style can _never_ be seen publically regardless of this setting.
+1. This only affectes `public` styles. The `private` attribute on a style overrides this. A `private` style can _never_ be seen publicly regardless of this setting.
 2. This is a category, the only valid option is `null` this will disable access to the endpoint entirely
 3. OSM software expects the authentication on these endpoints to mirror OSM. Setting these to a non-default option is supported but will likely have unpredicable
 support when using OSM software. If you are running a private server you should disable OSM support entirely.
@@ -961,7 +961,7 @@ The Features in the FeatureCollection must follow format defined in [Feature For
 
 The FeatureCollection also must contain a top-level String `message` attribute describing the changes being made (The delta message)
 
-Note that a mix of `create`, `modify`, and `delete` operatioons are allowed
+Note that a mix of `create`, `modify`, and `delete` operations are allowed
 within each `FeatureCollection`
 
 *Example*
@@ -1057,7 +1057,7 @@ curl -X GET 'http://localhost:8000/api/delta/4
 
 <h3 align='center'>OpenStreetMap API</h3>
 
-The primary goal of the hecate project is a very fast GeoJSON based Interchange. That said, the tooling the OSM community has built around editing is unparalled. As such,
+The primary goal of the hecate project is a very fast GeoJSON based Interchange. That said, the tooling the OSM community has built around editing is unparalleled. As such,
 Hecate provides a Work-In-Progress OpenStreetMap Shim to support a subset of API operations as defined by the [OSM API v0.6](httpl://wiki.openstreetmap.org/wiki/API_v0.6) document.
 
 *Important Notes*
@@ -1103,7 +1103,7 @@ curl -X GET 'http://localhost:8000/api/0.6/user/details
 
 #### `PUT` `/api/0.6/changeset/create` *Auth Required*
 
-Create a new changset and set the meta information, returning the opened id.
+Create a new changeset and set the meta information, returning the opened id.
 
 *Example*
 
