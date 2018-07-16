@@ -14,7 +14,7 @@ mod test {
     use serde_json;
 
     #[test]
-    fn features() {
+    fn deltas() {
         {
             let conn = Connection::connect("postgres://postgres@localhost:5432", TlsMode::None).unwrap();
 
@@ -42,7 +42,11 @@ mod test {
             conn.batch_execute(&*table_sql).unwrap();
         }
 
-        let mut server = Command::new("cargo").arg("run").spawn().unwrap();
+        let mut server = Command::new("cargo").args(&[
+            "run",
+            "--",
+            "--database_read", "hecate_read@localhost:5432/hecate"
+        ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username

@@ -44,7 +44,8 @@ mod test {
         let mut server = Command::new("cargo").args(&[
             "run",
             "--",
-            "--schema", env::current_dir().unwrap().join("tests/fixtures/source_schema.json").to_str().unwrap()
+            "--schema", env::current_dir().unwrap().join("tests/fixtures/source_schema.json").to_str().unwrap(),
+            "--database_read", "hecate_read@localhost:5432/hecate"
         ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
