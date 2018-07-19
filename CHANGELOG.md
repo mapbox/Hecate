@@ -10,6 +10,15 @@
 
 # Version History
 
+## v0.38.1
+
+- :bug: Fix version mismatch
+
+## v0.38.0
+
+- :rocket: All query style endpoints now use read-only postgres account
+- :tada: Allow multiple read-only postgres connections & load balancing between them
+
 ## v0.37.2
 
 - :rocket: remove all `unwrap()` `feature` mod
