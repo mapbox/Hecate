@@ -44,6 +44,18 @@
                 <span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span>
                 <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
             </div>
+
+            <div class="grid col px12 py12 wfull txt-l color-gray">
+                <div class='col--4'>
+                    <span @click='page > 0 ? page-- : 0'class='fr cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use xlink:href='#icon-arrow-left'/></svg></span>
+                </div>
+                <div class='col--4 flex-parent flex-parent--center-main'>
+                    <span @click='page = 0'class='cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use xlink:href='#icon-home'/></svg></span>
+                </div>
+                <div class='col--4'>
+                    <span @click='page++'class='fl cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use xlink:href='#icon-arrow-right'/></svg></span>
+                </div>
+            </div>
         </div>
     </template>
 
@@ -59,6 +71,8 @@ export default {
     name: 'deltas',
     data: function() {
         return {
+            maxoffset: false,
+            offset: false,
             deltas: [],
             delta: false
         }
@@ -74,7 +88,12 @@ export default {
     },
     methods: {
         getDeltas: function() {
-            fetch(`http://${window.location.host}/api/deltas`, {
+            let off = '';
+            if (this.offset) {
+                console.error(this.offset);
+            }
+
+            fetch(`http://${window.location.host}/api/deltas${off}`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
@@ -82,6 +101,8 @@ export default {
             }).then((body) => {
                 this.deltas.splice(0, this.deltas.length);
                 this.deltas = this.deltas.concat(body);
+
+                this.maxoffset = this.deltas[0].id;
             });
         },
         getDelta: function(delta_id) {
