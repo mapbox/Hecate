@@ -1,5 +1,5 @@
 <template>
-<div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+<div class='flex-parent flex-parent--column viewport-third h-auto-ml bg-white round-ml shadow-darken10' style="pointer-events:auto; max-height: calc(100% - 80px);">
     <template v-if='delta'>
         <div class='flex-child px12 py12'>
             <h3 class='fl py6 txt-m txt-bold'>Delta #<span v-text="delta.id"></span></h3>
