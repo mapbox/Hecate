@@ -1,5 +1,5 @@
 <template>
-<div class='flex-parent flex-parent--column viewport-third h-auto-ml hmax-full bg-white round-ml shadow-darken10' style="pointer-events:auto;">
+<div class='flex-parent flex-parent--column viewport-third h-auto-ml bg-white round-ml shadow-darken10' style="pointer-events:auto; max-height: calc(100% - 80px);">
     <template v-if='delta'>
         <div class='flex-child px12 py12'>
             <h3 class='fl py6 txt-m txt-bold'>Delta #<span v-text="delta.id"></span></h3>
@@ -44,6 +44,18 @@
                 <span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span>
                 <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
             </div>
+
+            <div class="grid col px12 py12 wfull txt-l color-gray">
+                <div class='col--4'>
+                    <span @click='getDeltas("left")'class='fr cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use href='#icon-arrow-left'/></svg></span>
+                </div>
+                <div class='col--4 flex-parent flex-parent--center-main'>
+                    <span @click='getDeltas("home")'class='cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use href='#icon-home'/></svg></span>
+                </div>
+                <div class='col--4'>
+                    <span @click='getDeltas("right")'class='fl cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use href='#icon-arrow-right'/></svg></span>
+                </div>
+            </div>
         </div>
     </template>
 
@@ -59,6 +71,8 @@ export default {
     name: 'deltas',
     data: function() {
         return {
+            maxoffset: false,
+            offset: false,
             deltas: [],
             delta: false
         }
@@ -73,8 +87,23 @@ export default {
         foot: Foot
     },
     methods: {
-        getDeltas: function() {
-            fetch(`http://${window.location.host}/api/deltas`, {
+        getDeltas: function(action) {
+            let off = '';
+
+            if (action === 'right') { //Back in time
+                this.offset = this.offset + 20;
+                
+                off = `?offset=${this.offset}`;
+            } else if (action === 'home') { //Current time
+                this.offset = false;
+            } else if (action === 'left') { //Forward in time
+                if (this.offset < 10) return;
+
+                this.offset = this.offset - 20;
+                off = `?offset=${this.offset}`;
+            }
+
+            fetch(`http://${window.location.host}/api/deltas${off}`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
@@ -82,6 +111,10 @@ export default {
             }).then((body) => {
                 this.deltas.splice(0, this.deltas.length);
                 this.deltas = this.deltas.concat(body);
+
+                if (this.deltas[0]) this.offset = this.deltas[0].id;
+            }).catch((err) => {
+                console.error(err);
             });
         },
         getDelta: function(delta_id) {
