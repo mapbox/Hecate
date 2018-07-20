@@ -47,13 +47,13 @@
 
             <div class="grid col px12 py12 wfull txt-l color-gray">
                 <div class='col--4'>
-                    <span @click='page > 0 ? page-- : 0'class='fr cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use xlink:href='#icon-arrow-left'/></svg></span>
+                    <span @click='getDeltas("left")'class='fr cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use xlink:href='#icon-arrow-left'/></svg></span>
                 </div>
                 <div class='col--4 flex-parent flex-parent--center-main'>
-                    <span @click='page = 0'class='cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use xlink:href='#icon-home'/></svg></span>
+                    <span @click='getDeltas("home")'class='cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use xlink:href='#icon-home'/></svg></span>
                 </div>
                 <div class='col--4'>
-                    <span @click='page++'class='fl cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use xlink:href='#icon-arrow-right'/></svg></span>
+                    <span @click='getDeltas("right")'class='fl cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use xlink:href='#icon-arrow-right'/></svg></span>
                 </div>
             </div>
         </div>
@@ -87,10 +87,20 @@ export default {
         foot: Foot
     },
     methods: {
-        getDeltas: function() {
+        getDeltas: function(action) {
             let off = '';
-            if (this.offset) {
-                console.error(this.offset);
+
+            if (action === 'right') {
+                if (this.offset < 10) return;
+
+                this.offset = this.offset - 10;
+                this.off = `?offset=${this.offset}`;
+            } else if (action === 'home') {
+                this.offset = false;
+            } else if (action === 'left') {
+                this.offset = this.offset + 10;
+                
+                this.off = `?offset=${this.offset}`;
             }
 
             fetch(`http://${window.location.host}/api/deltas${off}`, {
@@ -102,7 +112,9 @@ export default {
                 this.deltas.splice(0, this.deltas.length);
                 this.deltas = this.deltas.concat(body);
 
-                this.maxoffset = this.deltas[0].id;
+                if (this.deltas[0]) this.offset = this.deltas[0].id;
+            }).catch((err) => {
+                console.error(err);
             });
         },
         getDelta: function(delta_id) {

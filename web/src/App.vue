@@ -202,14 +202,22 @@ export default {
     },
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
+
+
         this.map.gl = new mapboxgl.Map({
             container: 'map',
+            attributionControl: false,
             style: 'mapbox://styles/mapbox/satellite-v9',
             center: [-96, 37.8],
             hash: true,
             maxzoom: 14,
             zoom: 3
-        });
+        }).addControl(new mapboxgl.AttributionControl({
+            compact: true
+        })).addControl(new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+        }));
+
 
         this.map.gl.on('load', () => {
             this.map.gl.addSource('hecate-data', {
@@ -225,10 +233,6 @@ export default {
 
             this.map.default();
         });
-
-        this.map.gl.addControl(new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-        }));
 
         this.map.gl.on('click', (e) => {
             if (this.modal === 'delta') return; //Don't currently support showing features within a delta
