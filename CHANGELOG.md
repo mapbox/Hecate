@@ -10,6 +10,11 @@
 
 # Version History
 
+## Pending Next Release
+
+- :rocket: [UI] Add paging fxn for deltas panel
+- :bug: [UI] Ensure panels don't collide with mapbox logo
+
 ## v0.38.1
 
 - :bug: Fix version mismatch
