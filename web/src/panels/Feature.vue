@@ -5,7 +5,10 @@
         <button @click='close()' class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-close'/></button>
     </div>
 
-    <template v-if='feature'>
+    <template v-if='loading'>
+        <div class='flex-child loading h60'></div>
+    </template>
+    <template v-else>
         <div class="flex-child scroll-auto">
             <table class='table txt-xs'>
                 <thead><tr><th>Key</th><th>Value</th></tr></thead>
@@ -49,7 +52,8 @@ export default {
     name: 'feature',
     data: function() {
         return {
-            feature: false
+            feature: false,
+            loading: false
         }
     },
     watch: {
@@ -66,6 +70,9 @@ export default {
         },
         get: function(id) {
             if (!id) return;
+            if (typeof id === 'number' || typeof id === 'string') {
+                this.loading = true;
+            }
 
             fetch(`http://${window.location.host}/api/data/feature/${id}`, {
                 method: 'GET',
@@ -74,6 +81,7 @@ export default {
                   return response.json();
             }).then((body) => {
                 this.feature = body;
+                this.loading = false;
             });
         }
     },
