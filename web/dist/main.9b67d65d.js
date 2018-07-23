@@ -7417,7 +7417,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],17:[function(require,module,exports) {
+},{}],15:[function(require,module,exports) {
 var define;
 var global = arguments[3];
 //! moment.js
@@ -12196,7 +12196,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"moment":17,"../components/Foot.vue":5}],7:[function(require,module,exports) {
+},{"moment":15,"../components/Foot.vue":5}],7:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
