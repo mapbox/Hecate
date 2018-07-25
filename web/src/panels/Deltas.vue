@@ -103,7 +103,7 @@ export default {
                 off = `?offset=${this.offset}`;
             }
 
-            fetch(`http://${window.location.host}/api/deltas${off}`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/deltas${off}`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
@@ -120,7 +120,7 @@ export default {
         getDelta: function(delta_id) {
             if (!delta_id) return;
 
-            fetch(`http://${window.location.host}/api/delta/${delta_id}`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/delta/${delta_id}`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {

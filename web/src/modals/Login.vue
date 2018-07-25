@@ -79,7 +79,7 @@ export default {
         login: function() {
             const self = this; 
 
-            fetch(`http://${window.location.host}/api/user/session`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/session`, {
                 method: 'GET',
                 credentials: 'same-origin',
                 headers: new Headers({

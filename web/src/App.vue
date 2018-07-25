@@ -223,7 +223,7 @@ export default {
             this.map.gl.addSource('hecate-data', {
                 type: 'vector',
                 maxzoom: 14,
-                tiles: [ `http://${window.location.host}/api/tiles/{z}/{x}/{y}` ]
+                tiles: [ `${window.location.protocol}//${window.location.host}/api/tiles/{z}/{x}/{y}` ]
             });
 
             this.map.gl.addSource('hecate-delta', {
@@ -248,7 +248,7 @@ export default {
         logout: function(reload) {
             this.credentials.authed = false;
 
-            fetch(`http://${window.location.host}/api/user/session`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/session`, {
                 method: 'DELETE',
                 credentials: 'same-origin'
             }).then((response) => {

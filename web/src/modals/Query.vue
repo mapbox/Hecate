@@ -71,7 +71,7 @@ export default {
             this.$emit('close');
         },
         getQuery: function(query) {
-            fetch(`http://${window.location.host}/api/data/query?limit=100&query=${encodeURIComponent(this.query.replace(/;/g, ''))}`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/data/query?limit=100&query=${encodeURIComponent(this.query.replace(/;/g, ''))}`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
