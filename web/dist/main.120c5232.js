@@ -98,7 +98,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({4:[function(require,module,exports) {
+})({5:[function(require,module,exports) {
 var global = arguments[3];
 'use strict';
 
@@ -7379,7 +7379,7 @@ if (inBrowser) {
 /*  */
 
 exports.default = Vue;
-},{}],5:[function(require,module,exports) {
+},{}],8:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -7417,7 +7417,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],15:[function(require,module,exports) {
+},{}],42:[function(require,module,exports) {
 var define;
 var global = arguments[3];
 //! moment.js
@@ -11927,7 +11927,7 @@ var global = arguments[3];
 
 })));
 
-},{}],6:[function(require,module,exports) {
+},{}],9:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12051,7 +12051,7 @@ exports.default = {
                 off = '?offset=' + this.offset;
             }
 
-            fetch('http://' + window.location.host + '/api/deltas' + off, {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/deltas' + off, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then(function (response) {
@@ -12070,7 +12070,7 @@ exports.default = {
 
             if (!delta_id) return;
 
-            fetch('http://' + window.location.host + '/api/delta/' + delta_id, {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/delta/' + delta_id, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then(function (response) {
@@ -12196,7 +12196,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"moment":15,"../components/Foot.vue":5}],7:[function(require,module,exports) {
+},{"moment":42,"../components/Foot.vue":8}],10:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12280,7 +12280,7 @@ exports.default = {
                 this.loading = true;
             }
 
-            fetch('http://' + window.location.host + '/api/data/feature/' + id, {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/data/feature/' + id, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then(function (response) {
@@ -12315,7 +12315,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],8:[function(require,module,exports) {
+},{}],11:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12345,7 +12345,7 @@ exports.default = {
         getBounds: function getBounds() {
             var _this = this;
 
-            fetch('http://' + window.location.host + '/api/data/bounds', {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/data/bounds', {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then(function (response) {
@@ -12402,7 +12402,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"../components/Foot.vue":5}],9:[function(require,module,exports) {
+},{"../components/Foot.vue":8}],12:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12436,7 +12436,7 @@ exports.default = {
         getStyles: function getStyles() {
             var _this = this;
 
-            fetch('http://' + window.location.host + '/api/styles', {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/styles', {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then(function (response) {
@@ -12446,7 +12446,7 @@ exports.default = {
             });
 
             if (this.credentials.authed) {
-                fetch('http://' + window.location.host + '/api/styles/' + this.credentials.uid, {
+                fetch(window.location.protocol + '//' + window.location.host + '/api/styles/' + this.credentials.uid, {
                     method: 'GET',
                     credentials: 'same-origin'
                 }).then(function (response) {
@@ -12524,7 +12524,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"../components/Foot.vue":5}],10:[function(require,module,exports) {
+},{"../components/Foot.vue":8}],13:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12611,7 +12611,7 @@ exports.default = {
         login: function login() {
             var self = this;
 
-            fetch('http://' + window.location.host + '/api/user/session', {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/user/session', {
                 method: 'GET',
                 credentials: 'same-origin',
                 headers: new Headers({
@@ -12666,7 +12666,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],11:[function(require,module,exports) {
+},{}],14:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12769,7 +12769,7 @@ exports.default = {
         register: function register() {
             var self = this;
 
-            fetch('http://' + window.location.host + '/api/user/create?username=' + this.username + '&password=' + this.password + '&email=' + this.email, {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/user/create?username=' + this.username + '&password=' + this.password + '&email=' + this.email, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then(function (response) {
@@ -12808,7 +12808,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],12:[function(require,module,exports) {
+},{}],15:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12867,7 +12867,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],13:[function(require,module,exports) {
+},{}],16:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12948,7 +12948,7 @@ exports.default = {
         getQuery: function getQuery(query) {
             var _this = this;
 
-            fetch('http://' + window.location.host + '/api/data/query?limit=100&query=' + encodeURIComponent(this.query.replace(/;/g, '')), {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/data/query?limit=100&query=' + encodeURIComponent(this.query.replace(/;/g, '')), {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then(function (response) {
@@ -12982,7 +12982,7 @@ var staticRenderFns = [function () {var _vm=this;var _h=_vm.$createElement;var _
           };
         })());
       
-},{}],14:[function(require,module,exports) {
+},{}],17:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -13095,7 +13095,7 @@ exports.default = {
             var _this = this;
 
             if (!style_id) return;
-            fetch('http://' + window.location.host + '/api/style/' + style_id, {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/style/' + style_id, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then(function (response) {
@@ -13127,7 +13127,7 @@ exports.default = {
         deleteStyle: function deleteStyle() {
             var _this2 = this;
 
-            fetch('http://' + window.location.host + '/api/style/' + this.id, {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/style/' + this.id, {
                 method: 'DELETE',
                 credentials: 'same-origin'
             }).then(function (response) {
@@ -13143,7 +13143,7 @@ exports.default = {
 
             if (!style_id) {
                 //Create new style
-                fetch('http://' + window.location.host + '/api/style', {
+                fetch(window.location.protocol + '//' + window.location.host + '/api/style', {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: new Headers({
@@ -13164,7 +13164,7 @@ exports.default = {
                 });
             } else {
                 //Update Existing Style
-                fetch('http://' + window.location.host + '/api/style/' + style_id, {
+                fetch(window.location.protocol + '//' + window.location.host + '/api/style/' + style_id, {
                     method: 'PATCH',
                     credentials: 'same-origin',
                     headers: new Headers({
@@ -13177,7 +13177,7 @@ exports.default = {
                 }).then(function (response) {
                     if (response.status !== 200) return _this3.ok('Failed to push style', 'Failed to update style');
                     if (_this3.credentials.authed && _this3.id) {
-                        fetch('http://' + window.location.host + '/api/style/' + style_id + '/' + (_this3.public ? 'public' : 'private'), {
+                        fetch(window.location.protocol + '//' + window.location.host + '/api/style/' + style_id + '/' + (_this3.public ? 'public' : 'private'), {
                             method: 'POST',
                             credentials: 'same-origin'
                         }).then(function (response) {
@@ -13538,7 +13538,7 @@ exports.default = {
             _this.map.gl.addSource('hecate-data', {
                 type: 'vector',
                 maxzoom: 14,
-                tiles: ['http://' + window.location.host + '/api/tiles/{z}/{x}/{y}']
+                tiles: [window.location.protocol + '//' + window.location.host + '/api/tiles/{z}/{x}/{y}']
             });
 
             _this.map.gl.addSource('hecate-delta', {
@@ -13563,7 +13563,7 @@ exports.default = {
         logout: function logout(reload) {
             this.credentials.authed = false;
 
-            fetch('http://' + window.location.host + '/api/user/session', {
+            fetch(window.location.protocol + '//' + window.location.host + '/api/user/session', {
                 method: 'DELETE',
                 credentials: 'same-origin'
             }).then(function (response) {
@@ -13596,7 +13596,7 @@ var staticRenderFns = []
           };
         })());
       
-},{"./components/Foot.vue":5,"./panels/Deltas.vue":6,"./panels/Feature.vue":7,"./panels/Bounds.vue":8,"./panels/Styles.vue":9,"./modals/Login.vue":10,"./modals/Register.vue":11,"./modals/Settings.vue":12,"./modals/Query.vue":13,"./modals/Style.vue":14}],2:[function(require,module,exports) {
+},{"./components/Foot.vue":8,"./panels/Deltas.vue":9,"./panels/Feature.vue":10,"./panels/Bounds.vue":11,"./panels/Styles.vue":12,"./modals/Login.vue":13,"./modals/Register.vue":14,"./modals/Settings.vue":15,"./modals/Query.vue":16,"./modals/Style.vue":17}],2:[function(require,module,exports) {
 'use strict';
 
 var _vue = require('vue');
@@ -13617,5 +13617,5 @@ window.onload = function () {
         }
     });
 };
-},{"vue":4,"./App.vue":3}]},{},[2], null)
-//# sourceMappingURL=/admin/main.9b67d65d.map
+},{"vue":5,"./App.vue":3}]},{},[2], null)
+//# sourceMappingURL=/admin/main.120c5232.map
