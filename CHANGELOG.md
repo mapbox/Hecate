@@ -10,8 +10,9 @@
 
 # Version History
 
-## Pending Next Release
+## v0.39.0
 
+- :bug: [UI] Ensure protocol (http(s)) is respected
 - :rocket: [UI] Add paging fxn for deltas panel
 - :bug: [UI] Ensure panels don't collide with mapbox logo
 
