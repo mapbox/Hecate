@@ -95,7 +95,7 @@ export default {
         register: function() {
             const self = this;
 
-            fetch(`http://${window.location.host}/api/user/create?username=${this.username}&password=${this.password}&email=${this.email}`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/create?username=${this.username}&password=${this.password}&email=${this.email}`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {

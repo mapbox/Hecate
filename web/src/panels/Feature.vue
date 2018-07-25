@@ -74,7 +74,7 @@ export default {
                 this.loading = true;
             }
 
-            fetch(`http://${window.location.host}/api/data/feature/${id}`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/data/feature/${id}`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {

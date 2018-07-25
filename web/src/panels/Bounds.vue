@@ -40,7 +40,7 @@ export default {
     },
     methods: {
         getBounds: function() {
-            fetch(`http://${window.location.host}/api/data/bounds`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/data/bounds`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {

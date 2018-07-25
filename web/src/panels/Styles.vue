@@ -59,7 +59,7 @@ export default {
             this.$emit('style', id);
         },
         getStyles: function() {
-            fetch(`http://${window.location.host}/api/styles`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/styles`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
@@ -69,7 +69,7 @@ export default {
             });
 
             if (this.credentials.authed) {
-                fetch(`http://${window.location.host}/api/styles/${this.credentials.uid}`, {
+                fetch(`${window.location.protocol}//${window.location.host}/api/styles/${this.credentials.uid}`, {
                     method: 'GET',
                     credentials: 'same-origin'
                 }).then((response) => {

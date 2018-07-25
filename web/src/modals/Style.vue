@@ -103,7 +103,7 @@ export default {
         },
         getStyle: function(style_id) {
             if (!style_id) return;
-            fetch(`http://${window.location.host}/api/style/${style_id}`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/style/${style_id}`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
@@ -133,7 +133,7 @@ export default {
             this.public = false;
         },
         deleteStyle:  function() {
-            fetch(`http://${window.location.host}/api/style/${this.id}`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/style/${this.id}`, {
                 method: 'DELETE',
                 credentials: 'same-origin'
             }).then((response) => {
@@ -146,7 +146,7 @@ export default {
         },
         updateStyle: function(style_id, style_name, style) {
             if (!style_id) { //Create new style
-                fetch(`http://${window.location.host}/api/style`, {
+                fetch(`${window.location.protocol}//${window.location.host}/api/style`, {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: new Headers({
@@ -166,7 +166,7 @@ export default {
                     return this.ok('Failed to push style', 'Failed to update style');
                 });
             } else { //Update Existing Style
-                fetch(`http://${window.location.host}/api/style/${style_id}`, {
+                fetch(`${window.location.protocol}//${window.location.host}/api/style/${style_id}`, {
                     method: 'PATCH',
                     credentials: 'same-origin',
                     headers: new Headers({
@@ -179,7 +179,7 @@ export default {
                 }).then((response) => {
                     if (response.status !== 200) return this.ok('Failed to push style', 'Failed to update style');
                     if (this.credentials.authed && this.id) {
-                        fetch(`http://${window.location.host}/api/style/${style_id}/${this.public ? 'public' : 'private'}`, {
+                        fetch(`${window.location.protocol}//${window.location.host}/api/style/${style_id}/${this.public ? 'public' : 'private'}`, {
                             method: 'POST',
                             credentials: 'same-origin'
                         }).then((response) => {
