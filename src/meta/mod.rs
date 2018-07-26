@@ -69,10 +69,10 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
 pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String, value: &serde_json::Value) -> Result<bool, MetaError> {
     match conn.query("
         INSERT INTO meta (key, value) VALUES ($1, $2)
-            ON CONFLICT
-                UPDATE meta 
+            ON CONFLICT (key) DO
+                UPDATE
                     SET value = $2
-                    WHERE key = $1
+                    WHERE meta.key = $1
     ", &[ &key, &value ]) {
         Ok(_) => Ok(true),
         Err(err) => {

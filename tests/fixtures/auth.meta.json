@@ -3,7 +3,7 @@
     "meta": {
         "get": "user",
         "list": "user",
-        "set": "admin"
+        "set": "user"
     },
     "schema": {
         "get": "user"

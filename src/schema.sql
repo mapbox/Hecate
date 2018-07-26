@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 
 DROP TABLE IF EXISTS meta;
 CREATE TABLE meta (
-    key         TEXT,
+    key         TEXT UNIQUE,
     value       JSONB
 );
 
