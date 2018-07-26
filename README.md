@@ -342,7 +342,7 @@ __Contents of auth.json__
 ```
 {
     "endpoints": {
-        "meta": "public",
+        "server": "public",
         "schema": null,
         "mvt": {
             "get": "user",
@@ -393,7 +393,11 @@ have a map containing the auth for each subkey.
 
 | Example Endpoint                      | Config Name               | Default       | Supported Behaviors       | Notes |
 | ------------------------------------- | ------------------------- | :-----------: | ------------------------- | :---: |
-| `GET /api`                            | `meta`                    | `public`      | All                       |       |
+| `GET /api`                            | `server`                  | `public`      | All                       |       |
+| **Server Meta**                       | `meta`                    |               | `null`                    | 2     |
+| `GET /api/meta`                       | `meta::list`              | `public`      | All                       |       |
+| `GET /api/meta/<key>`                 | `meta::get`               | `public`      | All                       |       |
+| `POST /api/meta/<key>`                | `meta::set`               | `admin`       | `user`, `admin`, `null`   |       |
 | **JSON Schema**                       | `schema`                  |               | `null`                    | 2     |
 | `GET /api/schema`                     | `schema::get`             | `public`      | All                       |       |
 | **Custom Auth JSON**                  | `auth`                    |               | `null`                    | 2     |

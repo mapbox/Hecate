@@ -18,6 +18,7 @@ extern crate geojson;
 extern crate env_logger;
 extern crate chrono;
 
+pub mod meta;
 pub mod delta;
 pub mod mvt;
 pub mod feature;
@@ -93,7 +94,8 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             staticsrv
         ])
         .mount("/api", routes![
-            meta,
+            server,
+            meta_list,
             schema_get,
             auth_get,
             mvt_get,
@@ -223,12 +225,25 @@ fn not_found() -> Json {
 fn index() -> &'static str { "Hello World!" }
 
 #[get("/")]
-fn meta(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
+fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
     auth_rules.allows_meta(&mut auth, &conn.get()?)?;
 
     Ok(Json(json!({
         "version": VERSION
     })))
+}
+
+#[get("/meta")]
+fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_meta(&mut auth, &conn)?;
+
+    match meta::list(&conn) {
+        Ok(list) => {
+            Ok(Json(json!(list)))
+        },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
 }
 
 #[get("/<file..>")]

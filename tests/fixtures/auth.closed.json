@@ -1,5 +1,5 @@
 {
-    "meta": "user",
+    "server": "user",
     "schema": {
         "get": "user"
     },
