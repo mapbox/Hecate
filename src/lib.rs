@@ -97,6 +97,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             server,
             meta_list,
             meta_get,
+            meta_set,
             schema_get,
             auth_get,
             mvt_get,
@@ -227,7 +228,7 @@ fn index() -> &'static str { "Hello World!" }
 
 #[get("/")]
 fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
-    auth_rules.allows_meta(&mut auth, &conn.get()?)?;
+    auth_rules.allows_server(&mut auth, &conn.get()?)?;
 
     Ok(Json(json!({
         "version": VERSION
@@ -237,7 +238,7 @@ fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth
 #[get("/meta")]
 fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;
-    auth_rules.allows_meta(&mut auth, &conn)?;
+    auth_rules.allows_meta_list(&mut auth, &conn)?;
 
     match meta::list(&conn) {
         Ok(list) => {
@@ -250,12 +251,23 @@ fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<a
 #[get("/meta/<key>")]
 fn meta_get(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String) -> Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;
-    auth_rules.allows_meta(&mut auth, &conn)?;
+    auth_rules.allows_meta_get(&mut auth, &conn)?;
 
     match meta::get(&conn, &key) {
         Ok(list) => {
             Ok(Json(json!(list)))
         },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[post("/meta/<key>", format="application/json", data="<body>")]
+fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String, body: Json) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_meta_list(&mut auth, &conn)?;
+
+    match meta::set(&conn, &key, &body) {
+        Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
