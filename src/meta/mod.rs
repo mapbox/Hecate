@@ -83,3 +83,17 @@ pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
         }
     }
 }
+
+pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<bool, MetaError> {
+    match conn.query("
+        DELETE FROM meta WHERE key = $1
+    ", &[ &key ]) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(MetaError::SetError(e.message.clone())) },
+                _ => Err(MetaError::SetError(String::from("generic")))
+            }
+        }
+    }
+}

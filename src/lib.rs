@@ -97,6 +97,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             server,
             meta_list,
             meta_get,
+            meta_delete,
             meta_set,
             schema_get,
             auth_get,
@@ -257,6 +258,17 @@ fn meta_get(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<au
         Ok(list) => {
             Ok(Json(json!(list)))
         },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[delete("/meta/<key>")]
+fn meta_delete(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_meta_set(&mut auth, &conn)?;
+
+    match meta::delete(&conn, &key) {
+        Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
