@@ -96,6 +96,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
         .mount("/api", routes![
             server,
             meta_list,
+            meta_get,
             schema_get,
             auth_get,
             mvt_get,
@@ -239,6 +240,19 @@ fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<a
     auth_rules.allows_meta(&mut auth, &conn)?;
 
     match meta::list(&conn) {
+        Ok(list) => {
+            Ok(Json(json!(list)))
+        },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[get("/meta/<key>")]
+fn meta_get(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_meta(&mut auth, &conn)?;
+
+    match meta::get(&conn, &key) {
         Ok(list) => {
             Ok(Json(json!(list)))
         },
