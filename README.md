@@ -876,7 +876,7 @@ Return a single GeoJSON `Feature` given a query parameter
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/features?key=123
+curl -X GET 'http://localhost:8000/api/data/feature?key=123
 ```
 
 ---
