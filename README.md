@@ -453,18 +453,6 @@ HTTP Healthcheck URL, currently returns `Hello World!`
 curl -X GET 'http://localhost:8000/
 ```
 
-#### `GET` `/health`
-
-Database Healthcheck URL, returns a JSON object.
-
-If the database is unhealthy or overloaded this endpoint will fail
-
-*Example*
-
-```bash
-curl -X GET 'http://localhost:8000/health
-```
-
 ---
 
 <h3 align='center'>Admin Interface</h3>
