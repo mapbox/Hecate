@@ -748,7 +748,7 @@ Create a new user, provied the username & email are not already taken
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email=ingalls@protonmail.com
+curl -X GET 'http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com
 ```
 
 ---
