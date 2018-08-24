@@ -7,9 +7,24 @@
   <a href="https://crates.io/crates/hecate"><img src="https://img.shields.io/crates/v/hecate.svg"/></a>
 </p>
 
+## Why Use Hecate?
+
+Hecate takes all the best parts of an ESRI MapServer and the OpenStreetMap backend platform and rolls them in a single
+user friendly platform.
+
+- Integrated Mapbox Vector Tile Creation (MapServer)
+- Full Authentication Cusomizations (MapServer)
+- Streaming GeoJSON Output for unbounded parallelism
+- Full MultiUser & Changesets tracked editing (OSM)
+- Fully Atomic Changesets
+- MapboxGL Style Storage
+- JSON Based REST API (ESRI)
+- Fully OpenSource! (OSM)
+
 ## Table Of Contents
 
 1. [Brief](#brief)
+1. [Why Use Hecate](#why-use-hecate)
 2. [Table of Contents](#table-of-contents)
 3. [Build Environment](#build-environment)
 3. [Docker File](#docker-file-coverage-tests)
