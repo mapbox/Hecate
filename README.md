@@ -9,7 +9,17 @@
 
 ## Why Use Hecate?
 
+Hecate takes all the best parts of an ESRI MapServer and the OpenStreetMap backend platform and rolls them in a single
+user friendly platform.
 
+- Integrated Mapbox Vector Tile Creation (MapServer)
+- Full Authentication Cusomizations (MapServer)
+- Streaming GeoJSON Output for unbounded parallelism
+- Full MultiUser & Changesets tracked editing (OSM)
+- Fully Atomic Changesets
+- MapboxGL Style Storage
+- JSON Based REST API (ESRI)
+- Fully OpenSource! (OSM)
 
 ## Table Of Contents
 
