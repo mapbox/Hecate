@@ -151,6 +151,9 @@ mod test {
                 "schema": {
                     "get": "user"
                 },
+                "stats": {
+                    "get": "user"
+                },
                 "mvt": {
                     "get": "user",
                     "regen": "user",
