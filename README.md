@@ -96,7 +96,7 @@ cargo run
 - Test it is working - should respond with `HTTP200`
 
 ```bash
-curl 'localhost:8000
+curl localhost:8000
 ```
 
 You will now have an empty database which can be populated with your own data/user accounts.
