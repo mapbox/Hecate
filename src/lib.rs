@@ -1,7 +1,7 @@
 #![feature(plugin, custom_derive, custom_attribute, attr_literals)]
 #![plugin(rocket_codegen)]
 
-static VERSION: &'static str = "0.39.0";
+static VERSION: &'static str = "0.40.0";
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
@@ -18,6 +18,7 @@ extern crate geojson;
 extern crate env_logger;
 extern crate chrono;
 
+pub mod stats;
 pub mod delta;
 pub mod mvt;
 pub mod feature;
@@ -96,6 +97,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             meta,
             schema_get,
             auth_get,
+            stats_get,
             mvt_get,
             mvt_meta,
             mvt_regen,
@@ -658,6 +660,18 @@ fn auth_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
     auth_rules.allows_auth_get(&mut auth, &conn)?;
 
     Ok(Json(auth_rules.to_json()))
+}
+
+#[get("/data/stats")]
+fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_stats_get(&mut auth, &conn)?;
+
+    match stats::get_json(&conn) {
+        Ok(stats) => Ok(Json(stats)),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
+    }
 }
 
 #[post("/data/features", format="application/json", data="<body>")]

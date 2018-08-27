@@ -36,6 +36,7 @@ user friendly platform.
 6. [API](#api)
     - [User Options](#user-options)
     - [Meta](#meta)
+    - [Data Stats](#data-stats)
     - [Admin Interface](#admin-interface)
     - [Schema](#schema)
     - [Auth](#Auth)
@@ -95,7 +96,7 @@ cargo run
 - Test it is working - should respond with `HTTP200`
 
 ```bash
-curl 'localhost:8000
+curl localhost:8000
 ```
 
 You will now have an empty database which can be populated with your own data/user accounts.
@@ -432,6 +433,8 @@ have a map containing the auth for each subkey.
 | **Deltas**                            | `delta`                   |               | `null`                    | 2     |
 | `GET /api/delta/<id>`                 | `delta::get`              | `public`      | All                       |       |
 | `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
+| **Data Stats**                        | `stats`                   | `public`      | All                       |       |
+| `GET /api/data/stats`                 | `stats::get`              | `public`      | All                       |       |
 | **Features**                          | `feature`                 |               | `null`                    | 2     |
 | `POST /api/data/feature(s)`           | `feature::create`         | `user`        | `user`, `admin`, `null`   |       |
 | `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |
@@ -488,6 +491,26 @@ Return a JSON object containing metadata about the server
 
 ```bash
 curl -X GET 'http://localhost:8000/api'
+```
+
+---
+
+<h3 align='center'>Data Stats</h3>
+
+Note: Analyze stats depend on the database having `ANALYZE` run.
+For performance reasons these stats are calculated from ANALYZEd stats
+where possible to ensure speedy results. For more up to date stats,
+ensure your database is running `ANALYZE` more often.
+
+#### `GET` `/api/data/stats`
+
+Return a JSON object containing statistics and metadata about the 
+geometries stored in the server
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/stats'
 ```
 
 ---
