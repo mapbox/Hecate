@@ -27,8 +27,17 @@ pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
                     ST_XMax(extent.extent),
                     ST_YMax(extent.extent)
                 ) AS bbox,
-                total.total AS total
+                total.total AS total,
+                time.time AS last_calc
             FROM
+                (
+                    SELECT
+                        to_char(last_analyze, 'YYYY-MM-DD HH24:MI:SS') AS time
+                    FROM
+                        pg_stat_all_tables
+                    WHERE
+                        relname = 'geo'
+                ) as time,
                 (
                     SELECT
                         ST_EstimatedExtent('geo', 'geom') AS extent

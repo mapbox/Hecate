@@ -105,15 +105,8 @@ mod test {
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
-            assert_eq!(json_body, json!({
-                "bbox": [
-                    -0.00499999988824129,
-                    -0.00499999988824129,
-                    1.00499999523163,
-                    1.00499999523163
-                ],
-                "total": 2
-            }));
+            assert_eq!(json_body["bbox"], json!([ -0.00499999988824129, -0.00499999988824129, 1.00499999523163, 1.00499999523163 ]));
+            assert_eq!(json_body["total"], json!(2));
         }
 
         server.kill().unwrap();
