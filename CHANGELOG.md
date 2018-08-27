@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.40.0
+
+- :rocket: Add Data Statistics API
+
 ## v0.39.0
 
 - :bug: [UI] Ensure protocol (http(s)) is respected
