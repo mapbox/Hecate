@@ -132,6 +132,27 @@ impl ValidAuth for AuthSchema {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct AuthStats {
+    pub get: Option<String>
+}
+
+impl AuthStats {
+    fn new() -> Self {
+        AuthStats {
+            get: Some(String::from("public"))
+        }
+    }
+}
+
+impl ValidAuth for AuthStats {
+    fn is_valid(&self) -> Result<bool, String> {
+        is_all("stats::get", &self.get)?;
+
+        Ok(true)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthAuth {
     pub get: Option<String>
 }
@@ -351,6 +372,7 @@ impl ValidAuth for AuthOSM {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CustomAuth {
     pub meta: Option<String>,
+    pub stats: Option<AuthStats>,
     pub mvt: Option<AuthMVT>,
     pub schema: Option<AuthSchema>,
     pub auth: Option<AuthAuth>,
@@ -463,6 +485,7 @@ impl CustomAuth {
     pub fn new() -> Self {
         CustomAuth {
             meta: Some(String::from("public")),
+            stats: Some(AuthStats::new()),
             schema: Some(AuthSchema::new()),
             auth: Some(AuthAuth::new()),
             mvt: Some(AuthMVT::new()),
@@ -484,6 +507,13 @@ impl CustomAuth {
 
     pub fn allows_meta(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
         auth_met(&self.meta, auth, &conn)
+    }
+
+    pub fn allows_stats_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.stats {
+            None => Err(not_authed()),
+            Some(stats) => auth_met(&stats.get, auth, &conn)
+        }
     }
 
     pub fn allows_mvt_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
