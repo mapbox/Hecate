@@ -435,6 +435,7 @@ have a map containing the auth for each subkey.
 | `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
 | **Data Stats**                        | `stats`                   | `public`      | All                       |       |
 | `GET /api/data/stats`                 | `stats::get`              | `public`      | All                       |       |
+| `GET /api/data/bounds/<id>/stats`     | `stats::bounds`           | `public`      | All                       |       |
 | **Features**                          | `feature`                 |               | `null`                    | 2     |
 | `POST /api/data/feature(s)`           | `feature::create`         | `user`        | `user`, `admin`, `null`   |       |
 | `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |
@@ -872,6 +873,24 @@ curl -X GET 'http://localhost:8000/api/data/bounds
 #### `GET` `/api/data/bounds/<bounds>`
 
 Return line delimited GeoJSON `Feature` of all the geometries within the specified boundary file.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<bounds>` | `REQUIRED` One of the boundary files as specified via the `/ap/data/bounds` |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
+```
+
+---
+
+#### `GET` `/api/data/bounds/<bounds>/stats`
+
+Return statistics about geometries that intersect a given bounds
 
 *Options*
 
