@@ -668,7 +668,7 @@ fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 
     auth_rules.allows_stats_get(&mut auth, &conn)?;
 
-    match delta::get_json(&conn) {
+    match stats::get_json(&conn) {
         Ok(stats) => Ok(Json(stats)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
     }

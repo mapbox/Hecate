@@ -372,6 +372,7 @@ impl ValidAuth for AuthOSM {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CustomAuth {
     pub meta: Option<String>,
+    pub stats: Option<AuthStats>,
     pub mvt: Option<AuthMVT>,
     pub schema: Option<AuthSchema>,
     pub auth: Option<AuthAuth>,
