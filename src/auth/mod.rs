@@ -132,6 +132,27 @@ impl ValidAuth for AuthSchema {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct AuthStats {
+    pub get: Option<String>
+}
+
+impl AuthStats {
+    fn new() -> Self {
+        AuthStats {
+            get: Some(String::from("public"))
+        }
+    }
+}
+
+impl ValidAuth for AuthStats {
+    fn is_valid(&self) -> Result<bool, String> {
+        is_all("stats::get", &self.get)?;
+
+        Ok(true)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthAuth {
     pub get: Option<String>
 }
@@ -463,6 +484,7 @@ impl CustomAuth {
     pub fn new() -> Self {
         CustomAuth {
             meta: Some(String::from("public")),
+            stats: Some(AuthStats::new()),
             schema: Some(AuthSchema::new()),
             auth: Some(AuthAuth::new()),
             mvt: Some(AuthMVT::new()),
