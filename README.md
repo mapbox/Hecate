@@ -495,7 +495,12 @@ curl -X GET 'http://localhost:8000/api'
 
 <h3 align='center'>Data Stats</h3>
 
-#### `GET` `/api`
+Note: Analyze stats depend on the database having `ANALYZE` run.
+For performance reasons these stats are calculated from ANALYZEd stats
+where possible to ensure speedy results. For more up to date stats,
+ensure your database is running `ANALYZE` more often.
+
+#### `GET` `/api/data/stats`
 
 Return a JSON object containing statistics and metadata about the 
 geometries stored in the server
