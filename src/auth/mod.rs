@@ -508,6 +508,13 @@ impl CustomAuth {
         auth_met(&self.meta, auth, &conn)
     }
 
+    pub fn allows_stats_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.stats {
+            None => Err(not_authed()),
+            Some(stats) => auth_met(&stats.get, auth, &conn)
+        }
+    }
+
     pub fn allows_mvt_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
         match &self.mvt {
             None => Err(not_authed()),
