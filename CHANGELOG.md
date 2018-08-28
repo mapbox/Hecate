@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.42.0
+
+- :rocket: Add generic server meta store
+
 ## v0.41.0
 
 - :rocket: Add Data Statistics API for Boundaries
