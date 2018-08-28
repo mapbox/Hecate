@@ -892,6 +892,45 @@ curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
 
 ---
 
+#### `POST` `/api/data/bounds/<bounds>`
+
+Create or replace a boundary with the given name.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<bounds>` | `REQUIRED` the name of the bounds to create or replace |
+
+*Example*
+
+```bash
+curl -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [ 1.1, 1.1 ] } }' \
+    'http://username:password@localhost:8000/api/data/bounds/us_dc'
+```
+
+---
+
+#### `DELETE` `/api/data/bounds/<bounds>`
+
+Delete a bounds file with the given name.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<bounds>` | `REQUIRED` the name of the bounds to create or replace |
+
+*Example*
+
+```bash
+curl -X DELETE 'http://username:password@localhost:8000/api/data/bounds/us_dc'
+```
+
+---
+
 #### `GET` `/api/data/bounds/<bounds>/stats`
 
 Return statistics about geometries that intersect a given bounds
