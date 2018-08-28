@@ -44,7 +44,7 @@ user friendly platform.
     - [Vector Tiles](#vector-tiles)
     - [Downloading Via Clone](#downloading-via-clone)
     - [Downloading Via Query](#downloading-via-query)
-    - [Downloading Via Boundaries](#downloading-via-boundaries)
+    - [Boundaries](#boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
     - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
     - [Feature Creation](#feature-creation)
@@ -856,7 +856,7 @@ curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20
 
 ---
 
-<h3 align='center'>Downloading via Boundaries</h3>
+<h3 align='center'>Boundaries</h3>
 
 #### `GET` `/api/data/bounds/`
 
@@ -901,7 +901,7 @@ Return statistics about geometries that intersect a given bounds
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats
 ```
 
 ---
