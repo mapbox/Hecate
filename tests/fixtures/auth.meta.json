@@ -1,5 +1,5 @@
 {
-    "server": "public",
+    "server": "user",
     "meta": {
         "get": "user",
         "list": "user",
@@ -7,10 +7,6 @@
     },
     "schema": {
         "get": "user"
-    },
-    "stats": {
-        "get": "user",
-        "bounds": "user"
     },
     "mvt": {
         "get": "user",

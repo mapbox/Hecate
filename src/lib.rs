@@ -18,6 +18,7 @@ extern crate geojson;
 extern crate env_logger;
 extern crate chrono;
 
+pub mod meta;
 pub mod stats;
 pub mod delta;
 pub mod mvt;
@@ -94,7 +95,11 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             staticsrv
         ])
         .mount("/api", routes![
-            meta,
+            server,
+            meta_list,
+            meta_get,
+            meta_delete,
+            meta_set,
             schema_get,
             auth_get,
             stats_get,
@@ -226,12 +231,60 @@ fn not_found() -> Json {
 fn index() -> &'static str { "Hello World!" }
 
 #[get("/")]
-fn meta(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
-    auth_rules.allows_meta(&mut auth, &conn.get()?)?;
+fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
+    auth_rules.allows_server(&mut auth, &conn.get()?)?;
 
     Ok(Json(json!({
         "version": VERSION
     })))
+}
+
+#[get("/meta")]
+fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_meta_list(&mut auth, &conn)?;
+
+    match meta::list(&conn) {
+        Ok(list) => {
+            Ok(Json(json!(list)))
+        },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[get("/meta/<key>")]
+fn meta_get(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_meta_get(&mut auth, &conn)?;
+
+    match meta::get(&conn, &key) {
+        Ok(list) => {
+            Ok(Json(json!(list)))
+        },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[delete("/meta/<key>")]
+fn meta_delete(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_meta_set(&mut auth, &conn)?;
+
+    match meta::delete(&conn, &key) {
+        Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[post("/meta/<key>", format="application/json", data="<body>")]
+fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String, body: Json) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_meta_list(&mut auth, &conn)?;
+
+    match meta::set(&conn, &key, &body) {
+        Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
 }
 
 #[get("/<file..>")]

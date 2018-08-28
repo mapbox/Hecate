@@ -4,6 +4,12 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS hstore;
 
+DROP TABLE IF EXISTS meta;
+CREATE TABLE meta (
+    key         TEXT UNIQUE,
+    value       JSONB
+);
+
 DROP TABLE IF EXISTS tiles;
 CREATE TABLE tiles (
     created     TIMESTAMP,
@@ -125,6 +131,7 @@ DO $$DECLARE count int;
 
         IF count > 0 THEN
             EXECUTE 'REVOKE ALL PRIVILEGES ON "geo" FROM hecate_read;';
+            EXECUTE 'REVOKE ALL PRIVILEGES ON "deltas" FROM hecate_read;';
             EXECUTE 'DROP ROLE IF EXISTS hecate_read;';
         END IF;
     END$$;

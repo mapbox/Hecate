@@ -1,4 +1,5 @@
 extern crate r2d2;
+
 extern crate r2d2_postgres;
 extern crate postgres;
 extern crate rocket;
@@ -84,6 +85,33 @@ fn is_auth(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
 
 pub trait ValidAuth {
     fn is_valid(&self) -> Result<bool, String>;
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct AuthMeta {
+    pub get: Option<String>,
+    pub list: Option<String>,
+    pub set: Option<String>
+}
+
+impl AuthMeta {
+    fn new() -> Self {
+        AuthMeta {
+            get: Some(String::from("public")),
+            list: Some(String::from("public")),
+            set: Some(String::from("admin"))
+        }
+    }
+}
+
+impl ValidAuth for AuthMeta {
+    fn is_valid(&self) -> Result<bool, String> {
+        is_all("meta::get", &self.get)?;
+        is_all("meta::list", &self.list)?;
+        is_auth("meta::set", &self.set)?;
+
+        Ok(true)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -374,7 +402,8 @@ impl ValidAuth for AuthOSM {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CustomAuth {
-    pub meta: Option<String>,
+    pub server: Option<String>,
+    pub meta: Option<AuthMeta>,
     pub stats: Option<AuthStats>,
     pub mvt: Option<AuthMVT>,
     pub schema: Option<AuthSchema>,
@@ -390,7 +419,12 @@ pub struct CustomAuth {
 
 impl ValidAuth for CustomAuth {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("meta", &self.meta)?;
+        is_all("server", &self.server)?;
+
+        match &self.meta {
+            None => (),
+            Some(ref meta) => { meta.is_valid()?; }
+        };
 
         match &self.mvt {
             None => (),
@@ -487,7 +521,8 @@ fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &r2d2::PooledConne
 impl CustomAuth {
     pub fn new() -> Self {
         CustomAuth {
-            meta: Some(String::from("public")),
+            server: Some(String::from("public")),
+            meta: Some(AuthMeta::new()),
             stats: Some(AuthStats::new()),
             schema: Some(AuthSchema::new()),
             auth: Some(AuthAuth::new()),
@@ -508,8 +543,29 @@ impl CustomAuth {
         json_auth
     }
 
-    pub fn allows_meta(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
-        auth_met(&self.meta, auth, &conn)
+    pub fn allows_server(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        auth_met(&self.server, auth, &conn)
+    }
+
+    pub fn allows_meta_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.meta {
+            None => Err(not_authed()),
+            Some(meta) => auth_met(&meta.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_meta_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.meta {
+            None => Err(not_authed()),
+            Some(meta) => auth_met(&meta.list, auth, &conn)
+        }
+    }
+
+    pub fn allows_meta_set(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.meta {
+            None => Err(not_authed()),
+            Some(meta) => auth_met(&meta.set, auth, &conn)
+        }
     }
 
     pub fn allows_stats_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
