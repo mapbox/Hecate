@@ -327,6 +327,7 @@ impl ValidAuth for AuthFeature {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthBounds {
     pub list: Option<String>,
+    pub create: Option<String>,
     pub get: Option<String>
 }
 
@@ -334,6 +335,7 @@ impl AuthBounds {
     fn new() -> Self {
         AuthBounds {
             list: Some(String::from("public")),
+            create: Some(String::from("admin")),
             get: Some(String::from("public"))
         }
     }
@@ -342,6 +344,7 @@ impl AuthBounds {
 impl ValidAuth for AuthBounds {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("bounds::list", &self.list)?;
+        is_all("bounds::create", &self.create)?;
         is_all("bounds::get", &self.get)?;
 
         Ok(true)
