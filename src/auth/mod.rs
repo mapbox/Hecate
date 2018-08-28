@@ -133,13 +133,15 @@ impl ValidAuth for AuthSchema {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthStats {
-    pub get: Option<String>
+    pub get: Option<String>,
+    pub bounds: Option<String>
 }
 
 impl AuthStats {
     fn new() -> Self {
         AuthStats {
-            get: Some(String::from("public"))
+            get: Some(String::from("public")),
+            bounds: Some(String::from("public"))
         }
     }
 }
@@ -147,6 +149,7 @@ impl AuthStats {
 impl ValidAuth for AuthStats {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("stats::get", &self.get)?;
+        is_all("stats::bounds", &self.bounds)?;
 
         Ok(true)
     }
@@ -513,6 +516,13 @@ impl CustomAuth {
         match &self.stats {
             None => Err(not_authed()),
             Some(stats) => auth_met(&stats.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_stats_bounds(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.stats {
+            None => Err(not_authed()),
+            Some(stats) => auth_met(&stats.bounds, auth, &conn)
         }
     }
 

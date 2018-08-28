@@ -44,7 +44,7 @@ user friendly platform.
     - [Vector Tiles](#vector-tiles)
     - [Downloading Via Clone](#downloading-via-clone)
     - [Downloading Via Query](#downloading-via-query)
-    - [Downloading Via Boundaries](#downloading-via-boundaries)
+    - [Boundaries](#boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
     - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
     - [Feature Creation](#feature-creation)
@@ -435,6 +435,7 @@ have a map containing the auth for each subkey.
 | `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
 | **Data Stats**                        | `stats`                   | `public`      | All                       |       |
 | `GET /api/data/stats`                 | `stats::get`              | `public`      | All                       |       |
+| `GET /api/data/bounds/<id>/stats`     | `stats::bounds`           | `public`      | All                       |       |
 | **Features**                          | `feature`                 |               | `null`                    | 2     |
 | `POST /api/data/feature(s)`           | `feature::create`         | `user`        | `user`, `admin`, `null`   |       |
 | `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |
@@ -855,7 +856,7 @@ curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20
 
 ---
 
-<h3 align='center'>Downloading via Boundaries</h3>
+<h3 align='center'>Boundaries</h3>
 
 #### `GET` `/api/data/bounds/`
 
@@ -883,6 +884,24 @@ Return line delimited GeoJSON `Feature` of all the geometries within the specifi
 
 ```bash
 curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
+```
+
+---
+
+#### `GET` `/api/data/bounds/<bounds>/stats`
+
+Return statistics about geometries that intersect a given bounds
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<bounds>` | `REQUIRED` One of the boundary files as specified via the `/ap/data/bounds` |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats
 ```
 
 ---
