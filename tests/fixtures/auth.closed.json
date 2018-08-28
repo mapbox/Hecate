@@ -1,5 +1,5 @@
 {
-    "server": "user",
+    "server": "public",
     "meta": {
         "get": "user",
         "list": "user",
