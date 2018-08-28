@@ -3,6 +3,7 @@ extern crate r2d2_postgres;
 extern crate postgres;
 extern crate std;
 extern crate rocket;
+extern crate serde_json;
 
 use stream::PGStream;
 
@@ -68,5 +69,37 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     "#), &[&bounds]) {
         Ok(stream) => Ok(stream),
         Err(_) =>  Err(BoundsError::GetError(String::from("db error")))
+    }
+}
+
+pub fn stats_json(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<serde_json::Value, BoundsError> {
+    match conn.query("
+        SELECT
+            row_to_json(t)
+        FROM (
+            SELECT
+                count(*) AS total,
+                json_build_array(
+                    ST_XMin(ST_Extent(bounds.geom)),
+                    ST_YMin(ST_Extent(bounds.geom)),
+                    ST_XMax(ST_Extent(bounds.geom)),
+                    ST_YMax(ST_Extent(bounds.geom))
+                ) AS bbox,
+                to_char(now(), 'YYYY-MM-DD HH24:MI:SS') AS last_calc
+            FROM
+                geo,
+                bounds
+            WHERE
+                bounds.name = $1
+                AND ST_Intersects(geo.geom, bounds.geom)
+        ) t
+    ", &[ &bounds ]) {
+        Ok(rows) => Ok(rows.get(0).get(0)),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
+                _ => Err(BoundsError::ListError(String::from("generic")))
+            }
+        }
     }
 }

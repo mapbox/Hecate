@@ -160,6 +160,30 @@ impl ValidAuth for AuthSchema {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct AuthStats {
+    pub get: Option<String>,
+    pub bounds: Option<String>
+}
+
+impl AuthStats {
+    fn new() -> Self {
+        AuthStats {
+            get: Some(String::from("public")),
+            bounds: Some(String::from("public"))
+        }
+    }
+}
+
+impl ValidAuth for AuthStats {
+    fn is_valid(&self) -> Result<bool, String> {
+        is_all("stats::get", &self.get)?;
+        is_all("stats::bounds", &self.bounds)?;
+
+        Ok(true)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthAuth {
     pub get: Option<String>
 }
@@ -380,6 +404,7 @@ impl ValidAuth for AuthOSM {
 pub struct CustomAuth {
     pub server: Option<String>,
     pub meta: Option<AuthMeta>,
+    pub stats: Option<AuthStats>,
     pub mvt: Option<AuthMVT>,
     pub schema: Option<AuthSchema>,
     pub auth: Option<AuthAuth>,
@@ -498,6 +523,7 @@ impl CustomAuth {
         CustomAuth {
             server: Some(String::from("public")),
             meta: Some(AuthMeta::new()),
+            stats: Some(AuthStats::new()),
             schema: Some(AuthSchema::new()),
             auth: Some(AuthAuth::new()),
             mvt: Some(AuthMVT::new()),
@@ -539,6 +565,20 @@ impl CustomAuth {
         match &self.meta {
             None => Err(not_authed()),
             Some(meta) => auth_met(&meta.set, auth, &conn)
+        }
+    }
+
+    pub fn allows_stats_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.stats {
+            None => Err(not_authed()),
+            Some(stats) => auth_met(&stats.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_stats_bounds(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.stats {
+            None => Err(not_authed()),
+            Some(stats) => auth_met(&stats.bounds, auth, &conn)
         }
     }
 

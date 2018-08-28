@@ -7,9 +7,24 @@
   <a href="https://crates.io/crates/hecate"><img src="https://img.shields.io/crates/v/hecate.svg"/></a>
 </p>
 
+## Why Use Hecate?
+
+Hecate takes all the best parts of an ESRI MapServer and the OpenStreetMap backend platform and rolls them in a single
+user friendly platform.
+
+- Integrated Mapbox Vector Tile Creation (MapServer)
+- Full Authentication Cusomizations (MapServer)
+- Streaming GeoJSON Output for unbounded parallelism
+- Full MultiUser & Changesets tracked editing (OSM)
+- Fully Atomic Changesets
+- MapboxGL Style Storage
+- JSON Based REST API (ESRI)
+- Fully OpenSource! (OSM)
+
 ## Table Of Contents
 
 1. [Brief](#brief)
+1. [Why Use Hecate](#why-use-hecate)
 2. [Table of Contents](#table-of-contents)
 3. [Build Environment](#build-environment)
 3. [Docker File](#docker-file-coverage-tests)
@@ -21,6 +36,7 @@
 6. [API](#api)
     - [User Options](#user-options)
     - [Meta](#meta)
+    - [Data Stats](#data-stats)
     - [Admin Interface](#admin-interface)
     - [Schema](#schema)
     - [Auth](#Auth)
@@ -28,7 +44,7 @@
     - [Vector Tiles](#vector-tiles)
     - [Downloading Via Clone](#downloading-via-clone)
     - [Downloading Via Query](#downloading-via-query)
-    - [Downloading Via Boundaries](#downloading-via-boundaries)
+    - [Boundaries](#boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
     - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
     - [Feature Creation](#feature-creation)
@@ -80,7 +96,7 @@ cargo run
 - Test it is working - should respond with `HTTP200`
 
 ```bash
-curl 'localhost:8000
+curl localhost:8000
 ```
 
 You will now have an empty database which can be populated with your own data/user accounts.
@@ -421,6 +437,9 @@ have a map containing the auth for each subkey.
 | **Deltas**                            | `delta`                   |               | `null`                    | 2     |
 | `GET /api/delta/<id>`                 | `delta::get`              | `public`      | All                       |       |
 | `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
+| **Data Stats**                        | `stats`                   | `public`      | All                       |       |
+| `GET /api/data/stats`                 | `stats::get`              | `public`      | All                       |       |
+| `GET /api/data/bounds/<id>/stats`     | `stats::bounds`           | `public`      | All                       |       |
 | **Features**                          | `feature`                 |               | `null`                    | 2     |
 | `POST /api/data/feature(s)`           | `feature::create`         | `user`        | `user`, `admin`, `null`   |       |
 | `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |
@@ -457,18 +476,6 @@ HTTP Healthcheck URL, currently returns `Hello World!`
 curl -X GET 'http://localhost:8000/
 ```
 
-#### `GET` `/health`
-
-Database Healthcheck URL, returns a JSON object.
-
-If the database is unhealthy or overloaded this endpoint will fail
-
-*Example*
-
-```bash
-curl -X GET 'http://localhost:8000/health
-```
-
 ---
 
 <h3 align='center'>Admin Interface</h3>
@@ -487,6 +494,26 @@ Return a JSON object containing metadata about the server
 
 ```bash
 curl -X GET 'http://localhost:8000/api'
+```
+
+---
+
+<h3 align='center'>Data Stats</h3>
+
+Note: Analyze stats depend on the database having `ANALYZE` run.
+For performance reasons these stats are calculated from ANALYZEd stats
+where possible to ensure speedy results. For more up to date stats,
+ensure your database is running `ANALYZE` more often.
+
+#### `GET` `/api/data/stats`
+
+Return a JSON object containing statistics and metadata about the 
+geometries stored in the server
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/stats'
 ```
 
 ---
@@ -764,7 +791,7 @@ Create a new user, provied the username & email are not already taken
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/user/create?ingalls&password=yeaheh&email=ingalls@protonmail.com
+curl -X GET 'http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com
 ```
 
 ---
@@ -833,7 +860,7 @@ curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20
 
 ---
 
-<h3 align='center'>Downloading via Boundaries</h3>
+<h3 align='center'>Boundaries</h3>
 
 #### `GET` `/api/data/bounds/`
 
@@ -865,6 +892,24 @@ curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
 
 ---
 
+#### `GET` `/api/data/bounds/<bounds>/stats`
+
+Return statistics about geometries that intersect a given bounds
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<bounds>` | `REQUIRED` One of the boundary files as specified via the `/ap/data/bounds` |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats
+```
+
+---
+
 <h3 align='center'>Downloading Individual Features</h3>
 
 #### `GET` `/api/data/feature`
@@ -880,7 +925,7 @@ Return a single GeoJSON `Feature` given a query parameter
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/features?key=123
+curl -X GET 'http://localhost:8000/api/data/feature?key=123
 ```
 
 ---

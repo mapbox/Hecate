@@ -1,7 +1,7 @@
 #![feature(plugin, custom_derive, custom_attribute, attr_literals)]
 #![plugin(rocket_codegen)]
 
-static VERSION: &'static str = "0.39.0";
+static VERSION: &'static str = "0.41.0";
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
@@ -19,6 +19,7 @@ extern crate env_logger;
 extern crate chrono;
 
 pub mod meta;
+pub mod stats;
 pub mod delta;
 pub mod mvt;
 pub mod feature;
@@ -101,6 +102,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             meta_set,
             schema_get,
             auth_get,
+            stats_get,
             mvt_get,
             mvt_meta,
             mvt_regen,
@@ -126,6 +128,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             feature_get_history,
             features_get,
             bounds_list,
+            bounds_stats,
             bounds_get,
             clone_get,
             clone_query,
@@ -655,6 +658,18 @@ fn bounds_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
     }
 }
 
+#[get("/data/bounds/<bounds>/stats")]
+fn bounds_stats(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_stats_bounds(&mut auth, &conn)?;
+
+    match bounds::stats_json(conn, bounds) {
+        Ok(stats) => Ok(Json(stats)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
 #[derive(FromForm)]
 struct CloneQuery {
     query: String,
@@ -711,6 +726,18 @@ fn auth_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
     auth_rules.allows_auth_get(&mut auth, &conn)?;
 
     Ok(Json(auth_rules.to_json()))
+}
+
+#[get("/data/stats")]
+fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_stats_get(&mut auth, &conn)?;
+
+    match stats::get_json(&conn) {
+        Ok(stats) => Ok(Json(stats)),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
+    }
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
