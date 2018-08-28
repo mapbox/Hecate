@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.41.0
+
+- :rocket: Add Data Statistics API for Boundaries
+
 ## v0.40.0
 
 - :rocket: Add Data Statistics API
