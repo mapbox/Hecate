@@ -152,7 +152,8 @@ mod test {
                     "get": "user"
                 },
                 "stats": {
-                    "get": "user"
+                    "get": "user",
+                    "bounds": "user"
                 },
                 "mvt": {
                     "get": "user",

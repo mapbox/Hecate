@@ -1,7 +1,7 @@
 #![feature(plugin, custom_derive, custom_attribute, attr_literals)]
 #![plugin(rocket_codegen)]
 
-static VERSION: &'static str = "0.40.0";
+static VERSION: &'static str = "0.41.0";
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
@@ -123,6 +123,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             feature_get_history,
             features_get,
             bounds_list,
+            bounds_stats,
             bounds_get,
             clone_get,
             clone_query,
@@ -600,6 +601,18 @@ fn bounds_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
     match bounds::get(conn, bounds) {
         Ok(bs) => Ok(Stream::from(bs)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[get("/data/bounds/<bounds>/stats")]
+fn bounds_stats(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_stats_bounds(&mut auth, &conn)?;
+
+    match bounds::stats_json(conn, bounds) {
+        Ok(stats) => Ok(Json(stats)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
