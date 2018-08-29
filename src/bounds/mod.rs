@@ -17,7 +17,7 @@ pub enum BoundsError {
 impl BoundsError {
     pub fn to_string(&self) -> String {
         match *self {
-            BoundsError::NotFound => String::from("User Not Found"),
+            BoundsError::NotFound => String::from("Bounds Not Found"),
             BoundsError::ListError(ref msg) => String::from(format!("Could not list bounds: {}", msg)),
             BoundsError::GetError(ref msg) => String::from(format!("Could not get bounds: {}", msg))
         }

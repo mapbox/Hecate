@@ -147,7 +147,12 @@ mod test {
             let resp_value: Value = resp.json().unwrap();
 
             assert_eq!(resp_value, json!({
-                "meta": "user",
+                "server": "public",
+                "meta": {
+                    "get": "user",
+                    "list": "user",
+                    "set": "user"
+                },
                 "schema": {
                     "get": "user"
                 },
