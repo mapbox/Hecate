@@ -408,6 +408,18 @@ fn user_list_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: 
     }
 }
 
+#[get("/user/<id>")]
+fn user_info(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.is_admin(&mut auth, &conn)?;
+
+    match user::info(&conn, &id) {
+        Ok(info) => { Ok(Json(json!(info))) },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
 #[get("/user/info")]
 fn user_self(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;

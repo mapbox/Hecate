@@ -546,6 +546,11 @@ impl CustomAuth {
         json_auth
     }
 
+
+    pub fn is_admin(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        auth_met(&Some(String::from("admin")), auth, &conn)
+    }
+
     pub fn allows_server(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
         auth_met(&self.server, auth, &conn)
     }
