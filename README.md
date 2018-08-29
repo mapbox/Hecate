@@ -859,6 +859,81 @@ curl -X GET \
 
 ---
 
+#### `GET` `/api/user/info`
+
+Allows an authenticated user to obtain information about their own account
+
+*Example*
+
+```bash
+curl -X GET \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/info'
+```
+
+---
+
+#### `GET` `/api/user/<id>` **ADMIN ONLY**
+
+Obtain information about any user in the system by their numeric User ID.
+
+Note the information returned is the same information that a user is able to
+lookup about themself with the `GET /api/user/info` endpoint.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>`     | `REQUIRED` User ID to obtain user information of |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com
+```
+
+---
+
+#### `PUT` `/api/user/<id>/admin` **ADMIN ONLY**
+
+Allows an admin to add another user to the admin pool.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>`     | `REQUIRED` User ID to obtain user information of |
+
+*Example*
+
+```bash
+curl -X PUT \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/1/admin'
+```
+
+---
+
+#### `DELETE` `/api/user/<id>/admin` **ADMIN ONLY**
+
+Allows an existing admin to remove another user from the admin pool.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>`     | `REQUIRED` User ID to obtain user information of |
+
+*Example*
+
+```bash
+curl -X DELETE \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/1/admin'
+```
+
+---
+
 <h3 align='center'>Downloading via Clone</h3>
 
 #### `GET` `/api/data/clone`
