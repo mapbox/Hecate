@@ -153,8 +153,8 @@ server members.
 | `id`      | The unique integer `id` of a given feature. Note that all features get a unique id accross GeoJSON Geometry Type |
 | `version` | The version of a given feature, starts at `1` for a newly created feature |
 | `action`  | Only used for uploads, the desired action to be performed. One of `create`, `modify`, `delete`, or `restore` |
-| `key`     | `[Optional]` A String containing a value that hecate will ensure remains unique across all features. Can be a natural id (wikidata id, PID, etc), computed property hash, geometry hash etc. The specifics are left up to the client. Should an attempt at importing a Feature with a differing `id` but identical `key` be made, the feature with will be rejected, ensuring the uniqueness of the `key` values. By default this value will be `NULL`. Duplicate `NULL` values are allowed.
-| `force`   | `[Optional]` Boolean allowing a user to override version locking and force UPSERT a feature. Disabled by default |
+| `key`     | `Optional` A String containing a value that hecate will ensure remains unique across all features. Can be a natural id (wikidata id, PID, etc), computed property hash, geometry hash etc. The specifics are left up to the client. Should an attempt at importing a Feature with a differing `id` but identical `key` be made, the feature with will be rejected, ensuring the uniqueness of the `key` values. By default this value will be `NULL`. Duplicate `NULL` values are allowed.
+| `force`   | `Optional` Boolean allowing a user to override version locking and force UPSERT a feature. Disabled by default |
 
 ### Examples
 
@@ -566,7 +566,9 @@ curl -X GET 'http://localhost:8000/api/styles/1'
 User requesting their own styles will get public & private styles
 
 ```bash
-curl -X GET 'http://username:password@localhost:8000/api/styles/1'
+curl -X GET \
+    -u 'username:password' \
+    'http://localhost:8000/api/styles/1'
 ```
 
 ---
@@ -582,7 +584,8 @@ curl \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"name": "Name of this particular style", "style": "Mapbox Style Object Here"}' \
-    'http://username:password@localhost:8000/api/style'
+    -u 'username:password' \
+    'http://localhost:8000/api/style'
 ```
 
 ---
@@ -642,7 +645,8 @@ curl \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"name": "New Name", "style": "New Mapbox Style Object Here"}' \
-    'http://username:password@localhost:8000/api/style/1'
+    -u 'username:password' \
+    'http://localhost:8000/api/style/1'
 ```
 
 ---
@@ -663,7 +667,9 @@ affect cloned styles that were made when it was public.
 *Example*
 
 ```bash
-curl -X POST 'http://username:password@localhost:8000/api/style/1/private'
+curl -X POST \
+    -u 'username:password' \
+    'http://localhost:8000/api/style/1/private'
 ```
 
 ---
@@ -684,7 +690,9 @@ and other users will be able to download, clone, and use it
 *Example*
 
 ```bash
-curl -X POST 'http://username:password@localhost:8000/api/style/1/public'
+curl -X POST \
+    -u 'username:password' \
+    'http://localhost:8000/api/style/1/public'
 ```
 
 ---
@@ -778,12 +786,32 @@ ensuring the tile isn't returned from the tile cache.
 *Example*
 
 ```bash
-curl -X GET 'http://username:password@localhost:8000/api/tiles/1/1/1/regen
+curl -X GET \
+    -u 'username:password' \
+    'http://localhost:8000/api/tiles/1/1/1/regen
 ```
 
 ---
 
 <h3 align='center'>User Options</h3>
+
+#### `GET` `/api/users`
+
+Get a list of users (up to 100) or filter by a given user prefix.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `filter` | `Optional` Desired search prefix for username |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/users
+```
+
+---
 
 #### `GET` `/api/user/create`
 
@@ -812,7 +840,9 @@ Return a new session cookie and the `uid` given an Basic Authenticated request.
 *Example*
 
 ```bash
-curl -X GET 'http://username:password@localhost:8000/api/user/session
+curl -X GET \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/session
 ```
 
 ---
@@ -855,7 +885,7 @@ SELECT props FROM geo WHERE id = 1
 | Option          | Notes                                                        |
 | :-------------: | ------------------------------------------------------------ |
 | `query=<query>` | SQL Query to run against Geometries                          |
-| `limit=<limit>` | `[optional]` Optionally limit the number of returned results |
+| `limit=<limit>` | `Optional` Optionally limit the number of returned results |
 
 *Examples*
 
@@ -1006,7 +1036,8 @@ curl \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"action": "create", "message": "Random Changes", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}' \
-    'http://username:password@localhost:8000/api/data/feature'
+    -u 'username:password' \
+    'http://localhost:8000/api/data/feature'
 ```
 
 ---
@@ -1029,7 +1060,8 @@ curl \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"type":"FeatureCollection","message":"A bunch of changes","features": [{"action": "create", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}]}' \
-    'http://username:password@localhost:8000/api/data/features'
+    -u 'username:password' \
+    'http://localhost:8000/api/data/features'
 ```
 
 ---
