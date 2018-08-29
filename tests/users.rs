@@ -173,9 +173,43 @@ mod test {
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
-            assert_eq!(json_body, json!([
-                                                   
-            ]));
+            assert_eq!(json_body, json!([{
+                "id": 1,
+                "access": null,
+                "username": "ingalls",
+            }]));
+        }
+
+        { //Test User Listing w/ Filtering
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/users?filter=in")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!([{
+                "id": 1,
+                "access": null,
+                "username": "ingalls",
+            }]));
+        }
+
+        { //Test User Listing w/ Filtering - no match
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/users?filter=kp")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!([]));
         }
 
         server.kill().unwrap();
