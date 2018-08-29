@@ -40,7 +40,7 @@ user friendly platform.
     - [Data Stats](#data-stats)
     - [Admin Interface](#admin-interface)
     - [Schema](#schema)
-    - [Auth](#Auth)
+    - [Authentication](#authentication)
     - [Styles](#styles)
     - [Vector Tiles](#vector-tiles)
     - [Downloading Via Clone](#downloading-via-clone)
@@ -724,7 +724,7 @@ curl -X GET 'http://localhost:8000/api/schema
 
 ---
 
-<h3 align='center'>Auth</h3>
+<h3 align='center'>Authentication</h3>
 
 #### `GET` `/api/auth`
 
