@@ -118,6 +118,8 @@ has a selection of scripts to populate the database with test data.
 
 ## Docker File (Coverage Tests)
 
+<details>
+
 The Docker file is designed to give the user a testing environment to easily run rust tests.
 
 Install docker and then run
@@ -128,7 +130,11 @@ docker build .
 docker run {{HASH FROM ABOVE}}
 ```
 
+</details>
+
 ## Feature Format
+
+<details>
 
 Hecate is designed as a GeoJSON first interchange and uses [standard GeoJSON](http://geojson.org/) with a couple additions
 and exceptions as outlined below.
@@ -284,6 +290,8 @@ Restore places the new given geometry/properties at the id specified. It does no
 must use the Feature History API to get the state before deletion and then perform the `restore` action.
 
 Note: Restore will throw an error if an feature still exists.
+
+</details>
 
 ## Server
 
