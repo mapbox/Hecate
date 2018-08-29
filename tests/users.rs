@@ -231,7 +231,7 @@ mod test {
             }));
         }
 
-        { // A non-admin cannot get user info about an arbitrary
+        { // A non-admin cannot get user info about an arbitrary user
             let client = reqwest::Client::new();
             let resp = client.get("http://localhost:8000/api/user/3")
                 .basic_auth("ingalls", Some("yeaheh"))
@@ -306,12 +306,22 @@ mod test {
 
         { // An admin can unset an admin
             let client = reqwest::Client::new();
-            let resp = client.delete("http://localhost:8000/api/user/3/admin")
-                .basic_auth("ingalls", Some("yeaheh"))
+            let resp = client.delete("http://localhost:8000/api/user/1/admin")
+                .basic_auth("admin_future", Some("yeaheh"))
                 .send()
                 .unwrap();
 
             assert!(resp.status().is_success());
+        }
+
+        { //Ensure admin was unset
+            let client = reqwest::Client::new();
+            let resp = client.get("http://localhost:8000/api/user/3")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
         }
 
         server.kill().unwrap();
