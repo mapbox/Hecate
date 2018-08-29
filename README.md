@@ -26,14 +26,15 @@ user friendly platform.
 1. [Brief](#brief)
 1. [Why Use Hecate](#why-use-hecate)
 2. [Table of Contents](#table-of-contents)
-3. [Build Environment](#build-environment)
-3. [Docker File](#docker-file-coverage-tests)
-4. [Feature Format](#feature-format)
-5. [Server](#server)
+3. [Related Libraries](#related-libraries)
+4. [Build Environment](#build-environment)
+5. [Docker File](#docker-file-coverage-tests)
+6. [Feature Format](#feature-format)
+7. [Server](#server)
     - [Database Connection](#database)
     - [JSON Validation](#json-validation)
     - [Custom Authentication](#custom-authentication)
-6. [API](#api)
+8. [API](#api)
     - [User Options](#user-options)
     - [Meta](#meta)
     - [Data Stats](#data-stats)
@@ -50,6 +51,13 @@ user friendly platform.
     - [Feature Creation](#feature-creation)
     - [Deltas](#deltas)
     - [OpenStreetMap API](#openstreetmap-api)
+
+## Related Libraries
+
+- [HecateJS](https://github.com/mapbox/HecateJS) Javascript Library & CLI Tool for interacting with the Hecate API
+- [Hecate-Example](https://github.com/ingalls/hecate-example) Script for importing some fake data for testing
+
+Built something cool that uses the Hecate API? Let us know!
 
 ## Build Environment
 
