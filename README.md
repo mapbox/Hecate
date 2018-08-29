@@ -61,6 +61,8 @@ Built something cool that uses the Hecate API? Let us know!
 
 ## Build Environment
 
+<details>
+
 - Start by installing Rust from [rust-lang.org](https://www.rust-lang.org/en-US/), this will install the current stable version
 
 ```bash
@@ -112,7 +114,11 @@ You will now have an empty database which can be populated with your own data/us
 If you want to populate the database with sample data for testing, [ingalls/hecate-example](https://github.com/ingalls/hecate-example)
 has a selection of scripts to populate the database with test data.
 
+</details>
+
 ## Docker File (Coverage Tests)
+
+<details>
 
 The Docker file is designed to give the user a testing environment to easily run rust tests.
 
@@ -124,7 +130,11 @@ docker build .
 docker run {{HASH FROM ABOVE}}
 ```
 
+</details>
+
 ## Feature Format
+
+<details>
 
 Hecate is designed as a GeoJSON first interchange and uses [standard GeoJSON](http://geojson.org/) with a couple additions
 and exceptions as outlined below.
@@ -280,6 +290,8 @@ Restore places the new given geometry/properties at the id specified. It does no
 must use the Feature History API to get the state before deletion and then perform the `restore` action.
 
 Note: Restore will throw an error if an feature still exists.
+
+</details>
 
 ## Server
 
