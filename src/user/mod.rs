@@ -108,9 +108,9 @@ pub fn delete_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
         }
     }
 }
-pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<String, UserError> {
+pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<serde_json::Value, UserError> {
     match conn.query("
-        SELECT row_to_json(u)::TEXT
+        SELECT row_to_json(u)
         FROM (
             SELECT
                 id,
@@ -122,10 +122,7 @@ pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
             WHERE id = $1
         ) u
     ", &[ &uid ]) {
-        Ok(res) => {
-            let info: String = res.get(0).get(0);
-            Ok(info)
-        },
+        Ok(res) => Ok(res.get(0).get(0)),
         Err(err) => {
             match err.as_db() {
                 Some(e) => { Err(UserError::CreateTokenError(e.message.clone())) },

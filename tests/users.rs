@@ -212,6 +212,108 @@ mod test {
             assert_eq!(json_body, json!([]));
         }
 
+        { // Get info about my own account
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/info")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 1,
+                "username": "ingalls",
+                "email": "ingalls@protonmail.com",
+                "meta": {}
+            }));
+        }
+
+        { // A non-admin cannot get user info about an arbitrary
+            let client = reqwest::Client::new();
+            let resp = client.get("http://localhost:8000/api/user/3")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+        }
+
+        { // A non-admin cannot set an admin
+            let client = reqwest::Client::new();
+            let resp = client.put("http://localhost:8000/api/user/1/admin")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+        }
+
+        { // A non-admin cannot unset an admin
+            let client = reqwest::Client::new();
+            let resp = client.delete("http://localhost:8000/api/user/1/admin")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+        }
+
+        {
+            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
+
+            conn.execute("
+                UPDATE users SET access = 'admin' WHERE id = 1;
+            ", &[]).unwrap();
+        }
+
+        { //Create Second User
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=future_admin&password=yeaheh&email=fake@example.com").unwrap();
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { // An admin can get user info about an arbitrary user
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/3")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 3,
+                "username": "future_admin",
+                "email": "fake@example.com",
+                "meta": {}
+            }));
+        }
+
+        { // An admin can set an admin
+            let client = reqwest::Client::new();
+            let resp = client.put("http://localhost:8000/api/user/3/admin")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+        }
+
+        { // An admin can unset an admin
+            let client = reqwest::Client::new();
+            let resp = client.delete("http://localhost:8000/api/user/3/admin")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+        }
+
         server.kill().unwrap();
     }
 }

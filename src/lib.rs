@@ -107,6 +107,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             mvt_meta,
             mvt_regen,
             user_self,
+            user_info,
             user_create,
             user_set_admin,
             user_delete_admin,
@@ -417,7 +418,7 @@ fn user_info(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     auth_rules.is_admin(&mut auth, &conn)?;
 
     match user::info(&conn, &id) {
-        Ok(info) => { Ok(Json(json!(info))) },
+        Ok(info) => { Ok(Json(info)) },
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
@@ -454,7 +455,7 @@ fn user_self(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     let uid = auth.uid.unwrap();
 
     match user::info(&conn, &uid) {
-        Ok(info) => { Ok(Json(json!(info))) },
+        Ok(info) => { Ok(Json(info)) },
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
