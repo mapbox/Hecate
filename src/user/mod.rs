@@ -48,15 +48,16 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
 
     match conn.query("
         SELECT 
-            json_agg(row_to_json(row)) 
+            COALESCE(json_agg(row_to_json(row)), '[]'::JSON)
         FROM (
             SELECT
                 id,
+                access,
                 username
             FROM
                 users
             WHERE
-                username iLIKE $1
+                username ~ $1
             ORDER BY
                 username
             LIMIT 100

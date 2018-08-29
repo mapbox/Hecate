@@ -1,5 +1,6 @@
 extern crate reqwest;
 extern crate postgres;
+#[macro_use] extern crate serde_json;
 
 #[cfg(test)]
 mod test {
@@ -10,6 +11,7 @@ mod test {
     use std::time::Duration;
     use std::thread;
     use reqwest;
+    use serde_json;
 
     #[test]
     fn users() {
@@ -145,6 +147,35 @@ mod test {
             assert_eq!(resp.text().unwrap(), "1");
             //TODO test for cookie existence - reqwest is currently working on adding better cookie
             //support
+        }
+
+        { //Create a new session given username & password
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/session")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+            assert_eq!(resp.text().unwrap(), "1");
+            //TODO test for cookie existence - reqwest is currently working on adding better cookie
+            //support
+        }
+
+        { //Test User Listing
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/users")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!([
+                                                   
+            ]));
         }
 
         server.kill().unwrap();
