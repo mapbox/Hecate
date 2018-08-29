@@ -307,7 +307,7 @@ mod test {
         { // An admin can unset an admin
             let client = reqwest::Client::new();
             let resp = client.delete("http://localhost:8000/api/user/1/admin")
-                .basic_auth("admin_future", Some("yeaheh"))
+                .basic_auth("future_admin", Some("yeaheh"))
                 .send()
                 .unwrap();
 
