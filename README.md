@@ -61,6 +61,8 @@ Built something cool that uses the Hecate API? Let us know!
 
 ## Build Environment
 
+<details>
+
 - Start by installing Rust from [rust-lang.org](https://www.rust-lang.org/en-US/), this will install the current stable version
 
 ```bash
@@ -111,6 +113,8 @@ You will now have an empty database which can be populated with your own data/us
 
 If you want to populate the database with sample data for testing, [ingalls/hecate-example](https://github.com/ingalls/hecate-example)
 has a selection of scripts to populate the database with test data.
+
+</details>
 
 ## Docker File (Coverage Tests)
 
