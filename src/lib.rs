@@ -110,7 +110,6 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             user_create,
             user_set_admin,
             user_delete_admin,
-            user_create,
             user_list,
             user_list_filter,
             user_create_session,
