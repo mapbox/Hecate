@@ -91,6 +91,23 @@ pub fn set_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
     }
 }
 
+pub fn delete_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<bool, UserError> {
+    match conn.query("
+        UPDATE users
+            SET
+                access = NULL
+            WHERE
+                id = $1
+    ", &[ &uid ]) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(UserError::AdminError(e.message.clone())) },
+                _ => Err(UserError::AdminError(String::from("generic")))
+            }
+        }
+    }
+}
 pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<String, UserError> {
     match conn.query("
         SELECT row_to_json(u)::TEXT

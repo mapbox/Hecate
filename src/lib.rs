@@ -108,6 +108,9 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             mvt_regen,
             user_self,
             user_create,
+            user_set_admin,
+            user_delete_admin,
+            user_create,
             user_list,
             user_list_filter,
             user_create_session,
@@ -415,6 +418,30 @@ fn user_info(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     auth_rules.is_admin(&mut auth, &conn)?;
 
     match user::info(&conn, &id) {
+        Ok(info) => { Ok(Json(json!(info))) },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[put("/user/<id>/admin")]
+fn user_set_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.is_admin(&mut auth, &conn)?;
+
+    match user::set_admin(&conn, &id) {
+        Ok(info) => { Ok(Json(json!(info))) },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[delete("/user/<id>/admin")]
+fn user_delete_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.is_admin(&mut auth, &conn)?;
+
+    match user::delete_admin(&conn, &id) {
         Ok(info) => { Ok(Json(json!(info))) },
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
