@@ -109,6 +109,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             user_self,
             user_create,
             user_list,
+            user_list_filter,
             user_create_session,
             user_delete_session,
             style_create,
@@ -385,8 +386,19 @@ struct UserFilter {
     filter: Option<String>,
 }
 
+#[get("/users")]
+fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_user_list(&mut auth, &conn)?;
+
+    match user::list(&conn, None) {
+        Ok(users) => Ok(Json(json!(users))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
 #[get("/users?<filter>")]
-fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: UserFilter) -> Result<Json, status::Custom<Json>> {
+fn user_list_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: UserFilter) -> Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;
     auth_rules.allows_user_list(&mut auth, &conn)?;
 
