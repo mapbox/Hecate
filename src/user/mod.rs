@@ -3,11 +3,14 @@ extern crate r2d2_postgres;
 extern crate postgres;
 extern crate rocket;
 extern crate base64;
+extern crate serde_json;
 
 #[derive(PartialEq, Debug)]
 pub enum UserError {
     NotFound,
     NotAuthorized,
+    ListError(String),
+    AdminError(String),
     CreateError(String),
     CreateTokenError(String)
 }
@@ -17,6 +20,8 @@ impl UserError {
         match *self {
             UserError::NotFound => String::from("User Not Found"),
             UserError::NotAuthorized => String::from("User Not Authorized"),
+            UserError::ListError(ref msg) => String::from(format!("Could not set list users: {}", msg)),
+            UserError::AdminError(ref msg) => String::from(format!("Could not set admin on user: {}", msg)),
             UserError::CreateError(ref msg) => String::from(format!("Could not create user: {}", msg)),
             UserError::CreateTokenError(ref msg) => String::from(format!("Could not create token: {}", msg))
         }
@@ -38,9 +43,74 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<String, UserError> {
+pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, filter: Option<String>) -> Result<serde_json::Value, UserError> {
+    let filter = filter.unwrap_or(String::from(""));
+
     match conn.query("
-        SELECT row_to_json(u)::TEXT
+        SELECT 
+            COALESCE(json_agg(row_to_json(row)), '[]'::JSON)
+        FROM (
+            SELECT
+                id,
+                access,
+                username
+            FROM
+                users
+            WHERE
+                username ~ $1
+            ORDER BY
+                username
+            LIMIT 100
+        ) row;
+    ", &[ &filter ]) {
+        Ok(rows) => Ok(rows.get(0).get(0)),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(UserError::CreateError(e.message.clone())) },
+                _ => Err(UserError::CreateError(String::from("generic")))
+            }
+        }
+    }
+}
+
+pub fn set_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<bool, UserError> {
+    match conn.query("
+        UPDATE users
+            SET
+                access = 'admin'
+            WHERE
+                id = $1
+    ", &[ &uid ]) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(UserError::AdminError(e.message.clone())) },
+                _ => Err(UserError::AdminError(String::from("generic")))
+            }
+        }
+    }
+}
+
+pub fn delete_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<bool, UserError> {
+    match conn.query("
+        UPDATE users
+            SET
+                access = NULL
+            WHERE
+                id = $1
+    ", &[ &uid ]) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(UserError::AdminError(e.message.clone())) },
+                _ => Err(UserError::AdminError(String::from("generic")))
+            }
+        }
+    }
+}
+pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<serde_json::Value, UserError> {
+    match conn.query("
+        SELECT row_to_json(u)
         FROM (
             SELECT
                 id,
@@ -52,10 +122,7 @@ pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
             WHERE id = $1
         ) u
     ", &[ &uid ]) {
-        Ok(res) => {
-            let info: String = res.get(0).get(0);
-            Ok(info)
-        },
+        Ok(res) => Ok(res.get(0).get(0)),
         Err(err) => {
             match err.as_db() {
                 Some(e) => { Err(UserError::CreateTokenError(e.message.clone())) },

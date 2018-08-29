@@ -234,6 +234,7 @@ impl ValidAuth for AuthMVT {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthUser {
     pub info: Option<String>,
+    pub list: Option<String>,
     pub create: Option<String>,
     pub create_session: Option<String>
 }
@@ -242,6 +243,7 @@ impl AuthUser {
     fn new() -> Self {
         AuthUser {
             info: Some(String::from("self")),
+            list: Some(String::from("user")),
             create: Some(String::from("public")),
             create_session: Some(String::from("self"))
         }
@@ -251,6 +253,7 @@ impl AuthUser {
 impl ValidAuth for AuthUser {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("user::create", &self.create)?;
+        is_all("user::list", &self.list)?;
 
         is_self("user::create_session", &self.create_session)?;
         is_self("user::info", &self.info)?;
@@ -543,6 +546,11 @@ impl CustomAuth {
         json_auth
     }
 
+
+    pub fn is_admin(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        auth_met(&Some(String::from("admin")), auth, &conn)
+    }
+
     pub fn allows_server(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
         auth_met(&self.server, auth, &conn)
     }
@@ -600,6 +608,13 @@ impl CustomAuth {
         match &self.mvt {
             None => Err(not_authed()),
             Some(mvt) => auth_met(&mvt.meta, auth, &conn)
+        }
+    }
+
+    pub fn allows_user_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.user {
+            None => Err(not_authed()),
+            Some(user) => auth_met(&user.list, auth, &conn)
         }
     }
 

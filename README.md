@@ -61,6 +61,8 @@ Built something cool that uses the Hecate API? Let us know!
 
 ## Build Environment
 
+<details>
+
 - Start by installing Rust from [rust-lang.org](https://www.rust-lang.org/en-US/), this will install the current stable version
 
 ```bash
@@ -112,7 +114,11 @@ You will now have an empty database which can be populated with your own data/us
 If you want to populate the database with sample data for testing, [ingalls/hecate-example](https://github.com/ingalls/hecate-example)
 has a selection of scripts to populate the database with test data.
 
+</details>
+
 ## Docker File (Coverage Tests)
+
+<details>
 
 The Docker file is designed to give the user a testing environment to easily run rust tests.
 
@@ -124,7 +130,11 @@ docker build .
 docker run {{HASH FROM ABOVE}}
 ```
 
+</details>
+
 ## Feature Format
+
+<details>
 
 Hecate is designed as a GeoJSON first interchange and uses [standard GeoJSON](http://geojson.org/) with a couple additions
 and exceptions as outlined below.
@@ -153,8 +163,8 @@ server members.
 | `id`      | The unique integer `id` of a given feature. Note that all features get a unique id accross GeoJSON Geometry Type |
 | `version` | The version of a given feature, starts at `1` for a newly created feature |
 | `action`  | Only used for uploads, the desired action to be performed. One of `create`, `modify`, `delete`, or `restore` |
-| `key`     | `[Optional]` A String containing a value that hecate will ensure remains unique across all features. Can be a natural id (wikidata id, PID, etc), computed property hash, geometry hash etc. The specifics are left up to the client. Should an attempt at importing a Feature with a differing `id` but identical `key` be made, the feature with will be rejected, ensuring the uniqueness of the `key` values. By default this value will be `NULL`. Duplicate `NULL` values are allowed.
-| `force`   | `[Optional]` Boolean allowing a user to override version locking and force UPSERT a feature. Disabled by default |
+| `key`     | `Optional` A String containing a value that hecate will ensure remains unique across all features. Can be a natural id (wikidata id, PID, etc), computed property hash, geometry hash etc. The specifics are left up to the client. Should an attempt at importing a Feature with a differing `id` but identical `key` be made, the feature with will be rejected, ensuring the uniqueness of the `key` values. By default this value will be `NULL`. Duplicate `NULL` values are allowed.
+| `force`   | `Optional` Boolean allowing a user to override version locking and force UPSERT a feature. Disabled by default |
 
 ### Examples
 
@@ -280,6 +290,8 @@ Restore places the new given geometry/properties at the id specified. It does no
 must use the Feature History API to get the state before deletion and then perform the `restore` action.
 
 Note: Restore will throw an error if an feature still exists.
+
+</details>
 
 ## Server
 
@@ -431,6 +443,7 @@ have a map containing the auth for each subkey.
 | `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt::regen`              | `user`        | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt::meta`               | `public`      | All                       |       |
 | **Users**                             | `user`                    |               | `null`                    | 2     |
+| `GET /api/users`                      | `user::list`              | `user`        | All                       |       |
 | `GET /api/user/info`                  | `user::info`              | `self`        | `self`, `admin`, `null`   |       |
 | `GET /api/create`                     | `user::create`            | `public`      | All                       |       |
 | `GET /api/create/session`             | `user::create_session`    | `self`        | `self`, `admin`, `null`   |       |
@@ -565,7 +578,9 @@ curl -X GET 'http://localhost:8000/api/styles/1'
 User requesting their own styles will get public & private styles
 
 ```bash
-curl -X GET 'http://username:password@localhost:8000/api/styles/1'
+curl -X GET \
+    -u 'username:password' \
+    'http://localhost:8000/api/styles/1'
 ```
 
 ---
@@ -581,7 +596,8 @@ curl \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"name": "Name of this particular style", "style": "Mapbox Style Object Here"}' \
-    'http://username:password@localhost:8000/api/style'
+    -u 'username:password' \
+    'http://localhost:8000/api/style'
 ```
 
 ---
@@ -641,7 +657,8 @@ curl \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"name": "New Name", "style": "New Mapbox Style Object Here"}' \
-    'http://username:password@localhost:8000/api/style/1'
+    -u 'username:password' \
+    'http://localhost:8000/api/style/1'
 ```
 
 ---
@@ -662,7 +679,9 @@ affect cloned styles that were made when it was public.
 *Example*
 
 ```bash
-curl -X POST 'http://username:password@localhost:8000/api/style/1/private'
+curl -X POST \
+    -u 'username:password' \
+    'http://localhost:8000/api/style/1/private'
 ```
 
 ---
@@ -683,7 +702,9 @@ and other users will be able to download, clone, and use it
 *Example*
 
 ```bash
-curl -X POST 'http://username:password@localhost:8000/api/style/1/public'
+curl -X POST \
+    -u 'username:password' \
+    'http://localhost:8000/api/style/1/public'
 ```
 
 ---
@@ -777,12 +798,32 @@ ensuring the tile isn't returned from the tile cache.
 *Example*
 
 ```bash
-curl -X GET 'http://username:password@localhost:8000/api/tiles/1/1/1/regen
+curl -X GET \
+    -u 'username:password' \
+    'http://localhost:8000/api/tiles/1/1/1/regen
 ```
 
 ---
 
 <h3 align='center'>User Options</h3>
+
+#### `GET` `/api/users`
+
+Get a list of users (up to 100) or filter by a given user prefix.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `filter` | `Optional` Desired search prefix for username |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/users
+```
+
+---
 
 #### `GET` `/api/user/create`
 
@@ -811,7 +852,84 @@ Return a new session cookie and the `uid` given an Basic Authenticated request.
 *Example*
 
 ```bash
-curl -X GET 'http://username:password@localhost:8000/api/user/session
+curl -X GET \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/session
+```
+
+---
+
+#### `GET` `/api/user/info`
+
+Allows an authenticated user to obtain information about their own account
+
+*Example*
+
+```bash
+curl -X GET \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/info'
+```
+
+---
+
+#### `GET` `/api/user/<id>` **ADMIN ONLY**
+
+Obtain information about any user in the system by their numeric User ID.
+
+Note the information returned is the same information that a user is able to
+lookup about themself with the `GET /api/user/info` endpoint.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>`     | `REQUIRED` User ID to obtain user information of |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com
+```
+
+---
+
+#### `PUT` `/api/user/<id>/admin` **ADMIN ONLY**
+
+Allows an admin to add another user to the admin pool.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>`     | `REQUIRED` User ID to obtain user information of |
+
+*Example*
+
+```bash
+curl -X PUT \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/1/admin'
+```
+
+---
+
+#### `DELETE` `/api/user/<id>/admin` **ADMIN ONLY**
+
+Allows an existing admin to remove another user from the admin pool.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>`     | `REQUIRED` User ID to obtain user information of |
+
+*Example*
+
+```bash
+curl -X DELETE \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/1/admin'
 ```
 
 ---
@@ -854,7 +972,7 @@ SELECT props FROM geo WHERE id = 1
 | Option          | Notes                                                        |
 | :-------------: | ------------------------------------------------------------ |
 | `query=<query>` | SQL Query to run against Geometries                          |
-| `limit=<limit>` | `[optional]` Optionally limit the number of returned results |
+| `limit=<limit>` | `Optional` Optionally limit the number of returned results |
 
 *Examples*
 
@@ -1005,7 +1123,8 @@ curl \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"action": "create", "message": "Random Changes", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}' \
-    'http://username:password@localhost:8000/api/data/feature'
+    -u 'username:password' \
+    'http://localhost:8000/api/data/feature'
 ```
 
 ---
@@ -1028,7 +1147,8 @@ curl \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"type":"FeatureCollection","message":"A bunch of changes","features": [{"action": "create", "type":"Feature","properties":{"shop": true},"geometry":{"type":"Point","coordinates":[0,0]}}]}' \
-    'http://username:password@localhost:8000/api/data/features'
+    -u 'username:password' \
+    'http://localhost:8000/api/data/features'
 ```
 
 ---
