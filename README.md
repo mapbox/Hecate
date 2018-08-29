@@ -431,6 +431,7 @@ have a map containing the auth for each subkey.
 | `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt::regen`              | `user`        | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt::meta`               | `public`      | All                       |       |
 | **Users**                             | `user`                    |               | `null`                    | 2     |
+| `GET /api/users`                      | `user::list`              | `user`        | All                       |       |
 | `GET /api/user/info`                  | `user::info`              | `self`        | `self`, `admin`, `null`   |       |
 | `GET /api/create`                     | `user::create`            | `public`      | All                       |       |
 | `GET /api/create/session`             | `user::create_session`    | `self`        | `self`, `admin`, `null`   |       |

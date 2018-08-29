@@ -3,11 +3,13 @@ extern crate r2d2_postgres;
 extern crate postgres;
 extern crate rocket;
 extern crate base64;
+extern crate serde_json;
 
 #[derive(PartialEq, Debug)]
 pub enum UserError {
     NotFound,
     NotAuthorized,
+    ListError(String),
     AdminError(String),
     CreateError(String),
     CreateTokenError(String)
@@ -18,6 +20,7 @@ impl UserError {
         match *self {
             UserError::NotFound => String::from("User Not Found"),
             UserError::NotAuthorized => String::from("User Not Authorized"),
+            UserError::ListError(ref msg) => String::from(format!("Could not set list users: {}", msg)),
             UserError::AdminError(ref msg) => String::from(format!("Could not set admin on user: {}", msg)),
             UserError::CreateError(ref msg) => String::from(format!("Could not create user: {}", msg)),
             UserError::CreateTokenError(ref msg) => String::from(format!("Could not create token: {}", msg))
@@ -31,6 +34,35 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
             VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, '{}'::JSONB);
     ", &[ &username, &password, &email ]) {
         Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(UserError::CreateError(e.message.clone())) },
+                _ => Err(UserError::CreateError(String::from("generic")))
+            }
+        }
+    }
+}
+
+pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, filter: Option<String>) -> Result<serde_json::Value, UserError> {
+    let filter = filter.unwrap_or(String::from(""));
+
+    match conn.query("
+        SELECT 
+            json_agg(row_to_json(row)) 
+        FROM (
+            SELECT
+                id,
+                username
+            FROM
+                users
+            WHERE
+                username iLIKE $1
+            ORDER BY
+                username
+            LIMIT 100
+        ) row;
+    ", &[ &filter ]) {
+        Ok(rows) => Ok(rows.get(0).get(0)),
         Err(err) => {
             match err.as_db() {
                 Some(e) => { Err(UserError::CreateError(e.message.clone())) },

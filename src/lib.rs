@@ -108,6 +108,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             mvt_regen,
             user_self,
             user_create,
+            user_list,
             user_create_session,
             user_delete_session,
             style_create,
@@ -375,6 +376,22 @@ fn user_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 
     match user::create(&conn, &user.username, &user.password, &user.email) {
         Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[derive(FromForm)]
+struct UserFilter {
+    filter: Option<String>,
+}
+
+#[get("/users?<filter>")]
+fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: UserFilter) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_user_list(&mut auth, &conn)?;
+
+    match user::list(&conn, filter.filter) {
+        Ok(users) => Ok(Json(json!(users))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
