@@ -872,8 +872,9 @@ curl -X GET \
 ```
 
 ---
+<p align=right><strong>Admin Only</strong></p>
 
-#### `GET` `/api/user/<id>` **ADMIN ONLY**
+#### `GET` `/api/user/<id>`
 
 Obtain information about any user in the system by their numeric User ID.
 
@@ -893,8 +894,9 @@ curl -X GET 'http://localhost:8000/api/user/create?username=ingalls&password=yea
 ```
 
 ---
+<p align=right><strong>Admin Only</strong></p>
 
-#### `PUT` `/api/user/<id>/admin` **ADMIN ONLY**
+#### `PUT` `/api/user/<id>/admin`
 
 Allows an admin to add another user to the admin pool.
 
@@ -913,8 +915,9 @@ curl -X PUT \
 ```
 
 ---
+<p align=right><strong>Admin Only</strong></p>
 
-#### `DELETE` `/api/user/<id>/admin` **ADMIN ONLY**
+#### `DELETE` `/api/user/<id>/admin`
 
 Allows an existing admin to remove another user from the admin pool.
 
