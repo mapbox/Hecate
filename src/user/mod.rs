@@ -8,6 +8,7 @@ extern crate base64;
 pub enum UserError {
     NotFound,
     NotAuthorized,
+    AdminError(String),
     CreateError(String),
     CreateTokenError(String)
 }
@@ -17,6 +18,7 @@ impl UserError {
         match *self {
             UserError::NotFound => String::from("User Not Found"),
             UserError::NotAuthorized => String::from("User Not Authorized"),
+            UserError::AdminError(ref msg) => String::from(format!("Could not set admin on user: {}", msg)),
             UserError::CreateError(ref msg) => String::from(format!("Could not create user: {}", msg)),
             UserError::CreateTokenError(ref msg) => String::from(format!("Could not create token: {}", msg))
         }
@@ -33,6 +35,24 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
             match err.as_db() {
                 Some(e) => { Err(UserError::CreateError(e.message.clone())) },
                 _ => Err(UserError::CreateError(String::from("generic")))
+            }
+        }
+    }
+}
+
+pub fn set_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<bool, UserError> {
+    match conn.query("
+        UPDATE users
+            SET
+                access = 'admin'
+            WHERE
+                id = $1
+    ", &[ &uid ]) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(UserError::AdminError(e.message.clone())) },
+                _ => Err(UserError::AdminError(String::from("generic")))
             }
         }
     }
