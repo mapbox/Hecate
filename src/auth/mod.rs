@@ -359,6 +359,7 @@ impl ValidAuth for AuthFeature {
 pub struct AuthBounds {
     pub list: Option<String>,
     pub create: Option<String>,
+    pub delete: Option<String>,
     pub get: Option<String>
 }
 
@@ -367,6 +368,7 @@ impl AuthBounds {
         AuthBounds {
             list: Some(String::from("public")),
             create: Some(String::from("admin")),
+            delete: Some(String::from("admin")),
             get: Some(String::from("public"))
         }
     }
@@ -376,6 +378,7 @@ impl ValidAuth for AuthBounds {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("bounds::list", &self.list)?;
         is_all("bounds::create", &self.create)?;
+        is_all("bounds::delete", &self.create)?;
         is_all("bounds::get", &self.get)?;
 
         Ok(true)
@@ -723,6 +726,20 @@ impl CustomAuth {
         match &self.bounds {
             None => Err(not_authed()),
             Some(bounds) => auth_met(&bounds.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_bounds_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.bounds {
+            None => Err(not_authed()),
+            Some(bounds) => auth_met(&bounds.create, auth, &conn)
+        }
+    }
+
+    pub fn allows_bounds_delete(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.bounds {
+            None => Err(not_authed()),
+            Some(bounds) => auth_met(&bounds.delete, auth, &conn)
         }
     }
 

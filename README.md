@@ -472,7 +472,7 @@ have a map containing the auth for each subkey.
 | **Bounds**                            | `bounds`                  |               | `null`                    | 2     |
 | `GET /api/bounds`                     | `bounds::list`            | `public`      | All                       |       |
 | `GET /api/bounds/<id>`                | `bounds::get`             | `public`      | All                       |       |
-| `PUT /api/bounds                      | `bounds::create`          | `admin`       | All                       |       |
+| `POST /api/bounds                     | `bounds::create`          | `admin`       | All                       |       |
 | `DELETE /api/bounds/<id>`             | `bounds:delete`           | `admin`       | All                       |       |
 | **OpenStreetMap Shim**                | `osm`                     |               | `null`                    | 2     |
 | `GET /api/0.6/map`                    | `osm::get`                | `public`      | All                       | 3     |

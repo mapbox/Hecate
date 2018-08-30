@@ -28,7 +28,7 @@ impl BoundsError {
     }
 }
 
-pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String, feat: &serde_json::Value) -> Result<bool, BoundsError> {
+pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String, feat: &String) -> Result<bool, BoundsError> {
     match conn.execute("
         INSERT INTO meta (name, geom) VALUES ($1, ST_SetSRID(ST_GeomFromGeoJSON($2::JSON->>'geometry'))
             ON CONFLICT (name) DO
