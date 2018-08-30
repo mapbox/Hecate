@@ -193,6 +193,7 @@ mod test {
                 "bounds": {
                     "list": "user",
                     "create": "user",
+                    "delete": "user",
                     "get": "user"
                 },
                 "osm": {
