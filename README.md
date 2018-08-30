@@ -1029,6 +1029,8 @@ curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
 
 Create or replace a boundary with the given name.
 
+Note: Boundaries must be a `Polygon` or `MultiPolygon` Feature GeoJSON.
+
 *Options*
 
 | Option     | Notes |
@@ -1041,7 +1043,8 @@ Create or replace a boundary with the given name.
 curl -X POST \
     -H "Content-Type: application/json" \
     -d '{"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [ 1.1, 1.1 ] } }' \
-    'http://username:password@localhost:8000/api/data/bounds/us_dc'
+    -u 'username:password' \
+    'http://localhost:8000/api/data/bounds/us_dc'
 ```
 
 ---
@@ -1059,7 +1062,9 @@ Delete a bounds file with the given name.
 *Example*
 
 ```bash
-curl -X DELETE 'http://username:password@localhost:8000/api/data/bounds/us_dc'
+curl -X DELETE \
+    -u 'username:password' \
+    'http://localhost:8000/api/data/bounds/us_dc'
 ```
 
 ---

@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.44.0
+
+- :tada: Allow creating and deleting bounds programatically
+
 ## v0.43.0
 
 - :tada: Add an endpoint for allowing an admin to add admins who can add more admins
