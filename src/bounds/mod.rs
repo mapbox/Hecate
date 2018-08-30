@@ -10,6 +10,8 @@ use stream::PGStream;
 #[derive(PartialEq, Debug)]
 pub enum BoundsError {
     NotFound,
+    DeleteError(String),
+    SetError(String),
     ListError(String),
     GetError(String)
 }
@@ -18,8 +20,42 @@ impl BoundsError {
     pub fn to_string(&self) -> String {
         match *self {
             BoundsError::NotFound => String::from("Bounds Not Found"),
+            BoundsError::DeleteError(ref msg) => String::from(format!("Could not delete bounds: {}", msg)),
+            BoundsError::SetError(ref msg) => String::from(format!("Could not set bounds: {}", msg)),
             BoundsError::ListError(ref msg) => String::from(format!("Could not list bounds: {}", msg)),
             BoundsError::GetError(ref msg) => String::from(format!("Could not get bounds: {}", msg))
+        }
+    }
+}
+
+pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String, feat: &serde_json::Value) -> Result<bool, BoundsError> {
+    match conn.execute("
+        INSERT INTO meta (name, geom) VALUES ($1, ST_SetSRID(ST_GeomFromGeoJSON($2::JSON->>'geometry'))
+            ON CONFLICT (name) DO
+                UPDATE
+                    SET geom = ST_SetSRID(ST_GeomFromGeoJSON($2::JSON->>'geometry'), 4326)
+                    WHERE name = $1
+    ", &[ &name, &feat ]) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
+                _ => Err(BoundsError::ListError(String::from("generic")))
+            }
+        }
+    }
+}
+
+pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String) -> Result<bool, BoundsError> {
+    match conn.execute("
+        DELETE FROM bounds WHERE name = $1
+    ", &[ &name ]) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
+                _ => Err(BoundsError::ListError(String::from("generic")))
+            }
         }
     }
 }
