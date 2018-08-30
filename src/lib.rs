@@ -135,6 +135,8 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             bounds_list,
             bounds_stats,
             bounds_get,
+            bounds_set,
+            bounds_delete,
             clone_get,
             clone_query,
             xml_capabilities,
@@ -722,6 +724,37 @@ fn bounds_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
     match bounds::get(conn, bounds) {
         Ok(bs) => Ok(Stream::from(bs)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[post("/data/bounds/<bounds>", format="application/json", data="<body>")]
+fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String, body: String) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_bounds_create(&mut auth, &conn)?;
+
+    let geom: serde_json::Value = match serde_json::from_str(&*body) {
+        Ok(geom) => geom,
+        Err(_) => {
+            return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid Feature GeoJSON"))));
+        }
+    };
+
+    match bounds::set(&conn, &bounds, &geom) {
+        Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+#[delete("/data/bounds/<bounds>")]
+fn bounds_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_bounds_delete(&mut auth, &conn)?;
+
+    match bounds::delete(&conn, &bounds) {
+        Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }

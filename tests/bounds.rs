@@ -49,19 +49,33 @@ mod test {
         ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
+        { //Create Username
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
         {
             let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
 
-            conn.execute(r#"
-                INSERT INTO bounds(geom, name) VALUES (
-                    ST_Multi(ST_SetSRID(ST_GeomFromGeoJSON('{ "type": "Polygon", "coordinates": [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] }'), 4326)),
-                    'dc'
-                );
-            "#, &[]).unwrap();
+            conn.execute("
+                UPDATE users SET access = 'admin' WHERE id = 1;
+            ", &[]).unwrap();
         }
 
-        { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+        { //Set DC Bounds
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/bounds/dc")
+                .body(r#"{
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -106,7 +120,10 @@ mod test {
 
         { //List Bounds
             let mut resp = reqwest::get("http://localhost:8000/api/data/bounds").unwrap();
-            assert_eq!(resp.text().unwrap(), r#"["dc"]"#);
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body, json!(["dc"]));
+
             assert!(resp.status().is_success());
         }
 
@@ -173,6 +190,45 @@ mod test {
 
             assert_eq!(json_body["bbox"], json!([-77.1336364746094, 38.835428840073, -76.9640350341797, 38.9748910643417]));
             assert_eq!(json_body["total"], json!(1));
+        }
+
+        { //Update Bounds
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/bounds/dc")
+                .body(r#"{
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": { "type": "Polygon", "coordinates": [ [ [ -29.8828125, 62.59334083012024 ], [ -11.6015625, 62.59334083012024 ], [ -11.6015625, 67.47492238478702 ], [ -29.8828125, 67.47492238478702 ], [ -29.8828125, 62.59334083012024 ] ] ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //Delete Bounds
+            let client = reqwest::Client::new();
+            let mut resp = client.delete("http://localhost:8000/api/data/bounds/dc")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //List Bounds
+            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body, json!([]));
+
+            assert!(resp.status().is_success());
         }
 
         server.kill().unwrap();

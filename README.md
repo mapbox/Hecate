@@ -472,6 +472,8 @@ have a map containing the auth for each subkey.
 | **Bounds**                            | `bounds`                  |               | `null`                    | 2     |
 | `GET /api/bounds`                     | `bounds::list`            | `public`      | All                       |       |
 | `GET /api/bounds/<id>`                | `bounds::get`             | `public`      | All                       |       |
+| `POST /api/bounds                     | `bounds::create`          | `admin`       | All                       |       |
+| `DELETE /api/bounds/<id>`             | `bounds:delete`           | `admin`       | All                       |       |
 | **OpenStreetMap Shim**                | `osm`                     |               | `null`                    | 2     |
 | `GET /api/0.6/map`                    | `osm::get`                | `public`      | All                       | 3     |
 | `PUT /api/0.6/changeset/<id>/upload`  | `osm::create`             | `user`        | `user`, `admin`, `null`   | 3     |
@@ -991,6 +993,8 @@ curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20
 
 <h3 align='center'>Boundaries</h3>
 
+Boundaries allow downloading data via a set of pre-determined boundary files.
+
 #### `GET` `/api/data/bounds/`
 
 Return an array of possible boundary files with which data can be extracted from the server with
@@ -1017,6 +1021,45 @@ Return line delimited GeoJSON `Feature` of all the geometries within the specifi
 
 ```bash
 curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
+```
+
+---
+
+#### `POST` `/api/data/bounds/<bounds>`
+
+Create or replace a boundary with the given name.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<bounds>` | `REQUIRED` the name of the bounds to create or replace |
+
+*Example*
+
+```bash
+curl -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [ 1.1, 1.1 ] } }' \
+    'http://username:password@localhost:8000/api/data/bounds/us_dc'
+```
+
+---
+
+#### `DELETE` `/api/data/bounds/<bounds>`
+
+Delete a bounds file with the given name.
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<bounds>` | `REQUIRED` the name of the bounds to create or replace |
+
+*Example*
+
+```bash
+curl -X DELETE 'http://username:password@localhost:8000/api/data/bounds/us_dc'
 ```
 
 ---
