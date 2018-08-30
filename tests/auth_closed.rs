@@ -167,6 +167,7 @@ mod test {
                 },
                 "user": {
                     "info": "self",
+                    "list": "user",
                     "create": "public",
                     "create_session": "self"
                 },

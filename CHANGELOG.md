@@ -10,6 +10,12 @@
 
 # Version History
 
+## v0.43.0
+
+- :tada: Add an endpoint for allowing an admin to add admins who can add more admins
+- :tada: Add endpoint for admins to remove other admins
+- :tada: Add endpoint for searching list of users
+
 ## v0.42.0
 
 - :rocket: Add generic server meta store
