@@ -76,7 +76,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "");
+            assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
