@@ -49,20 +49,34 @@ mod test {
         ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
-        {
-            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
-
-            conn.execute(r#"
-                INSERT INTO bounds(geom, name) VALUES (
-                    ST_Multi(ST_SetSRID(ST_GeomFromGeoJSON('{ "type": "Polygon", "coordinates": [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] }'), 4326)),
-                    'dc'
-                );
-            "#, &[]).unwrap();
-        }
-
         { //Create Username
             let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
+
+            conn.execute("
+                UPDATE users SET access = 'admin' WHERE id = 1;
+            ", &[]).unwrap();
+        }
+
+        { //Set DC Bounds
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/bounds/dc")
+                .body(r#"{
+                    "type": "Feature",
+                    "properties": {}
+                    "geometry": { "type": "Polygon", "coordinates": [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "");
             assert!(resp.status().is_success());
         }
 
@@ -173,6 +187,26 @@ mod test {
 
             assert_eq!(json_body["bbox"], json!([-77.1336364746094, 38.835428840073, -76.9640350341797, 38.9748910643417]));
             assert_eq!(json_body["total"], json!(1));
+        }
+
+        { //Set Bounds
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/bounds/dc")
+                .body(r#"{
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": { "type": "Polygon", "coordinates": [ [ [ -29.8828125, 62.59334083012024 ], [ -11.6015625, 62.59334083012024 ], [ -11.6015625, 67.47492238478702 ], [ -29.8828125, 67.47492238478702 ], [ -29.8828125, 62.59334083012024 ] ] ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::ContentType::json())
+                .send()
+                .unwrap();
+
+
+            let mut body_str = String::from(resp.text().unwrap());
+            body_str.pop();
+            assert_eq!(&*body_str, r#"{"id":3,"key":null,"type":"Feature","version":1,"geometry":{"type":"Point","coordinates":[-77.0121002197266,38.9257632323745]},"properties":{"large_props": "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"}}"#);
+            assert!(resp.status().is_success());
         }
 
         server.kill().unwrap();

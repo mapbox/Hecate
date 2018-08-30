@@ -28,19 +28,19 @@ impl BoundsError {
     }
 }
 
-pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String, feat: &String) -> Result<bool, BoundsError> {
+pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String, feat: &serde_json::Value) -> Result<bool, BoundsError> {
     match conn.execute("
-        INSERT INTO meta (name, geom) VALUES ($1, ST_SetSRID(ST_GeomFromGeoJSON($2::JSON->>'geometry'))
+        INSERT INTO bounds (name, geom) VALUES ($1 , ST_SetSRID(ST_GeomFromGeoJSON($2->>'geometry'), 4326))
             ON CONFLICT (name) DO
                 UPDATE
-                    SET geom = ST_SetSRID(ST_GeomFromGeoJSON($2::JSON->>'geometry'), 4326)
-                    WHERE name = $1
+                    SET geom = ST_SetSRID(ST_GeomFromGeoJSON($2->>'geometry'), 4326)
+                    WHERE bounds.name = $1;
     ", &[ &name, &feat ]) {
         Ok(_) => Ok(true),
         Err(err) => {
             match err.as_db() {
-                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
-                _ => Err(BoundsError::ListError(String::from("generic")))
+                Some(e) => { Err(BoundsError::SetError(e.message.clone())) },
+                _ => Err(BoundsError::SetError(String::from("generic")))
             }
         }
     }
@@ -53,8 +53,8 @@ pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
         Ok(_) => Ok(true),
         Err(err) => {
             match err.as_db() {
-                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
-                _ => Err(BoundsError::ListError(String::from("generic")))
+                Some(e) => { Err(BoundsError::DeleteError(e.message.clone())) },
+                _ => Err(BoundsError::DeleteError(String::from("generic")))
             }
         }
     }

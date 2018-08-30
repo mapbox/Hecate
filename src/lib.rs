@@ -734,7 +734,14 @@ fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
     auth_rules.allows_bounds_create(&mut auth, &conn)?;
 
-    match bounds::set(&conn, &bounds, &body) {
+    let geom: serde_json::Value = match serde_json::from_str(&*body) {
+        Ok(geom) => geom,
+        Err(_) => {
+            return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid Feature GeoJSON"))));
+        }
+    };
+
+    match bounds::set(&conn, &bounds, &geom) {
         Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
