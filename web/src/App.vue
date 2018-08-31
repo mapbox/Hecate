@@ -79,6 +79,10 @@
 </template>
 
 <script>
+//Libaries
+import mapboxgl from 'mapbox-gl';
+import mapboxglgeo from '@mapbox/mapbox-gl-geocoder';
+
 // === Components ===
 import Foot from './components/Foot.vue';
 
@@ -214,7 +218,7 @@ export default {
             zoom: 3
         }).addControl(new mapboxgl.AttributionControl({
             compact: true
-        })).addControl(new MapboxGeocoder({
+        })).addControl(new mapboxglgeo({
             accessToken: mapboxgl.accessToken,
         }));
 
