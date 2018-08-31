@@ -11,6 +11,10 @@
     "dev": "NODE_ENV=development parcel build index.html --no-minify --public-url='/admin/'"
   },
   "dependencies": {
+    "@mapbox/assembly": "^0.23.0",
+    "@mapbox/mapbox-gl-geocoder": "^2.3.0",
+    "@turf/turf": "^5.1.6",
+    "mapbox-gl": "^0.48.0",
     "moment": "^2.22.2",
     "vue": "^2.5.16"
   },
