@@ -92,7 +92,8 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             index
         ])
         .mount("/admin", routes![
-            staticsrv
+            staticsrv,
+            staticsrvredirect
         ])
         .mount("/api", routes![
             server,
@@ -292,6 +293,11 @@ fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<au
         Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
+}
+
+#[get("/")]
+fn staticsrvredirect() -> rocket::response::Redirect {
+    rocket::response::Redirect::to("/admin/index.html")
 }
 
 #[get("/<file..>")]
