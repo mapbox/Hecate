@@ -945,6 +945,9 @@ curl -X DELETE \
 
 Return a Line-Delimited GeoJSON stream of all features currently stored on the server.
 
+Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
+(`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
+
 *Example*
 
 ```bash
@@ -961,6 +964,9 @@ Return a Line-Delimited GeoJSON stream of all features that match the given quer
 
 The query must be a valid SQL query against the `geo` table. Note that the `geo` is
 the only table that this endpoint can access. Only read operations are permitted.
+
+Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
+(`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
 
 IE:
 
@@ -1010,6 +1016,9 @@ curl -X GET 'http://localhost:8000/api/data/bounds
 #### `GET` `/api/data/bounds/<bounds>`
 
 Return line delimited GeoJSON `Feature` of all the geometries within the specified boundary file.
+
+Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
+(`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
 
 *Options*
 
@@ -1148,6 +1157,10 @@ curl -X GET 'http://localhost:8000/api/data/feature/1542/history
 #### `GET` `/api/data/features`
 
 Return streaming Line-Delimited GeoJSON within the provided BBOX
+
+Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
+(`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
+
 
 *Options*
 
