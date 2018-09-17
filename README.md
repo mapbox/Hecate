@@ -9,8 +9,8 @@
 
 ## Hecate Feature Comparison
 
-| Feature | Hecate | ESRI MapServer | OSM Backend |
-| ------- | ------ | -------------- | ----------- |
+| Feature               | Hecate             | ESRI MapServer     | OSM Backend        |
+| --------------------- | ------------------ | ------------------ | ------------------ |
 | Vector Tile Creation  | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | Streaming Query API   | :heavy_check_mark: | :x:                | :x:                |
 | Multi User Support    | :heavy_check_mark: | :x:                | :heavy_check_mark: |
