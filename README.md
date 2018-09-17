@@ -7,19 +7,18 @@
   <a href="https://crates.io/crates/hecate"><img src="https://img.shields.io/crates/v/hecate.svg"/></a>
 </p>
 
-## Why Use Hecate?
+## Hecate Feature Comparison
 
-Hecate takes all the best parts of an ESRI MapServer and the OpenStreetMap backend platform and rolls them in a single
-user friendly platform.
-
-- Integrated Mapbox Vector Tile Creation (MapServer)
-- Full Authentication Cusomizations (MapServer)
-- Streaming GeoJSON Output for unbounded parallelism
-- Full MultiUser & Changesets tracked editing (OSM)
-- Fully Atomic Changesets
-- MapboxGL Style Storage
-- JSON Based REST API (ESRI)
-- Fully OpenSource! (OSM)
+| Feature | Hecate | ESRI MapServer | OSM Backend |
+| ------- | ------ | -------------- | ----------- |
+| Vector Tile Creation  | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| Streaming Query API   | :heavy_check_mark: | :x:                | :x:                |
+| Multi User Support    | :heavy_check_mark: | :x:                | :heavy_check_mark: |
+| Feature History       | :heavy_check_mark: | :x:                | :heavy_check_mark: |
+| Atomic API Operations | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| GeoJSON Based API     | :heavy_check_mark: | :x:                | :heavy_check_mark: |
+| Mapbox GL JS Styling  | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| Integrated Data Stats | :heavy_check_mark: | :heavy_check_mark: | :x                 |
 
 ## Table Of Contents
 
