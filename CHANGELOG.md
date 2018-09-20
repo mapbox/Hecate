@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.44.1
+
+- :rocket: Add redirect from `/admin` => `/admin/index.html`
+
 ## v0.44.0
 
 - :tada: Allow creating and deleting bounds programatically

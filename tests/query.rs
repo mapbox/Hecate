@@ -12,7 +12,7 @@ mod test {
     use reqwest;
 
     #[test]
-    fn clone() {
+    fn query() {
         {
             let conn = Connection::connect("postgres://postgres@localhost:5432", TlsMode::None).unwrap();
 
@@ -119,6 +119,7 @@ mod test {
 
             let mut body_str = String::from(resp.text().unwrap());
             body_str.pop();
+            body_str.pop();
             assert_eq!(&*body_str, "{\"count\":3}");
             assert!(resp.status().is_success());
         }
@@ -131,6 +132,7 @@ mod test {
                 .unwrap();
 
             let mut body_str = String::from(resp.text().unwrap());
+            body_str.pop();
             body_str.pop();
             assert_eq!(&*body_str, "{\"props\":{\"name\": \"I am Feature 1\"}}");
             assert!(resp.status().is_success());
