@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.45.0
+
+- :rocket: Add EOT Character at end of streaming API calls
+
 ## v0.44.1
 
 - :rocket: Add redirect from `/admin` => `/admin/index.html`
