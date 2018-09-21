@@ -51,7 +51,14 @@ use rocket::response::{Response, status, Stream, NamedFile};
 use geojson::GeoJson;
 use rocket_contrib::Json;
 
-pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<u16>, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
+pub fn start(
+    database: String,
+    database_read: Option<Vec<String>>,
+    port: Option<u16>,
+    workers: Option<u16>,
+    schema: Option<serde_json::value::Value>,
+    auth: Option<auth::CustomAuth>
+) {
     env_logger::init();
 
     let auth_rules: auth::CustomAuth = match auth {
@@ -80,7 +87,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
         .log_level(LoggingLevel::Debug)
         .port(port.unwrap_or(8000))
         .limits(limits)
-        .workers(12)
+        .workers(workers.unwrap_or(12))
         .unwrap();
 
     rocket::custom(config, true)
