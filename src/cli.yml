@@ -23,6 +23,12 @@ args:
         value_name: PORT
         help: \[optional\] Specify a custom port
 
+    - workers:
+        short: w
+        long: workers
+        value_name: WORKERS
+        help: \[optional\] Number of concurrent connections the server will actively respond to at a given time
+
     - schema:
         short: s
         long: schema
