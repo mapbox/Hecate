@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.46.0
+
+- :tada: Add support for configurable web workers to allow custom levels of parallelism
+
 ## v0.45.0
 
 - :rocket: Add EOT Character at end of streaming API calls
