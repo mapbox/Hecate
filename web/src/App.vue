@@ -8,19 +8,19 @@
 
             <!-- Toolbar -->
             <div class='bg-white round mb12' style='height: 40px; pointer-events:auto;'>
-                <div @click="panel === 'deltas' ? panel = false : panel = 'deltas'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel === 'deltas' ? panel = false : panel = 'deltas'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-clock'/></svg>
                 </div>
-                <div @click="panel === 'styles' ? panel = false : panel = 'styles'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel === 'styles' ? panel = false : panel = 'styles'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-paint'/></svg>
                 </div>
-                <div @click="panel = false; modal = 'query'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; modal = 'query'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-inspect'/></svg>
                 </div>
-                <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-arrow-down'/></svg>
                 </div>
-                <div @click="panel = false; modal = 'settings'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; modal = 'settings'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-sprocket'/></svg>
                 </div>
             </div>
@@ -41,10 +41,10 @@
         <!-- Login Panel -->
         <div class='none block-ml absolute top-ml left bottom z1 ml240 hmax-full py12-ml' style="pointer-events: none;">
             <div class='bg-white round' style='height: 40px; pointer-events:auto;'>
-                <div @click="panel = false; logout(); modal = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; logout(); modal = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-user'/></svg>
                 </div>
-                <div v-if='credentials.authed' @click="logout(true)" class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div v-if='credentials.authed' @click="logout(true)" class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-logout'/></svg>
                 </div>
             </div>
