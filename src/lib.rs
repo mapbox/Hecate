@@ -1,7 +1,7 @@
 #![feature(plugin, custom_derive, custom_attribute, attr_literals)]
 #![plugin(rocket_codegen)]
 
-static VERSION: &'static str = "0.44.0";
+static VERSION: &'static str = "0.46.0";
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
@@ -51,7 +51,14 @@ use rocket::response::{Response, status, Stream, NamedFile};
 use geojson::GeoJson;
 use rocket_contrib::Json;
 
-pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<u16>, schema: Option<serde_json::value::Value>, auth: Option<auth::CustomAuth>) {
+pub fn start(
+    database: String,
+    database_read: Option<Vec<String>>,
+    port: Option<u16>,
+    workers: Option<u16>,
+    schema: Option<serde_json::value::Value>,
+    auth: Option<auth::CustomAuth>
+) {
     env_logger::init();
 
     let auth_rules: auth::CustomAuth = match auth {
@@ -80,7 +87,7 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
         .log_level(LoggingLevel::Debug)
         .port(port.unwrap_or(8000))
         .limits(limits)
-        .workers(12)
+        .workers(workers.unwrap_or(12))
         .unwrap();
 
     rocket::custom(config, true)
@@ -92,7 +99,8 @@ pub fn start(database: String, database_read: Option<Vec<String>>, port: Option<
             index
         ])
         .mount("/admin", routes![
-            staticsrv
+            staticsrv,
+            staticsrvredirect
         ])
         .mount("/api", routes![
             server,
@@ -292,6 +300,11 @@ fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<au
         Ok(_) => Ok(Json(json!(true))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
+}
+
+#[get("/")]
+fn staticsrvredirect() -> rocket::response::Redirect {
+    rocket::response::Redirect::to("/admin/index.html")
 }
 
 #[get("/<file..>")]

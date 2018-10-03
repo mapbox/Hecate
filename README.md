@@ -7,19 +7,18 @@
   <a href="https://crates.io/crates/hecate"><img src="https://img.shields.io/crates/v/hecate.svg"/></a>
 </p>
 
-## Why Use Hecate?
+## Hecate Feature Comparison
 
-Hecate takes all the best parts of an ESRI MapServer and the OpenStreetMap backend platform and rolls them in a single
-user friendly platform.
-
-- Integrated Mapbox Vector Tile Creation (MapServer)
-- Full Authentication Cusomizations (MapServer)
-- Streaming GeoJSON Output for unbounded parallelism
-- Full MultiUser & Changesets tracked editing (OSM)
-- Fully Atomic Changesets
-- MapboxGL Style Storage
-- JSON Based REST API (ESRI)
-- Fully OpenSource! (OSM)
+| Feature               | Hecate             | ESRI MapServer     | OSM Backend        |
+| --------------------- | ------------------ | ------------------ | ------------------ |
+| Vector Tile Creation  | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| Streaming Query API   | :heavy_check_mark: | :x:                | :x:                |
+| Multi User Support    | :heavy_check_mark: | :x:                | :heavy_check_mark: |
+| Feature History       | :heavy_check_mark: | :x:                | :heavy_check_mark: |
+| Atomic API Operations | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| GeoJSON Based API     | :heavy_check_mark: | :x:                | :heavy_check_mark: |
+| Mapbox GL JS Styling  | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| Integrated Data Stats | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 
 ## Table Of Contents
 
@@ -472,7 +471,7 @@ have a map containing the auth for each subkey.
 | **Bounds**                            | `bounds`                  |               | `null`                    | 2     |
 | `GET /api/bounds`                     | `bounds::list`            | `public`      | All                       |       |
 | `GET /api/bounds/<id>`                | `bounds::get`             | `public`      | All                       |       |
-| `POST /api/bounds                     | `bounds::create`          | `admin`       | All                       |       |
+| `POST /api/bounds/<id>`               | `bounds::create`          | `admin`       | All                       |       |
 | `DELETE /api/bounds/<id>`             | `bounds:delete`           | `admin`       | All                       |       |
 | **OpenStreetMap Shim**                | `osm`                     |               | `null`                    | 2     |
 | `GET /api/0.6/map`                    | `osm::get`                | `public`      | All                       | 3     |
@@ -945,6 +944,9 @@ curl -X DELETE \
 
 Return a Line-Delimited GeoJSON stream of all features currently stored on the server.
 
+Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
+(`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
+
 *Example*
 
 ```bash
@@ -961,6 +963,9 @@ Return a Line-Delimited GeoJSON stream of all features that match the given quer
 
 The query must be a valid SQL query against the `geo` table. Note that the `geo` is
 the only table that this endpoint can access. Only read operations are permitted.
+
+Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
+(`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
 
 IE:
 
@@ -1010,6 +1015,9 @@ curl -X GET 'http://localhost:8000/api/data/bounds
 #### `GET` `/api/data/bounds/<bounds>`
 
 Return line delimited GeoJSON `Feature` of all the geometries within the specified boundary file.
+
+Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
+(`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
 
 *Options*
 
@@ -1148,6 +1156,10 @@ curl -X GET 'http://localhost:8000/api/data/feature/1542/history
 #### `GET` `/api/data/features`
 
 Return streaming Line-Delimited GeoJSON within the provided BBOX
+
+Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
+(`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
+
 
 *Options*
 

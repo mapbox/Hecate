@@ -54,11 +54,21 @@ fn main() {
     };
 
     let port: Option<u16> = match matched.value_of("port") {
-        Some(port) => {
-            Some(port.parse().unwrap())
-        },
+        Some(port) => Some(port.parse().unwrap()),
         None => None
     };
 
-    hecate::start(database, database_read, port, schema, auth);
+    let workers: Option<u16> = match matched.value_of("workers") {
+        Some(workers) => Some(workers.parse().unwrap()),
+        None => None
+    };
+
+    hecate::start(
+        database,
+        database_read,
+        port,
+        workers,
+        schema,
+        auth
+    );
 }

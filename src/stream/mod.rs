@@ -14,6 +14,7 @@ use std::io::{Error, ErrorKind};
 use std::mem;
 
 pub struct PGStream {
+    eot: bool, //End of Tranmission has been sent
     cursor: String,
     pending: Option<Vec<u8>>,
     trans: postgres::transaction::Transaction<'static>,
@@ -47,7 +48,12 @@ impl std::io::Read for PGStream {
                 }
             }
 
-            if write.len() == 0 {
+            if write.len() == 0 && !self.eot {
+                write.push(0x04); //Write EOT Character To Stream
+                self.eot = true;
+            }
+
+            if write.len() == 0 && self.eot {
                 //No more data to fetch, close up shop
                 break;
             } else if current + write.len() > buf.len() {
@@ -91,6 +97,7 @@ impl PGStream {
         match trans.execute(&*query, params) {
             Ok(_) => {
                 Ok(PGStream {
+                    eot: false,
                     cursor: cursor,
                     pending: None,
                     trans: trans,
@@ -99,7 +106,7 @@ impl PGStream {
             },
             Err(err) => {
                 Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
-                    "code": 500, 
+                    "code": 500,
                     "status": "Internal Server Error",
                     "reason": format!("{:?}", err)
                 }))))
