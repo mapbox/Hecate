@@ -156,6 +156,8 @@ export default {
             if (this.addLayerData.urlError || this.addLayerData.nameError || this.addLayerData.typeError) {
                 this.addLayerData.error = 'All Fields Are Required!';
                 return;
+            } else {
+                this.addLayerData.error = false;
             }
 
             this.layers.push({
@@ -164,6 +166,7 @@ export default {
                 url: this.addLayerData.url
             });
 
+            this.addLayerData.error = false;
             this.addLayerData.name = '';
             this.addLayerData.type = '';
             this.addLayerData.url = '';
