@@ -53,7 +53,20 @@
                 <template v-else-if='mode === "delLayer"'>
                     <div class='grid w-full col'>
                         <div class='col--12'>
-                            <h3 class='w-full py6 txt-m txt-bold'>Are you sure?</h3>
+                            <h3 class='w-full py6 txt-m txt-bold align-center'>Are you sure you want to delete this layer?</h3>
+
+                            <div class='w120 mx-auto relative color-gray-light my12'>
+                                <div class='w-full h120 round border border--gray-light'>
+                                    <template v-if='delLayerData.type === "Raster"'>
+                                        <svg class='icon w-full h-full'><use href='#icon-satellite'/></svg>
+                                    </template>
+                                    <template v-else>
+                                        <svg class='icon w-full h-full'><use href='#icon-paint'/></svg>
+                                    </template>
+                                </div>
+
+                                <div class='w-full color-black align-center' v-text='delLayerData.name'></div>
+                            </div>
                         </div>
 
                         <div class='col--12 py12'>
@@ -76,9 +89,9 @@
                             <h4 class='fl py6 txt-m w-full border--gray-light border-b'>Base Layers</h4>
 
                             <div class='col col--12 hmin120 hmax180 clearfix'>
-                                <template v-for='layer of layers'>
+                                <template v-for='(layer, layer_idx) of layers'>
                                     <div class='w120 fl relative color-gray-light my12 mx12 cursor-pointer'>
-                                        <div @click='delLayer' class='absolute bg-red round color-white w18 h18' style='top: -9px; right: -9px;'>
+                                        <div @click='delLayerClick(layer_idx)' class='absolute bg-red round color-white w18 h18' style='top: -9px; right: -9px;'>
                                             <svg class='icon w-full pt3'><use xlink:href='#icon-close'/></svg>
                                         </div>
 
@@ -96,7 +109,7 @@
                                 </template>
 
                                 <!-- Add a new Base Layer -->
-                                <div @click='newLayer' class='h120 w120 fl round border border--gray-light border--gray-on-hover color-gray-light color-gray-on-hover my12 mx12 cursor-pointer'>
+                                <div @click='newLayerClick' class='h120 w120 fl round border border--gray-light border--gray-on-hover color-gray-light color-gray-on-hover my12 mx12 cursor-pointer'>
                                     <svg class='icon w-full h-full'><use href='#icon-plus'/></svg>
                                 </div>
                             </div>
@@ -122,6 +135,11 @@ export default {
         return {
             mode: 'settings',
             layers: [],
+            delLayerData: {
+                idx: false,
+                name: '',
+                type: ''
+            },
             addLayerData: {
                 error: '',
                 name: '',
@@ -133,6 +151,9 @@ export default {
             }
         }
     },
+    mounted: function() {
+        this.getLayers();
+    },
     methods: {
         close: function() {
             if (this.mode !== 'settings') {
@@ -140,6 +161,44 @@ export default {
             } else {
                 this.$emit('close');
             }
+        },
+        getLayers: function() {
+            fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                return response.json();
+            }).then((layers) => {
+                //If the server doesn't already have a layers object, create it
+                if (!layers) return this.putLayers();
+
+                this.layers = layers;
+            }).catch((err) => {
+                console.error(err);
+            });
+        },
+        putLayers: function() {
+            fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: new Headers({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify(this.layers)
+            }).then((response) => {
+                return response.json();
+            }).then((layers) => {
+                if (!layers)
+                this.layers = layers;
+            }).catch((err) => {
+                console.error(err);
+            });
+        },
+        deleteLayer: function() {
+            if (isNaN(this.delLayerData.idx)) return;
+
+            this.layers.splice(this.delLayerData.idx, 1);
+            this.putLayers();
+
+            this.close();
         },
         addLayer: function() {
             if (this.addLayerData.name.length === 0) {
@@ -173,6 +232,8 @@ export default {
                 url: this.addLayerData.url
             });
 
+            this.putLayers();
+
             this.addLayerData.error = false;
             this.addLayerData.name = '';
             this.addLayerData.type = '';
@@ -180,11 +241,17 @@ export default {
 
             this.close();
         },
-        newLayer: function() {
+        newLayerClick: function() {
             this.mode = 'addLayer';
         },
-        delLayer: function() {
+        delLayerClick: function(layer_idx) {
+            if (isNaN(Number(layer_idx))) return;
+
             this.mode = 'delLayer';
+
+            this.delLayerData.idx = Number(layer_idx);
+            this.delLayerData.name = this.layers[layer_idx].name;
+            this.delLayerData.type = this.layers[layer_idx].type;
         }
     },
     render: h => h(App),

@@ -149,9 +149,7 @@ export default {
                 fetch(`${window.location.protocol}//${window.location.host}/api/style`, {
                     method: 'POST',
                     credentials: 'same-origin',
-                    headers: new Headers({
-                        'Content-Type': 'application/json'
-                    }),
+                    headers: new Headers({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({
                         name: style_name,
                         style: style
