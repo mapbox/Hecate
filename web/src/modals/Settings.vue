@@ -4,6 +4,13 @@
             <div class="flex-child px12 py12 w600 h80 bg-white round-ml shadow-darken10">
                 <template v-if='mode === "addLayer"'>
                     <div class='grid w-full col'>
+
+                        <template v-if='addLayerData.error'>
+                            <div class='col--12 color-white px12 bg-red round align-center'>
+                                <h3 class='w-full py6 txt-m txt-bold' v-text='addLayerData.error'></h3>
+                            </div>
+                        </template>
+
                         <div class='col--12'>
                             <h3 class='w-full py6 txt-m txt-bold'>Add A New Base Layer</h3>
                         </div>
@@ -12,21 +19,21 @@
                             <div class='grid grid--gut12'>
                                 <div class='col col--6'>
                                     <label>Layer Name</label>
-                                    <input v-model='addLayerData.name' class='input' placeholder='Layer Name'/>
+                                    <input v-model='addLayerData.name' class='input' placeholder='Layer Name' v-bind:class="{ 'input--border-red': addLayerData.nameError }"/>
                                 </div>
                                 <div class='col col--6'>
                                     <label >Layer Type</label>
                                     <div class='select-container w-full'>
-                                        <select v-model='addLayerData.type' class='select'>
+                                        <select v-model='addLayerData.type' class='select' v-bind:class="{ 'input--border-red': addLayerData.typeError }">
                                             <option>Vector</option>
-                                            <option>Rastor</option>
+                                            <option>Raster</option>
                                         </select>
                                         <div class='select-arrow'></div>
                                     </div>
                                 </div>
                                 <div class='col col--12 py12'>
                                     <label>Mapbox:// Style</label>
-                                    <input v-model='addLayerData.url' class='input w-full' placeholder='mapbox://'/>
+                                    <input v-model='addLayerData.url' class='input w-full' placeholder='mapbox://' v-bind:class="{ 'input--border-red': addLayerData.urlError }" />
                                 </div>
                             </div>
                         </div>
@@ -66,7 +73,7 @@
                         <div class='col col--12'>
                             <h3 class='col col--12 fl py6 txt-m txt-bold'>Settings</h3>
 
-                            <h4 class='fl py6 txt-m w-full border--gray border-b'>Base Layers</h4>
+                            <h4 class='fl py6 txt-m w-full border--gray-light border-b'>Base Layers</h4>
 
                             <div class='col col--12 hmin120 hmax180 clearfix'>
                                 <template v-for='layer of layers'>
@@ -87,7 +94,7 @@
                                 </div>
                             </div>
 
-                            <h4 class='fl py6 txt-m w-full border--gray border-b'>Default Style</h4>
+                            <h4 class='fl py6 txt-m w-full border--gray-light border-b'>Default Style</h4>
 
                         </div>
 
@@ -109,9 +116,13 @@ export default {
             mode: 'settings',
             layers: [],
             addLayerData: {
+                error: '',
                 name: '',
+                nameError: false,
                 type: '',
-                url: ''
+                typeError: false,
+                url: '',
+                urlError: false
             }
         }
     },
@@ -124,13 +135,34 @@ export default {
             }
         },
         addLayer: function() {
+            if (this.addLayerData.name.length === 0) {
+                this.addLayerData.nameError = true;
+            } else {
+                this.addLayerData.nameError = false;
+            }
+
+            if (['Vector', 'Raster'].indexOf(this.addLayerData.type) === -1) {
+                this.addLayerData.typeError = true;
+            } else {
+                this.addLayerData.typeError = false;
+            }
+
+            if (!this.addLayerData.url.match(/^mapbox:\/\//)) {
+                this.addLayerData.urlError = true;
+            } else {
+                this.addLayerData.urlError = false;
+            }
+
+            if (this.addLayerData.urlError || this.addLayerData.nameError || this.addLayerData.typeError) {
+                this.addLayerData.error = 'All Fields Are Required!';
+                return;
+            }
+
             this.layers.push({
                 name: this.addLayerData.name,
                 type: this.addLayerData.type,
                 url: this.addLayerData.url
             });
-
-            console.error(this.layers.length);
 
             this.addLayerData.name = '';
             this.addLayerData.type = '';
