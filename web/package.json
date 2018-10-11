@@ -8,7 +8,7 @@
   "private": false,
   "scripts": {
     "build": "NODE_ENV=prodution parcel build index.html --public-url='/admin/'",
-    "dev": "NODE_ENV=development parcel build index.html --no-minify --public-url='/admin/'"
+    "dev": "NODE_ENV=development parcel index.html --public-url='/admin/'"
   },
   "dependencies": {
     "@mapbox/assembly": "^0.23.0",

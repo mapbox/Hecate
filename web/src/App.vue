@@ -207,7 +207,6 @@ export default {
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
 
-
         this.map.gl = new mapboxgl.Map({
             container: 'map',
             attributionControl: false,
@@ -221,7 +220,6 @@ export default {
         })).addControl(new mapboxglgeo({
             accessToken: mapboxgl.accessToken,
         }));
-
 
         this.map.gl.on('load', () => {
             this.map.gl.addSource('hecate-data', {
