@@ -97,7 +97,6 @@
 
 <script>
 //Libaries
-import mapboxgl from 'mapbox-gl';
 import mapboxglgeo from '@mapbox/mapbox-gl-geocoder';
 
 // === Components ===
