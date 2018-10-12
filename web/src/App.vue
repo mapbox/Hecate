@@ -37,7 +37,7 @@
                 <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-arrow-down'/></svg>
                 </div>
-                <div @click="panel = false; modal = 'settings'" v-on:close='load_settings' class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="panel = false; modal = 'settings'" class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-sprocket'/></svg>
                 </div>
             </div>
@@ -84,7 +84,7 @@
             <register v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "settings"'>
-            <settings v-on:close='modal = false' />
+            <settings v-on:close='settings_close' />
         </template>
         <template v-else-if='modal === "query"'>
             <query v-on:close='modal = false' :credentials='credentials' />
@@ -253,7 +253,7 @@ export default {
         this.load_settings();
 
         this.map.gl.on('load', () => {
-            this.map.default();
+            //this.map.default();
         });
 
         this.map.gl.on('click', (e) => {
@@ -267,6 +267,10 @@ export default {
         });
     },
     methods: {
+        settings_close: function() {
+            this.modal = false;
+            this.load_settings();
+        },
         load_settings: function() {
             fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
                 method: 'GET',
@@ -286,7 +290,7 @@ export default {
 
             this.map.gl.setStyle(this.map.baselayers[layer_idx].url);
 
-            this.map.default();
+            //this.map.default();
         },
         logout: function(reload) {
             this.credentials.authed = false;
