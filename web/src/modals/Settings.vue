@@ -149,14 +149,14 @@
 
                             <div class='py6 col col--12 border--gray-light border-b'>
                                 <span class='txt-m'>Base Layers</span>
-                                <span @click='helpBaseClick' class='fr cursor-pointer'><svg class='icon'><use xlink:href='#icon-info'/></svg></span>
+                                <span @click='helpBaseClick' class='fr cursor-pointer'><svg class='icon'><use href='#icon-info'/></svg></span>
                             </div>
 
                             <div class='col col--12 hmin120 hmax180 clearfix'>
                                 <template v-for='(layer, layer_idx) of layers'>
                                     <div class='w120 fl relative color-gray-light my12 mx12 cursor-pointer'>
                                         <div @click='delLayerClick(layer_idx)' class='absolute bg-red-light bg-red-on-hover round color-white w18 h18' style='top: -9px; right: -9px;'>
-                                            <svg class='icon w-full pt3'><use xlink:href='#icon-close'/></svg>
+                                            <svg class='icon w-full pt3'><use href='#icon-close'/></svg>
                                         </div>
 
                                         <div @click='editLayerClick(layer_idx)'  class='w-full h120 color-gray-on-hover round border border--gray-light border--gray-on-hover'>
