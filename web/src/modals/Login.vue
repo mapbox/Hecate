@@ -89,13 +89,11 @@ export default {
                 if (response.status === 200) {
                     response.json().then((response) => {
                         self.$emit('uid', parseInt(response));
-                        self.$emit('username', self.username);
+                        self.$emit('username', self.modal_username);
 
                         self.modal_password = '';
                         self.modal_username = '';
                         self.modal_error = '';
-
-                        self.username = self.modal_username;
 
                         self.$emit('login');
                     }).catch((err) => {

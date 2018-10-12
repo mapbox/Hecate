@@ -491,13 +491,11 @@ impl ValidAuth for CustomAuth {
 fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
     auth.validate(conn)?;
 
-    println!("{:?}", required);
     match required {
         None => Err(not_authed()),
         Some(req) => match req.as_ref() {
             "public" => Ok(true),
             "admin" => {
-
                 if auth.uid.is_none() || auth.access.is_none() {
                     return Err(not_authed());
                 } else if auth.access == Some(String::from("admin")) {

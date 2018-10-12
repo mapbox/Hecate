@@ -2,7 +2,25 @@
     <div class='absolute top left bottom right z3' style="pointer-events: none;">
         <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events: auto;">
             <div class="flex-child px12 py12 w600 h80 bg-white round-ml shadow-darken10">
-                <template v-if='mode === "addLayer"'>
+                <template v-if='error'>
+                    <div class='grid w-full col'>
+                        <div class='col--12'>
+                            <h3 class='w-full py6 txt-m txt-bold align-center'>ERROR!</h3>
+                        </div>
+
+                        <div class='col--12 py12' v-text='error'></div>
+
+                        <div class='col--12 py12'>
+                            <div class='grid grid--gut12'>
+                                <div class='col col--6'></div>
+                                <div class='col col--6'>
+                                    <button @click='error = false' class='btn round w-full'>Ok</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template v-else-if='mode === "addLayer"'>
                     <div class='grid w-full col'>
 
                         <template v-if='addLayerData.error'>
@@ -178,6 +196,7 @@ export default {
         return {
             mode: 'settings',
             layers: [],
+            error: '',
             delLayerData: {
                 idx: false,
                 name: '',
@@ -198,6 +217,11 @@ export default {
     mounted: function() {
         this.getLayers();
     },
+    watch: {
+        error: function() {
+            this.getLayers();
+        }
+    },
     methods: {
         close: function() {
             this.clearLayer();
@@ -213,6 +237,10 @@ export default {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
+                if (response.status !== 200) {
+                    this.error = response.status + ':' + response.statusText;
+                }
+
                 return response.json();
             }).then((layers) => {
                 //If the server doesn't already have a layers object, create it
@@ -220,7 +248,7 @@ export default {
 
                 this.layers = layers;
             }).catch((err) => {
-                console.error(err);
+                this.error = err.message;
             });
         },
         putLayers: function() {
@@ -230,12 +258,16 @@ export default {
                 headers: new Headers({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify(this.layers)
             }).then((response) => {
+                if (response.status !== 200) {
+                    this.error = response.status + ':' + response.statusText;
+                }
+
                 return response.json();
             }).then((layers) => {
                 if (!layers)
                 this.layers = layers;
             }).catch((err) => {
-                console.error(err);
+                this.error = err.message;
             });
         },
         deleteLayer: function() {
