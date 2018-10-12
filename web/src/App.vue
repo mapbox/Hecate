@@ -251,8 +251,8 @@ export default {
 
         this.load_settings();
 
-        this.map.gl.on('load', () => {
-            //this.map.default();
+        this.map.gl.on('style.load', () => {
+            this.map.default();
         });
 
         this.map.gl.on('click', (e) => {
@@ -288,8 +288,6 @@ export default {
             if (isNaN(layer_idx)) return;
 
             this.map.gl.setStyle(this.map.baselayers[layer_idx].url);
-
-            //this.map.default();
         },
         logout: function(reload) {
             this.credentials.authed = false;

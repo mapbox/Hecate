@@ -83,7 +83,7 @@ export default {
                 method: 'GET',
                 credentials: 'same-origin',
                 headers: new Headers({
-                    'Authorization': 'Basic '+ btoa(`${this.username}:${this.password}`)
+                    'Authorization': 'Basic '+ btoa(`${this.modal_username}:${this.modal_password}`)
                 })
             }).then((response) => {
                 if (response.status === 200) {
