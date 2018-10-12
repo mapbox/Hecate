@@ -131,13 +131,13 @@ export default {
                 baselayers: [],
                 layers: [],
                 default: function() {
-                    this.map.gl.addSource('hecate-data', {
+                    this.gl.addSource('hecate-data', {
                         type: 'vector',
                         maxzoom: 14,
                         tiles: [ `${window.location.protocol}//${window.location.host}/api/tiles/{z}/{x}/{y}` ]
                     });
 
-                    this.map.gl.addSource('hecate-delta', {
+                    this.gl.addSource('hecate-delta', {
                         type: 'geojson',
                         data: { type: 'FeatureCollection', features: [] }
                     });
@@ -285,7 +285,8 @@ export default {
             if (isNaN(layer_idx)) return;
 
             this.map.gl.setStyle(this.map.baselayers[layer_idx].url);
-            console.error(this.map.baselayers[layer_idx].url)
+
+            this.map.default();
         },
         logout: function(reload) {
             this.credentials.authed = false;
