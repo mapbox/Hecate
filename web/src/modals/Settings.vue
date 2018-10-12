@@ -50,6 +50,36 @@
                         </div>
                     </div>
                 </template>
+                <template v-else-if='mode === "helpBase"'>
+                    <div class='grid w-full col'>
+                        <div class='col--12'>
+                            <h3 class='w-full py6 txt-m txt-bold align-center'>Base Layers Help</h3>
+                        </div>
+
+                        <div class='col--12 py12'>
+                            <p class='py3'>
+                                Base Layers are the background map that the data in the Hecate instance is displayed on.
+                            </p>
+                            <p class='py3'>
+                                Common options include Satellite Imagery, Street, Political Boundaries, etc.
+                            </p>
+                            <p class='py3'>
+                                Hecate currently supports adding any mapbox:// prefixed map. See documentation on creating
+                                a style url <a href="https://www.mapbox.com/help/define-style-url/">here</a>. Prebuilt
+                                mapbox style URLs can be obtained <a href="https://www.mapbox.com/api-documentation/#styles">here</a>.
+                            </p>
+                        </div>
+
+                        <div class='col--12 py12'>
+                            <div class='grid grid--gut12'>
+                                <div class='col col--6'></div>
+                                <div class='col col--6'>
+                                    <button @click='close' class='btn round w-full'>Got It!</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
                 <template v-else-if='mode === "delLayer"'>
                     <div class='grid w-full col'>
                         <div class='col--12'>
@@ -84,9 +114,12 @@
                 <template v-else>
                     <div class='grid w-full'>
                         <div class='col col--12'>
-                            <h3 class='col col--12 fl py6 txt-m txt-bold'>Settings</h3>
+                            <h3 class='col col--12 py6 txt-m txt-bold'>Settings</h3>
 
-                            <h4 class='fl py6 txt-m w-full border--gray-light border-b'>Base Layers</h4>
+                            <div class='py6 col col--12 border--gray-light border-b'>
+                                <span class='txt-m'>Base Layers</span>
+                                <span @click='helpBaseClick' class='fr cursor-pointer'><svg class='icon'><use xlink:href='#icon-info'/></svg></span>
+                            </div>
 
                             <div class='col col--12 hmin120 hmax180 clearfix'>
                                 <template v-for='(layer, layer_idx) of layers'>
@@ -113,9 +146,6 @@
                                     <svg class='icon w-full h-full'><use href='#icon-plus'/></svg>
                                 </div>
                             </div>
-
-                            <h4 class='fl py6 txt-m w-full border--gray-light border-b'>Default Style</h4>
-
                         </div>
 
                         <div class='col col--12'>
@@ -243,6 +273,9 @@ export default {
         },
         newLayerClick: function() {
             this.mode = 'addLayer';
+        },
+        helpBaseClick: function() {
+            this.mode = 'helpBase';
         },
         delLayerClick: function(layer_idx) {
             if (isNaN(Number(layer_idx))) return;
