@@ -131,6 +131,17 @@ export default {
                 baselayers: [],
                 layers: [],
                 default: function() {
+                    this.map.gl.addSource('hecate-data', {
+                        type: 'vector',
+                        maxzoom: 14,
+                        tiles: [ `${window.location.protocol}//${window.location.host}/api/tiles/{z}/{x}/{y}` ]
+                    });
+
+                    this.map.gl.addSource('hecate-delta', {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features: [] }
+                    });
+
                     const foregroundColor = '#FF0000';
 
                     this.layers.push('hecate-data-polygons');
@@ -242,17 +253,6 @@ export default {
         this.load_settings();
 
         this.map.gl.on('load', () => {
-            this.map.gl.addSource('hecate-data', {
-                type: 'vector',
-                maxzoom: 14,
-                tiles: [ `${window.location.protocol}//${window.location.host}/api/tiles/{z}/{x}/{y}` ]
-            });
-
-            this.map.gl.addSource('hecate-delta', {
-                type: 'geojson',
-                data: { type: 'FeatureCollection', features: [] }
-            });
-
             this.map.default();
         });
 
@@ -282,7 +282,10 @@ export default {
             });
         },
         setBaseLayer(layer_idx) {
+            if (isNaN(layer_idx)) return;
+
             this.map.gl.setStyle(this.map.baselayers[layer_idx].url);
+            console.error(this.map.baselayers[layer_idx].url)
         },
         logout: function(reload) {
             this.credentials.authed = false;
