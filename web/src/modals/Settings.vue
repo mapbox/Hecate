@@ -114,7 +114,10 @@
                 <template v-else>
                     <div class='grid w-full'>
                         <div class='col col--12'>
-                            <h3 class='col col--12 py6 txt-m txt-bold'>Settings</h3>
+                            <div class='col col--12 py6 txt-m txt-bold'>
+                                Settings
+                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                            </div>
 
                             <div class='py6 col col--12 border--gray-light border-b'>
                                 <span class='txt-m'>Base Layers</span>
