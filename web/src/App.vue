@@ -3,24 +3,41 @@
         <!-- Map -->
         <div id="map" class='h-full bg-darken10 viewport-twothirds viewport-full-ml absolute top left right bottom'></div>
 
+        <!-- Bottom BaseLayers -->
+        <div class='absolute z1 h60 color-black' style='right: 40px; bottom: 10px;'>
+            <template v-for='(layer, layer_idx) in map.baselayers' >
+                <div @click='setBaseLayer(layer_idx)' class='w60 h60 fr bg-white mx6 round cursor-pointer bg-gray-light-on-hover'>
+                    <div class='w-full pt3'>
+                        <template v-if='layer.type === "Raster"'>
+                            <svg class='icon mx-auto align-center' style='width: 15px;'><use href='#icon-paint'/></svg>
+                        </template>
+                        <template v-else>
+                            <svg class='icon mx-auto' style='width: 15px;'><use href='#icon-satellite'/></svg>
+                        </template>
+                    </div>
+                    <div class='w-full align-center txt-xs' v-text='layer.name'></div>
+                </div>
+            </template>
+        </div>
+
         <!-- Left Panel -->
         <div class='absolute top-ml left bottom z1 w-full w240-ml hmax-full px12 py12-ml' style="pointer-events: none;">
 
             <!-- Toolbar -->
             <div class='bg-white round mb12' style='height: 40px; pointer-events:auto;'>
-                <div @click="panel === 'deltas' ? panel = false : panel = 'deltas'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel === 'deltas' ? panel = false : panel = 'deltas'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-clock'/></svg>
                 </div>
-                <div @click="panel === 'styles' ? panel = false : panel = 'styles'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel === 'styles' ? panel = false : panel = 'styles'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-paint'/></svg>
                 </div>
-                <div @click="panel = false; modal = 'query'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; modal = 'query'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-inspect'/></svg>
                 </div>
-                <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-arrow-down'/></svg>
                 </div>
-                <div @click="panel = false; modal = 'settings'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; modal = 'settings'" class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-sprocket'/></svg>
                 </div>
             </div>
@@ -41,10 +58,10 @@
         <!-- Login Panel -->
         <div class='none block-ml absolute top-ml left bottom z1 ml240 hmax-full py12-ml' style="pointer-events: none;">
             <div class='bg-white round' style='height: 40px; pointer-events:auto;'>
-                <div @click="panel = false; logout(); modal = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div @click="panel = false; logout(); modal = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-user'/></svg>
                 </div>
-                <div v-if='credentials.authed' @click="logout(true)" class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer' style='height: 40px; width: 40px;'>
+                <div v-if='credentials.authed' @click="logout(true)" class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-logout'/></svg>
                 </div>
             </div>
@@ -67,7 +84,7 @@
             <register v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "settings"'>
-            <settings v-on:close='modal = false' />
+            <settings v-on:close='settings_close' />
         </template>
         <template v-else-if='modal === "query"'>
             <query v-on:close='modal = false' :credentials='credentials' />
@@ -79,6 +96,9 @@
 </template>
 
 <script>
+//Libaries
+import mapboxglgeo from '@mapbox/mapbox-gl-geocoder';
+
 // === Components ===
 import Foot from './components/Foot.vue';
 
@@ -107,8 +127,20 @@ export default {
             },
             map: {
                 gl: false,
+                baselayers: [],
                 layers: [],
                 default: function() {
+                    this.gl.addSource('hecate-data', {
+                        type: 'vector',
+                        maxzoom: 14,
+                        tiles: [ `${window.location.protocol}//${window.location.host}/api/tiles/{z}/{x}/{y}` ]
+                    });
+
+                    this.gl.addSource('hecate-delta', {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features: [] }
+                    });
+
                     const foregroundColor = '#FF0000';
 
                     this.layers.push('hecate-data-polygons');
@@ -203,7 +235,6 @@ export default {
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
 
-
         this.map.gl = new mapboxgl.Map({
             container: 'map',
             attributionControl: false,
@@ -214,23 +245,13 @@ export default {
             zoom: 3
         }).addControl(new mapboxgl.AttributionControl({
             compact: true
-        })).addControl(new MapboxGeocoder({
+        })).addControl(new mapboxglgeo({
             accessToken: mapboxgl.accessToken,
         }));
 
+        this.load_settings();
 
-        this.map.gl.on('load', () => {
-            this.map.gl.addSource('hecate-data', {
-                type: 'vector',
-                maxzoom: 14,
-                tiles: [ `${window.location.protocol}//${window.location.host}/api/tiles/{z}/{x}/{y}` ]
-            });
-
-            this.map.gl.addSource('hecate-delta', {
-                type: 'geojson',
-                data: { type: 'FeatureCollection', features: [] }
-            });
-
+        this.map.gl.on('style.load', () => {
             this.map.default();
         });
 
@@ -245,6 +266,29 @@ export default {
         });
     },
     methods: {
+        settings_close: function() {
+            this.modal = false;
+            this.load_settings();
+        },
+        load_settings: function() {
+            fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                return response.json();
+            }).then((layers) => {
+                if (!layers) return;
+
+                this.map.baselayers = layers;
+            }).catch((err) => {
+                console.error(err);
+            });
+        },
+        setBaseLayer(layer_idx) {
+            if (isNaN(layer_idx)) return;
+
+            this.map.gl.setStyle(this.map.baselayers[layer_idx].url);
+        },
         logout: function(reload) {
             this.credentials.authed = false;
 

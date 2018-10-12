@@ -1,16 +1,16 @@
 <template>
 <div class='absolute top left bottom right z3' style="pointer-events: none;">
     <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events: auto;">
-        <template v-if='error'>
+        <template v-if='modal_error'>
             <div class="flex-child px12 py12 w600 h80 bg-white round-ml shadow-darken10">
                 <div class='grid w-full'>
                     <div class='col col--8'>
                         <h3 class='fl py6 txt-m txt-bold w-full'>Login Error!</h3>
-                        <p class='color-red' v-text='error'></p>
+                        <p class='color-red' v-text='modal_error'></p>
                     </div>
 
                     <div class='col col--4'>
-                        <button @click='error = ""' class='mt24 btn round w-full'>OK</button>
+                        <button @click='modal_error = ""' class='mt24 btn round w-full'>OK</button>
                     </div>
                 </div>
             </div>
@@ -30,13 +30,13 @@
                             <div class='col col--6'>
                                 <label>
                                     Username:
-                                    <input v-model='username' class='input py12' placeholder='username'/>
+                                    <input v-model='modal_username' class='input py12' placeholder='username'/>
                                 </label>
                             </div>
                             <div class='col col--6'>
                                 <label>
                                     Password:
-                                    <input v-model='password' type='password' class='input py12' placeholder='password'/>
+                                    <input v-model='modal_password' type='password' class='input py12' placeholder='password'/>
                                 </label>
                             </div>
                         </div>
@@ -64,9 +64,9 @@ export default {
     name: 'login',
     data: function() {
         return {
-            error: '',
-            username: '',
-            password: ''
+            modal_error: '',
+            modal_username: '',
+            modal_password: ''
         }
     },
     methods: {
@@ -83,30 +83,30 @@ export default {
                 method: 'GET',
                 credentials: 'same-origin',
                 headers: new Headers({
-                    'Authorization': 'Basic '+ btoa(`${this.username}:${this.password}`)
+                    'Authorization': 'Basic '+ btoa(`${this.modal_username}:${this.modal_password}`)
                 })
             }).then((response) => {
                 if (response.status === 200) {
                     response.json().then((response) => {
                         self.$emit('uid', parseInt(response));
-                        self.$emit('username', self.username);
+                        self.$emit('username', self.modal_username);
 
-                        self.password = '';
-                        self.username = '';
-                        self.error = '';
+                        self.modal_password = '';
+                        self.modal_username = '';
+                        self.modal_error = '';
 
                         self.$emit('login');
                     }).catch((err) => {
-                        self.password = '';
-                        self.error = 'Failed to parse login response';
+                        self.modal_password = '';
+                        self.modal_error = 'Failed to parse login response';
                     });
                 } else {
-                    self.password = '';
-                    self.error = 'Incorrect Username/Password';
+                    self.modal_password = '';
+                    self.modal_error = 'Incorrect Username/Password';
                 }
             }).catch((err) => {
-                self.password = '';
-                self.error = 'Incorrect Username/Password';
+                self.modal_password = '';
+                self.modal_error = 'Incorrect Username/Password';
             });
         }
     },

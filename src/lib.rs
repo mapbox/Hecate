@@ -294,7 +294,7 @@ fn meta_delete(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State
 #[post("/meta/<key>", format="application/json", data="<body>")]
 fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String, body: Json) -> Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;
-    auth_rules.allows_meta_list(&mut auth, &conn)?;
+    auth_rules.allows_meta_set(&mut auth, &conn)?;
 
     match meta::set(&conn, &key, &body) {
         Ok(_) => Ok(Json(json!(true))),
