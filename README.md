@@ -438,6 +438,7 @@ have a map containing the auth for each subkey.
 | **Custom Auth JSON**                  | `auth`                    |               | `null`                    | 2     |
 | `GET /api/auth`                       | `auth::get`               | `public`      | All                       |       |
 | **Mapbox Vector Tiles**               | `mvt`                     |               | `null`                    | 2     |
+| `DELETE /api/tiles                    | `mvt::delete`             | `admin`       | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>`          | `mvt::get`                | `public`      | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt::regen`              | `user`        | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt::meta`               | `public`      | All                       |       |
@@ -742,6 +743,19 @@ curl -X GET 'http://localhost:8000/api/auth
 ---
 
 <h3 align='center'>Vector Tiles</h3>
+
+<p align=right><strong>Admin Only</strong></p>
+#### `DELETE` `/api/tiles`
+
+Remove all tiles from the integrated tile cache
+
+*Example*
+
+```bash
+curl -X DELETE 'http://localhost:8000/api/tiles
+```
+
+---
 
 #### `GET` `/api/tiles/<z>/<x>/<y>`
 
