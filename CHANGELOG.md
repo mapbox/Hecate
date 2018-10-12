@@ -10,6 +10,12 @@
 
 # Version History
 
+## v0.47.0
+
+- :bug: Meta Set was incorrectly set to check meta::list permission
+- :tada: Add new server settings UI - allowing management of default styles
+- :tada: Add default styles switching UI
+
 ## v0.46.0
 
 - :tada: Add support for configurable web workers to allow custom levels of parallelism
