@@ -3,6 +3,23 @@
         <!-- Map -->
         <div id="map" class='h-full bg-darken10 viewport-twothirds viewport-full-ml absolute top left right bottom'></div>
 
+        <!-- Bottom BaseLayers -->
+        <div class='absolute z1 h60 color-black' style='right: 40px; bottom: 10px;'>
+            <template v-for='(layer, layer_idx) in map.baselayers' >
+                <div @click='setBaseLayer(layer_idx)' class='w60 h60 fr bg-white mx6 round cursor-pointer bg-gray-light-on-hover'>
+                    <div class='w-full pt3'>
+                        <template v-if='layer.type === "Raster"'>
+                            <svg class='icon mx-auto align-center' style='width: 15px;'><use href='#icon-paint'/></svg>
+                        </template>
+                        <template v-else>
+                            <svg class='icon mx-auto' style='width: 15px;'><use href='#icon-satellite'/></svg>
+                        </template>
+                    </div>
+                    <div class='w-full align-center txt-xs' v-text='layer.name'></div>
+                </div>
+            </template>
+        </div>
+
         <!-- Left Panel -->
         <div class='absolute top-ml left bottom z1 w-full w240-ml hmax-full px12 py12-ml' style="pointer-events: none;">
 
@@ -20,7 +37,7 @@
                 <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-arrow-down'/></svg>
                 </div>
-                <div @click="panel = false; modal = 'settings'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="panel = false; modal = 'settings'" v-on:close='load_settings' class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-sprocket'/></svg>
                 </div>
             </div>
@@ -111,6 +128,7 @@ export default {
             },
             map: {
                 gl: false,
+                baselayers: [],
                 layers: [],
                 default: function() {
                     const foregroundColor = '#FF0000';
@@ -221,6 +239,8 @@ export default {
             accessToken: mapboxgl.accessToken,
         }));
 
+        this.load_settings();
+
         this.map.gl.on('load', () => {
             this.map.gl.addSource('hecate-data', {
                 type: 'vector',
@@ -247,6 +267,23 @@ export default {
         });
     },
     methods: {
+        load_settings: function() {
+            fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                return response.json();
+            }).then((layers) => {
+                if (!layers) return;
+
+                this.map.baselayers = layers;
+            }).catch((err) => {
+                console.error(err);
+            });
+        },
+        setBaseLayer(layer_idx) {
+            this.map.gl.setStyle(this.map.baselayers[layer_idx].url);
+        },
         logout: function(reload) {
             this.credentials.authed = false;
 
