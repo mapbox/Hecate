@@ -12,7 +12,12 @@
                         </template>
 
                         <div class='col--12'>
-                            <h3 class='w-full py6 txt-m txt-bold'>Add A New Base Layer</h3>
+                            <template v-if='addLayerData.exists === false'>
+                                <h3 class='w-full py6 txt-m txt-bold'>Add A New Base Layer</h3>
+                            </template>
+                            <template v-else>
+                                <h3 class='w-full py6 txt-m txt-bold' v-text='"Modify the " + addLayerData.name + " layer"'></h3>
+                            </template>
                         </div>
 
                         <div class='col--12 py12 px12'>
@@ -44,7 +49,12 @@
                                     <button @click='close' class='btn btn--red round w-full'>Cancel</button>
                                 </div>
                                 <div class='col col--6'>
-                                    <button @click='addLayer' class='btn round w-full'>OK</button>
+                                    <template v-if='addLayerData.exists === false'>
+                                        <button @click='addLayer' class='btn round w-full'>Create Layer</button>
+                                    </template>
+                                    <template v-else>
+                                        <button @click='updateLayer(addLayerData.exists)' class='btn round w-full'>Update Layer</button>
+                                    </template>
                                 </div>
                             </div>
                         </div>
@@ -131,7 +141,7 @@
                                             <svg class='icon w-full pt3'><use xlink:href='#icon-close'/></svg>
                                         </div>
 
-                                        <div class='w-full h120 color-gray-on-hover round border border--gray-light border--gray-on-hover'>
+                                        <div @click='editLayerClick(layer_idx)'  class='w-full h120 color-gray-on-hover round border border--gray-light border--gray-on-hover'>
                                             <template v-if='layer.type === "Raster"'>
                                                 <svg class='icon w-full h-full'><use href='#icon-satellite'/></svg>
                                             </template>
@@ -174,6 +184,7 @@ export default {
                 type: ''
             },
             addLayerData: {
+                exists: false,
                 error: '',
                 name: '',
                 nameError: false,
@@ -189,6 +200,8 @@ export default {
     },
     methods: {
         close: function() {
+            this.clearLayer();
+
             if (this.mode !== 'settings') {
                 this.mode = 'settings';
             } else {
@@ -233,21 +246,26 @@ export default {
 
             this.close();
         },
-        addLayer: function() {
+        validateLayer: function() {
+            let error = false;
+
             if (this.addLayerData.name.length === 0) {
                 this.addLayerData.nameError = true;
+                error = true;
             } else {
                 this.addLayerData.nameError = false;
             }
 
             if (['Vector', 'Raster'].indexOf(this.addLayerData.type) === -1) {
                 this.addLayerData.typeError = true;
+                error = true;
             } else {
                 this.addLayerData.typeError = false;
             }
 
             if (!this.addLayerData.url.match(/^mapbox:\/\//)) {
                 this.addLayerData.urlError = true;
+                error = true;
             } else {
                 this.addLayerData.urlError = false;
             }
@@ -259,6 +277,29 @@ export default {
                 this.addLayerData.error = false;
             }
 
+            return error;
+        },
+        updateLayer: function(layer_idx) {
+            if (isNaN(layer_idx)) return;
+            if (this.validateLayer()) return;
+
+            this.layers[layer_idx].name = this.addLayerData.name;
+            this.layers[layer_idx].type = this.addLayerData.type;
+            this.layers[layer_idx].url = this.addLayerData.url;
+
+            this.putLayers();
+            this.close();
+        },
+        clearLayer: function() {
+            this.addLayerData.exists = false;
+            this.addLayerData.error = false;
+            this.addLayerData.name = '';
+            this.addLayerData.type = '';
+            this.addLayerData.url = '';
+        },
+        addLayer: function() {
+            if (this.validateLayer()) return;
+
             this.layers.push({
                 name: this.addLayerData.name,
                 type: this.addLayerData.type,
@@ -266,13 +307,16 @@ export default {
             });
 
             this.putLayers();
-
-            this.addLayerData.error = false;
-            this.addLayerData.name = '';
-            this.addLayerData.type = '';
-            this.addLayerData.url = '';
-
             this.close();
+        },
+        editLayerClick: function(layer_idx) {
+            if (isNaN(layer_idx)) return;
+
+            this.mode = 'addLayer';
+            this.addLayerData.exists = layer_idx;
+            this.addLayerData.name = this.layers[layer_idx].name;
+            this.addLayerData.url = this.layers[layer_idx].url;
+            this.addLayerData.type = this.layers[layer_idx].type;
         },
         newLayerClick: function() {
             this.mode = 'addLayer';
