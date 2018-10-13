@@ -177,8 +177,17 @@
                                     <svg class='icon w-full h-full'><use href='#icon-plus'/></svg>
                                 </div>
                             </div>
-                        </div>
 
+                            <div class='py6 col col--12 border--gray-light border-b'>
+                                <span class='txt-m'>Miscellaneous</span>
+                            </div>
+
+                            <div class='col col--12 my12'>
+                                Wipe the cached vector tiles, forcing regen of all tiles
+                                <button :disabled='tilecache' @click='clearCache' class='fr btn btn--red round'>Clear Cache</button>
+                            </div>
+
+                        </div>
                         <div class='col col--12'>
                             <button @click='close' class='fr mt24 btn round w-full'>OK</button>
                         </div>
@@ -195,6 +204,7 @@ export default {
     data: function() {
         return {
             mode: 'settings',
+            tilecache: false, //Store if the cache has been cleared or not
             layers: [],
             error: '',
             delLayerData: {
@@ -232,6 +242,20 @@ export default {
                 this.$emit('close');
             }
         },
+        clearCache: function() {
+            fetch(`${window.location.protocol}//${window.location.host}/api/tiles`, {
+                method: 'DELETE',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) {
+                    this.error = response.status + ':' + response.statusText;
+                }
+
+                this.tilecache = false;
+            }).catch((err) => {
+                this.error = err.message;
+            });
+        },
         getLayers: function() {
             fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
                 method: 'GET',
@@ -243,8 +267,7 @@ export default {
 
                 return response.json();
             }).then((layers) => {
-                //If the server doesn't already have a layers object, create it
-                if (!layers) return this.putLayers();
+                if (!layers || !layers.length) layers = [];
 
                 this.layers = layers;
             }).catch((err) => {
