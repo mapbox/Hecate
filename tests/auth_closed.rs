@@ -163,6 +163,7 @@ mod test {
                 "mvt": {
                     "get": "user",
                     "regen": "user",
+                    "delete": "user",
                     "meta": "user"
                 },
                 "user": {

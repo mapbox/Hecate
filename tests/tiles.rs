@@ -138,6 +138,16 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { //Wipe Tile DB
+            let client = reqwest::Client::new();
+            let resp = client.delete("http://localhost:8000/api/tiles")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+        }
+
         server.kill().unwrap();
     }
 }

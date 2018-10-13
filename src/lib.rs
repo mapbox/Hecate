@@ -354,11 +354,14 @@ fn mvt_meta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
 
 
 #[delete("/tiles")]
-fn mvt_wipe(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<Json>> {
+fn mvt_wipe(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;
     auth_rules.allows_mvt_delete(&mut auth, &conn)?;
 
-    Ok(mvt_response)
+    match mvt::wipe(&conn) {
+        Ok(response) => Ok(Json(response)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
 }
 
 #[get("/tiles/<z>/<x>/<y>/regen")]

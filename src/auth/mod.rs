@@ -606,6 +606,13 @@ impl CustomAuth {
         }
     }
 
+    pub fn allows_mvt_delete(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.mvt {
+            None => Err(not_authed()),
+            Some(mvt) => auth_met(&mvt.delete, auth, &conn)
+        }
+    }
+
     pub fn allows_mvt_regen(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
         match &self.mvt {
             None => Err(not_authed()),
