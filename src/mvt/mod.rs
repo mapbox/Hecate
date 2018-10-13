@@ -126,6 +126,18 @@ pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
     }
 }
 
+pub fn wipe(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<serde_json::Value, MVTError> {
+    match conn.execute("
+        DELETE FROM tiles;
+    ", &[]) {
+        Ok(_) => Ok(json!(true)),
+        Err(err) => match err.as_db() {
+            Some(_e) => Err(MVTError::DB),
+            _ => Err(MVTError::DB)
+        }
+    }
+}
+
 pub fn meta(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<serde_json::Value, MVTError> {
     match conn.query("
         SELECT

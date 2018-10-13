@@ -207,6 +207,7 @@ impl ValidAuth for AuthAuth {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthMVT {
     pub get: Option<String>,
+    pub delete: Option<String>,
     pub regen: Option<String>,
     pub meta: Option<String>
 }
@@ -215,6 +216,7 @@ impl AuthMVT {
     fn new() -> Self {
         AuthMVT {
             get: Some(String::from("public")),
+            delete: Some(String::from("admin")),
             regen: Some(String::from("user")),
             meta: Some(String::from("public"))
         }
@@ -225,6 +227,7 @@ impl ValidAuth for AuthMVT {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("mvt::get", &self.get)?;
         is_all("mvt::regen", &self.regen)?;
+        is_all("mvt::delete", &self.regen)?;
         is_all("mvt::meta", &self.meta)?;
 
         Ok(true)
@@ -600,6 +603,13 @@ impl CustomAuth {
         match &self.mvt {
             None => Err(not_authed()),
             Some(mvt) => auth_met(&mvt.get, auth, &conn)
+        }
+    }
+
+    pub fn allows_mvt_delete(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json>> {
+        match &self.mvt {
+            None => Err(not_authed()),
+            Some(mvt) => auth_met(&mvt.delete, auth, &conn)
         }
     }
 

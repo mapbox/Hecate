@@ -113,6 +113,7 @@ pub fn start(
             stats_get,
             mvt_get,
             mvt_meta,
+            mvt_wipe,
             mvt_regen,
             user_self,
             user_info,
@@ -347,6 +348,18 @@ fn mvt_meta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
 
     match mvt::meta(&conn, z, x, y) {
         Ok(tile) => Ok(Json(tile)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+
+#[delete("/tiles")]
+fn mvt_wipe(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+    auth_rules.allows_mvt_delete(&mut auth, &conn)?;
+
+    match mvt::wipe(&conn) {
+        Ok(response) => Ok(Json(response)),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
