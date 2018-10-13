@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.48.0
+
+- :rocket: Add endpoint for clearing the tile cache
+- :rocket: Add UI Fxn to clear tile cache
+
 ## v0.47.0
 
 - :bug: Meta Set was incorrectly set to check meta::list permission
