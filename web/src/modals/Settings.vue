@@ -184,7 +184,10 @@
 
                             <div class='col col--12 my12'>
                                 Wipe the cached vector tiles, forcing regen of all tiles
-                                <button :disabled='tilecache' @click='clearCache' class='fr btn btn--red round'>Clear Cache</button>
+                                <button :disabled='tilecache' @click='clearCache' class='fr btn btn--red round'>
+                                    <template v-if='tilecache'>Cache Cleared</template>
+                                    <template v-else>Clear Cache</template>
+                                </button>
                             </div>
 
                         </div>
@@ -249,9 +252,9 @@ export default {
             }).then((response) => {
                 if (response.status !== 200) {
                     this.error = response.status + ':' + response.statusText;
+                    return;
                 }
-
-                this.tilecache = false;
+                this.tilecache = true;
             }).catch((err) => {
                 this.error = err.message;
             });
