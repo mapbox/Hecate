@@ -10,11 +10,15 @@
 
 # Version History
 
+## v0.47.1
+
+- :rocket: [UI] Add cursor change on hover events in mapbox-gl
+
 ## v0.47.0
 
 - :bug: Meta Set was incorrectly set to check meta::list permission
-- :tada: Add new server settings UI - allowing management of default styles
-- :tada: Add default styles switching UI
+- :tada: [UI] Add new server settings - allowing management of default styles
+- :tada: [UI] Add default styles switching
 
 ## v0.46.0
 
