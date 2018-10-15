@@ -141,8 +141,7 @@ export default {
                         data: { type: 'FeatureCollection', features: [] }
                     });
 
-                    const foregroundColor = '#FF0000';
-
+                    const foregroundColor = '#FF0000'; 
                     this.layers.push('hecate-data-polygons');
                     this.gl.addLayer({
                         id: 'hecate-data-polygons',
@@ -253,6 +252,25 @@ export default {
 
         this.map.gl.on('style.load', () => {
             this.map.default();
+        });
+
+        this.map.gl.on('mouseenter', 'hecate-data-polygons',  (e) => {
+            this.map.gl.getCanvas().style.cursor = 'pointer';
+        });
+        this.map.gl.on('mouseleave', 'hecate-data-polygons', (e) => {
+            this.map.gl.getCanvas().style.cursor = '';
+        });
+        this.map.gl.on('mouseenter', 'hecate-data-lines',  (e) => {
+            this.map.gl.getCanvas().style.cursor = 'pointer';
+        });
+        this.map.gl.on('mouseleave', 'hecate-data-lines', (e) => {
+            this.map.gl.getCanvas().style.cursor = '';
+        });
+        this.map.gl.on('mouseenter', 'hecate-data-points',  (e) => {
+            this.map.gl.getCanvas().style.cursor = 'pointer';
+        });
+        this.map.gl.on('mouseleave', 'hecate-data-points', (e) => {
+            this.map.gl.getCanvas().style.cursor = '';
         });
 
         this.map.gl.on('click', (e) => {
