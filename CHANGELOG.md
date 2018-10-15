@@ -10,9 +10,13 @@
 
 # Version History
 
-## v0.47.1
+## v0.48.1
 
 - :rocket: [UI] Add cursor change on hover events in mapbox-gl
+
+# v0.48.0
+- :rocket: Add endpoint for clearing the tile cache
+- :rocket: Add UI Fxn to clear tile cache
 
 ## v0.47.0
 
