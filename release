@@ -1,0 +1,60 @@
+#!/bin/bash
+
+if [[ -z $1 ]]; then
+    echo
+    echo "  Usage: ./release <VERSION>"
+    echo
+    exit 1
+fi
+
+set -euo pipefail
+
+NVER=$1
+
+# Get the current version from the Cargo.toml file
+
+if [[ ! -f Cargo.toml ]]; then
+    echo "Could not find Cargo.toml file"
+    echo "Run release from project root"
+    exit 1
+fi
+
+CVER=$(grep -Po '(?<=^version = ")\d+\.\d+\.\d+(?="$)' ./Cargo.toml | head -1)
+
+echo "ok - $CVER => $NVER"
+
+sed -i "s/\"$CVER\"/\"$NVER\"/" ./Cargo.toml
+echo "ok - Updated Cargo.toml"
+
+if [[ ! $(git diff Cargo.toml | grep '^+' | wc -l | grep -Po '^\d+') -eq 2 ]]; then
+    echo "not ok - Failed to update Cargo.toml"
+    exit 1
+fi
+
+sed -i "s/\"$CVER\"/\"$NVER\"/" ./src/lib.rs
+echo "ok - Updated src/lib.rs"
+
+if [[ ! $(git diff ./src/lib.rs | grep '^+' | wc -l | grep -Po '^\d+') -eq 2 ]]; then
+    echo "not ok - Failed to update src/lib.rs"
+    exit 1
+fi
+
+sed -i "s/$CVER/$NVER/" ./src/cli.yml
+echo "ok - Updated src/cli.yml"
+
+if [[ ! $(git diff ./src/cli.yml | grep '^+' | wc -l | grep -Po '^\d+') -eq 2 ]]; then
+    echo "not ok - Failed to update src/cli.yml"
+    exit 1
+fi
+
+cargo build --release
+
+git commit -am "v${NVER}"
+git tag "v${NVER}"
+
+git push
+git push --tags
+
+echo "ok - release published!"
+echo
+echo "Via the GH interface, create a new release and upload the built linux binary"
