@@ -41,7 +41,7 @@
                     <div class="fl txt-bold" v-text="delta.username"></div>
                     <div class="fr txt-em" v-text="moment(delta.created).add(moment().utcOffset(), 'minutes').fromNow()"></div>
                 </div>
-                <span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span>
+                <span v-text="delta.props.message ? delta.props.message : (delta.props.comment ? delta.props.comment : '<No Delta Message>')"></span>
                 <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
             </div>
 
