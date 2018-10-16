@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.48.2
+
+- :rocket: [UI] Show JOSM changeset messages in delta panel
+
 ## v0.48.1
 
 - :rocket: [UI] Add cursor change on hover events in mapbox-gl
