@@ -21,7 +21,10 @@ fi
 
 CVER=$(grep -Po '(?<=^version = ")\d+\.\d+\.\d+(?="$)' ./Cargo.toml | head -1)
 
-echo "ok - $CVER => $NVER"
+if [[ ! $(grep "v${NVER}" CHANGELOG.md | wc -l | grep -Po '^\d+') -eq 1 ]]; then
+    echo "not ok - Add version to CHANGELOG.md before releasing"
+    exit 1
+fi
 
 sed -i "s/\"$CVER\"/\"$NVER\"/" ./Cargo.toml
 echo "ok - Updated Cargo.toml"
@@ -55,6 +58,5 @@ git tag "v${NVER}"
 git push
 git push --tags
 
+echo "ok - $CVER => $NVER"
 echo "ok - release published!"
-echo
-echo "Via the GH interface, create a new release and upload the built linux binary"
