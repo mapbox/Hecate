@@ -7,6 +7,8 @@
   <a href="https://crates.io/crates/hecate"><img src="https://img.shields.io/crates/v/hecate.svg"/></a>
 </p>
 
+<img src="https://i.imgur.com/xLjiTqL.jpg"/>
+
 ## Hecate Feature Comparison
 
 | Feature               | Hecate             | ESRI MapServer     | OSM Backend        |
