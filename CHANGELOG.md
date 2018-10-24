@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.48.3
+
+- :arrow_up: Update to latest deps
+
 ## v0.48.2
 
 - :rocket: [UI] Show JOSM changeset messages in delta panel
