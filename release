@@ -59,4 +59,6 @@ git push
 git push --tags
 
 echo "ok - $CVER => $NVER"
-echo "ok - release published!"
+echo "ok - release pushed!"
+echo
+echo "ok - publish the new release - https://github.com/mapbox/Hecate/releases/new?tag=v${NVER}"
