@@ -21,6 +21,11 @@ fi
 
 set -euo pipefail
 
+if [[ $(git rev-parse --abbrev-ref HEAD) != "master" ]]; then
+    echo "not ok - Must release on 'master' branch"
+    exit 1
+fi
+
 NVER=$1
 
 if [[ ! $(grep "v${NVER}" CHANGELOG.md | wc -l | grep -Po '^\d+') -eq 1 ]]; then
