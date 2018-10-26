@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.49.0
+
+- :rocket: Make fallback for `database_read` flag
+- :tada: Schema now creates a `hecate` & `hecate_read` user instead of using the `postgres` user by default
+
 ## v0.48.3
 
 - :arrow_up: Update to latest deps
