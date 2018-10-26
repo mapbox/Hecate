@@ -306,7 +306,9 @@ cargo run
 
 ### Database
 
-By default hecate will attempt to connect to `postgres@localhost:5432/hecate`.
+By default hecate will attempt to connect to `hecate@localhost:5432/hecate` for write
+operations and simultaneously connect to `hecate_read@localhost:5432/hecate` for
+read only operations.
 
 Note that only postgres/postgis backed databases are currently supported.
 
@@ -326,8 +328,6 @@ cargo run -- --database "<USER>@<HOST>/<DATABASE>"
 A second read-only account should also be created with permissions to SELECT from the
 `geo` & `deltas` table. All query endpoints - query, clone, bbox, etc will use this readonly connection
 A sample implementation can be found in the `schema.sql` document
-
-If this flag is not provided, `query` endpoints will be disabled.
 
 Note: It is up to the DB Admin to ensure the permissions are limited in scope for this user. Hecate will
 expose access to this user via the query endpoint.
