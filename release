@@ -1,16 +1,5 @@
 #!/bin/bash
 
-if [[ -z $1 ]]; then
-    echo
-    echo "  Usage: ./release <VERSION>"
-    echo
-    exit 1
-fi
-
-set -euo pipefail
-
-NVER=$1
-
 # Get the current version from the Cargo.toml file
 
 if [[ ! -f Cargo.toml ]]; then
@@ -20,6 +9,19 @@ if [[ ! -f Cargo.toml ]]; then
 fi
 
 CVER=$(grep -Po '(?<=^version = ")\d+\.\d+\.\d+(?="$)' ./Cargo.toml | head -1)
+
+if [[ -z $1 ]]; then
+    echo
+    echo "  Current Version: $CVER"
+    echo
+    echo "  Usage: ./release <VERSION>"
+    echo
+    exit 1
+fi
+
+set -euo pipefail
+
+NVER=$1
 
 if [[ ! $(grep "v${NVER}" CHANGELOG.md | wc -l | grep -Po '^\d+') -eq 1 ]]; then
     echo "not ok - Add version to CHANGELOG.md before releasing"
