@@ -123,7 +123,6 @@ CREATE OR REPLACE FUNCTION modify_geo(TEXT, TEXT, BIGINT, BIGINT, BIGINT, TEXT)
 
 COMMIT;
 
-
 -- ------- Hecate Read User ----------
 DO $$DECLARE count int;
     BEGIN
@@ -139,4 +138,19 @@ DO $$DECLARE count int;
 CREATE ROLE hecate_read WITH LOGIN NOINHERIT;
 GRANT SELECT ON geo TO hecate_read;
 GRANT SELECT ON deltas TO hecate_read;
+-- -----------------------------------
+
+-- ------- Hecate User ---------------
+DO $$DECLARE count int;
+    BEGIN
+        SELECT count(*) INTO count FROM pg_roles WHERE rolname = 'hecate';
+
+        IF count > 0 THEN
+            EXECUTE 'REVOKE ALL PRIVILEGES ON DATABASE hecate FROM hecate;';
+            EXECUTE 'DROP ROLE IF EXISTS hecate;';
+        END IF;
+    END$$;
+
+CREATE ROLE hecate WITH LOGIN NOINHERIT;
+GRANT ALL PRIVILEGES ON DATABASE hecate TO hecate;
 -- -----------------------------------

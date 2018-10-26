@@ -53,7 +53,7 @@ use rocket_contrib::Json;
 
 pub fn start(
     database: String,
-    database_read: Option<Vec<String>>,
+    database_read: Vec<String>,
     port: Option<u16>,
     workers: Option<u16>,
     schema: Option<serde_json::value::Value>,
@@ -73,10 +73,7 @@ pub fn start(
         }
     };
 
-    let db_read: DbRead = match database_read {
-        None => DbRead::new(None),
-        Some(dbs) => DbRead::new(Some(dbs.iter().map(|db| init_pool(&db)).collect()))
-    };
+    let db_read: DbRead = DbRead::new(Some(dbs.iter().map(|db| init_pool(&db)).collect()));
 
     let limits = Limits::new()
         .limit("json", 20971520)
