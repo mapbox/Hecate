@@ -73,7 +73,7 @@ pub fn start(
         }
     };
 
-    let db_read: DbRead = DbRead::new(Some(dbs.iter().map(|db| init_pool(&db)).collect()));
+    let db_read: DbRead = DbRead::new(Some(database_read.iter().map(|db| init_pool(&db)).collect()));
 
     let limits = Limits::new()
         .limit("json", 20971520)
