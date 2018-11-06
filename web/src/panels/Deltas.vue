@@ -7,7 +7,7 @@
         </div>
 
         <div class="flex-child py12 px12 bg-gray-faint txt-s align-center">
-            <span style="word-wrap: break-word;" v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span>
+            <span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span>
         </div>
 
         <div class="flex-child scroll-auto">
@@ -36,12 +36,12 @@
         </div>
 
         <div class="flex-child scroll-auto">
-            <div v-for="delta in deltas" @click="getDelta(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer wfull">
+            <div v-for="delta in deltas" @click="getDelta(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer clearfix">
                 <div class="clearfix">
                     <div class="fl txt-bold" v-text="delta.username"></div>
                     <div class="fr txt-em" v-text="moment(delta.created).add(moment().utcOffset(), 'minutes').fromNow()"></div>
                 </div>
-                <span v-text="delta.props.message ? delta.props.message : (delta.props.comment ? delta.props.comment : '<No Delta Message>')"></span>
+                <div style="word-wrap: break-word;" v-text="delta.props.message ? delta.props.message : (delta.props.comment ? delta.props.comment : '<No Delta Message>')"></div>
                 <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
             </div>
 
