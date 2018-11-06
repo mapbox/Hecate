@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.49.2
+
+- [UI] More whitespace fixes in deltas panel
+
 ## v0.49.1
 
 - [UI] Fix spacing on main toolbar
