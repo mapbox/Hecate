@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.49.1
+
+- [UI] Fix spacing on main toolbar
+- [UI] Fix whitespace & overflow on delta message
+
 ## v0.49.0
 
 - :rocket: Make fallback for `database_read` flag
