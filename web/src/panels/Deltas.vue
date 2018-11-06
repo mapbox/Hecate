@@ -7,11 +7,11 @@
         </div>
 
         <div class="flex-child py12 px12 bg-gray-faint txt-s align-center">
-            <span v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span>
+            <span style="word-wrap: break-word;" v-text="delta.props.message ? delta.props.message : '<No Delta Message>'"></span>
         </div>
 
         <div class="flex-child scroll-auto">
-            <div v-for="(feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+            <div v-for="(feat, feat_it) in delta.features.features" class="px12 py3 clearfix bg-white bg-darken25-on-hover cursor-pointer clearfix">
                 <span v-if="feat.geometry && feat.geometry.type === 'Point'" class="fl py6 px6"><svg class='icon'><use href='#icon-marker'/></span>
                 <span v-else-if="feat.geometry && feat.geometry.type === 'MultiPoint'" class="fl px6 py6"><svg class='icon'><use href='#icon-marker'/></span>
                 <span v-else-if="feat.geometry && feat.geometry.type === 'LineString'" class="fl px6 py6"><svg class='icon'><use href='#icon-polyline'/></span>
