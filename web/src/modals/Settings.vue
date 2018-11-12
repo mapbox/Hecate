@@ -140,10 +140,20 @@
                     </div>
                 </template>
                 <template v-else>
-                    <div class='grid w-full'>
-                        <div class='col col--12'>
-                            <div class='col col--12 py6 txt-m txt-bold'>
-                                Settings
+                    <div class='fl h360' style='width: 44px; padding-right: 8px;'>
+                        <button @click='submode = "server"' class='fl btn btn--stroke w36 px12 my6'>
+                            <svg class='icon'><use xlink:href='#icon-sprocket'/></svg>
+                        </button>
+    
+                        <button @click='submode = "users"' class='fl btn btn--stroke w36 px12 my6'>
+                            <svg class='icon'><use xlink:href='#icon-user'/></svg>
+                        </button>
+                    </div>
+
+                    <div class='fl pl6' style='width: calc(600px - 68px);'>
+                        <template v-if='submode === "server"'>
+                            <div class='col col--12 txt-m txt-bold'>
+                                Server Settings
                                 <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </div>
 
@@ -189,11 +199,23 @@
                                     <template v-else>Clear Cache</template>
                                 </button>
                             </div>
+                        </template>
+                        <template v-if='submode === "users"'>
+                            <div class='col col--12 txt-m txt-bold'>
+                                User Settings
+                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                            </div>
 
-                        </div>
-                        <div class='col col--12'>
-                            <button @click='close' class='fr mt24 btn round w-full'>OK</button>
-                        </div>
+                            <div class='py6 col col--12 border--gray-light border-b'>
+                                <span class='txt-m'>Users</span>
+                                <span @click='helpBaseClick' class='fr cursor-pointer'><svg class='icon'><use href='#icon-info'/></svg></span>
+                            </div>
+
+                            <div class='col col--12 hmin120 hmax180 clearfix'>
+                                <template v-for='(user, user_idx) of users'>
+                                </template>
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -207,8 +229,10 @@ export default {
     data: function() {
         return {
             mode: 'settings',
+            submode: 'server',
             tilecache: false, //Store if the cache has been cleared or not
             layers: [],
+            users: [],
             error: '',
             delLayerData: {
                 idx: false,
