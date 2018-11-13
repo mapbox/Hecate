@@ -269,6 +269,20 @@ export default {
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
 
+        if (/session=[a-z0-9+%]/.test(document.cookie)) {
+            this.getSelf((err, user) => {
+                this.credentials.authed = true;
+                this.credentials.username = user.username;
+                this.credentials.uid = user.id;
+
+                this.getSettings();
+                this.getAuth();
+            });
+        } else {
+            this.getSettings();
+            this.getAuth();
+        }
+
         this.map.gl = new mapboxgl.Map({
             container: 'map',
             attributionControl: false,
@@ -282,9 +296,6 @@ export default {
         })).addControl(new mapboxglgeo({
             accessToken: mapboxgl.accessToken,
         }));
-
-        this.getSettings();
-        this.getAuth();
 
         this.map.gl.on('style.load', () => {
             this.map.default();
@@ -356,6 +367,19 @@ export default {
             if (isNaN(layer_idx)) return;
 
             this.map.gl.setStyle(this.map.baselayers[layer_idx].url);
+        },
+        getSelf: function(cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/info`, {
+                credentials: 'same-origin'
+            }).then((response) => {
+                return response.json();
+            }).then((user) => {
+                if (cb) return cb(null, user);
+            }).catch((err) => {
+                console.error(err);
+
+                if (cb) return cb(err);
+            });
         },
         logout: function(reload) {
             this.credentials.authed = false;
