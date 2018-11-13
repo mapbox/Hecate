@@ -94,7 +94,7 @@
             <settings v-on:close='settings_close' :auth='auth'/>
         </template>
         <template v-else-if='modal === "query"'>
-            <query v-on:close='modal = false' :credentials='credentials' />
+            <query :auth='auth' v-on:close='modal = false' :credentials='credentials' />
         </template>
         <template v-else-if='modal === "style"'>
             <stylem v-on:close='modal = false' :id='style_id' :credentials='credentials' :map='map' />
