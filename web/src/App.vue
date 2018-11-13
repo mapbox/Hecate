@@ -87,6 +87,9 @@
         <template v-else-if='modal === "register"'>
             <register v-on:close='modal = false' />
         </template>
+        <template v-else-if='modal === "user"'>
+            <user :auth='auth' :user='user' v-on:close='modal = false' />
+        </template>
         <template v-else-if='modal === "settings"'>
             <settings v-on:close='settings_close' :auth='auth'/>
         </template>
@@ -113,6 +116,7 @@ import Bounds from './panels/Bounds.vue';
 import Styles from './panels/Styles.vue';
 
 // === Modals ===
+import User from './modals/User.vue';
 import Login from './modals/Login.vue';
 import Register from './modals/Register.vue';
 import Settings from './modals/Settings.vue';
@@ -220,11 +224,13 @@ export default {
             panel: false, //Store the current panel view (Deltas, Styles, Bounds, etc)
             layers: [], //Store list of GL layer names so they can be easily removed
             feature: false, //Store the id of a clicked feature
+            user: false, //Store the id of a user for viewing more info
             style_id: false, //Store the id of the current style - false for generic style
             modal: false
         }
     },
     components: {
+        user: User,
         foot: Foot,
         deltas: Deltas,
         bounds: Bounds,
