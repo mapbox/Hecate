@@ -141,11 +141,11 @@
                 </template>
                 <template v-else>
                     <div class='fl h360' style='width: 44px; padding-right: 8px;'>
-                        <button @click='submode = "server"' class='fl btn btn--stroke w36 px12 my6'>
+                        <button @click='submode = "server"' class='fl btn btn--stroke round w36 px12 my6'>
                             <svg class='icon'><use xlink:href='#icon-sprocket'/></svg>
                         </button>
     
-                        <button @click='submode = "users"' class='fl btn btn--stroke w36 px12 my6'>
+                        <button @click='submode = "users"' class='fl btn btn--stroke round w36 px12 my6'>
                             <svg class='icon'><use xlink:href='#icon-user'/></svg>
                         </button>
                     </div>
@@ -206,13 +206,26 @@
                                 <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </div>
 
-                            <div class='py6 col col--12 border--gray-light border-b'>
+                            <div class='py6 col col--12 border--gray-light border-b mb12'>
                                 <span class='txt-m'>Users</span>
-                                <span @click='helpBaseClick' class='fr cursor-pointer'><svg class='icon'><use href='#icon-info'/></svg></span>
                             </div>
 
-                            <div class='col col--12 hmin120 hmax180 clearfix'>
+                            <div class='relative mb12'>
+                                <div class='absolute flex-parent flex-parent--center-cross flex-parent--center-main w36 h36'><svg class='icon'><use xlink:href='#icon-search'></use></svg></div>
+                                <input v-model='userFilter' class='input pl36' placeholder='Filter Users'>
+                            </div>
+
+                            <div class='col col--12 hmin120 hmax180'>
                                 <template v-for='(user, user_idx) of users'>
+                                    <div class='col col--12'>
+                                       <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
+                                            <div class='col--2'>
+                                                <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round' v-text="user.id"></span>
+                                            </div>
+                                            <div class='col--8' v-text='user.username'></div>
+                                            <div class='col--2' v-text='user.access'></div>
+                                        </div>
+                                    </div>
                                 </template>
                             </div>
                         </template>
@@ -233,6 +246,7 @@ export default {
             tilecache: false, //Store if the cache has been cleared or not
             layers: [],
             users: [],
+            userFilter: '',
             error: '',
             delLayerData: {
                 idx: false,
@@ -253,8 +267,12 @@ export default {
     },
     mounted: function() {
         this.getLayers();
+        this.getUsers();
     },
     watch: {
+        userFilter: function() {
+            this.getUsers();
+        },
         error: function() {
             this.getLayers();
         }
@@ -297,6 +315,24 @@ export default {
                 if (!layers || !layers.length) layers = [];
 
                 this.layers = layers;
+            }).catch((err) => {
+                this.error = err.message;
+            });
+        },
+        getUsers: function() {
+            fetch(`${window.location.protocol}//${window.location.host}/api/users?filter=${this.userFilter}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) {
+                    this.error = response.status + ':' + response.statusText;
+                }
+
+                return response.json();
+            }).then((users) => {
+                if (!users || !users.length) users = [];
+
+                this.users = users;
             }).catch((err) => {
                 this.error = err.message;
             });
