@@ -123,6 +123,7 @@ export default {
     name: 'app',
     data: function() {
         return {
+            auth: false,
             credentials: {
                 map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' },
                 authed: false,
@@ -252,7 +253,7 @@ export default {
             accessToken: mapboxgl.accessToken,
         }));
 
-        this.load_settings();
+        this.getSettings();
 
         this.map.gl.on('style.load', () => {
             this.map.default();
@@ -290,9 +291,9 @@ export default {
     methods: {
         settings_close: function() {
             this.modal = false;
-            this.load_settings();
+            this.getSettings();
         },
-        load_settings: function() {
+        getSettings: function() {
             fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
                 method: 'GET',
                 credentials: 'same-origin'
@@ -302,6 +303,20 @@ export default {
                 if (!layers) return;
 
                 this.map.baselayers = layers;
+            }).catch((err) => {
+                console.error(err);
+            });
+        },
+        getAuth: function() {
+            fetch(`${window.location.protocol}//${window.location.host}/api/auth`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                return response.json();
+            }).then((auth) => {
+                if (!auth) return;
+
+                this.auth = auth;
             }).catch((err) => {
                 console.error(err);
             });
