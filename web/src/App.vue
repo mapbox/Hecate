@@ -62,7 +62,7 @@
         <!-- Login Panel -->
         <div class='none block-ml absolute top-ml left bottom z1 ml240 hmax-full py12-ml' style="pointer-events: none;">
             <div class='bg-white round' style='height: 40px; pointer-events:auto;'>
-                <div @click="panel = false; logout(); modal = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="credentials.authed ? modal = 'self' : modal = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-user'/></svg>
                 </div>
                 <div v-if='credentials.authed' @click="logout(true)" class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
@@ -89,6 +89,9 @@
         </template>
         <template v-else-if='modal === "user"'>
             <user :auth='auth' :user='user_id' v-on:close='modal = false' />
+        </template>
+        <template v-else-if='modal === "self"'>
+            <self :auth='auth' v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "settings"'>
             <settings v-on:close='settings_close' :auth='auth'/>
@@ -117,6 +120,7 @@ import Styles from './panels/Styles.vue';
 
 // === Modals ===
 import User from './modals/User.vue';
+import Self from './modals/Self.vue';
 import Login from './modals/Login.vue';
 import Register from './modals/Register.vue';
 import Settings from './modals/Settings.vue';
@@ -249,6 +253,7 @@ export default {
         }
     },
     components: {
+        self: Self,
         user: User,
         foot: Foot,
         deltas: Deltas,
