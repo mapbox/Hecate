@@ -25,19 +25,19 @@
 
             <!-- Toolbar -->
             <div class='bg-white round mb12' style='height: 40px; pointer-events:auto;'>
-                <div @click="panel === 'deltas' ? panel = false : panel = 'deltas'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="panel === 'deltas' ? panel = false : panel = 'deltas'" class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-clock'/></svg>
                 </div>
                 <div style='width: 4px' class='fl h-full'></div>
-                <div @click="panel === 'styles' ? panel = false : panel = 'styles'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="panel === 'styles' ? panel = false : panel = 'styles'" class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-paint'/></svg>
                 </div>
                 <div style='width: 4px' class='fl h-full'></div>
-                <div @click="panel = false; modal = 'query'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="panel = false; modal = 'query'" class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-inspect'/></svg>
                 </div>
                 <div style='width: 4px' class='fl h-full'></div>
-                <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'" class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-arrow-down'/></svg>
                 </div>
                 <div style='width: 4px' class='fl h-full'></div>
@@ -47,7 +47,7 @@
             </div>
 
             <template v-if='panel === "deltas"'>
-                <deltas :map='map'/></template>
+                <deltas :map='map' v-on:user='modal = "user"; user_id = $event'/></template>
             <template v-else-if='panel === "bounds"'>
                 <bounds/>
             </template>
@@ -88,7 +88,7 @@
             <register v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "user"'>
-            <user :auth='auth' :user='user' v-on:close='modal = false' />
+            <user :auth='auth' :user='user_id' v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "settings"'>
             <settings v-on:close='settings_close' :auth='auth'/>
@@ -224,7 +224,7 @@ export default {
             panel: false, //Store the current panel view (Deltas, Styles, Bounds, etc)
             layers: [], //Store list of GL layer names so they can be easily removed
             feature: false, //Store the id of a clicked feature
-            user: false, //Store the id of a user for viewing more info
+            user_id: false, //Store the id of a user for viewing more info
             style_id: false, //Store the id of the current style - false for generic style
             modal: false
         }
