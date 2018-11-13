@@ -48,6 +48,8 @@
 </template>
 
 <script>
+import Foot from '../components/Foot.vue';
+
 export default {
     name: 'feature',
     data: function() {
@@ -55,6 +57,9 @@ export default {
             feature: false,
             loading: false
         }
+    },
+    components: {
+        foot: Foot
     },
     watch: {
         id: function() {

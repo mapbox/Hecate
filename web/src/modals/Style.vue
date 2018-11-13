@@ -62,7 +62,7 @@
                                     <button @click='updateStyle(id, name, JSON.parse(style))' class='btn round btn--stroke w-full'>Save &amp; Apply Style</button>
                                 </template>
                                 <template v-else>
-                                    <button @click='setStyle(id, JSON.parse(style))' class='btn round btn--stroke w-full'>Apply Style</button>
+                                    <button @click='setStyle(style_id, JSON.parse(style))' class='btn round btn--stroke w-full'>Apply Style</button>
                                 </template>
                             </div>
                         </div>
@@ -79,7 +79,6 @@ export default {
     name: 'style',
     data: function() {
         return {
-            id: false,
             public: false,
             uid: false,
             username: false,
@@ -89,7 +88,7 @@ export default {
         }
     },
     created: function() {
-        this.id ? this.getStyle(this.id) : this.createStyle();
+        this.style_id ? this.getStyle(this.style_id) : this.createStyle();
     },
     methods: {
         ok: function(title, body) {
@@ -110,7 +109,7 @@ export default {
                   return response.json();
             }).then((body) => {
                 this.style = JSON.stringify(body.style, null, 4);
-                this.id = body.id;
+                this.style_id = body.id;
                 this.name = body.name;
                 this.public = body.public;
                 this.uid = body.uid;
@@ -119,21 +118,21 @@ export default {
         },
         createStyle: function() {
             this.style = '';
-            this.id = false;
+            this.style_id = false;
             this.username = this.credentials.username;
             this.uid = this.credentials.uid;
             this.name = '';
             this.public = false;
         },
         cloneStyle: function(style, name) {
-            this.id = false;
+            this.style_id = false;
             this.username = this.credentials.username;
             this.uid = this.credentials.uid;
             this.name = `Copy of ${this.name}`;
             this.public = false;
         },
         deleteStyle:  function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/style/${this.id}`, {
+            fetch(`${window.location.protocol}//${window.location.host}/api/style/${this.style_id}`, {
                 method: 'DELETE',
                 credentials: 'same-origin'
             }).then((response) => {
@@ -176,7 +175,7 @@ export default {
                     })
                 }).then((response) => {
                     if (response.status !== 200) return this.ok('Failed to push style', 'Failed to update style');
-                    if (this.credentials.authed && this.id) {
+                    if (this.credentials.authed && this.style_id) {
                         fetch(`${window.location.protocol}//${window.location.host}/api/style/${style_id}/${this.public ? 'public' : 'private'}`, {
                             method: 'POST',
                             credentials: 'same-origin'
@@ -214,6 +213,6 @@ export default {
         }
     },
     render: h => h(App),
-    props: ['id', 'map', 'credentials']
+    props: ['style_id', 'map', 'credentials']
 }
 </script>
