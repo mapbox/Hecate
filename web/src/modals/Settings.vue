@@ -453,6 +453,6 @@ export default {
         }
     },
     render: h => h(App),
-    props: []
+    props: ['auth']
 }
 </script>

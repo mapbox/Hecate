@@ -66,6 +66,7 @@
 <script>
 import Moment from 'moment';
 import Foot from '../components/Foot.vue';
+import { bbox } from '@turf/turf';
 
 export default {
     name: 'deltas',
@@ -217,7 +218,7 @@ export default {
                 this.map.unstyle();
                 this.style();
 
-                this.delta.bbox = turf.bbox(noDeletes);
+                this.delta.bbox = bbox(noDeletes);
                 this.map.gl.fitBounds(this.delta.bbox);
             }
         }

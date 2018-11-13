@@ -88,7 +88,7 @@
             <register v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "settings"'>
-            <settings v-on:close='settings_close' />
+            <settings v-on:close='settings_close' :auth='auth'/>
         </template>
         <template v-else-if='modal === "query"'>
             <query v-on:close='modal = false' :credentials='credentials' />
@@ -254,6 +254,7 @@ export default {
         }));
 
         this.getSettings();
+        this.getAuth();
 
         this.map.gl.on('style.load', () => {
             this.map.default();
