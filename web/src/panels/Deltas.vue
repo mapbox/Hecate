@@ -200,13 +200,12 @@ export default {
     },
     watch: {
         delta: function() {
-            //Reset Normal Map
-            if (!this.delta) {
+            if (!this.delta) { // Reset to normal map
                 this.map.unstyle();
-                this.map.default();
+                this.map.show();
 
                 this.map.gl.getSource('hecate-delta').setData({ type: 'FeatureCollection', features: [] });
-            } else {
+            } else { // Display Delta Map
                 //Deletes don't have a geometry property and as such
                 //should not be dislayed or used to calc. bbox
                 const noDeletes = {
@@ -220,7 +219,7 @@ export default {
 
                 this.map.gl.getSource('hecate-delta').setData(noDeletes);
 
-                this.map.unstyle();
+                this.map.hide();
                 this.style();
 
                 this.delta.bbox = bbox(noDeletes);

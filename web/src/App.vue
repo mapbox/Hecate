@@ -138,6 +138,7 @@ export default {
                 gl: false,
                 baselayers: [],
                 layers: [],
+                defaults: [],
                 default: function() {
                     this.gl.addSource('hecate-data', {
                         type: 'vector',
@@ -150,8 +151,8 @@ export default {
                         data: { type: 'FeatureCollection', features: [] }
                     });
 
-                    const foregroundColor = '#FF0000'; 
-                    this.layers.push('hecate-data-polygons');
+                    const foregroundColor = '#FF0000';
+                    this.defaults.push('hecate-data-polygons');
                     this.gl.addLayer({
                         id: 'hecate-data-polygons',
                         type: 'fill',
@@ -164,7 +165,7 @@ export default {
                         }
                     });
 
-                    this.layers.push('hecate-data-polygon-outlines');
+                    this.defaults.push('hecate-data-polygon-outlines');
                     this.gl.addLayer({
                         id: 'hecate-data-polygon-outlines',
                         type: 'line',
@@ -182,7 +183,7 @@ export default {
                         }
                     })
 
-                    this.layers.push('hecate-data-lines');
+                    this.defaults.push('hecate-data-lines');
                     this.gl.addLayer({
                         id: 'hecate-data-lines',
                         type: 'line',
@@ -200,7 +201,7 @@ export default {
                         }
                     });
 
-                    this.layers.push('hecate-data-points');
+                    this.defaults.push('hecate-data-points');
                     this.gl.addLayer({
                         id: 'hecate-data-points',
                         type: 'circle',
@@ -214,11 +215,29 @@ export default {
                         }
                     });
                 },
+
+                /**
+                 * Removes all user given styles from the map
+                 */
                 unstyle: function() {
                     for (let layer of this.layers) {
                         this.gl.removeLayer(layer);
                     }
                     this.layers = [];
+                },
+
+                /**
+                 * Hide default style
+                 */
+                hide: function() {
+                    for (let layer of this.defaults) this.gl.setLayoutProperty(layer, 'visibility', 'none');
+                },
+
+                /**
+                 * Show default style
+                 */
+                show: function() {
+                    for (let layer of this.defaults) this.gl.setLayoutProperty(layer, 'visibility', 'visible');
                 }
             },
             panel: false, //Store the current panel view (Deltas, Styles, Bounds, etc)
