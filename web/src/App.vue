@@ -108,6 +108,7 @@
 <script>
 //Libaries
 import mapboxglgeo from '@mapbox/mapbox-gl-geocoder';
+import Cookies from 'js-cookie';
 
 // === Components ===
 import Foot from './components/Foot.vue';
@@ -269,11 +270,15 @@ export default {
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
 
-        if (/session=[a-z0-9+%]/.test(document.cookie)) {
+        if (Cookies.get('session')) {
             this.getSelf((err, user) => {
-                this.credentials.authed = true;
-                this.credentials.username = user.username;
-                this.credentials.uid = user.id;
+                if (err || !user) {
+                    Cookies.remove('session');
+                } else {
+                    this.credentials.authed = true;
+                    this.credentials.username = user.username;
+                    this.credentials.uid = user.id;
+                }
 
                 this.getSettings();
                 this.getAuth();
@@ -372,7 +377,11 @@ export default {
             fetch(`${window.location.protocol}//${window.location.host}/api/user/info`, {
                 credentials: 'same-origin'
             }).then((response) => {
-                return response.json();
+                if (response.status !== 200) {
+                    return cb(new Error('not logged in'));
+                } else {
+                    return response.json();
+                }
             }).then((user) => {
                 if (cb) return cb(null, user);
             }).catch((err) => {
