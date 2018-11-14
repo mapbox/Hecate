@@ -215,7 +215,7 @@
                                 <input v-model='userFilter' class='input pl36' placeholder='Filter Users'>
                             </div>
 
-                            <div class='col col--12 hmin120 hmax180'>
+                            <div class='col col--12 h240 scroll-auto'>
                                 <template v-for='(user, user_idx) of users'>
                                     <div class='col col--12'>
                                        <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
