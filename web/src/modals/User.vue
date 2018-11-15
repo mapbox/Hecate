@@ -27,12 +27,8 @@
                             <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                         </div>
 
-                        <div class='py6 col col--12 border--gray-light border-b'>
-                            <span class='txt-m'>Base Layers</span>
-                        </div>
-
-                        <div class='col col--12 hmin120 hmax180 clearfix'>
-                        </div>
+                        Hecate is an Open-Source project, User Profiles are not quite ready for prime-time, come
+                        help us out at <a class='txt-underline' href="https://github.com/mapbox/hecate">mapbox/Hecate</a>
                     </div>
                 </template>
             </div>
