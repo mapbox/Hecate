@@ -7,13 +7,14 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build": "NODE_ENV=prodution parcel build index.html --public-url='/admin/'",
+    "build": "NODE_ENV=prodution parcel build index.html --public-url='/admin/' --no-source-maps",
     "dev": "NODE_ENV=development parcel index.html --public-url='/admin/'"
   },
   "dependencies": {
     "@mapbox/assembly": "^0.23.0",
     "@mapbox/mapbox-gl-geocoder": "^2.3.0",
     "@turf/turf": "^5.1.6",
+    "js-cookie": "^2.2.0",
     "moment": "^2.22.2",
     "vue": "^2.5.16"
   },

@@ -38,10 +38,10 @@
         <div class="flex-child scroll-auto">
             <div v-for="delta in deltas" @click="getDelta(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer clearfix">
                 <div class="clearfix">
-                    <div class="fl txt-bold" v-text="delta.username"></div>
+                    <div @click.stop='userClick(delta.uid)' class="fl txt-bold txt-underline-on-hover" v-text="delta.username"></div>
                     <div class="fr txt-em" v-text="moment(delta.created).add(moment().utcOffset(), 'minutes').fromNow()"></div>
                 </div>
-                <div style="word-wrap: break-word;" v-text="delta.props.message ? delta.props.message : (delta.props.comment ? delta.props.comment : '<No Delta Message>')"></div>
+                <div class='txt-s' style="word-wrap: break-word;" v-text="delta.props.message ? delta.props.message : (delta.props.comment ? delta.props.comment : '<No Delta Message>')"></div>
                 <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
             </div>
 
@@ -66,6 +66,7 @@
 <script>
 import Moment from 'moment';
 import Foot from '../components/Foot.vue';
+import { bbox } from '@turf/turf';
 
 export default {
     name: 'deltas',
@@ -87,6 +88,11 @@ export default {
         foot: Foot
     },
     methods: {
+        userClick(uid) {
+            if (!uid) return;
+
+            this.$emit('user', parseInt(uid));
+        },
         getDeltas: function(action) {
             let off = '';
 
@@ -194,13 +200,12 @@ export default {
     },
     watch: {
         delta: function() {
-            //Reset Normal Map
-            if (!this.delta) {
+            if (!this.delta) { // Reset to normal map
                 this.map.unstyle();
-                this.map.default();
+                this.map.show();
 
                 this.map.gl.getSource('hecate-delta').setData({ type: 'FeatureCollection', features: [] });
-            } else {
+            } else { // Display Delta Map
                 //Deletes don't have a geometry property and as such
                 //should not be dislayed or used to calc. bbox
                 const noDeletes = {
@@ -214,10 +219,10 @@ export default {
 
                 this.map.gl.getSource('hecate-delta').setData(noDeletes);
 
-                this.map.unstyle();
+                this.map.hide();
                 this.style();
 
-                this.delta.bbox = turf.bbox(noDeletes);
+                this.delta.bbox = bbox(noDeletes);
                 this.map.gl.fitBounds(this.delta.bbox);
             }
         }

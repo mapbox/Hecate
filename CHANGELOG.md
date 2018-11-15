@@ -10,6 +10,16 @@
 
 # Version History
 
+## v0.49.3
+
+- [UI] Much better session handling, refreshing the page no longer marks you as logged out, when you actually still have a valid session cookie!
+- [UI] Add User Listing to admin panel
+- [UI] Add Self Modal to view your own account information when signed in
+- [UI] Add clickable usernames to open a user's public profile
+- [UI] Load auth settings at startup to allow components to conditionally request content - avoiding 401 errors where possible by telling the user they aren't logged in/aren't admin, etc.
+- [UI] Fix turf bbox calculation bug in Delta Panel
+- [UI] Fix Foot component error in Features Panel
+
 ## v0.49.2
 
 - [UI] More whitespace fixes in deltas panel

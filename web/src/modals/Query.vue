@@ -82,6 +82,6 @@ export default {
         }
     },
     render: h => h(App),
-    props: ['credentials']
+    props: ['credentials', 'auth']
 }
 </script>

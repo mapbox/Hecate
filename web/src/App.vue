@@ -25,19 +25,19 @@
 
             <!-- Toolbar -->
             <div class='bg-white round mb12' style='height: 40px; pointer-events:auto;'>
-                <div @click="panel === 'deltas' ? panel = false : panel = 'deltas'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="panel === 'deltas' ? panel = false : panel = 'deltas'" class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-clock'/></svg>
                 </div>
                 <div style='width: 4px' class='fl h-full'></div>
-                <div @click="panel === 'styles' ? panel = false : panel = 'styles'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="panel === 'styles' ? panel = false : panel = 'styles'" class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-paint'/></svg>
                 </div>
                 <div style='width: 4px' class='fl h-full'></div>
-                <div @click="panel = false; modal = 'query'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="panel = false; modal = 'query'" class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-inspect'/></svg>
                 </div>
                 <div style='width: 4px' class='fl h-full'></div>
-                <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'"class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="panel === 'bounds' ? panel = false : panel = 'bounds'" class='py12 bg-white bg-darken25-on-hover round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-arrow-down'/></svg>
                 </div>
                 <div style='width: 4px' class='fl h-full'></div>
@@ -47,7 +47,7 @@
             </div>
 
             <template v-if='panel === "deltas"'>
-                <deltas :map='map'/></template>
+                <deltas :map='map' v-on:user='modal = "user"; user_id = $event'/></template>
             <template v-else-if='panel === "bounds"'>
                 <bounds/>
             </template>
@@ -62,7 +62,7 @@
         <!-- Login Panel -->
         <div class='none block-ml absolute top-ml left bottom z1 ml240 hmax-full py12-ml' style="pointer-events: none;">
             <div class='bg-white round' style='height: 40px; pointer-events:auto;'>
-                <div @click="panel = false; logout(); modal = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
+                <div @click="credentials.authed ? modal = 'self' : modal = 'login'"class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
                     <svg class='icon'><use href='#icon-user'/></svg>
                 </div>
                 <div v-if='credentials.authed' @click="logout(true)" class='py12 bg-white bg-darken25-on-hover btn round color-gray-dark cursor-pointer h-full px12 fl' style='width: 40px;'>
@@ -87,14 +87,20 @@
         <template v-else-if='modal === "register"'>
             <register v-on:close='modal = false' />
         </template>
+        <template v-else-if='modal === "user"'>
+            <user :auth='auth' :user='user_id' v-on:close='modal = false' />
+        </template>
+        <template v-else-if='modal === "self"'>
+            <self :auth='auth' v-on:close='modal = false' />
+        </template>
         <template v-else-if='modal === "settings"'>
-            <settings v-on:close='settings_close' />
+            <settings v-on:close='settings_close' :auth='auth'/>
         </template>
         <template v-else-if='modal === "query"'>
-            <query v-on:close='modal = false' :credentials='credentials' />
+            <query :auth='auth' v-on:close='modal = false' :credentials='credentials' />
         </template>
         <template v-else-if='modal === "style"'>
-            <stylem v-on:close='modal = false' :id='style_id' :credentials='credentials' :map='map' />
+            <stylem v-on:close='modal = false' :style_id='style_id' :credentials='credentials' :map='map' />
         </template>
     </div>
 </template>
@@ -102,6 +108,7 @@
 <script>
 //Libaries
 import mapboxglgeo from '@mapbox/mapbox-gl-geocoder';
+import Cookies from 'js-cookie';
 
 // === Components ===
 import Foot from './components/Foot.vue';
@@ -113,6 +120,8 @@ import Bounds from './panels/Bounds.vue';
 import Styles from './panels/Styles.vue';
 
 // === Modals ===
+import User from './modals/User.vue';
+import Self from './modals/Self.vue';
 import Login from './modals/Login.vue';
 import Register from './modals/Register.vue';
 import Settings from './modals/Settings.vue';
@@ -123,8 +132,9 @@ export default {
     name: 'app',
     data: function() {
         return {
+            auth: false,
             credentials: {
-                map: { key: 'pk.eyJ1Ijoic2JtYTQ0IiwiYSI6ImNpcXNycTNqaTAwMDdmcG5seDBoYjVkZGcifQ.ZVIe6sjh0QGeMsHpBvlsEA' },
+                map: { key: 'pk.eyJ1IjoiaW5nYWxscyIsImEiOiJjam42YjhlMG4wNTdqM2ttbDg4dmh3YThmIn0.uNAoXsEXts4ljqf2rKWLQg' },
                 authed: false,
                 username: '',
                 uid: false
@@ -133,6 +143,7 @@ export default {
                 gl: false,
                 baselayers: [],
                 layers: [],
+                defaults: [],
                 default: function() {
                     this.gl.addSource('hecate-data', {
                         type: 'vector',
@@ -145,8 +156,8 @@ export default {
                         data: { type: 'FeatureCollection', features: [] }
                     });
 
-                    const foregroundColor = '#FF0000'; 
-                    this.layers.push('hecate-data-polygons');
+                    const foregroundColor = '#FF0000';
+                    this.defaults.push('hecate-data-polygons');
                     this.gl.addLayer({
                         id: 'hecate-data-polygons',
                         type: 'fill',
@@ -159,7 +170,7 @@ export default {
                         }
                     });
 
-                    this.layers.push('hecate-data-polygon-outlines');
+                    this.defaults.push('hecate-data-polygon-outlines');
                     this.gl.addLayer({
                         id: 'hecate-data-polygon-outlines',
                         type: 'line',
@@ -177,7 +188,7 @@ export default {
                         }
                     })
 
-                    this.layers.push('hecate-data-lines');
+                    this.defaults.push('hecate-data-lines');
                     this.gl.addLayer({
                         id: 'hecate-data-lines',
                         type: 'line',
@@ -195,7 +206,7 @@ export default {
                         }
                     });
 
-                    this.layers.push('hecate-data-points');
+                    this.defaults.push('hecate-data-points');
                     this.gl.addLayer({
                         id: 'hecate-data-points',
                         type: 'circle',
@@ -209,21 +220,42 @@ export default {
                         }
                     });
                 },
+
+                /**
+                 * Removes all user given styles from the map
+                 */
                 unstyle: function() {
                     for (let layer of this.layers) {
                         this.gl.removeLayer(layer);
                     }
                     this.layers = [];
+                },
+
+                /**
+                 * Hide default style
+                 */
+                hide: function() {
+                    for (let layer of this.defaults) this.gl.setLayoutProperty(layer, 'visibility', 'none');
+                },
+
+                /**
+                 * Show default style
+                 */
+                show: function() {
+                    for (let layer of this.defaults) this.gl.setLayoutProperty(layer, 'visibility', 'visible');
                 }
             },
             panel: false, //Store the current panel view (Deltas, Styles, Bounds, etc)
             layers: [], //Store list of GL layer names so they can be easily removed
             feature: false, //Store the id of a clicked feature
+            user_id: false, //Store the id of a user for viewing more info
             style_id: false, //Store the id of the current style - false for generic style
             modal: false
         }
     },
     components: {
+        self: Self,
+        user: User,
         foot: Foot,
         deltas: Deltas,
         bounds: Bounds,
@@ -238,6 +270,24 @@ export default {
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
 
+        if (Cookies.get('session')) {
+            this.getSelf((err, user) => {
+                if (err || !user) {
+                    Cookies.remove('session');
+                } else {
+                    this.credentials.authed = true;
+                    this.credentials.username = user.username;
+                    this.credentials.uid = user.id;
+                }
+
+                this.getSettings();
+                this.getAuth();
+            });
+        } else {
+            this.getSettings();
+            this.getAuth();
+        }
+
         this.map.gl = new mapboxgl.Map({
             container: 'map',
             attributionControl: false,
@@ -251,8 +301,6 @@ export default {
         })).addControl(new mapboxglgeo({
             accessToken: mapboxgl.accessToken,
         }));
-
-        this.load_settings();
 
         this.map.gl.on('style.load', () => {
             this.map.default();
@@ -290,9 +338,9 @@ export default {
     methods: {
         settings_close: function() {
             this.modal = false;
-            this.load_settings();
+            this.getSettings();
         },
-        load_settings: function() {
+        getSettings: function() {
             fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
                 method: 'GET',
                 credentials: 'same-origin'
@@ -306,10 +354,41 @@ export default {
                 console.error(err);
             });
         },
+        getAuth: function() {
+            fetch(`${window.location.protocol}//${window.location.host}/api/auth`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                return response.json();
+            }).then((auth) => {
+                if (!auth) return;
+
+                this.auth = auth;
+            }).catch((err) => {
+                console.error(err);
+            });
+        },
         setBaseLayer(layer_idx) {
             if (isNaN(layer_idx)) return;
 
             this.map.gl.setStyle(this.map.baselayers[layer_idx].url);
+        },
+        getSelf: function(cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/info`, {
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) {
+                    return cb(new Error('not logged in'));
+                } else {
+                    return response.json();
+                }
+            }).then((user) => {
+                if (cb) return cb(null, user);
+            }).catch((err) => {
+                console.error(err);
+
+                if (cb) return cb(err);
+            });
         },
         logout: function(reload) {
             this.credentials.authed = false;

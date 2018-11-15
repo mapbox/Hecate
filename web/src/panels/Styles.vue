@@ -2,7 +2,7 @@
 <div class='flex-parent flex-parent--column viewport-third h-auto-ml bg-white round-ml shadow-darken10' style="pointer-events:auto; max-height: calc(100% - 80px);">
     <div class='flex-child px12 py12'>
         <h3 class='fl py6 txt-m txt-bold'>Styles</h3>
-        <button @click="getStyles()" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
+        <button @click="getStyles()" class='btn round bg-gray-light bg-darken10-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
 
         <template v-if="credentials.authed">
             <button @click="styleModal(false)" class='fr btn mx6 btn--s round align-center'>New</button>
