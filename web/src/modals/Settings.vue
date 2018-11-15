@@ -142,11 +142,11 @@
                 <template v-else>
                     <div class='fl h360' style='width: 44px; padding-right: 8px;'>
                         <button @click='submode = "server"' class='fl btn btn--stroke round w36 px12 my6'>
-                            <svg class='icon'><use xlink:href='#icon-sprocket'/></svg>
+                            <svg class='icon'><use href='#icon-sprocket'/></svg>
                         </button>
     
                         <button @click='submode = "users"' class='fl btn btn--stroke round w36 px12 my6'>
-                            <svg class='icon'><use xlink:href='#icon-user'/></svg>
+                            <svg class='icon'><use href='#icon-user'/></svg>
                         </button>
                     </div>
 
@@ -211,7 +211,7 @@
                             </div>
 
                             <div class='relative mb12'>
-                                <div class='absolute flex-parent flex-parent--center-cross flex-parent--center-main w36 h36'><svg class='icon'><use xlink:href='#icon-search'></use></svg></div>
+                                <div class='absolute flex-parent flex-parent--center-cross flex-parent--center-main w36 h36'><svg class='icon'><use href='#icon-search'></use></svg></div>
                                 <input v-model='userFilter' class='input pl36' placeholder='Filter Users'>
                             </div>
 
