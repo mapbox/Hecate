@@ -523,6 +523,8 @@ View the Admin Interface in your browser by pointing to `127.0.0.1:8000/admin/in
 
 <h3 align='center'>Meta</h3>
 
+<details>
+
 #### `GET` `/api`
 
 Return a JSON object containing metadata about the server
@@ -533,9 +535,13 @@ Return a JSON object containing metadata about the server
 curl -X GET 'http://localhost:8000/api'
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Data Stats</h3>
+
+<details>
 
 Note: Analyze stats depend on the database having `ANALYZE` run.
 For performance reasons these stats are calculated from ANALYZEd stats
@@ -552,6 +558,8 @@ geometries stored in the server
 ```bash
 curl -X GET 'http://localhost:8000/api/data/stats'
 ```
+
+</details>
 
 ---
 
@@ -731,6 +739,8 @@ curl -X POST \
 
 <h3 align='center'>Schema</h3>
 
+<details>
+
 #### `GET` `/api/schema`
 
 Return a JSON object containing the schema used by the server or return a 404 if no schema file is in use.
@@ -742,9 +752,13 @@ Return a JSON object containing the schema used by the server or return a 404 if
 curl -X GET 'http://localhost:8000/api/schema
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Authentication</h3>
+
+<details>
 
 #### `GET` `/api/auth`
 
@@ -758,11 +772,16 @@ of this guide
 curl -X GET 'http://localhost:8000/api/auth
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Vector Tiles</h3>
 
+<details>
+
 <p align=right><strong>Admin Only</strong></p>
+
 #### `DELETE` `/api/tiles`
 
 Remove all tiles from the integrated tile cache
@@ -835,6 +854,8 @@ curl -X GET \
     -u 'username:password' \
     'http://localhost:8000/api/tiles/1/1/1/regen
 ```
+
+</details>
 
 ---
 
