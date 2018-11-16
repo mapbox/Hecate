@@ -55,7 +55,7 @@
     - [Deltas](#deltas)
     - [OpenStreetMap API](#openstreetmap-api)
 
-<details>
+</details>
 
 ## Related Libraries
 
