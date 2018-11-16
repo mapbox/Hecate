@@ -348,6 +348,8 @@ cargo run -- --database_read "<USER>@<HOST>/<DATABASE>" --database_read "<USER>@
 
 ### JSON Validation
 
+<details> 
+
 By default Hecate will allow any property on a given GeoJSON feature, including nestled arrays, maps, etc.
 
 A custom property validation file can be specified using the schema flag.
@@ -361,7 +363,11 @@ cargo run -- --schema <PATH-TO-SCHEMA>.json
 Note hecate currently supports the JSON Schema draft-04. Once draft-06/07 support lands in
 [valico](https://github.com/rustless/valico) we can support newer versions of the spec.
 
+</details>
+
 ### Custom Authentication
+
+<details>
 
 By default the Hecate API is most favourable to a crowd-sourced data server. Any users
 can access the data/vector tiles, users can create & manage data, and admins
@@ -491,6 +497,8 @@ have a map containing the auth for each subkey.
 3. OSM software expects the authentication on these endpoints to mirror OSM. Setting these to a non-default option is supported but will likely have unpredicable
 support when using OSM software. If you are running a private server you should disable OSM support entirely.
 
+</details>
+
 ## API
 
 <h3 align='center'>Index</h3>
@@ -548,6 +556,8 @@ curl -X GET 'http://localhost:8000/api/data/stats'
 ---
 
 <h3 align='center'>Styles</h3>
+
+<details>
 
 #### `GET` `/api/styles`
 
@@ -714,6 +724,8 @@ curl -X POST \
     -u 'username:password' \
     'http://localhost:8000/api/style/1/public'
 ```
+
+</details>
 
 ---
 
