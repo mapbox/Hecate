@@ -221,6 +221,12 @@ impl DbReadWrite {
     }
 }
 
+#[derive(FromForm)]
+struct Filter {
+    filter: Option<String>,
+    limit: Option<i32>
+}
+
 #[error(401)]
 fn not_authorized() -> status::Custom<Json> {
     status::Custom(HTTPStatus::Unauthorized, Json(json!({
@@ -409,11 +415,6 @@ fn user_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
     }
 }
 
-#[derive(FromForm)]
-struct UserFilter {
-    filter: Option<String>,
-}
-
 #[get("/users")]
 fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;
@@ -426,7 +427,7 @@ fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 }
 
 #[get("/users?<filter>")]
-fn user_list_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: UserFilter) -> Result<Json, status::Custom<Json>> {
+fn user_list_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Filter) -> Result<Json, status::Custom<Json>> {
     let conn = conn.get()?;
     auth_rules.allows_user_list(&mut auth, &conn)?;
 
@@ -733,7 +734,20 @@ fn bounds_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 
     auth_rules.allows_bounds_list(&mut auth, &conn)?;
 
-    match bounds::list(&conn) {
+    match bounds::list(&conn, None) {
+        Ok(bounds) => Ok(Json(json!(bounds))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    }
+}
+
+
+#[get("/data/bounds?<filter>")]
+fn bounds_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Filter) -> Result<Json, status::Custom<Json>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_bounds_list(&mut auth, &conn, filter.filter)?;
+
+    match bounds::search(&conn, filter.filter, filter.limit) {
         Ok(bounds) => Ok(Json(json!(bounds))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }

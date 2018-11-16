@@ -60,10 +60,37 @@ pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Vec<String>, BoundsError> {
+pub fn search(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, prefix: &String, limit: Option<i32>) -> Result<Vec<String>, BoundsError> {
     match conn.query("
-        SELECT name FROM bounds;
-    ", &[ ]) {
+        SELECT name
+            FROM bounds
+            WHERE bounds iLIKE $1||'%'
+            LIMIT $2
+    ", &[ &prefix, &limit ]) {
+        Ok(rows) => {
+            let mut names = Vec::<String>::new();
+
+            for row in rows.iter() {
+                names.push(row.get(0));
+            }
+
+            Ok(names)
+        },
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
+                _ => Err(BoundsError::ListError(String::from("generic")))
+            }
+        }
+    }
+}
+
+pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: Option<i32>) -> Result<Vec<String>, BoundsError> {
+    match conn.query("
+        SELECT name
+            FROM bounds
+            LIMIT $1
+    ", &[ &limit ]) {
         Ok(rows) => {
             let mut names = Vec::<String>::new();
 
