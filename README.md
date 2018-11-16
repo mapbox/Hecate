@@ -869,6 +869,8 @@ curl -X GET \
 
 <h3 align='center'>User Options</h3>
 
+<details>
+
 #### `GET` `/api/users`
 
 Get a list of users (up to 100) or filter by a given user prefix.
@@ -997,9 +999,13 @@ curl -X DELETE \
     'http://localhost:8000/api/user/1/admin'
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Downloading via Clone</h3>
+
+<details>
 
 #### `GET` `/api/data/clone`
 
@@ -1014,9 +1020,13 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 curl -X GET 'http://localhost:8000/api/data/clone
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Downloading via Query</h3>
+
+<details>
 
 #### `GET` `/api/data/query`
 
@@ -1055,9 +1065,13 @@ curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20count(*)%20FROM
 curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20geo%20WHERE%20id%20%3D%201
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Boundaries</h3>
+
+<details>
 
 Boundaries allow downloading data via a set of pre-determined boundary files.
 
@@ -1154,9 +1168,13 @@ Return statistics about geometries that intersect a given bounds
 curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Downloading Individual Features</h3>
+
+<details>
 
 #### `GET` `/api/data/feature`
 
@@ -1210,9 +1228,13 @@ Return an array containing the full feature history for the provided feature id.
 curl -X GET 'http://localhost:8000/api/data/feature/1542/history
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Downloading Multiple Features via BBOX</h3>
+
+<details>
 
 #### `GET` `/api/data/features`
 
@@ -1228,9 +1250,13 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 | :----: | ----- |
 | `bbox` | `REQUIRED` Bounding Box in format `left,bottom,right,top` |
 
+</details>
+
 ---
 
 <h3 align='center'>Feature Creation</h3>
+
+<details>
 
 #### `POST` `/api/data/feature` *Auth Required*
 
@@ -1275,9 +1301,13 @@ curl \
     'http://localhost:8000/api/data/features'
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Deltas</h3>
+
+<details>
 
 #### `GET` `/api/deltas`
 
@@ -1354,12 +1384,16 @@ Returns all data for a given delta as a JSON Object, including geometric data.
 curl -X GET 'http://localhost:8000/api/delta/4
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>OpenStreetMap API</h3>
 
 The primary goal of the hecate project is a very fast GeoJSON based Interchange. That said, the tooling the OSM community has built around editing is unparalleled. As such,
 Hecate provides a Work-In-Progress OpenStreetMap Shim to support a subset of API operations as defined by the [OSM API v0.6](httpl://wiki.openstreetmap.org/wiki/API_v0.6) document.
+
+<details>
 
 *Important Notes*
 - All GeoJSON types can be downloaded via the API and viewed in JOSM
@@ -1441,5 +1475,7 @@ Close a given changeset, preventing further modification to it
 ```bash
 curl -X PUT 'http://localhost:8000/api/0.6/changeset/1/close'
 ```
+
+</details>
 
 ---
