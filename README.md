@@ -24,6 +24,8 @@
 
 ## Table Of Contents
 
+<details>
+
 1. [Brief](#brief)
 1. [Why Use Hecate](#why-use-hecate)
 2. [Table of Contents](#table-of-contents)
@@ -53,12 +55,18 @@
     - [Deltas](#deltas)
     - [OpenStreetMap API](#openstreetmap-api)
 
+<details>
+
 ## Related Libraries
+
+<details>
 
 - [HecateJS](https://github.com/mapbox/HecateJS) Javascript Library & CLI Tool for interacting with the Hecate API
 - [Hecate-Example](https://github.com/ingalls/hecate-example) Script for importing some fake data for testing
 
 Built something cool that uses the Hecate API? Let us know!
+
+</details>
 
 ## Build Environment
 
