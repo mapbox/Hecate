@@ -24,6 +24,8 @@
 
 ## Table Of Contents
 
+<details>
+
 1. [Brief](#brief)
 1. [Why Use Hecate](#why-use-hecate)
 2. [Table of Contents](#table-of-contents)
@@ -53,12 +55,18 @@
     - [Deltas](#deltas)
     - [OpenStreetMap API](#openstreetmap-api)
 
+</details>
+
 ## Related Libraries
+
+<details>
 
 - [HecateJS](https://github.com/mapbox/HecateJS) Javascript Library & CLI Tool for interacting with the Hecate API
 - [Hecate-Example](https://github.com/ingalls/hecate-example) Script for importing some fake data for testing
 
 Built something cool that uses the Hecate API? Let us know!
+
+</details>
 
 ## Build Environment
 
@@ -306,6 +314,8 @@ cargo run
 
 ### Database
 
+<details>
+
 By default hecate will attempt to connect to `hecate@localhost:5432/hecate` for write
 operations and simultaneously connect to `hecate_read@localhost:5432/hecate` for
 read only operations.
@@ -342,7 +352,11 @@ cargo run -- --database_read "<USER>@<HOST>/<DATABASE>"
 cargo run -- --database_read "<USER>@<HOST>/<DATABASE>" --database_read "<USER>@<HOST>/<DATABASE>"
 ```
 
+</details>
+
 ### JSON Validation
+
+<details> 
 
 By default Hecate will allow any property on a given GeoJSON feature, including nestled arrays, maps, etc.
 
@@ -357,7 +371,11 @@ cargo run -- --schema <PATH-TO-SCHEMA>.json
 Note hecate currently supports the JSON Schema draft-04. Once draft-06/07 support lands in
 [valico](https://github.com/rustless/valico) we can support newer versions of the spec.
 
+</details>
+
 ### Custom Authentication
+
+<details>
 
 By default the Hecate API is most favourable to a crowd-sourced data server. Any users
 can access the data/vector tiles, users can create & manage data, and admins
@@ -487,6 +505,8 @@ have a map containing the auth for each subkey.
 3. OSM software expects the authentication on these endpoints to mirror OSM. Setting these to a non-default option is supported but will likely have unpredicable
 support when using OSM software. If you are running a private server you should disable OSM support entirely.
 
+</details>
+
 ## API
 
 <h3 align='center'>Index</h3>
@@ -511,6 +531,8 @@ View the Admin Interface in your browser by pointing to `127.0.0.1:8000/admin/in
 
 <h3 align='center'>Meta</h3>
 
+<details>
+
 #### `GET` `/api`
 
 Return a JSON object containing metadata about the server
@@ -521,9 +543,13 @@ Return a JSON object containing metadata about the server
 curl -X GET 'http://localhost:8000/api'
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Data Stats</h3>
+
+<details>
 
 Note: Analyze stats depend on the database having `ANALYZE` run.
 For performance reasons these stats are calculated from ANALYZEd stats
@@ -541,9 +567,13 @@ geometries stored in the server
 curl -X GET 'http://localhost:8000/api/data/stats'
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Styles</h3>
+
+<details>
 
 #### `GET` `/api/styles`
 
@@ -711,9 +741,13 @@ curl -X POST \
     'http://localhost:8000/api/style/1/public'
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Schema</h3>
+
+<details>
 
 #### `GET` `/api/schema`
 
@@ -726,9 +760,13 @@ Return a JSON object containing the schema used by the server or return a 404 if
 curl -X GET 'http://localhost:8000/api/schema
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Authentication</h3>
+
+<details>
 
 #### `GET` `/api/auth`
 
@@ -742,11 +780,16 @@ of this guide
 curl -X GET 'http://localhost:8000/api/auth
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Vector Tiles</h3>
 
+<details>
+
 <p align=right><strong>Admin Only</strong></p>
+
 #### `DELETE` `/api/tiles`
 
 Remove all tiles from the integrated tile cache
@@ -820,9 +863,13 @@ curl -X GET \
     'http://localhost:8000/api/tiles/1/1/1/regen
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>User Options</h3>
+
+<details>
 
 #### `GET` `/api/users`
 
@@ -952,9 +999,13 @@ curl -X DELETE \
     'http://localhost:8000/api/user/1/admin'
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Downloading via Clone</h3>
+
+<details>
 
 #### `GET` `/api/data/clone`
 
@@ -969,9 +1020,13 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 curl -X GET 'http://localhost:8000/api/data/clone
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Downloading via Query</h3>
+
+<details>
 
 #### `GET` `/api/data/query`
 
@@ -1010,9 +1065,13 @@ curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20count(*)%20FROM
 curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20geo%20WHERE%20id%20%3D%201
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Boundaries</h3>
+
+<details>
 
 Boundaries allow downloading data via a set of pre-determined boundary files.
 
@@ -1109,9 +1168,13 @@ Return statistics about geometries that intersect a given bounds
 curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Downloading Individual Features</h3>
+
+<details>
 
 #### `GET` `/api/data/feature`
 
@@ -1165,9 +1228,13 @@ Return an array containing the full feature history for the provided feature id.
 curl -X GET 'http://localhost:8000/api/data/feature/1542/history
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Downloading Multiple Features via BBOX</h3>
+
+<details>
 
 #### `GET` `/api/data/features`
 
@@ -1183,9 +1250,13 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 | :----: | ----- |
 | `bbox` | `REQUIRED` Bounding Box in format `left,bottom,right,top` |
 
+</details>
+
 ---
 
 <h3 align='center'>Feature Creation</h3>
+
+<details>
 
 #### `POST` `/api/data/feature` *Auth Required*
 
@@ -1230,9 +1301,13 @@ curl \
     'http://localhost:8000/api/data/features'
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>Deltas</h3>
+
+<details>
 
 #### `GET` `/api/deltas`
 
@@ -1309,12 +1384,16 @@ Returns all data for a given delta as a JSON Object, including geometric data.
 curl -X GET 'http://localhost:8000/api/delta/4
 ```
 
+</details>
+
 ---
 
 <h3 align='center'>OpenStreetMap API</h3>
 
 The primary goal of the hecate project is a very fast GeoJSON based Interchange. That said, the tooling the OSM community has built around editing is unparalleled. As such,
 Hecate provides a Work-In-Progress OpenStreetMap Shim to support a subset of API operations as defined by the [OSM API v0.6](httpl://wiki.openstreetmap.org/wiki/API_v0.6) document.
+
+<details>
 
 *Important Notes*
 - All GeoJSON types can be downloaded via the API and viewed in JOSM
@@ -1396,5 +1475,7 @@ Close a given changeset, preventing further modification to it
 ```bash
 curl -X PUT 'http://localhost:8000/api/0.6/changeset/1/close'
 ```
+
+</details>
 
 ---
