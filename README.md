@@ -306,6 +306,8 @@ cargo run
 
 ### Database
 
+<details>
+
 By default hecate will attempt to connect to `hecate@localhost:5432/hecate` for write
 operations and simultaneously connect to `hecate_read@localhost:5432/hecate` for
 read only operations.
@@ -341,6 +343,8 @@ cargo run -- --database_read "<USER>@<HOST>/<DATABASE>"
 
 cargo run -- --database_read "<USER>@<HOST>/<DATABASE>" --database_read "<USER>@<HOST>/<DATABASE>"
 ```
+
+</details>
 
 ### JSON Validation
 
