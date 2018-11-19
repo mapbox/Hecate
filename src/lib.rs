@@ -95,66 +95,66 @@ pub fn start(
         .mount("/", routes![
             index
         ])
-//      .mount("/admin", routes![
-//          staticsrv,
-//          staticsrvredirect
-//      ])
-//      .mount("/api", routes![
-//          server,
-//          meta_list,
-//          meta_get,
-//          meta_delete,
-//          meta_set,
-//          schema_get,
-//          auth_get,
-//          stats_get,
-//          mvt_get,
-//          mvt_meta,
-//          mvt_wipe,
-//          mvt_regen,
-//          user_self,
-//          user_info,
-//          user_create,
-//          user_set_admin,
-//          user_delete_admin,
-//          user_list,
-//          user_filter,
-//          user_create_session,
-//          user_delete_session,
-//          style_create,
-//          style_patch,
-//          style_public,
-//          style_private,
-//          style_delete,
-//          style_get,
-//          style_list_public,
-//          style_list_user,
-//          delta,
-//          delta_list,
-//          delta_list_params,
-//          feature_action,
-//          features_action,
-//          feature_get,
-//          feature_query,
-//          feature_get_history,
-//          features_get,
-//          bounds_list,
-//          bounds_filter,
-//          bounds_stats,
-//          bounds_get,
-//          bounds_set,
-//          bounds_delete,
-//          clone_get,
-//          clone_query,
-//          xml_capabilities,
-//          xml_06capabilities,
-//          xml_user,
-//          xml_map,
-//          xml_changeset_create,
-//          xml_changeset_modify,
-//          xml_changeset_upload,
-//          xml_changeset_close
-//      ])
+        .mount("/admin", routes![
+            staticsrv,
+            staticsrvredirect
+        ])
+        .mount("/api", routes![
+            server,
+            meta_list,
+            meta_get,
+            meta_delete,
+            meta_set,
+            schema_get,
+            auth_get,
+            stats_get,
+            mvt_get,
+            mvt_meta,
+            mvt_wipe,
+            mvt_regen,
+            user_self,
+            user_info,
+            user_create,
+            user_set_admin,
+            user_delete_admin,
+            user_list,
+            user_filter,
+            user_create_session,
+            user_delete_session,
+            style_create,
+            style_patch,
+            style_public,
+            style_private,
+            style_delete,
+            style_get,
+            style_list_public,
+            style_list_user,
+            delta,
+            delta_list,
+            delta_list_params,
+            feature_action,
+            features_action,
+            feature_get,
+            feature_query,
+            feature_get_history,
+            features_get,
+            bounds_list,
+            bounds_filter,
+            bounds_stats,
+            bounds_get,
+            bounds_set,
+            bounds_delete,
+            clone_get,
+            clone_query,
+            xml_capabilities,
+            xml_06capabilities,
+            xml_user,
+            xml_map,
+            xml_changeset_create,
+            xml_changeset_modify,
+            xml_changeset_upload,
+            xml_changeset_close
+        ])
         .register(catchers![
            not_authorized,
            not_found,
@@ -250,7 +250,6 @@ fn not_found() -> Json<serde_json::Value> {
 #[get("/")]
 fn index() -> &'static str { "Hello World!" }
 
-/*
 #[get("/")]
 fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_server(&mut auth, &conn.get()?)?;
@@ -393,7 +392,6 @@ fn mvt_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     mvt_response.set_raw_header("Content-Type", "application/x-protobuf");
     Ok(mvt_response)
 }
-*/
 
 #[derive(FromForm)]
 struct User {
@@ -880,7 +878,6 @@ fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     }
 }
 
-/*
 #[post("/data/features", format="application/json", data="<body>")]
 fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
@@ -941,10 +938,10 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
             },
             Ok(res) => {
                 if res.new != None {
-                    feat.id = Some(Json(json!(res.new)))
+                    feat.id = Some(json!(res.new))
                 }
             }
-        }
+        };
     }
 
     if delta::modify(&delta_id, &trans, &fc, &uid).is_err() {
@@ -965,7 +962,6 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
         }
     }
 }
-*/
 
 #[get("/0.6/map?<map..>")]
 fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<String, status::Custom<String>> {
