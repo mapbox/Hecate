@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro, plugin, custom_derive, custom_attribute, attr_literals)]
+#![feature(proc_macro_hygiene, decl_macro, plugin, custom_derive, custom_attribute)]
 
 static VERSION: &'static str = "0.49.3";
 
@@ -95,66 +95,66 @@ pub fn start(
         .mount("/", routes![
             index
         ])
-        .mount("/admin", routes![
-            staticsrv,
-            staticsrvredirect
-        ])
-        .mount("/api", routes![
-            server,
-            meta_list,
-            meta_get,
-            meta_delete,
-            meta_set,
-            schema_get,
-            auth_get,
-            stats_get,
-            mvt_get,
-            mvt_meta,
-            mvt_wipe,
-            mvt_regen,
-            user_self,
-            user_info,
-            user_create,
-            user_set_admin,
-            user_delete_admin,
-            user_list,
-            user_filter,
-            user_create_session,
-            user_delete_session,
-            style_create,
-            style_patch,
-            style_public,
-            style_private,
-            style_delete,
-            style_get,
-            style_list_public,
-            style_list_user,
-            delta,
-            delta_list,
-            delta_list_params,
-            feature_action,
-            features_action,
-            feature_get,
-            feature_query,
-            feature_get_history,
-            features_get,
-            bounds_list,
-            bounds_filter,
-            bounds_stats,
-            bounds_get,
-            bounds_set,
-            bounds_delete,
-            clone_get,
-            clone_query,
-            xml_capabilities,
-            xml_06capabilities,
-            xml_user,
-            xml_map,
-            xml_changeset_create,
-            xml_changeset_modify,
-            xml_changeset_upload,
-            xml_changeset_close
-        ])
+//      .mount("/admin", routes![
+//          staticsrv,
+//          staticsrvredirect
+//      ])
+//      .mount("/api", routes![
+//          server,
+//          meta_list,
+//          meta_get,
+//          meta_delete,
+//          meta_set,
+//          schema_get,
+//          auth_get,
+//          stats_get,
+//          mvt_get,
+//          mvt_meta,
+//          mvt_wipe,
+//          mvt_regen,
+//          user_self,
+//          user_info,
+//          user_create,
+//          user_set_admin,
+//          user_delete_admin,
+//          user_list,
+//          user_filter,
+//          user_create_session,
+//          user_delete_session,
+//          style_create,
+//          style_patch,
+//          style_public,
+//          style_private,
+//          style_delete,
+//          style_get,
+//          style_list_public,
+//          style_list_user,
+//          delta,
+//          delta_list,
+//          delta_list_params,
+//          feature_action,
+//          features_action,
+//          feature_get,
+//          feature_query,
+//          feature_get_history,
+//          features_get,
+//          bounds_list,
+//          bounds_filter,
+//          bounds_stats,
+//          bounds_get,
+//          bounds_set,
+//          bounds_delete,
+//          clone_get,
+//          clone_query,
+//          xml_capabilities,
+//          xml_06capabilities,
+//          xml_user,
+//          xml_map,
+//          xml_changeset_create,
+//          xml_changeset_modify,
+//          xml_changeset_upload,
+//          xml_changeset_close
+//      ])
         .register(catchers![
            not_authorized,
            not_found,
@@ -250,6 +250,7 @@ fn not_found() -> Json<serde_json::Value> {
 #[get("/")]
 fn index() -> &'static str { "Hello World!" }
 
+/*
 #[get("/")]
 fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_server(&mut auth, &conn.get()?)?;
@@ -741,10 +742,8 @@ fn bounds_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
     }
 }
 
-
 #[get("/data/bounds?<filter..>")]
 fn bounds_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Form<Filter>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
-#[derive(FromForm)]
     let conn = conn.get()?;
 
     auth_rules.allows_bounds_list(&mut auth, &conn, filter.filter)?;
@@ -1343,6 +1342,7 @@ fn feature_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: aut
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.as_json()))
     }
 }
+*/
 
 #[derive(FromForm)]
 struct FeatureQuery {
@@ -1356,10 +1356,10 @@ fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: a
     if fquery.key.is_some() {
         match feature::query_by_key(&read_conn.get()?, &fquery.key.unwrap()) {
             Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
-            Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.as_json()))
+            Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
         }
     } else {
-        Err(status::Custom(HTTPStatus::BadRequest, json!("At least 1 query parameter must be specified")))
+        Err(status::Custom(HTTPStatus::BadRequest, Json(json!("At least 1 query parameter must be specified")))
     }
 }
 
@@ -1369,7 +1369,7 @@ fn feature_get_history(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
     auth_rules.allows_feature_history(&mut auth, &conn)?;
 
     match delta::history(&conn, &id) {
-        Ok(features) => Ok(features),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(features) => Ok(Json(features)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
