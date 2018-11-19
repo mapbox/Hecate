@@ -43,9 +43,33 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, filter: Option<String>) -> Result<serde_json::Value, UserError> {
-    let filter = filter.unwrap_or(String::from(""));
+pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<serde_json::Value, UserError> {
+    match conn.query("
+        SELECT 
+            COALESCE(json_agg(row_to_json(row)), '[]'::JSON)
+        FROM (
+            SELECT
+                id,
+                access,
+                username
+            FROM
+                users
+            ORDER BY
+                username
+            LIMIT 100
+        ) row;
+    ", &[ ]) {
+        Ok(rows) => Ok(rows.get(0).get(0)),
+        Err(err) => {
+            match err.as_db() {
+                Some(e) => { Err(UserError::CreateError(e.message.clone())) },
+                _ => Err(UserError::CreateError(String::from("generic")))
+            }
+        }
+    }
+}
 
+pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, filter: &String) -> Result<serde_json::Value, UserError> {
     match conn.query("
         SELECT 
             COALESCE(json_agg(row_to_json(row)), '[]'::JSON)

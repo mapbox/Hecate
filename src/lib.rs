@@ -47,7 +47,7 @@ use rocket::config::{Config, Environment, LoggingLevel, Limits};
 use rocket::http::{Cookie, Cookies};
 use rocket::{State};
 use rocket::response::{Response, status, Stream, NamedFile};
-use rocket::request::{Form, LenientForm};
+use rocket::request::Form;
 use geojson::GeoJson;
 use rocket_contrib::json::Json;
 
@@ -224,17 +224,17 @@ impl DbReadWrite {
 
 #[derive(FromForm)]
 struct Filter {
-    filter: Option<String>,
+    filter: String,
     limit: Option<i32>
 }
 
 #[catch(401)]
-fn not_authorized() -> status::Custom<Json<serde_json::Value>> {
-    status::Custom(HTTPStatus::Unauthorized, Json(json!({
+fn not_authorized() -> Json<serde_json::Value> {
+    Json(json!({
         "code": 401,
         "status": "Not Authorized",
         "reason": "You must be logged in to access this resource"
-    })))
+    }))
 }
 
 #[catch(404)]
@@ -393,6 +393,7 @@ fn mvt_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     mvt_response.set_raw_header("Content-Type", "application/x-protobuf");
     Ok(mvt_response)
 }
+*/
 
 #[derive(FromForm)]
 struct User {
@@ -422,7 +423,7 @@ fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     let conn = conn.get()?;
     auth_rules.allows_user_list(&mut auth, &conn)?;
 
-    match user::list(&conn, None) {
+    match user::list(&conn) {
         Ok(users) => Ok(Json(json!(users))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
@@ -433,7 +434,7 @@ fn user_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
     let conn = conn.get()?;
     auth_rules.allows_user_list(&mut auth, &conn)?;
 
-    match user::list(&conn, filter.filter) {
+    match user::filter(&conn, &filter.filter) {
         Ok(users) => Ok(Json(json!(users))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
@@ -678,7 +679,7 @@ fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
     }
 
     if opts.start.is_some() || opts.end.is_some() {
-        let start: Option<chrono::NaiveDateTime> = match opts.start {
+        let start: Option<chrono::NaiveDateTime> = match &opts.start {
             None => None,
             Some(start) => {
                 match start.parse() {
@@ -688,7 +689,7 @@ fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
             }
         };
 
-        let end: Option<chrono::NaiveDateTime> = match opts.end {
+        let end: Option<chrono::NaiveDateTime> = match &opts.end {
             None => None,
             Some(end) => {
                 match end.parse() {
@@ -746,9 +747,9 @@ fn bounds_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 fn bounds_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Form<Filter>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
-    auth_rules.allows_bounds_list(&mut auth, &conn, filter.filter)?;
+    auth_rules.allows_bounds_list(&mut auth, &conn)?;
 
-    match bounds::search(&conn, filter.filter, filter.limit) {
+    match bounds::search(&conn, &filter.filter, &filter.limit) {
         Ok(bounds) => Ok(Json(json!(bounds))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
@@ -831,7 +832,7 @@ fn clone_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth:
 
     match clone::get(read_conn.get()?) {
         Ok(clone) => Ok(Stream::from(clone)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.as_json()))
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
     }
 }
 
@@ -842,7 +843,7 @@ fn features_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: au
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
     match feature::get_bbox_stream(read_conn.get()?, bbox) {
         Ok(features) => Ok(Stream::from(features)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.as_json()))
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
     }
 }
 
@@ -879,6 +880,7 @@ fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     }
 }
 
+/*
 #[post("/data/features", format="application/json", data="<body>")]
 fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
@@ -922,7 +924,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
     for feat in &mut fc.features {
         match feature::is_force(&feat) {
             Err(err) => {
-                return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json()));
+                return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
             },
             Ok(force) => {
                 if force {
@@ -935,7 +937,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
-                return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json()));
+                return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
             },
             Ok(res) => {
                 if res.new != None {
@@ -963,6 +965,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
         }
     }
 }
+*/
 
 #[get("/0.6/map?<map..>")]
 fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<String, status::Custom<String>> {
@@ -1253,16 +1256,16 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
     let uid = auth.uid.unwrap();
 
     let mut feat = match body.parse::<GeoJson>() {
-        Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, json!("Body must be valid GeoJSON Feature"))); },
+        Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); },
         Ok(geo) => match geo {
             GeoJson::Feature(feat) => feat,
-            _ => { return Err(status::Custom(HTTPStatus::BadRequest, json!("Body must be valid GeoJSON Feature"))); }
+            _ => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); }
         }
     };
 
     match feature::is_force(&feat) {
         Err(err) => {
-            return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json()));
+            return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
         },
         Ok(force) => {
             if force {
@@ -1272,13 +1275,13 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
     };
 
     let delta_message = match feat.foreign_members {
-        None => { return Err(status::Custom(HTTPStatus::BadRequest, json!("Feature Must have message property for delta"))); }
+        None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Feature Must have message property for delta")))); }
         Some(ref members) => match members.get("message") {
             Some(message) => match message.as_str() {
                 Some(message) => String::from(message),
-                None => { return Err(status::Custom(HTTPStatus::BadRequest, json!("Feature Must have message property for delta"))); }
+                None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Feature Must have message property for delta")))); }
             },
-            None => { return Err(status::Custom(HTTPStatus::BadRequest, json!("Feature Must have message property for delta"))); }
+            None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Feature Must have message property for delta")))); }
         }
     };
 
@@ -1291,7 +1294,7 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, json!("Could not create delta")));
+            return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not create delta"))));
         }
     };
 
@@ -1304,7 +1307,7 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json()));
+            return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
         }
     }
 
@@ -1317,18 +1320,18 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
     if delta::modify(&delta_id, &trans, &fc, &uid).is_err() {
         trans.set_rollback();
         trans.finish().unwrap();
-        return Err(status::Custom(HTTPStatus::InternalServerError, json!("Could not create delta")));
+        return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not create delta"))));
     }
 
     match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
             trans.commit().unwrap();
-            Ok(json!(true))
+            Ok(Json(json!(true)))
         },
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            Err(status::Custom(HTTPStatus::InternalServerError, json!(err.to_string())))
+            Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
         }
     }
 }
@@ -1339,27 +1342,22 @@ fn feature_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: aut
 
     match feature::get(&read_conn.get()?, &id) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, err.as_json()))
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
     }
 }
-*/
 
 #[derive(FromForm)]
 struct FeatureQuery {
-    key: Option<String>
+    key: String
 }
 
 #[get("/data/feature?<fquery..>")]
 fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: Form<FeatureQuery>) -> Result<String, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
-    if fquery.key.is_some() {
-        match feature::query_by_key(&read_conn.get()?, &fquery.key.unwrap()) {
-            Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
-            Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
-        }
-    } else {
-        Err(status::Custom(HTTPStatus::BadRequest, Json(json!("At least 1 query parameter must be specified")))
+    match feature::query_by_key(&read_conn.get()?, &fquery.key) {
+        Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
     }
 }
 

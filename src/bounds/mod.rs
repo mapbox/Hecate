@@ -60,7 +60,7 @@ pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn search(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, prefix: &String, limit: Option<i32>) -> Result<Vec<String>, BoundsError> {
+pub fn search(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, prefix: &String, limit: &Option<i32>) -> Result<Vec<String>, BoundsError> {
     match conn.query("
         SELECT name
             FROM bounds
