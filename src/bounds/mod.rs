@@ -60,7 +60,7 @@ pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn search(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, prefix: &String, limit: &Option<i32>) -> Result<Vec<String>, BoundsError> {
+pub fn search(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, prefix: &String, limit: &Option<i8>) -> Result<Vec<String>, BoundsError> {
     match conn.query("
         SELECT name
             FROM bounds
@@ -85,12 +85,10 @@ pub fn search(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: Option<i32>) -> Result<Vec<String>, BoundsError> {
+pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Vec<String>, BoundsError> {
     match conn.query("
-        SELECT name
-            FROM bounds
-            LIMIT $1
-    ", &[ &limit ]) {
+        SELECT name FROM bounds
+    ", &[]) {
         Ok(rows) => {
             let mut names = Vec::<String>::new();
 

@@ -225,7 +225,7 @@ impl DbReadWrite {
 #[derive(FromForm)]
 struct Filter {
     filter: String,
-    limit: Option<i32>
+    limit: Option<i8>
 }
 
 #[catch(401)]
@@ -735,7 +735,7 @@ fn bounds_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 
     auth_rules.allows_bounds_list(&mut auth, &conn)?;
 
-    match bounds::list(&conn, None) {
+    match bounds::list(&conn) {
         Ok(bounds) => Ok(Json(json!(bounds))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
