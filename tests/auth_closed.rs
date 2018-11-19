@@ -115,11 +115,12 @@ mod test {
 
         {
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/deltas")
+            let mut resp = client.get("http://localhost:8000/api/deltas")
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
 
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
             assert!(resp.status().is_success());
         }
 

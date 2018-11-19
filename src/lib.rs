@@ -131,7 +131,6 @@ pub fn start(
             style_list_user,
             delta,
             delta_list,
-            delta_list_params,
             feature_action,
             features_action,
             feature_get,
@@ -646,18 +645,6 @@ fn style_list_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: S
     }
 }
 
-#[get("/deltas")]
-fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) ->  Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
-    let conn = conn.get()?;
-
-    auth_rules.allows_delta_list(&mut auth, &conn)?;
-
-    match delta::list_by_offset(&conn, None, None) {
-        Ok(deltas) => Ok(Json(deltas)),
-        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
-    }
-}
-
 #[derive(FromForm)]
 struct DeltaList {
     offset: Option<i64>,
@@ -667,55 +654,68 @@ struct DeltaList {
 }
 
 #[get("/deltas?<opts..>")]
-fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: Form<DeltaList>) ->  Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: Option<Form<DeltaList>>) ->  Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_delta_list(&mut auth, &conn)?;
 
-    if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
-        return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Offset cannot be used with start or end"))));
-    }
-
-    if opts.start.is_some() || opts.end.is_some() {
-        let start: Option<chrono::NaiveDateTime> = match &opts.start {
-            None => None,
-            Some(start) => {
-                match start.parse() {
-                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid start timestamp")))); },
-                    Ok(start) => Some(start)
+    match opts {
+        None => {
+            match delta::list_by_offset(&conn, None, None) {
+                Ok(deltas) => Ok(Json(deltas)),
+                Err(err) => {
+                    return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
                 }
             }
-        };
+        },
+        Some(opts) => {
+            if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
+                return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Offset cannot be used with start or end"))));
+            }
 
-        let end: Option<chrono::NaiveDateTime> = match &opts.end {
-            None => None,
-            Some(end) => {
-                match end.parse() {
-                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid end timestamp")))); },
-                    Ok(end) => Some(end)
+            if opts.start.is_some() || opts.end.is_some() {
+                let start: Option<chrono::NaiveDateTime> = match &opts.start {
+                    None => None,
+                    Some(start) => {
+                        match start.parse() {
+                            Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid start timestamp")))); },
+                            Ok(start) => Some(start)
+                        }
+                    }
+                };
+
+                let end: Option<chrono::NaiveDateTime> = match &opts.end {
+                    None => None,
+                    Some(end) => {
+                        match end.parse() {
+                            Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid end timestamp")))); },
+                            Ok(end) => Some(end)
+                        }
+                    }
+                };
+
+                match delta::list_by_date(&conn, start, end, opts.limit) {
+                    Ok(deltas) => {
+                        return Ok(Json(deltas));
+                    },
+                    Err(err) => {
+                        return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
+                    }
+                }
+            } else if opts.offset.is_some() || opts.limit.is_some() {
+                match delta::list_by_offset(&conn, opts.offset, opts.limit) {
+                    Ok(deltas) => {
+                        return Ok(Json(deltas));
+                    },
+                    Err(err) => {
+                        return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
+                    }
                 }
             }
-        };
 
-        match delta::list_by_date(&conn, start, end, opts.limit) {
-            Ok(deltas) => {
-                return Ok(Json(deltas));
-            },
-            Err(err) => {
-                return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
-            }
+            return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Query Param Error"))));
         }
-    } else if opts.offset.is_some() || opts.limit.is_some() {
-        match delta::list_by_offset(&conn, opts.offset, opts.limit) {
-            Ok(deltas) => {
-                return Ok(Json(deltas));
-            },
-            Err(err) => {
-                return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
-            }
-        }
-    }
-    Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Query Param Error"))))
+    };
 }
 
 #[get("/delta/<id>")]
