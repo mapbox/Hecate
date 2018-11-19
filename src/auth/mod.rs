@@ -16,11 +16,11 @@ use rocket_contrib::json::Json;
 
 
 fn not_authed() -> status::Custom<Json<serde_json::Value>> {
-    status::Custom(HTTPStatus::Unauthorized, json!({
+    status::Custom(HTTPStatus::Unauthorized, Json(json!({
         "code": 401,
         "status": "Not Authorized",
         "reason": "You must be logged in to access this resource"
-    }))
+    })))
 }
 
 ///

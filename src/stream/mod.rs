@@ -105,11 +105,11 @@ impl PGStream {
                 })
             },
             Err(err) => {
-                Err(status::Custom(HTTPStatus::ServiceUnavailable, json!({
+                Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
                     "code": 500,
                     "status": "Internal Server Error",
                     "reason": format!("{:?}", err)
-                })))
+                }))))
             }
         }
     }

@@ -47,6 +47,7 @@ use rocket::config::{Config, Environment, LoggingLevel, Limits};
 use rocket::http::{Cookie, Cookies};
 use rocket::{State};
 use rocket::response::{Response, status, Stream, NamedFile};
+use rocket::request::{Form, LenientForm};
 use geojson::GeoJson;
 use rocket_contrib::json::Json;
 
@@ -86,7 +87,7 @@ pub fn start(
         .workers(workers.unwrap_or(12))
         .unwrap();
 
-    rocket::custom(config, true)
+    rocket::custom(config)
         .manage(DbReadWrite::new(init_pool(&database)))
         .manage(db_read)
         .manage(schema)
@@ -154,10 +155,10 @@ pub fn start(
             xml_changeset_upload,
             xml_changeset_close
         ])
-        .catchers(
+        .register(catchers![
            not_authorized,
            not_found,
-        ).launch();
+        ]).launch();
 }
 
 
@@ -181,22 +182,22 @@ impl DbRead {
 
     fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, status::Custom<Json<serde_json::Value>>> {
         match self.0 {
-            None => Err(status::Custom(HTTPStatus::ServiceUnavailable, json!({
+            None => Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
                 "code": 503,
                 "status": "Service Unavailable",
                 "reason": "No Database Read Connection"
-            }))),
+            })))),
             Some(ref db_read) => {
                 let mut rng = thread_rng();
                 let db_read_it = rng.gen_range(0, db_read.len());
 
                 match db_read.get(db_read_it).unwrap().get() {
                     Ok(conn) => Ok(conn),
-                    Err(_) => Err(status::Custom(HTTPStatus::ServiceUnavailable, json!({
+                    Err(_) => Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
                         "code": 503,
                         "status": "Service Unavailable",
                         "reason": "Could not connect to database"
-                    })))
+                    }))))
                 }
             }
         }
@@ -212,11 +213,11 @@ impl DbReadWrite {
     fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, status::Custom<Json<serde_json::Value>>> {
         match self.0.get() {
             Ok(conn) => Ok(conn),
-            Err(_) => Err(status::Custom(HTTPStatus::ServiceUnavailable, json!({
+            Err(_) => Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
                 "code": 503,
                 "status": "Service Unavailable",
                 "reason": "Could not connect to database"
-            })))
+            }))))
         }
     }
 }
@@ -228,21 +229,21 @@ struct Filter {
 }
 
 #[catch(401)]
-fn not_authorized() -> status::Custom<serde_json::Value> {
-    status::Custom(HTTPStatus::Unauthorized, json!({
+fn not_authorized() -> status::Custom<Json<serde_json::Value>> {
+    status::Custom(HTTPStatus::Unauthorized, Json(json!({
         "code": 401,
         "status": "Not Authorized",
         "reason": "You must be logged in to access this resource"
-    }))
+    })))
 }
 
 #[catch(404)]
 fn not_found() -> Json<serde_json::Value> {
-    json!({
+    Json(json!({
         "code": 404,
         "status": "Not Found",
         "reason": "Resource was not found."
-    })
+    }))
 }
 
 
@@ -253,9 +254,9 @@ fn index() -> &'static str { "Hello World!" }
 fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_server(&mut auth, &conn.get()?)?;
 
-    Ok(json!({
+    Ok(Json(json!({
         "version": VERSION
-    }))
+    })))
 }
 
 #[get("/meta")]
@@ -265,9 +266,9 @@ fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<a
 
     match meta::list(&conn) {
         Ok(list) => {
-            Ok(json!(list))
+            Ok(Json(json!(list)))
         },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -278,9 +279,9 @@ fn meta_get(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<au
 
     match meta::get(&conn, &key) {
         Ok(list) => {
-            Ok(json!(list))
+            Ok(Json(json!(list)))
         },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -290,19 +291,19 @@ fn meta_delete(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State
     auth_rules.allows_meta_set(&mut auth, &conn)?;
 
     match meta::delete(&conn, &key) {
-        Ok(_) => Ok(json!(true)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
 #[post("/meta/<key>", format="application/json", data="<body>")]
-fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String, body: Json) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String, body: Json<serde_json::Value>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_meta_set(&mut auth, &conn)?;
 
     match meta::set(&conn, &key, &body) {
-        Ok(_) => Ok(json!(true)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -322,17 +323,17 @@ fn mvt_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
 
     auth_rules.allows_mvt_get(&mut auth, &conn)?;
 
-    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, json!("Tile Not Found"))); }
+    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, Json(json!("Tile Not Found")))); }
 
     let tile = match mvt::get(&conn, z, x, y, false) {
         Ok(tile) => tile,
-        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string()))); }
+        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string())))); }
     };
 
     let mut c = Cursor::new(Vec::new());
     match tile.to_writer(&mut c) {
         Ok(_) => (),
-        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string()))); }
+        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string())))); }
     }
 
     let mut mvt_response = Response::new();
@@ -347,11 +348,11 @@ fn mvt_meta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
     let conn = conn.get()?;
     auth_rules.allows_mvt_meta(&mut auth, &conn)?;
 
-    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, json!("Tile Not Found"))); }
+    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, Json(json!("Tile Not Found")))); }
 
     match mvt::meta(&conn, z, x, y) {
-        Ok(tile) => Ok(tile),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(tile) => Ok(Json(tile)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -362,8 +363,8 @@ fn mvt_wipe(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
     auth_rules.allows_mvt_delete(&mut auth, &conn)?;
 
     match mvt::wipe(&conn) {
-        Ok(response) => Ok(response),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(response) => Ok(Json(response)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -372,17 +373,17 @@ fn mvt_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     let conn = conn.get()?;
     auth_rules.allows_mvt_regen(&mut auth, &conn)?;
 
-    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, json!("Tile Not Found"))); }
+    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, Json(json!("Tile Not Found")))); }
 
     let tile = match mvt::get(&conn, z, x, y, true) {
         Ok(tile) => tile,
-        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string()))); }
+        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string())))); }
     };
 
     let mut c = Cursor::new(Vec::new());
     match tile.to_writer(&mut c) {
         Ok(_) => (),
-        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string()))); }
+        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string())))); }
     }
 
     let mut mvt_response = Response::new();
@@ -404,14 +405,14 @@ struct Map {
     bbox: String
 }
 
-#[get("/user/create?<user>")]
-fn user_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: User) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+#[get("/user/create?<user..>")]
+fn user_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: Form<User>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_user_create(&mut auth, &conn)?;
 
     match user::create(&conn, &user.username, &user.password, &user.email) {
-        Ok(_) => Ok(json!(true)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -421,19 +422,19 @@ fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     auth_rules.allows_user_list(&mut auth, &conn)?;
 
     match user::list(&conn, None) {
-        Ok(users) => Ok(json!(users)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(users) => Ok(Json(json!(users))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
-#[get("/users?<filter>")]
-fn user_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Filter) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+#[get("/users?<filter..>")]
+fn user_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Form<Filter>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_user_list(&mut auth, &conn)?;
 
     match user::list(&conn, filter.filter) {
-        Ok(users) => Ok(json!(users)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(users) => Ok(Json(json!(users))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -444,8 +445,8 @@ fn user_info(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     auth_rules.is_admin(&mut auth, &conn)?;
 
     match user::info(&conn, &id) {
-        Ok(info) => { Ok(info) },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(info) => { Ok(Json(info)) },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -456,8 +457,8 @@ fn user_set_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: St
     auth_rules.is_admin(&mut auth, &conn)?;
 
     match user::set_admin(&conn, &id) {
-        Ok(info) => { Ok(json!(info)) },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(info) => { Ok(Json(json!(info))) },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -468,8 +469,8 @@ fn user_delete_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
     auth_rules.is_admin(&mut auth, &conn)?;
 
     match user::delete_admin(&conn, &id) {
-        Ok(info) => { Ok(json!(info)) },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(info) => { Ok(Json(json!(info))) },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -481,8 +482,8 @@ fn user_self(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     let uid = auth.uid.unwrap();
 
     match user::info(&conn, &uid) {
-        Ok(info) => { Ok(info) },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(info) => { Ok(Json(info)) },
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -497,9 +498,9 @@ fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
     match user::create_token(&conn, &uid) {
         Ok(token) => {
             cookies.add_private(Cookie::new("session", token));
-            Ok(json!(uid))
+            Ok(Json(json!(uid)))
         },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -518,11 +519,11 @@ fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
             match user::destroy_token(&conn, &uid, &token) {
                 _ => {
                     cookies.remove_private(session); 
-                    Ok(json!(true))
+                    Ok(Json(json!(true)))
                 }
             }
         },
-        None => Ok(json!(true))
+        None => Ok(Json(json!(true)))
     }
 }
 
@@ -534,8 +535,8 @@ fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
     let uid = auth.uid.unwrap();
 
     match style::create(&conn, &uid, &style) {
-        Ok(style_id) => Ok(json!(style_id)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(style_id) => Ok(Json(json!(style_id))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -547,8 +548,8 @@ fn style_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
     let uid = auth.uid.unwrap();
 
     match style::access(&conn, &uid, &id, true) {
-        Ok(updated) => Ok(json!(updated)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(updated) => Ok(Json(json!(updated))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -560,8 +561,8 @@ fn style_private(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
     let uid = auth.uid.unwrap();
 
     match style::access(&conn, &uid, &id, false) {
-        Ok(updated) => Ok(json!(updated)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(updated) => Ok(Json(json!(updated))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -573,8 +574,8 @@ fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
     let uid = auth.uid.unwrap();
 
     match style::update(&conn, &uid, &id, &style) {
-        Ok(updated) => Ok(json!(updated)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(updated) => Ok(Json(json!(updated))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -586,8 +587,8 @@ fn style_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
     let uid = auth.uid.unwrap();
 
     match style::delete(&conn, &uid, &id) {
-        Ok(created) => Ok(json!(created)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(created) => Ok(Json(json!(created))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -599,8 +600,8 @@ fn style_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     auth_rules.allows_style_get(&mut auth, &conn)?;
 
     match style::get(&conn, &auth.uid, &id) {
-        Ok(style) => Ok(json!(style)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(style) => Ok(Json(json!(style))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -611,8 +612,8 @@ fn style_list_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
     auth_rules.allows_style_list(&mut auth, &conn)?;
 
     match style::list_public(&conn) {
-        Ok(styles) => Ok(json!(styles)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(styles) => Ok(Json(json!(styles))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -626,20 +627,20 @@ fn style_list_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: S
         Some(uid) => {
             if uid == user {
                 match style::list_user(&conn, &user) {
-                    Ok(styles) => Ok(json!(styles)),
-                    Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+                    Ok(styles) => Ok(Json(json!(styles))),
+                    Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
                 }
             } else {
                 match style::list_user_public(&conn, &user) {
-                    Ok(styles) => Ok(json!(styles)),
-                    Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+                    Ok(styles) => Ok(Json(json!(styles))),
+                    Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
                 }
             }
         },
         _ => {
             match style::list_user_public(&conn, &user) {
-                Ok(styles) => Ok(json!(styles)),
-                Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+                Ok(styles) => Ok(Json(json!(styles))),
+                Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
             }
         }
     }
@@ -652,8 +653,8 @@ fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
     auth_rules.allows_delta_list(&mut auth, &conn)?;
 
     match delta::list_by_offset(&conn, None, None) {
-        Ok(deltas) => Ok(deltas),
-        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, json!(err.to_string())))
+        Ok(deltas) => Ok(Json(deltas)),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
     }
 }
 
@@ -665,14 +666,14 @@ struct DeltaList {
     end: Option<String>
 }
 
-#[get("/deltas?<opts>")]
-fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+#[get("/deltas?<opts..>")]
+fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: Form<DeltaList>) ->  Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_delta_list(&mut auth, &conn)?;
 
     if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
-        return Err(status::Custom(HTTPStatus::BadRequest, json!("Offset cannot be used with start or end")));
+        return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Offset cannot be used with start or end"))));
     }
 
     if opts.start.is_some() || opts.end.is_some() {
@@ -680,7 +681,7 @@ fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
             None => None,
             Some(start) => {
                 match start.parse() {
-                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, json!("Invalid start timestamp"))); },
+                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid start timestamp")))); },
                     Ok(start) => Some(start)
                 }
             }
@@ -690,7 +691,7 @@ fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
             None => None,
             Some(end) => {
                 match end.parse() {
-                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, json!("Invalid end timestamp"))); },
+                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid end timestamp")))); },
                     Ok(end) => Some(end)
                 }
             }
@@ -698,23 +699,23 @@ fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
 
         match delta::list_by_date(&conn, start, end, opts.limit) {
             Ok(deltas) => {
-                return Ok(deltas);
+                return Ok(Json(deltas));
             },
             Err(err) => {
-                return Err(status::Custom(HTTPStatus::InternalServerError, json!(err.to_string())));
+                return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
             }
         }
     } else if opts.offset.is_some() || opts.limit.is_some() {
         match delta::list_by_offset(&conn, opts.offset, opts.limit) {
             Ok(deltas) => {
-                return Ok(deltas);
+                return Ok(Json(deltas));
             },
             Err(err) => {
-                return Err(status::Custom(HTTPStatus::InternalServerError, json!(err.to_string())));
+                return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
             }
         }
     }
-    Err(status::Custom(HTTPStatus::BadRequest, json!("Query Param Error")))
+    Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Query Param Error"))))
 }
 
 #[get("/delta/<id>")]
@@ -723,8 +724,8 @@ fn delta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth:
     auth_rules.allows_delta_get(&mut auth, &conn)?;
 
     match delta::get_json(&conn, &id) {
-        Ok(delta) => Ok(delta),
-        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, json!(err.to_string())))
+        Ok(delta) => Ok(Json(delta)),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
     }
 }
 
@@ -735,21 +736,22 @@ fn bounds_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
     auth_rules.allows_bounds_list(&mut auth, &conn)?;
 
     match bounds::list(&conn, None) {
-        Ok(bounds) => Ok(json!(bounds)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(bounds) => Ok(Json(json!(bounds))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
 
-#[get("/data/bounds?<filter>")]
-fn bounds_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Filter) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+#[get("/data/bounds?<filter..>")]
+fn bounds_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Form<Filter>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+#[derive(FromForm)]
     let conn = conn.get()?;
 
     auth_rules.allows_bounds_list(&mut auth, &conn, filter.filter)?;
 
     match bounds::search(&conn, filter.filter, filter.limit) {
-        Ok(bounds) => Ok(json!(bounds)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(bounds) => Ok(Json(json!(bounds))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -761,7 +763,7 @@ fn bounds_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
     match bounds::get(conn, bounds) {
         Ok(bs) => Ok(Stream::from(bs)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -774,13 +776,13 @@ fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
     let geom: serde_json::Value = match serde_json::from_str(&*body) {
         Ok(geom) => geom,
         Err(_) => {
-            return Err(status::Custom(HTTPStatus::BadRequest, json!("Invalid Feature GeoJSON")));
+            return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid Feature GeoJSON"))));
         }
     };
 
     match bounds::set(&conn, &bounds, &geom) {
-        Ok(_) => Ok(json!(true)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -791,8 +793,8 @@ fn bounds_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
     auth_rules.allows_bounds_delete(&mut auth, &conn)?;
 
     match bounds::delete(&conn, &bounds) {
-        Ok(_) => Ok(json!(true)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(_) => Ok(Json(json!(true))),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -803,8 +805,8 @@ fn bounds_stats(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
     auth_rules.allows_stats_bounds(&mut auth, &conn)?;
 
     match bounds::stats_json(conn, bounds) {
-        Ok(stats) => Ok(stats),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, json!(err.to_string())))
+        Ok(stats) => Ok(Json(stats)),
+        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
 }
 
@@ -814,8 +816,8 @@ struct CloneQuery {
     limit: Option<i64>
 }
 
-#[get("/data/query?<cquery>")]
-fn clone_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: CloneQuery) -> Result<Stream<stream::PGStream>, status::Custom<Json<serde_json::Value>>> {
+#[get("/data/query?<cquery..>")]
+fn clone_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: Form<CloneQuery>) -> Result<Stream<stream::PGStream>, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_clone_query(&mut auth, &conn.get()?)?;
 
     match clone::query(read_conn.get()?, &cquery.query, &cquery.limit) {
@@ -834,8 +836,8 @@ fn clone_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth:
     }
 }
 
-#[get("/data/features?<map>")]
-fn features_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<Stream<stream::PGStream>, status::Custom<Json<serde_json::Value>>> {
+#[get("/data/features?<map..>")]
+fn features_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<Stream<stream::PGStream>, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
@@ -852,8 +854,8 @@ fn schema_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
     auth_rules.allows_schema_get(&mut auth, &conn)?;
 
     match schema.inner().clone() {
-        Some(s) => Ok(json!(s.clone())),
-        None => Err(status::Custom(HTTPStatus::NotFound, json!("No Schema Validation Enforced")))
+        Some(s) => Ok(Json(json!(s.clone()))),
+        None => Err(status::Custom(HTTPStatus::NotFound, Json(json!("No Schema Validation Enforced"))))
     }
 }
 
@@ -863,7 +865,7 @@ fn auth_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
 
     auth_rules.allows_auth_get(&mut auth, &conn)?;
 
-    Ok(auth_rules.to_json())
+    Ok(Json(auth_rules.to_json()))
 }
 
 #[get("/data/stats")]
@@ -873,8 +875,8 @@ fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     auth_rules.allows_stats_get(&mut auth, &conn)?;
 
     match stats::get_json(&conn) {
-        Ok(stats) => Ok(stats),
-        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, json!(err.to_string())))
+        Ok(stats) => Ok(Json(stats)),
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
     }
 }
 
@@ -887,21 +889,21 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
     let uid = auth.uid.unwrap();
 
     let mut fc = match body.parse::<GeoJson>() {
-        Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, json!("Body must be valid GeoJSON Feature"))); },
+        Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); },
         Ok(geo) => match geo {
             GeoJson::FeatureCollection(fc) => fc,
-            _ => { return Err(status::Custom(HTTPStatus::BadRequest, json!("Body must be valid GeoJSON FeatureCollection"))); }
+            _ => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON FeatureCollection")))); }
         }
     };
 
     let delta_message = match fc.foreign_members {
-        None => { return Err(status::Custom(HTTPStatus::BadRequest, json!("FeatureCollection Must have message property for delta"))); }
+        None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("FeatureCollection Must have message property for delta")))); }
         Some(ref members) => match members.get("message") {
             Some(message) => match message.as_str() {
                 Some(message) => String::from(message),
-                None => { return Err(status::Custom(HTTPStatus::BadRequest, json!("FeatureCollection Must have message property for delta"))); }
+                None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("FeatureCollection Must have message property for delta")))); }
             },
-            None => { return Err(status::Custom(HTTPStatus::BadRequest, json!("FeatureCollection Must have message property for delta"))); }
+            None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("FeatureCollection Must have message property for delta")))); }
         }
     };
 
@@ -915,7 +917,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, json!("Could not create delta"))); }
+            return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not create delta")))); }
     };
 
     for feat in &mut fc.features {
@@ -938,7 +940,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
             },
             Ok(res) => {
                 if res.new != None {
-                    feat.id = Some(json!(res.new))
+                    feat.id = Some(Json(json!(res.new)))
                 }
             }
         }
@@ -947,24 +949,24 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
     if delta::modify(&delta_id, &trans, &fc, &uid).is_err() {
         trans.set_rollback();
         trans.finish().unwrap();
-        return Err(status::Custom(HTTPStatus::InternalServerError, json!("Could not create delta")));
+        return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not create delta"))));
     }
 
     match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
             trans.commit().unwrap();
-            Ok(json!(true))
+            Ok(Json(json!(true)))
         },
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            Err(status::Custom(HTTPStatus::InternalServerError, json!(err.to_string())))
+            Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
         }
     }
 }
 
-#[get("/0.6/map?<map>")]
-fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<String, status::Custom<String>> {
+#[get("/0.6/map?<map..>")]
+fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap(); 
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1347,8 +1349,8 @@ struct FeatureQuery {
     key: Option<String>
 }
 
-#[get("/data/feature?<fquery>")]
-fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: FeatureQuery) -> Result<String, status::Custom<Json<serde_json::Value>>> {
+#[get("/data/feature?<fquery..>")]
+fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: Form<FeatureQuery>) -> Result<String, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
     if fquery.key.is_some() {
