@@ -179,7 +179,7 @@ impl DbRead {
         DbRead(database)
     }
 
-    fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, status::Custom<Json<impl serde::Serialize>>> {
+    fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, status::Custom<Json<serde_json::Value>>> {
         match self.0 {
             None => Err(status::Custom(HTTPStatus::ServiceUnavailable, json!({
                 "code": 503,
@@ -209,7 +209,7 @@ impl DbReadWrite {
         DbReadWrite(database)
     }
 
-    fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, status::Custom<Json<impl serde::Serialize>>> {
+    fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, status::Custom<Json<serde_json::Value>>> {
         match self.0.get() {
             Ok(conn) => Ok(conn),
             Err(_) => Err(status::Custom(HTTPStatus::ServiceUnavailable, json!({
@@ -228,7 +228,7 @@ struct Filter {
 }
 
 #[catch(401)]
-fn not_authorized() -> status::Custom<impl serde::Serialize> {
+fn not_authorized() -> status::Custom<serde_json::Value> {
     status::Custom(HTTPStatus::Unauthorized, json!({
         "code": 401,
         "status": "Not Authorized",
@@ -237,7 +237,7 @@ fn not_authorized() -> status::Custom<impl serde::Serialize> {
 }
 
 #[catch(404)]
-fn not_found() -> Json<impl serde::Serialize> {
+fn not_found() -> Json<serde_json::Value> {
     json!({
         "code": 404,
         "status": "Not Found",
@@ -250,7 +250,7 @@ fn not_found() -> Json<impl serde::Serialize> {
 fn index() -> &'static str { "Hello World!" }
 
 #[get("/")]
-fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_server(&mut auth, &conn.get()?)?;
 
     Ok(json!({
@@ -259,7 +259,7 @@ fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth
 }
 
 #[get("/meta")]
-fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_meta_list(&mut auth, &conn)?;
 
@@ -272,7 +272,7 @@ fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<a
 }
 
 #[get("/meta/<key>")]
-fn meta_get(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn meta_get(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_meta_get(&mut auth, &conn)?;
 
@@ -285,7 +285,7 @@ fn meta_get(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<au
 }
 
 #[delete("/meta/<key>")]
-fn meta_delete(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn meta_delete(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_meta_set(&mut auth, &conn)?;
 
@@ -296,7 +296,7 @@ fn meta_delete(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State
 }
 
 #[post("/meta/<key>", format="application/json", data="<body>")]
-fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String, body: Json) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth::CustomAuth>, key: String, body: Json) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_meta_set(&mut auth, &conn)?;
 
@@ -317,7 +317,7 @@ fn staticsrv(file: PathBuf) -> Option<NamedFile> {
 }
 
 #[get("/tiles/<z>/<x>/<y>")]
-fn mvt_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<Json<impl serde::Serialize>>> {
+fn mvt_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_mvt_get(&mut auth, &conn)?;
@@ -343,7 +343,7 @@ fn mvt_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
 }
 
 #[get("/tiles/<z>/<x>/<y>/meta")]
-fn mvt_meta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn mvt_meta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_mvt_meta(&mut auth, &conn)?;
 
@@ -357,7 +357,7 @@ fn mvt_meta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
 
 
 #[delete("/tiles")]
-fn mvt_wipe(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn mvt_wipe(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_mvt_delete(&mut auth, &conn)?;
 
@@ -368,7 +368,7 @@ fn mvt_wipe(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
 }
 
 #[get("/tiles/<z>/<x>/<y>/regen")]
-fn mvt_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<Json<impl serde::Serialize>>> {
+fn mvt_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, z: u8, x: u32, y: u32) -> Result<Response<'static>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_mvt_regen(&mut auth, &conn)?;
 
@@ -405,7 +405,7 @@ struct Map {
 }
 
 #[get("/user/create?<user>")]
-fn user_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: User) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn user_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: User) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_user_create(&mut auth, &conn)?;
 
@@ -416,7 +416,7 @@ fn user_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 }
 
 #[get("/users")]
-fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_user_list(&mut auth, &conn)?;
 
@@ -427,7 +427,7 @@ fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 }
 
 #[get("/users?<filter>")]
-fn user_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Filter) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn user_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Filter) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_user_list(&mut auth, &conn)?;
 
@@ -438,7 +438,7 @@ fn user_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 }
 
 #[get("/user/<id>")]
-fn user_info(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn user_info(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.is_admin(&mut auth, &conn)?;
@@ -450,7 +450,7 @@ fn user_info(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 }
 
 #[put("/user/<id>/admin")]
-fn user_set_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn user_set_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.is_admin(&mut auth, &conn)?;
@@ -462,7 +462,7 @@ fn user_set_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: St
 }
 
 #[delete("/user/<id>/admin")]
-fn user_delete_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn user_delete_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.is_admin(&mut auth, &conn)?;
@@ -474,7 +474,7 @@ fn user_delete_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
 }
 
 #[get("/user/info")]
-fn user_self(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn user_self(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_user_info(&mut auth, &conn)?;
 
@@ -487,7 +487,7 @@ fn user_self(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 }
 
 #[get("/user/session")]
-fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut cookies: Cookies) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut cookies: Cookies) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_user_create_session(&mut auth, &conn)?;
@@ -504,7 +504,7 @@ fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
 }
 
 #[delete("/user/session")]
-fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut cookies: Cookies) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut cookies: Cookies) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_user_create_session(&mut auth, &conn)?;
@@ -527,7 +527,7 @@ fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
 }
 
 #[post("/style", format="application/json", data="<style>")]
-fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, style: String) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, style: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     
     auth_rules.allows_style_create(&mut auth, &conn)?;
@@ -540,7 +540,7 @@ fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
 }
 
 #[post("/style/<id>/public")]
-fn style_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn style_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_set_public(&mut auth, &conn)?;
@@ -553,7 +553,7 @@ fn style_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
 }
 
 #[post("/style/<id>/private")]
-fn style_private(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn style_private(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_set_private(&mut auth, &conn)?;
@@ -566,7 +566,7 @@ fn style_private(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
 }
 
 #[patch("/style/<id>", format="application/json", data="<style>")]
-fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64, style: String) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64, style: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_patch(&mut auth, &conn)?;
@@ -579,7 +579,7 @@ fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 }
 
 #[delete("/style/<id>")]
-fn style_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn style_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_delete(&mut auth, &conn)?;
@@ -593,7 +593,7 @@ fn style_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
 
 
 #[get("/style/<id>")]
-fn style_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn style_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_get(&mut auth, &conn)?;
@@ -605,7 +605,7 @@ fn style_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 }
 
 #[get("/styles")]
-fn style_list_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn style_list_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_list(&mut auth, &conn)?;
@@ -617,7 +617,7 @@ fn style_list_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
 }
 
 #[get("/styles/<user>")]
-fn style_list_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: i64) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn style_list_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: i64) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_list(&mut auth, &conn)?;
@@ -646,7 +646,7 @@ fn style_list_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: S
 }
 
 #[get("/deltas")]
-fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) ->  Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) ->  Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_delta_list(&mut auth, &conn)?;
@@ -666,7 +666,7 @@ struct DeltaList {
 }
 
 #[get("/deltas?<opts>")]
-fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: DeltaList) ->  Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_delta_list(&mut auth, &conn)?;
@@ -718,7 +718,7 @@ fn delta_list_params(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
 }
 
 #[get("/delta/<id>")]
-fn delta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) ->  Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn delta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) ->  Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_delta_get(&mut auth, &conn)?;
 
@@ -729,7 +729,7 @@ fn delta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth:
 }
 
 #[get("/data/bounds")]
-fn bounds_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn bounds_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_bounds_list(&mut auth, &conn)?;
@@ -742,7 +742,7 @@ fn bounds_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 
 
 #[get("/data/bounds?<filter>")]
-fn bounds_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Filter) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn bounds_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Filter) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_bounds_list(&mut auth, &conn, filter.filter)?;
@@ -754,7 +754,7 @@ fn bounds_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
 }
 
 #[get("/data/bounds/<bounds>")]
-fn bounds_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Stream<stream::PGStream>, status::Custom<Json<impl serde::Serialize>>> {
+fn bounds_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Stream<stream::PGStream>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_bounds_list(&mut auth, &conn)?;
@@ -766,7 +766,7 @@ fn bounds_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 }
 
 #[post("/data/bounds/<bounds>", format="application/json", data="<body>")]
-fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String, body: String) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String, body: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_bounds_create(&mut auth, &conn)?;
@@ -785,7 +785,7 @@ fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 }
 
 #[delete("/data/bounds/<bounds>")]
-fn bounds_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn bounds_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_bounds_delete(&mut auth, &conn)?;
@@ -797,7 +797,7 @@ fn bounds_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
 }
 
 #[get("/data/bounds/<bounds>/stats")]
-fn bounds_stats(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn bounds_stats(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_stats_bounds(&mut auth, &conn)?;
@@ -815,7 +815,7 @@ struct CloneQuery {
 }
 
 #[get("/data/query?<cquery>")]
-fn clone_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: CloneQuery) -> Result<Stream<stream::PGStream>, status::Custom<Json<impl serde::Serialize>>> {
+fn clone_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: CloneQuery) -> Result<Stream<stream::PGStream>, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_clone_query(&mut auth, &conn.get()?)?;
 
     match clone::query(read_conn.get()?, &cquery.query, &cquery.limit) {
@@ -825,7 +825,7 @@ fn clone_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: aut
 }
 
 #[get("/data/clone")]
-fn clone_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Stream<stream::PGStream>, status::Custom<Json<impl serde::Serialize>>> {
+fn clone_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Stream<stream::PGStream>, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_clone_get(&mut auth, &conn.get()?)?;
 
     match clone::get(read_conn.get()?) {
@@ -835,7 +835,7 @@ fn clone_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth:
 }
 
 #[get("/data/features?<map>")]
-fn features_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<Stream<stream::PGStream>, status::Custom<Json<impl serde::Serialize>>> {
+fn features_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Map) -> Result<Stream<stream::PGStream>, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
@@ -846,7 +846,7 @@ fn features_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: au
 }
 
 #[get("/schema")]
-fn schema_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, schema: State<Option<serde_json::value::Value>>) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn schema_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, schema: State<Option<serde_json::value::Value>>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_schema_get(&mut auth, &conn)?;
@@ -858,7 +858,7 @@ fn schema_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 }
 
 #[get("/auth")]
-fn auth_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn auth_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_auth_get(&mut auth, &conn)?;
@@ -867,7 +867,7 @@ fn auth_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
 }
 
 #[get("/data/stats")]
-fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_stats_get(&mut auth, &conn)?;
@@ -879,7 +879,7 @@ fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
-fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_feature_create(&mut auth, &conn)?;
@@ -1244,7 +1244,7 @@ fn xml_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_feature_create(&mut auth, &conn)?;
@@ -1333,7 +1333,7 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
 }
 
 #[get("/data/feature/<id>")]
-fn feature_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<String, status::Custom<Json<impl serde::Serialize>>> {
+fn feature_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<String, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
     match feature::get(&read_conn.get()?, &id) {
@@ -1348,7 +1348,7 @@ struct FeatureQuery {
 }
 
 #[get("/data/feature?<fquery>")]
-fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: FeatureQuery) -> Result<String, status::Custom<Json<impl serde::Serialize>>> {
+fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: FeatureQuery) -> Result<String, status::Custom<Json<serde_json::Value>>> {
     auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
     if fquery.key.is_some() {
@@ -1362,7 +1362,7 @@ fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: a
 }
 
 #[get("/data/feature/<id>/history")]
-fn feature_get_history(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<impl serde::Serialize>, status::Custom<Json<impl serde::Serialize>>> {
+fn feature_get_history(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_feature_history(&mut auth, &conn)?;
 
