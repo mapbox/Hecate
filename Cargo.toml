@@ -13,7 +13,7 @@ readme = "README.md"
 categories = ["database"]
 
 [dev-dependencies]
-reqwest = "0.8.4"
+reqwest = "0.9.5"
 
 [dependencies]
 valico = "2.2"

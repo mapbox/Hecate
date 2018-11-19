@@ -68,7 +68,7 @@ mod test {
                     "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -87,7 +87,7 @@ mod test {
                     "geometry": { "type": "Point", "coordinates": [ -77.01210021972656,38.925763232374514 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -106,7 +106,7 @@ mod test {
                     "geometry": { "type": "Point", "coordinates": [ -76.94755554199219,38.90385833966778 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -145,7 +145,7 @@ mod test {
                     "geometry": null
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -164,7 +164,7 @@ mod test {
                     "geometry": { "type": "Point", "coordinates": [ -77.01210021972656,38.925763232374514 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -199,7 +199,7 @@ mod test {
                     "geometry": { "type": "Polygon", "coordinates": [ [ [ -29.8828125, 62.59334083012024 ], [ -11.6015625, 62.59334083012024 ], [ -11.6015625, 67.47492238478702 ], [ -29.8828125, 67.47492238478702 ], [ -29.8828125, 62.59334083012024 ] ] ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 

@@ -60,7 +60,7 @@ mod test {
                     "geometry": { "type": "Point", "coordinates": [ -77.01210021972656,38.925763232374514 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -79,7 +79,7 @@ mod test {
                     "geometry": { "type": "Point", "coordinates": [ -77.01210021972656,38.925763232374514 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -98,7 +98,7 @@ mod test {
                     "geometry": { "type": "Point", "coordinates": [ -77.01210021972656,38.925763232374514 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 

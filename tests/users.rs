@@ -67,7 +67,7 @@ mod test {
                     "properties": { "addr:housenumber": "1234", "addr:street": "Main St" },
                     "geometry": { "type": "Point", "coordinates": [ -79.46014970541, 43.67263458218963 ] }
                 }"#)
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -86,7 +86,7 @@ mod test {
                     "geometry": { "type": "Point", "coordinates": [ -79.46014970541, 43.67263458218963 ] }
                 }"#)
                 .basic_auth("ingalls2", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -105,7 +105,7 @@ mod test {
                     "geometry": { "type": "Point", "coordinates": [ -79.46014970541, 43.67263458218963 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh2"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -124,7 +124,7 @@ mod test {
                     "geometry": { "type": "Point", "coordinates": [ -79.46014970541, 43.67263458218963 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
