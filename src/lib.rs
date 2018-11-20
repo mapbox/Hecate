@@ -221,7 +221,7 @@ impl DbReadWrite {
     }
 }
 
-#[derive(FromForm)]
+#[derive(FromForm, Debug)]
 struct Filter {
     filter: String,
     limit: Option<i8>
@@ -392,14 +392,14 @@ fn mvt_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     Ok(mvt_response)
 }
 
-#[derive(FromForm)]
+#[derive(FromForm, Debug)]
 struct User {
     username: String,
     password: String,
     email: String
 }
 
-#[derive(FromForm)]
+#[derive(FromForm, Debug)]
 struct Map {
     bbox: String
 }
@@ -645,7 +645,7 @@ fn style_list_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: S
     }
 }
 
-#[derive(FromForm)]
+#[derive(FromForm, Debug)]
 struct DeltaList {
     offset: Option<i64>,
     limit: Option<i64>,
@@ -654,68 +654,61 @@ struct DeltaList {
 }
 
 #[get("/deltas?<opts..>")]
-fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: Option<Form<DeltaList>>) ->  Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, opts: Form<DeltaList>) ->  Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_delta_list(&mut auth, &conn)?;
 
-    match opts {
-        None => {
-            match delta::list_by_offset(&conn, None, None) {
-                Ok(deltas) => Ok(Json(deltas)),
-                Err(err) => {
-                    return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
-                }
+    if opts.offset.is_none() && opts.limit.is_none() && opts.start.is_none() && opts.end.is_none() {
+        match delta::list_by_offset(&conn, None, None) {
+            Ok(deltas) => Ok(Json(deltas)),
+            Err(err) => {
+                return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
             }
-        },
-        Some(opts) => {
-            if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
-                return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Offset cannot be used with start or end"))));
-            }
-
-            if opts.start.is_some() || opts.end.is_some() {
-                let start: Option<chrono::NaiveDateTime> = match &opts.start {
-                    None => None,
-                    Some(start) => {
-                        match start.parse() {
-                            Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid start timestamp")))); },
-                            Ok(start) => Some(start)
-                        }
-                    }
-                };
-
-                let end: Option<chrono::NaiveDateTime> = match &opts.end {
-                    None => None,
-                    Some(end) => {
-                        match end.parse() {
-                            Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid end timestamp")))); },
-                            Ok(end) => Some(end)
-                        }
-                    }
-                };
-
-                match delta::list_by_date(&conn, start, end, opts.limit) {
-                    Ok(deltas) => {
-                        return Ok(Json(deltas));
-                    },
-                    Err(err) => {
-                        return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
-                    }
-                }
-            } else if opts.offset.is_some() || opts.limit.is_some() {
-                match delta::list_by_offset(&conn, opts.offset, opts.limit) {
-                    Ok(deltas) => {
-                        return Ok(Json(deltas));
-                    },
-                    Err(err) => {
-                        return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
-                    }
-                }
-            }
-
-            return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Query Param Error"))));
         }
-    };
+    } else if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
+        return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Offset cannot be used with start or end"))));
+    } else if opts.start.is_some() || opts.end.is_some() {
+        let start: Option<chrono::NaiveDateTime> = match &opts.start {
+            None => None,
+            Some(start) => {
+                match start.parse() {
+                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid start timestamp")))); },
+                    Ok(start) => Some(start)
+                }
+            }
+        };
+
+        let end: Option<chrono::NaiveDateTime> = match &opts.end {
+            None => None,
+            Some(end) => {
+                match end.parse() {
+                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid end timestamp")))); },
+                    Ok(end) => Some(end)
+                }
+            }
+        };
+
+        match delta::list_by_date(&conn, start, end, opts.limit) {
+            Ok(deltas) => {
+                return Ok(Json(deltas));
+            },
+            Err(err) => {
+                return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
+            }
+        }
+    } else if opts.offset.is_some() || opts.limit.is_some() {
+        match delta::list_by_offset(&conn, opts.offset, opts.limit) {
+            Ok(deltas) => {
+                return Ok(Json(deltas));
+            },
+            Err(err) => {
+                return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
+            }
+        }
+    } else {
+        return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Query Param Error"))));
+    }
 }
 
 #[get("/delta/<id>")]
@@ -808,7 +801,7 @@ fn bounds_stats(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
     }
 }
 
-#[derive(FromForm)]
+#[derive(FromForm, Debug)]
 struct CloneQuery {
     query: String,
     limit: Option<i64>
@@ -1342,7 +1335,7 @@ fn feature_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: aut
     }
 }
 
-#[derive(FromForm)]
+#[derive(FromForm, Debug)]
 struct FeatureQuery {
     key: String
 }
