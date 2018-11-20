@@ -1,6 +1,6 @@
 #![feature(proc_macro_hygiene, decl_macro, plugin, custom_derive, custom_attribute)]
 
-static VERSION: &'static str = "0.49.3";
+static VERSION: &'static str = "0.50.0";
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
@@ -45,7 +45,7 @@ use std::collections::HashMap;
 use rocket::http::Status as HTTPStatus;
 use rocket::config::{Config, Environment, LoggingLevel, Limits};
 use rocket::http::{Cookie, Cookies};
-use rocket::{State};
+use rocket::{State, Data};
 use rocket::response::{Response, status, Stream, NamedFile};
 use rocket::request::Form;
 use geojson::GeoJson;
@@ -527,13 +527,23 @@ fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
 }
 
 #[post("/style", format="application/json", data="<style>")]
-fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, style: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, style: Data) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
+
+    let mut body_str: String;
+    {    
+        let mut body_vec = Vec::new();
+        while !style.peek_complete() {
+            body_vec.append(&mut style.peek().to_vec());
+        }    
+
+        body_str = String::from_utf8(body_vec).unwrap();
+    } 
     
     auth_rules.allows_style_create(&mut auth, &conn)?;
     let uid = auth.uid.unwrap();
 
-    match style::create(&conn, &uid, &style) {
+    match style::create(&conn, &uid, &body_str) {
         Ok(style_id) => Ok(Json(json!(style_id))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
@@ -566,13 +576,23 @@ fn style_private(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
 }
 
 #[patch("/style/<id>", format="application/json", data="<style>")]
-fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64, style: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64, style: Data) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_patch(&mut auth, &conn)?;
     let uid = auth.uid.unwrap();
 
-    match style::update(&conn, &uid, &id, &style) {
+    let mut body_str: String;
+    {
+        let mut body_vec = Vec::new();
+        while !style.peek_complete() {
+            body_vec.append(&mut style.peek().to_vec());
+        }
+
+        body_str = String::from_utf8(body_vec).unwrap();
+    }
+
+    match style::update(&conn, &uid, &id, &body_str) {
         Ok(updated) => Ok(Json(json!(updated))),
         Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
     }
@@ -759,12 +779,22 @@ fn bounds_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 }
 
 #[post("/data/bounds/<bounds>", format="application/json", data="<body>")]
-fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String, body: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String, body: Data) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_bounds_create(&mut auth, &conn)?;
 
-    let geom: serde_json::Value = match serde_json::from_str(&*body) {
+    let mut body_str: String;
+    {
+        let mut body_vec = Vec::new();
+        while !body.peek_complete() {
+            body_vec.append(&mut body.peek().to_vec());
+        }
+
+        body_str = String::from_utf8(body_vec).unwrap();
+    }
+
+    let geom: serde_json::Value = match serde_json::from_str(&*body_str) {
         Ok(geom) => geom,
         Err(_) => {
             return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid Feature GeoJSON"))));
@@ -872,14 +902,24 @@ fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
-fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: Data) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_feature_create(&mut auth, &conn)?;
 
     let uid = auth.uid.unwrap();
 
-    let mut fc = match body.parse::<GeoJson>() {
+    let mut body_str: String;
+    {    
+        let mut body_vec = Vec::new();
+        while !body.peek_complete() {
+            body_vec.append(&mut body.peek().to_vec());
+        }    
+
+        body_str = String::from_utf8(body_vec).unwrap();
+    } 
+
+    let mut fc = match body_str.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); },
         Ok(geo) => match geo {
             GeoJson::FeatureCollection(fc) => fc,
@@ -981,7 +1021,7 @@ fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, body: String) -> Result<String, status::Custom<String>> {
+fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, body: Data) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -989,9 +1029,19 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
     };
 
+    let body_str: String;
+    {
+        let mut body_vec = Vec::new();
+        while !body.peek_complete() {
+            body_vec.append(&mut body.peek().to_vec());
+        }
+
+        body_str = String::from_utf8(body_vec).unwrap();
+    }
+
     let uid = auth.uid.unwrap();
 
-    let map = match xml::to_delta(&body) {
+    let map = match xml::to_delta(&body_str) {
         Ok(map) => map,
         Err(err) => { return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); }
     };
@@ -1025,13 +1075,23 @@ fn xml_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
+fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
         Ok(_) => (),
         Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
     };
+
+    let body_str: String;
+    {
+        let mut body_vec = Vec::new();
+        while !body.peek_complete() {
+            body_vec.append(&mut body.peek().to_vec());
+        }
+
+        body_str = String::from_utf8(body_vec).unwrap();
+    }
 
     let uid = auth.uid.unwrap();
 
@@ -1051,7 +1111,7 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         }
     }
 
-    let map = match xml::to_delta(&body) {
+    let map = match xml::to_delta(&body_str) {
         Ok(map) => map,
         Err(err) => {
             trans.set_rollback();
@@ -1075,13 +1135,23 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: String) -> Result<Response<'static>, status::Custom<String>> {
+fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
         Ok(_) => (),
         Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
     };
+
+    let mut body_str: String;
+    {    
+        let mut body_vec = Vec::new();
+        while !body.peek_complete() {
+            body_vec.append(&mut body.peek().to_vec());
+        }    
+
+        body_str = String::from_utf8(body_vec).unwrap();
+    } 
 
     let uid = auth.uid.unwrap();
 
@@ -1101,7 +1171,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         }
     }
 
-    let (mut fc, tree) = match xml::to_features(&body) {
+    let (mut fc, tree) = match xml::to_features(&body_str) {
         Ok(fctree) => fctree,
         Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())); }
     };
@@ -1237,14 +1307,24 @@ fn xml_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: String) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: Data) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_feature_create(&mut auth, &conn)?;
 
     let uid = auth.uid.unwrap();
 
-    let mut feat = match body.parse::<GeoJson>() {
+    let mut body_str: String;
+    {    
+        let mut body_vec = Vec::new();
+        while !body.peek_complete() {
+            body_vec.append(&mut body.peek().to_vec());
+        }    
+
+        body_str = String::from_utf8(body_vec).unwrap();
+    } 
+
+    let mut feat = match body_str.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); },
         Ok(geo) => match geo {
             GeoJson::Feature(feat) => feat,
