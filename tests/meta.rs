@@ -92,7 +92,7 @@ mod test {
             let mut resp = client.post("http://localhost:8000/api/meta/key")
                 .body(r#"{ "value": "test" }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
@@ -140,7 +140,7 @@ mod test {
             let mut resp = client.post("http://localhost:8000/api/meta/key")
                 .body(r#"{ "value": false }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 

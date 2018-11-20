@@ -60,7 +60,7 @@ mod test {
                     "geometry": { "type": "Point", "coordinates": [ -97.734375,56.559482483762245 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::ContentType::json())
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 

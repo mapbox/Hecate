@@ -13,7 +13,7 @@ readme = "README.md"
 categories = ["database"]
 
 [dev-dependencies]
-reqwest = "0.8.4"
+reqwest = "0.9.5"
 
 [dependencies]
 valico = "2.2"
@@ -21,9 +21,8 @@ rand = "0.5"
 postgis = "0.6.0"
 protobuf = "1.5"
 base64 = "0.9.3"
-rocket = "0.3.11"
-rocket_codegen = "0.3.11"
-rocket_contrib = "0.3.11"
+rocket = "0.4.0-rc.1"
+rocket_contrib="0.4.0-rc.1"
 geojson = "0.12.0"
 quick-xml = "0.13.1"
 serde = "1.0"

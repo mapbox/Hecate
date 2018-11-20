@@ -7,7 +7,7 @@ extern crate serde_json;
 
 use stream::PGStream;
 use serde_json::value::Value;
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 use rocket::response::status;
 
 #[derive(PartialEq, Debug)]
@@ -47,7 +47,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     }
 }
 
-pub fn query(read_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &String, limit: &Option<i64>) -> Result<PGStream, status::Custom<Json>> {
+pub fn query(read_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &String, limit: &Option<i64>) -> Result<PGStream, status::Custom<Json<serde_json::Value>>> {
     Ok(PGStream::new(read_conn, String::from("next_clone_query"), format!(r#"
         DECLARE next_clone_query CURSOR FOR
             SELECT
