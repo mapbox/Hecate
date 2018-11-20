@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.50.0
+
+- :arrow_up: [BREAKING] Update to `nightly-2018-11-19` per README instructions to compile
+- :arrow_up: Update to Rocket@0.4
+
 ## v0.49.3
 
 - [UI] Much better session handling, refreshing the page no longer marks you as logged out, when you actually still have a valid session cookie!
