@@ -85,11 +85,11 @@ source ~/.bashrc        # Most Linux Distros, some OSX
 source ~/.bash_profile  # Most OSX, some Linux Distros
 ```
 
-- Install the `nightly-2018-05-05` build of rust, `Rocket`, the web-framework relies on some advanced compiler options not yet included in the default build.
+- Install the `nightly-2018-11-19` build of rust, `Rocket`, the web-framework relies on some advanced compiler options not yet included in the default build.
 
 ```bash
-rustup install nightly-2018-05-05
-rustup default nightly-2018-05-05
+rustup install nightly-2018-11-19
+rustup default nightly-2018-11-19
 ```
 
 - Download and compile the project and all of it's libraries
@@ -104,6 +104,22 @@ cargo build
 echo "CREATE DATABASE hecate;" | psql -U postgres
 
 psql -U postgres -f src/schema.sql hecate
+```
+
+- This step will also create a database role called `hecate` and `hecate_read`. If
+the connection fails due to authentication, you're pg_hba file may not be set up
+to trust local connections.
+
+Your pb_hba file location can be found using `echo "show hba_file;" | psql -U postgres`
+
+Replace the file with the following:
+
+```
+local all postgres trust
+local all all trust
+host all all 127.0.0.1/32 trust
+host all all ::1/128 trust
+host replication postgres samenet trust
 ```
 
 - Start the server
@@ -356,7 +372,7 @@ cargo run -- --database_read "<USER>@<HOST>/<DATABASE>" --database_read "<USER>@
 
 ### JSON Validation
 
-<details> 
+<details>
 
 By default Hecate will allow any property on a given GeoJSON feature, including nestled arrays, maps, etc.
 
@@ -558,7 +574,7 @@ ensure your database is running `ANALYZE` more often.
 
 #### `GET` `/api/data/stats`
 
-Return a JSON object containing statistics and metadata about the 
+Return a JSON object containing statistics and metadata about the
 geometries stored in the server
 
 *Example*
