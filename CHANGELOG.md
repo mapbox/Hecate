@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.51.0
+
+- :tada: Add database check to ensure connections work before starting server
+
 ## v0.50.1
 
 - :bug: Fix regression where Data => String is not supported in release builds
