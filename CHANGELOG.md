@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.50.1
+
+- :bug: Fix regression where Data => String is not supported in release builds
+
 ## v0.50.0
 
 - :arrow_up: [BREAKING] Update to `nightly-2018-11-19` per README instructions to compile
