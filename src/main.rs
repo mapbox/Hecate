@@ -1,18 +1,20 @@
 extern crate hecate;
 #[macro_use] extern crate clap;
 extern crate serde_json;
+extern crate postgres;
 
 use std::path::Path;
 use std::fs::File;
 use std::io::Read;
 use hecate::auth::CustomAuth;
+use std::error::Error;
 use clap::App;
 
 fn main() {
     let cli_cnf = load_yaml!("cli.yml");
     let matched = App::from_yaml(cli_cnf).get_matches();
 
-    let database = String::from(matched.value_of("database").unwrap_or("postgres@localhost:5432/hecate"));
+    let database = String::from(matched.value_of("database").unwrap_or("hecate@localhost:5432/hecate"));
 
     let database_read = match matched.values_of("database_read") {
         None => vec![String::from("hecate_read@localhost:5432/hecate")],
@@ -63,6 +65,12 @@ fn main() {
         None => None
     };
 
+    database_check(&database, false);
+
+    for db_read in &database_read {
+        database_check(db_read, true);
+    }
+
     hecate::start(
         database,
         database_read,
@@ -71,4 +79,34 @@ fn main() {
         schema,
         auth
     );
+}
+
+fn database_check(conn_str: &String, is_read: bool) {
+    match postgres::Connection::connect(format!("postgres://{}", conn_str), postgres::TlsMode::None) {
+        Ok(conn) => {
+            let conn_type = match is_read {
+                true => String::from("READ"),
+                false => String::from("READ/WRITE")
+            };
+
+            match conn.query("
+                SELECT id FROM geo LIMIT 1
+            ", &[]) {
+                Ok(_) => (),
+                Err(err) => {
+                    println!("ERROR: Connection unable to {} geo table using {}", conn_type, conn_str);
+                    println!("ERROR: {}", err.description());
+                    println!("ERROR: Caused by: {}", err.cause().unwrap());
+                    std::process::exit(1);
+                }
+            }
+        },
+        Err(err) => {
+            println!("ERROR: Unable to connect to {}", conn_str);
+            println!("ERROR: {}", err.description());
+            println!("ERROR: caused by: {}", err.cause().unwrap());
+
+            std::process::exit(1);
+        }
+    }
 }

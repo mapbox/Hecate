@@ -147,10 +147,14 @@ DO $$DECLARE count int;
 
         IF count > 0 THEN
             EXECUTE 'REVOKE ALL PRIVILEGES ON DATABASE hecate FROM hecate;';
+            EXECUTE 'REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM hecate;';
+            EXECUTE 'REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM hecate;';
             EXECUTE 'DROP ROLE IF EXISTS hecate;';
         END IF;
     END$$;
 
 CREATE ROLE hecate WITH LOGIN NOINHERIT;
 GRANT ALL PRIVILEGES ON DATABASE hecate TO hecate;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO hecate;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO hecate;
 -- -----------------------------------
