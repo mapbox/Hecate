@@ -39,7 +39,7 @@ use mvt::Encode;
 
 use rand::prelude::*;
 
-use std::io::{Cursor};
+use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use rocket::http::Status as HTTPStatus;
@@ -517,7 +517,7 @@ fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
 
             match user::destroy_token(&conn, &uid, &token) {
                 _ => {
-                    cookies.remove_private(session); 
+                    cookies.remove_private(session);
                     Ok(Json(json!(true)))
                 }
             }
@@ -526,22 +526,28 @@ fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
     }
 }
 
-#[post("/style", format="application/json", data="<style>")]
-fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, style: Data) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+#[post("/style", format="application/json", data="<body>")]
+fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, body: Data) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
-    let mut body_str: String;
-    {    
-        let mut body_vec = Vec::new();
-        while !style.peek_complete() {
-            body_vec.append(&mut style.peek().to_vec());
-        }    
-
-        body_str = String::from_utf8(body_vec).unwrap();
-    } 
-    
     auth_rules.allows_style_create(&mut auth, &conn)?;
     let uid = auth.uid.unwrap();
+
+    let body_str: String;
+    {
+        let mut body_stream = body.open();
+        let mut body_vec = Vec::new();
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
+        }
+
+        body_str = String::from_utf8(body_vec).unwrap();
+    }
 
     match style::create(&conn, &uid, &body_str) {
         Ok(style_id) => Ok(Json(json!(style_id))),
@@ -575,18 +581,24 @@ fn style_private(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
     }
 }
 
-#[patch("/style/<id>", format="application/json", data="<style>")]
-fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64, style: Data) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+#[patch("/style/<id>", format="application/json", data="<body>")]
+fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64, body: Data) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_patch(&mut auth, &conn)?;
     let uid = auth.uid.unwrap();
 
-    let mut body_str: String;
+    let body_str: String;
     {
+        let mut body_stream = body.open();
         let mut body_vec = Vec::new();
-        while !style.peek_complete() {
-            body_vec.append(&mut style.peek().to_vec());
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
         body_str = String::from_utf8(body_vec).unwrap();
@@ -784,11 +796,17 @@ fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
     auth_rules.allows_bounds_create(&mut auth, &conn)?;
 
-    let mut body_str: String;
+    let body_str: String;
     {
+        let mut body_stream = body.open();
         let mut body_vec = Vec::new();
-        while !body.peek_complete() {
-            body_vec.append(&mut body.peek().to_vec());
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
         body_str = String::from_utf8(body_vec).unwrap();
@@ -909,15 +927,21 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 
     let uid = auth.uid.unwrap();
 
-    let mut body_str: String;
-    {    
+    let body_str: String;
+    {
+        let mut body_stream = body.open();
         let mut body_vec = Vec::new();
-        while !body.peek_complete() {
-            body_vec.append(&mut body.peek().to_vec());
-        }    
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
+        }
 
         body_str = String::from_utf8(body_vec).unwrap();
-    } 
+    }
 
     let mut fc = match body_str.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); },
@@ -998,7 +1022,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 
 #[get("/0.6/map?<map..>")]
 fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<String, status::Custom<String>> {
-    let conn = conn.get().unwrap(); 
+    let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
         Ok(_) => (),
@@ -1031,9 +1055,15 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let body_str: String;
     {
+        let mut body_stream = body.open();
         let mut body_vec = Vec::new();
-        while !body.peek_complete() {
-            body_vec.append(&mut body.peek().to_vec());
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
         body_str = String::from_utf8(body_vec).unwrap();
@@ -1085,9 +1115,15 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let body_str: String;
     {
+        let mut body_stream = body.open();
         let mut body_vec = Vec::new();
-        while !body.peek_complete() {
-            body_vec.append(&mut body.peek().to_vec());
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
         body_str = String::from_utf8(body_vec).unwrap();
@@ -1143,15 +1179,21 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
     };
 
-    let mut body_str: String;
-    {    
+    let body_str: String;
+    {
+        let mut body_stream = body.open();
         let mut body_vec = Vec::new();
-        while !body.peek_complete() {
-            body_vec.append(&mut body.peek().to_vec());
-        }    
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
+        }
 
         body_str = String::from_utf8(body_vec).unwrap();
-    } 
+    }
 
     let uid = auth.uid.unwrap();
 
@@ -1314,15 +1356,21 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
 
     let uid = auth.uid.unwrap();
 
-    let mut body_str: String;
-    {    
+    let body_str: String;
+    {
+        let mut body_stream = body.open();
         let mut body_vec = Vec::new();
-        while !body.peek_complete() {
-            body_vec.append(&mut body.peek().to_vec());
-        }    
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
+        }
 
         body_str = String::from_utf8(body_vec).unwrap();
-    } 
+    }
 
     let mut feat = match body_str.parse::<GeoJson>() {
         Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); },
