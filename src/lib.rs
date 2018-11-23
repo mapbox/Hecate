@@ -223,7 +223,7 @@ impl DbReadWrite {
 
 #[derive(FromForm, Debug)]
 struct Filter {
-    filter: String,
+    filter: Option<String>,
     limit: Option<i8>
 }
 
@@ -415,25 +415,21 @@ fn user_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
     }
 }
 
-#[get("/users")]
-fn user_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
-    let conn = conn.get()?;
-    auth_rules.allows_user_list(&mut auth, &conn)?;
-
-    match user::list(&conn) {
-        Ok(users) => Ok(Json(json!(users))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
-    }
-}
-
 #[get("/users?<filter..>")]
 fn user_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Form<Filter>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
     auth_rules.allows_user_list(&mut auth, &conn)?;
 
-    match user::filter(&conn, &filter.filter) {
-        Ok(users) => Ok(Json(json!(users))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    if filter.filter.is_some() {
+        match user::filter(&conn, &filter.filter) {
+            Ok(users) => Ok(Json(json!(users))),
+            Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        }
+    } else {
+        match user::list(&conn) {
+            Ok(users) => Ok(Json(json!(users))),
+            Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        }
     }
 }
 
@@ -754,27 +750,22 @@ fn delta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth:
     }
 }
 
-#[get("/data/bounds")]
-fn bounds_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
-    let conn = conn.get()?;
-
-    auth_rules.allows_bounds_list(&mut auth, &conn)?;
-
-    match bounds::list(&conn) {
-        Ok(bounds) => Ok(Json(json!(bounds))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
-    }
-}
-
 #[get("/data/bounds?<filter..>")]
 fn bounds_filter(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, filter: Form<Filter>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
     auth_rules.allows_bounds_list(&mut auth, &conn)?;
 
-    match bounds::search(&conn, &filter.filter, &filter.limit) {
-        Ok(bounds) => Ok(Json(json!(bounds))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+    if filter.filter.is_some() {
+        match bounds::search(&conn, &filter.filter, &filter.limit) {
+            Ok(bounds) => Ok(Json(json!(bounds))),
+            Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        }
+    } else {
+        match bounds::list(&conn) {
+            Ok(bounds) => Ok(Json(json!(bounds))),
+            Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        }
     }
 }
 

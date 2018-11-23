@@ -895,7 +895,8 @@ Get a list of users (up to 100) or filter by a given user prefix.
 
 | Option     | Notes |
 | :--------: | ----- |
-| `filter` | `Optional` Desired search prefix for username |
+| `filter` | `Optional` Desired search prefix for username              |
+| `limit`  | `Optional` Optionally limit the number of returned results |
 
 *Example*
 
@@ -1069,7 +1070,7 @@ SELECT props FROM geo WHERE id = 1
 | Option          | Notes                                                        |
 | :-------------: | ------------------------------------------------------------ |
 | `query=<query>` | SQL Query to run against Geometries                          |
-| `limit=<limit>` | `Optional` Optionally limit the number of returned results |
+| `limit=<limit>` | `Optional` Optionally limit the number of returned results   |
 
 *Examples*
 
@@ -1091,9 +1092,17 @@ curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20
 
 Boundaries allow downloading data via a set of pre-determined boundary files.
 
-#### `GET` `/api/data/bounds/`
+#### `GET` `/api/data/bounds`
 
 Return an array of possible boundary files with which data can be extracted from the server with
+
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `filter` | `Optional` Desired search prefix for username              |
+| `limit`  | `Optional` Optionally limit the number of returned results |
 
 *Example*
 
