@@ -418,7 +418,7 @@ fn users(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth:
     let conn = conn.get()?;
     auth_rules.allows_user_list(&mut auth, &conn)?;
 
-    match filter.filter {
+    match &filter.filter {
         Some(search) => {
             match user::filter(&conn, &search, &filter.limit) {
                 Ok(users) => Ok(Json(json!(users))),
@@ -757,7 +757,7 @@ fn bounds(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth
 
     auth_rules.allows_bounds_list(&mut auth, &conn)?;
 
-    match filter.filter {
+    match &filter.filter {
         Some(search) => {
             match bounds::filter(&conn, &search, &filter.limit) {
                 Ok(bounds) => Ok(Json(json!(bounds))),
