@@ -10,6 +10,14 @@
 
 # Version History
 
+## v0.52.0
+
+
+- :rocket: Add filter consistency to users and bounds APIs
+- :tada: `users` has `limit` & `filter` param
+- :tada: `bounds` has `limit` & `filter` param
+- :rocket: `users` & `bounds` no longer require 2 function with rocket@0.4
+
 ## v0.51.0
 
 - :tada: Add database check to ensure connections work before starting server
