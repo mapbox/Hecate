@@ -69,7 +69,8 @@ pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     match conn.query("
         SELECT name
             FROM bounds
-            WHERE bounds iLIKE $1||'%'
+            WHERE name iLIKE $1||'%'
+            ORDER BY name
             LIMIT $2::SmallInt
     ", &[ &prefix, &limit ]) {
         Ok(rows) => {
@@ -94,6 +95,7 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     match conn.query("
         SELECT name
         FROM bounds
+        ORDER BY name
         LIMIT $1::SmallInt
     ", &[ &limit ]) {
         Ok(rows) => {
