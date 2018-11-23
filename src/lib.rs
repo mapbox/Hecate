@@ -222,7 +222,7 @@ impl DbReadWrite {
 #[derive(FromForm, Debug)]
 struct Filter {
     filter: Option<String>,
-    limit: Option<i8>
+    limit: Option<i16>
 }
 
 #[catch(401)]

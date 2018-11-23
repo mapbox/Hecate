@@ -60,8 +60,8 @@ pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, prefix: &String, limit: &Option<i8>) -> Result<Vec<String>, BoundsError> {
-    let limit: i8 = match limit {
+pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, prefix: &String, limit: &Option<i16>) -> Result<Vec<String>, BoundsError> {
+    let limit: i16 = match limit {
         None => 100,
         Some(limit) => if *limit > 100 { 100 } else { *limit }
     };
@@ -70,7 +70,7 @@ pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
         SELECT name
             FROM bounds
             WHERE bounds iLIKE $1||'%'
-            LIMIT $2
+            LIMIT $2::SmallInt
     ", &[ &prefix, &limit ]) {
         Ok(rows) => {
             let mut names = Vec::<String>::new();
@@ -90,11 +90,11 @@ pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: &Option<i8>) -> Result<Vec<String>, BoundsError> {
+pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: &Option<i16>) -> Result<Vec<String>, BoundsError> {
     match conn.query("
         SELECT name
         FROM bounds
-        LIMIT $1
+        LIMIT $1::SmallInt
     ", &[ &limit ]) {
         Ok(rows) => {
             let mut names = Vec::<String>::new();
