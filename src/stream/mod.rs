@@ -18,6 +18,7 @@ pub struct PGStream {
     cursor: String,
     pending: Option<Vec<u8>>,
     trans: postgres::transaction::Transaction<'static>,
+    #[allow(dead_code)]
     conn: Box<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>>
 }
 

@@ -43,7 +43,12 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<serde_json::Value, UserError> {
+pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: &Option<i16>) -> Result<serde_json::Value, UserError> {
+    let limit: i16 = match limit {
+        None => 100,
+        Some(limit) => if *limit > 100 { 100 } else { *limit }
+    };
+
     match conn.query("
         SELECT 
             COALESCE(json_agg(row_to_json(row)), '[]'::JSON)
@@ -56,9 +61,9 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
                 users
             ORDER BY
                 username
-            LIMIT 100
+            LIMIT $1::SmallInt
         ) row;
-    ", &[ ]) {
+    ", &[ &limit ]) {
         Ok(rows) => Ok(rows.get(0).get(0)),
         Err(err) => {
             match err.as_db() {
@@ -69,7 +74,12 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     }
 }
 
-pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, filter: &String) -> Result<serde_json::Value, UserError> {
+pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, filter: &String, limit: &Option<i16>) -> Result<serde_json::Value, UserError> {
+    let limit: i16 = match limit {
+        None => 100,
+        Some(limit) => if *limit > 100 { 100 } else { *limit }
+    };
+
     match conn.query("
         SELECT 
             COALESCE(json_agg(row_to_json(row)), '[]'::JSON)
@@ -84,9 +94,9 @@ pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
                 username ~ $1
             ORDER BY
                 username
-            LIMIT 100
+            LIMIT $2::SmallInt
         ) row;
-    ", &[ &filter ]) {
+    ", &[ &filter, &limit ]) {
         Ok(rows) => Ok(rows.get(0).get(0)),
         Err(err) => {
             match err.as_db() {

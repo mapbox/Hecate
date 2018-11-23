@@ -52,7 +52,25 @@ mod test {
         }
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls2&password=yeaheh&email=ingalls2@protonmail.com").unwrap();
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //Create Username
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls3&password=yeaheh&email=ingalls3@protonmail.com").unwrap();
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //Create Username
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=filter&password=yeaheh&email=ingalls4@protonmail.com").unwrap();
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        { //Create Username Duplicate Error
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls3@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "\"Could not create user: duplicate key value violates unique constraint \\\"users_username_key\\\"\"");
             assert!(resp.status().is_client_error());
         }
@@ -85,13 +103,13 @@ mod test {
                     "properties": { "addr:housenumber": "1234", "addr:street": "Main St" },
                     "geometry": { "type": "Point", "coordinates": [ -79.46014970541, 43.67263458218963 ] }
                 }"#)
-                .basic_auth("ingalls2", Some("yeaheh"))
+                .basic_auth("ingalls_bad", Some("yeaheh"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
-            assert!(resp.status().is_client_error());
             assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert!(resp.status().is_client_error());
         }
 
         { //Feature Upload with bad password
@@ -109,8 +127,8 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert!(resp.status().is_client_error());
             assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert!(resp.status().is_client_error());
         }
 
         { //Feature Upload with correct creds
@@ -170,9 +188,39 @@ mod test {
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body, json!([{
+                "id": 4,
+                "access": null,
+                "username": "filter",
+            },{
                 "id": 1,
                 "access": null,
                 "username": "ingalls",
+            },{
+                "id": 2,
+                "access": null,
+                "username": "ingalls2",
+            },{
+                "id": 3,
+                "access": null,
+                "username": "ingalls3",
+            }]));
+        }
+
+        { //Test User Listing w/ Limit
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/users?limit=1")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!([{
+                "id": 4,
+                "access": null,
+                "username": "filter",
             }]));
         }
 
@@ -191,6 +239,54 @@ mod test {
                 "id": 1,
                 "access": null,
                 "username": "ingalls",
+            },{
+                "id": 2,
+                "access": null,
+                "username": "ingalls2",
+            },{
+                "id": 3,
+                "access": null,
+                "username": "ingalls3",
+            }]));
+        }
+
+        { //Test User Listing w/ Filtering & limit
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/users?filter=in&limit=2")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!([{
+                "id": 1,
+                "access": null,
+                "username": "ingalls",
+            },{
+                "id": 2,
+                "access": null,
+                "username": "ingalls2",
+            }]));
+        }
+
+        { //Test User Listing w/ Filtering - complete name
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/users?filter=ingalls2")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!([{
+                "id": 2,
+                "access": null,
+                "username": "ingalls2",
             }]));
         }
 
@@ -273,7 +369,7 @@ mod test {
 
         { // An admin can get user info about an arbitrary user
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/user/3")
+            let mut resp = client.get("http://localhost:8000/api/user/6")
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
@@ -283,7 +379,7 @@ mod test {
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body, json!({
-                "id": 3,
+                "id": 6,
                 "username": "future_admin",
                 "email": "fake@example.com",
                 "meta": {}
@@ -292,7 +388,7 @@ mod test {
 
         { // An admin can set an admin
             let client = reqwest::Client::new();
-            let resp = client.put("http://localhost:8000/api/user/3/admin")
+            let resp = client.put("http://localhost:8000/api/user/6/admin")
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
@@ -312,7 +408,7 @@ mod test {
 
         { //Ensure admin was unset
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/user/3")
+            let resp = client.get("http://localhost:8000/api/user/6")
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
