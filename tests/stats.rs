@@ -1,5 +1,4 @@
-extern crate reqwest;
-extern crate postgres;
+extern crate reqwest; extern crate postgres;
 #[macro_use] extern crate serde_json;
 
 #[cfg(test)]
@@ -91,13 +90,13 @@ mod test {
 
         //ANALYZE must be run for up to date stats
         {
-            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
-
-            conn.execute("ANALYZE", &[]).unwrap();
+            let resp = reqwest::get("http://localhost:8000/api/data/stats/regen").unwrap();
+            assert!(resp.status().is_success());
         }
 
         {
             let mut resp = reqwest::get("http://localhost:8000/api/data/stats").unwrap();
+            assert!(resp.status().is_success());
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
