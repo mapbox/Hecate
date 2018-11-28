@@ -570,7 +570,8 @@ curl -X GET 'http://localhost:8000/api'
 Note: Analyze stats depend on the database having `ANALYZE` run.
 For performance reasons these stats are calculated from ANALYZEd stats
 where possible to ensure speedy results. For more up to date stats,
-ensure your database is running `ANALYZE` more often.
+ensure your database is running `ANALYZE` more often. This can be done
+manually in the database or by using the `/api/data/stats/regen` API.
 
 #### `GET` `/api/data/stats`
 
@@ -581,6 +582,19 @@ geometries stored in the server
 
 ```bash
 curl -X GET 'http://localhost:8000/api/data/stats'
+```
+
+---
+
+#### `GET` `/api/data/stats/regen`
+
+Perform an `ANAYLZE` call on the `geo` table to update
+the global stats.
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/stats/regen'
 ```
 
 </details>
