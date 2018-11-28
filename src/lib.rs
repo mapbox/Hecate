@@ -108,6 +108,7 @@ pub fn start(
             schema_get,
             auth_get,
             stats_get,
+            stats_regen,
             mvt_get,
             mvt_meta,
             mvt_wipe,
@@ -911,6 +912,18 @@ fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     match stats::get_json(&conn) {
         Ok(stats) => Ok(Json(stats)),
         Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
+    }
+}
+
+#[get("/data/stats/regen")]
+fn stats_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_stats_get(&mut auth, &conn)?;
+
+    match stats::regen(&conn) {
+        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string())))),
+        _ => Ok(Json(json!(true)))
     }
 }
 

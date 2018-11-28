@@ -64,3 +64,17 @@ pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
         }
     }
 }
+
+pub fn regen(conn:  &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, StatsError> {
+    match conn.execute("
+        ANALYZE geo;
+    ", &[]) {
+        Err(err) => {
+            match err.as_db() {
+                Some(_e) => { Err(StatsError::GetFail) },
+                _ => Err(StatsError::GetFail)
+            }
+        },
+        _ => Ok(true)
+    }
+}
