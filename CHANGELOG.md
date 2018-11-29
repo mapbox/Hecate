@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.53.0
+
+- :tada: Add new `/api/data/stats/regen` endpoint
+- :rocket: Make `hecate` ROLE database owner for regen endpoint
+
 ## v0.52.0
 
 
