@@ -141,20 +141,26 @@ GRANT SELECT ON deltas TO hecate_read;
 -- -----------------------------------
 
 -- ------- Hecate User ---------------
-DO $$DECLARE count int;
+DO $$DECLARE
+    owner TEXT;
+    count INT;
     BEGIN
         SELECT count(*) INTO count FROM pg_roles WHERE rolname = 'hecate';
 
-        IF count > 0 THEN
-            EXECUTE 'REVOKE ALL PRIVILEGES ON DATABASE hecate FROM hecate;';
-            EXECUTE 'REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM hecate;';
-            EXECUTE 'REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM hecate;';
-            EXECUTE 'DROP ROLE IF EXISTS hecate;';
+        IF count = 0 THEN
+            EXECUTE 'CREATE ROLE hecate WITH LOGIN NOINHERIT;';
+        END IF;
+
+        EXECUTE 'GRANT ALL PRIVILEGES ON DATABASE hecate TO hecate;';
+        EXECUTE 'GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO hecate;';
+        EXECUTE 'GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO hecate;';
+
+        SELECT u.usename INTO owner
+            FROM pg_database d JOIN pg_user u ON (d.datdba = u.usesysid)
+            WHERE d.datname = (SELECT current_database());
+
+        IF owner != 'hecate' THEN
+            EXECUTE 'ALTER DATABASE hecate OWNER TO "hecate";';
         END IF;
     END$$;
-
-CREATE ROLE hecate WITH LOGIN NOINHERIT;
-GRANT ALL PRIVILEGES ON DATABASE hecate TO hecate;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO hecate;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO hecate;
 -- -----------------------------------
