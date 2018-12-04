@@ -10,6 +10,12 @@
 
 # Version History
 
+## v0.54.0
+
+- :arrow_up: [BREAKING] Update to `nightly-2018-12-01` per README instructions to compile
+- :arrow_up: Update Rocket to RC2
+- :arrow_up: General dep updates
+
 ## v0.53.0
 
 - :tada: Add new `/api/data/stats/regen` endpoint
