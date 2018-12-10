@@ -650,6 +650,11 @@ fn style_list_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
 fn style_list_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, user: i64) -> Result<Json<serde_json::Value>, status::Custom<Json<serde_json::Value>>> {
     let conn = conn.get()?;
 
+    match auth_rules.allows_style_list(&mut auth, &conn) {
+        Ok(authed) => println("AUTHED: {}", authed),
+        Err(err) => println!("{:?}", err);
+    };
+
     auth_rules.allows_style_list(&mut auth, &conn)?;
 
     match auth.uid {
