@@ -412,7 +412,7 @@ fn user_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 
     match user::create(&conn, &user.username, &user.password, &user.email) {
         Ok(_) => Ok(Json(json!(true))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -425,13 +425,13 @@ fn users(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth:
         Some(search) => {
             match user::filter(&conn, &search, &filter.limit) {
                 Ok(users) => Ok(Json(json!(users))),
-                Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+                Err(err) => Err(err.as_resp())
             }
         },
         None => {
             match user::list(&conn, &filter.limit) {
                 Ok(users) => Ok(Json(json!(users))),
-                Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+                Err(err) => Err(err.as_resp())
             }
         }
     }
@@ -445,7 +445,7 @@ fn user_info(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 
     match user::info(&conn, &id) {
         Ok(info) => { Ok(Json(info)) },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -457,7 +457,7 @@ fn user_set_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: St
 
     match user::set_admin(&conn, &id) {
         Ok(info) => { Ok(Json(json!(info))) },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -469,7 +469,7 @@ fn user_delete_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
 
     match user::delete_admin(&conn, &id) {
         Ok(info) => { Ok(Json(json!(info))) },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -482,7 +482,7 @@ fn user_self(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 
     match user::info(&conn, &uid) {
         Ok(info) => { Ok(Json(info)) },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -499,7 +499,7 @@ fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
             cookies.add_private(Cookie::new("session", token));
             Ok(Json(json!(uid)))
         },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 

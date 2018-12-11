@@ -1,6 +1,5 @@
 use err::HecateError;
 
-#[derive(PartialEq, Debug)]
 pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String, email: &String) -> Result<bool, HecateError> {
     match conn.query("
         INSERT INTO users (username, password, email, meta)
@@ -136,6 +135,6 @@ pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnec
                 AND uid = $2;
     ", &[ &token, &uid ]) {
         Ok(_) => Ok(true),
-        Err(_) => Err(HecateError::new(404, String::from("Token Not Found"), None)
+        Err(_) => Err(HecateError::new(404, String::from("Token Not Found"), None))
     }
 }
