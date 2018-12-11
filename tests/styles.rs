@@ -67,7 +67,7 @@ mod test {
 
         { //Get Style - No Auth
             let mut resp = reqwest::get("http://localhost:8000/api/style/1").unwrap();
-            assert_eq!(resp.text().unwrap(), "\"Style Not Found\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":404,\"reason\":\"Style Not Found\",\"status\":\"Not Found\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -87,7 +87,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), "\"Style Not Found\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":404,\"reason\":\"Style Not Found\",\"status\":\"Not Found\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -147,7 +147,7 @@ mod test {
             let mut resp = client.delete("http://localhost:8000/api/style/1")
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -167,7 +167,7 @@ mod test {
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();
-            assert_eq!(resp.text().unwrap(), "\"Style Not Found\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":404,\"reason\":\"Style Not Found\",\"status\":\"Not Found\"}");
             assert!(resp.status().is_client_error());
         }
 
