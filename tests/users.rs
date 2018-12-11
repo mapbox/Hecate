@@ -71,7 +71,7 @@ mod test {
 
         { //Create Username Duplicate Error
             let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls3@protonmail.com").unwrap();
-            assert_eq!(resp.text().unwrap(), "\"Could not create user: duplicate key value violates unique constraint \\\"users_username_key\\\"\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":400,\"reason\":\"User/Email Exists\",\"status\":\"Bad Request\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -90,7 +90,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
         }
 
         { //Feature Upload with bad username
@@ -108,7 +108,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -127,7 +127,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 

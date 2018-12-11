@@ -6,7 +6,13 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
             VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, '{}'::JSONB);
     ", &[ &username, &password, &email ]) {
         Ok(_) => Ok(true),
-        Err(err) => Err(HecateError::from_db(err))
+        Err(err) => {
+            if err.as_db().is_some() && err.as_db().unwrap().code.code() == "23505" {
+                Err(HecateError::new(400, String::from("User/Email Exists"), None))
+            } else {
+                Err(HecateError::from_db(err))
+            }
+        }
     }
 }
 
