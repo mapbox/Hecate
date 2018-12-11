@@ -1,6 +1,7 @@
 #[derive(PartialEq, Debug)]
 pub struct HecateError {
     code: u16,
+    custom_json: Option<serde_json::Value>,
     safe_error: String,
     full_error: String
 }
@@ -14,6 +15,21 @@ impl HecateError {
 
         HecateError {
             code: code,
+            custom_json: None,
+            safe_error: safe_error,
+            full_error: full_error
+        }
+    }
+
+    pub fn from_json(code: u16, json: serde_json::Value, safe_error: String, full_error: Option<String>) -> Self {
+        let full_error = match full_error {
+            Some(err) => err,
+            None => safe_error.clone()
+        };
+
+        HecateError {
+            code: code,
+            custom_json: Some(json),
             safe_error: safe_error,
             full_error: full_error
         }
@@ -23,11 +39,13 @@ impl HecateError {
         match error.as_db() {
             Some(db_err) => HecateError {
                 code: 500,
+                custom_json: None,
                 safe_error: String::from("Database Error"),
                 full_error: format!("{}", db_err)
             },
             None => HecateError {
                 code: 500,
+                custom_json: None,
                 safe_error: String::from("Database Error"),
                 full_error: format!("{}", error)
             }
@@ -38,12 +56,15 @@ impl HecateError {
         String::new()
     }
 
-    pub fn as_json(&self) -> serde_json::Value {
-        json!({
-            "code": self.code,
-            "status": "Service Unavailable", //TODO: Lookup Status from code
-            "reason": self.safe_error
-        })
+    pub fn as_json(self) -> serde_json::Value {
+        match self.custom_json {
+            Some(custom_json) => custom_json,
+            None => json!({
+                "code": self.code,
+                "status": "Service Unavailable", //TODO: Lookup Status from code
+                "reason": self.safe_error
+            })
+        }
     }
 }
 
@@ -54,6 +75,7 @@ use rocket::http::ContentType;
 
 impl <'r> Responder<'r> for HecateError {
     fn respond_to(self, _: &Request) -> response::Result<'r> {
+        // TODO ADD CODE
         Response::build()
             .sized_body(Cursor::new(self.as_json().to_string()))
             .header(ContentType::new("application", "json"))

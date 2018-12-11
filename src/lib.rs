@@ -299,14 +299,14 @@ fn mvt_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
 
     auth_rules.allows_mvt_get(&mut auth, &conn)?;
 
-    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, Json(json!("Tile Not Found")))); }
+    if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
     let tile = mvt::get(&conn, z, x, y, false)?;
 
     let mut c = Cursor::new(Vec::new());
     match tile.to_writer(&mut c) {
         Ok(_) => (),
-        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string())))); }
+        Err(err) => { return Err(HecateError::new(500, err.to_string(), None)); }
     }
 
     let mut mvt_response = Response::new();
@@ -321,7 +321,7 @@ fn mvt_meta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
     let conn = conn.get()?;
     auth_rules.allows_mvt_meta(&mut auth, &conn)?;
 
-    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, Json(json!("Tile Not Found")))); }
+    if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
     Ok(Json(mvt::meta(&conn, z, x, y)?))
 }
@@ -340,14 +340,14 @@ fn mvt_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
     let conn = conn.get()?;
     auth_rules.allows_mvt_regen(&mut auth, &conn)?;
 
-    if z > 14 { return Err(status::Custom(HTTPStatus::NotFound, Json(json!("Tile Not Found")))); }
+    if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
     let tile = mvt::get(&conn, z, x, y, true)?;
 
     let mut c = Cursor::new(Vec::new());
     match tile.to_writer(&mut c) {
         Ok(_) => (),
-        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string())))); }
+        Err(err) => { return Err(HecateError::new(500, err.to_string(), None)); }
     }
 
     let mut mvt_response = Response::new();
@@ -600,13 +600,13 @@ fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
     if opts.offset.is_none() && opts.limit.is_none() && opts.start.is_none() && opts.end.is_none() {
         Ok(Json(delta::list_by_offset(&conn, None, None)?))
     } else if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
-        return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Offset cannot be used with start or end"))));
+        return Err(HecateError::new(400, String::from("Offset cannot be used with start or end"), None));
     } else if opts.start.is_some() || opts.end.is_some() {
         let start: Option<chrono::NaiveDateTime> = match &opts.start {
             None => None,
             Some(start) => {
                 match start.parse() {
-                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid start timestamp")))); },
+                    Err(_) => { return Err(HecateError::new(400, String::from("Invalid Start Timestamp"), None)); },
                     Ok(start) => Some(start)
                 }
             }
@@ -616,7 +616,7 @@ fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
             None => None,
             Some(end) => {
                 match end.parse() {
-                    Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid end timestamp")))); },
+                    Err(_) => { return Err(HecateError::new(400, String::from("Invalid end Timestamp"), None)); },
                     Ok(end) => Some(end)
                 }
             }
@@ -626,7 +626,7 @@ fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
     } else if opts.offset.is_some() || opts.limit.is_some() {
         Ok(Json(delta::list_by_offset(&conn, opts.offset, opts.limit)?))
     } else {
-        return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Query Param Error"))));
+        return Err(HecateError::new(400, String::from("Invalid Query Params"), None));
     }
 }
 
@@ -684,7 +684,7 @@ fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
     let geom: serde_json::Value = match serde_json::from_str(&*body_str) {
         Ok(geom) => geom,
         Err(_) => {
-            return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Invalid Feature GeoJSON"))));
+            return Err(HecateError::new(400, String::from("Invalid Feature GeoJSON"), None));
         }
     };
 
@@ -726,10 +726,7 @@ fn clone_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: aut
 fn clone_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Stream<stream::PGStream>, HecateError> {
     auth_rules.allows_clone_get(&mut auth, &conn.get()?)?;
 
-    match clone::get(read_conn.get()?) {
-        Ok(clone) => Ok(Stream::from(clone)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
-    }
+    Ok(Stream::from(clone::get(read_conn.get()?)?))
 }
 
 #[get("/data/features?<map..>")]
@@ -737,10 +734,7 @@ fn features_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: au
     auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
-    match feature::get_bbox_stream(read_conn.get()?, bbox) {
-        Ok(features) => Ok(Stream::from(features)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
-    }
+    Ok(Stream::from(feature::get_bbox_stream(read_conn.get()?, bbox)?))
 }
 
 #[get("/schema")]
@@ -751,7 +745,7 @@ fn schema_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
     match schema.inner().clone() {
         Some(s) => Ok(Json(json!(s.clone()))),
-        None => Err(status::Custom(HTTPStatus::NotFound, Json(json!("No Schema Validation Enforced"))))
+        None => Err(HecateError::new(404, String::from("No schema Validation Enforced"), None))
     }
 }
 
@@ -770,10 +764,7 @@ fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 
     auth_rules.allows_stats_get(&mut auth, &conn)?;
 
-    match stats::get_json(&conn) {
-        Ok(stats) => Ok(Json(stats)),
-        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
-    }
+    Ok(Json(stats::get_json(&conn)?))
 }
 
 #[get("/data/stats/regen")]
@@ -782,10 +773,7 @@ fn stats_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 
     auth_rules.allows_stats_get(&mut auth, &conn)?;
 
-    match stats::regen(&conn) {
-        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string())))),
-        _ => Ok(Json(json!(true)))
-    }
+    Ok(Json(json!(stats::regen(&conn)?)))
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
@@ -813,21 +801,21 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
     }
 
     let mut fc = match body_str.parse::<GeoJson>() {
-        Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); },
+        Err(_) => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON Feature"), None)); },
         Ok(geo) => match geo {
             GeoJson::FeatureCollection(fc) => fc,
-            _ => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON FeatureCollection")))); }
+            _ => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON FeatureCollection"), None)); }
         }
     };
 
     let delta_message = match fc.foreign_members {
-        None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("FeatureCollection Must have message property for delta")))); }
+        None => { return Err(HecateError::new(400, String::from("FeatureCollection Must have message property for delta"), None)); }
         Some(ref members) => match members.get("message") {
             Some(message) => match message.as_str() {
                 Some(message) => String::from(message),
-                None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("FeatureCollection Must have message property for delta")))); }
+                None => { return Err(HecateError::new(400, String::from("FeatureCollection Must have message property for delta"), None)); }
             },
-            None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("FeatureCollection Must have message property for delta")))); }
+            None => { return Err(HecateError::new(400, String::from("FeatureCollection Must have message property for delta"), None)); }
         }
     };
 
@@ -838,16 +826,17 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 
     let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
-        Err(_) => {
+        Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not create delta")))); }
+            return Err(err);
+        }
     };
 
     for feat in &mut fc.features {
         match feature::is_force(&feat) {
             Err(err) => {
-                return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
+                return Err(err);
             },
             Ok(force) => {
                 if force {
@@ -860,7 +849,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
-                return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
+                return Err(err);
             },
             Ok(res) => {
                 if res.new != None {
@@ -870,11 +859,14 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
         };
     }
 
-    if delta::modify(&delta_id, &trans, &fc, &uid).is_err() {
-        trans.set_rollback();
-        trans.finish().unwrap();
-        return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not create delta"))));
-    }
+    match delta::modify(&delta_id, &trans, &fc, &uid) {
+        Err(err) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Err(err);
+        },
+        _ => ()
+    };
 
     match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
@@ -884,7 +876,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.as_string()))))
+            Err(err)
         }
     }
 }
@@ -1242,32 +1234,25 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
     }
 
     let mut feat = match body_str.parse::<GeoJson>() {
-        Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); },
+        Err(_) => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON Feature"), None)); }
         Ok(geo) => match geo {
             GeoJson::Feature(feat) => feat,
-            _ => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Body must be valid GeoJSON Feature")))); }
+            _ => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON Feature"), None)); }
         }
     };
 
-    match feature::is_force(&feat) {
-        Err(err) => {
-            return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
-        },
-        Ok(force) => {
-            if force {
-                auth_rules.allows_feature_force(&mut auth, &conn)?;
-            }
-        }
+    if feature::is_force(&feat)? {
+        auth_rules.allows_feature_force(&mut auth, &conn)?;
     };
 
     let delta_message = match feat.foreign_members {
-        None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Feature Must have message property for delta")))); }
+        None => { return Err(HecateError::new(400, String::from("Feature Must have message property for delta"), None)); }
         Some(ref members) => match members.get("message") {
             Some(message) => match message.as_str() {
                 Some(message) => String::from(message),
-                None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Feature Must have message property for delta")))); }
+                None => { return Err(HecateError::new(400, String::from("Feature Must have message property for delta"), None)); }
             },
-            None => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Feature Must have message property for delta")))); }
+            None => { return Err(HecateError::new(400, String::from("Feature Must have message property for delta"), None)); }
         }
     };
 
@@ -1277,10 +1262,10 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
     map.insert(String::from("message"), Some(delta_message));
     let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
-        Err(_) => {
+        Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not create delta"))));
+            return Err(err);
         }
     };
 
@@ -1293,7 +1278,7 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::ExpectationFailed, Json(err.as_json())));
+            return Err(err);
         }
     }
 
@@ -1303,10 +1288,13 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
         foreign_members: None,
     };
 
-    if delta::modify(&delta_id, &trans, &fc, &uid).is_err() {
-        trans.set_rollback();
-        trans.finish().unwrap();
-        return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!("Could not create delta"))));
+    match delta::modify(&delta_id, &trans, &fc, &uid) {
+        Err(err) => {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Err(err);
+        },
+        _ => ()
     }
 
     match delta::finalize(&delta_id, &trans) {
@@ -1328,7 +1316,7 @@ fn feature_get(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: aut
 
     match feature::get(&read_conn.get()?, &id) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
+        Err(err) => Err(err)
     }
 }
 
@@ -1343,7 +1331,7 @@ fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: a
 
     match feature::query_by_key(&read_conn.get()?, &fquery.key) {
         Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(err.as_json())))
+        Err(err) => Err(err)
     }
 }
 
