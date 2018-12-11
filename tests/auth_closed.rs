@@ -58,7 +58,7 @@ mod test {
 
         {
             let mut resp = reqwest::get("http://localhost:8000/api/schema").unwrap();
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -69,7 +69,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "\"No Schema Validation Enforced\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":404,\"reason\":\"No schema Validation Enforced\",\"status\":\"Not Found\"}");
         }
 
         { //Create Point
@@ -93,7 +93,7 @@ mod test {
 
         {
             let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -109,7 +109,7 @@ mod test {
 
         {
             let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 
@@ -125,7 +125,7 @@ mod test {
 
         {
             let mut resp = reqwest::get("http://localhost:8000/api/delta/1").unwrap();
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Not Authorized\"}");
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 
