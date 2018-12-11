@@ -219,12 +219,12 @@ struct Filter {
 
 #[catch(401)]
 fn not_authorized() -> HecateError {
-    HecateError::new(401, String::From("You must be logged in to access this resource", None))
+    HecateError::new(401, String::from("You must be logged in to access this resource"), None)
 }
 
 #[catch(404)]
-fn not_found() -> Json<serde_json::Value> {
-    HecateError::new(404, String::From("Resource Not Found", None))
+fn not_found() -> HecateError {
+    HecateError::new(404, String::from("Resource Not Found"), None)
 }
 
 

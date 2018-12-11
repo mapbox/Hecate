@@ -56,7 +56,7 @@ impl HecateError {
         String::new()
     }
 
-    pub fn code_as_string(code: &i16) -> String {
+    pub fn code_as_string(&self, code: &u16) -> String {
         match *code {
             // 100 Status Codes (Informational)
             100 => String::from("Continue"),
@@ -96,25 +96,27 @@ impl HecateError {
             410 => String::from("Gone"),
             411 => String::from("Length Required"),
             412 => String::from("Precondition Failed"),
-            413 => String::from(""),
-            414 => String::from(""),
-            415 => String::from(""),
-            416 => String::from(""),
-            417 => String::from(""),
-            418 => String::from(""),
-            426 => String::from(""),
-            428 => String::from(""),
-            429 => String::from(""),
-            431 => String::from(""),
-            451 => String::from(""),
+            413 => String::from("Payload too Large"),
+            414 => String::from("URI Too Long"),
+            415 => String::from("Unsupported Media Type"),
+            416 => String::from("Range Not Satisfiable"),
+            417 => String::from("Expectation Failed"),
+            418 => String::from("I'm a teapot"),
+            426 => String::from("Upgrade Required"),
+            428 => String::from("Precondition Required"),
+            429 => String::from("Too Many Requests"),
+            431 => String::from("Request Header Fields Too Large"),
+            451 => String::from("Unavailable For Legal Reasons"),
 
             // 500 Status Codes (Server Error)
-            500 => String::from(""),
-            501 => String::from(""),
-            502 => String::from(""),
-            503 => String::from(""),
-            504 => String::from(""),
-            505 => String::from("")
+            500 => String::from("Internal Server Error"),
+            501 => String::from("Not Implemented"),
+            502 => String::from("Bad Gateway"),
+            503 => String::from("Service Unavailable"),
+            504 => String::from("Gateway Timeout"),
+
+            // Unknown
+            _ => String::from("Generic")
         }
     }
 
@@ -123,7 +125,7 @@ impl HecateError {
             Some(custom_json) => custom_json,
             None => json!({
                 "code": self.code,
-                "status": code_as_string(&self.code),
+                "status": self.code_as_string(&self.code),
                 "reason": self.safe_error
             })
         }
