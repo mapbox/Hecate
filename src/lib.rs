@@ -764,13 +764,13 @@ fn bounds(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth
         Some(search) => {
             match bounds::filter(&conn, &search, &filter.limit) {
                 Ok(bounds) => Ok(Json(json!(bounds))),
-                Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+                Err(err) => Err(err.as_resp())
             }
         },
         None => {
             match bounds::list(&conn, &filter.limit) {
                 Ok(bounds) => Ok(Json(json!(bounds))),
-                Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+                Err(err) => Err(err.as_resp())
             }
         }
     }
@@ -784,7 +784,7 @@ fn bounds_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
     match bounds::get(conn, bounds) {
         Ok(bs) => Ok(Stream::from(bs)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -819,7 +819,7 @@ fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
     match bounds::set(&conn, &bounds, &geom) {
         Ok(_) => Ok(Json(json!(true))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -831,7 +831,7 @@ fn bounds_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
 
     match bounds::delete(&conn, &bounds) {
         Ok(_) => Ok(Json(json!(true))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -843,7 +843,7 @@ fn bounds_stats(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
 
     match bounds::stats_json(conn, bounds) {
         Ok(stats) => Ok(Json(stats)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
