@@ -51,3 +51,17 @@ impl HecateError {
         rocket::response::status::Custom(rocket::http::Status::ServiceUnavailable, rocket_contrib::json::Json(self.as_json()))
     }
 }
+
+use std::io::Cursor;
+use rocket::request::Request;
+use rocket::response::{self, Response, Responder};
+use rocket::http::ContentType;
+
+impl <'r> Responder<'r> for HecateError {
+    fn respond_to(self, _: &Request) -> response::Result<'r> {
+        Response::build()
+            .sized_body(Cursor::new(self.as_json().to_string()))
+            .header(ContentType::new("application", "json"))
+            .ok()
+    }
+}
