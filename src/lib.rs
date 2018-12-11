@@ -17,6 +17,7 @@ extern crate geojson;
 extern crate env_logger;
 extern crate chrono;
 
+pub mod err;
 pub mod meta;
 pub mod stats;
 pub mod delta;
@@ -266,7 +267,7 @@ fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<a
         Ok(list) => {
             Ok(Json(json!(list)))
         },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -279,7 +280,7 @@ fn meta_get(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<au
         Ok(list) => {
             Ok(Json(json!(list)))
         },
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -290,7 +291,7 @@ fn meta_delete(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State
 
     match meta::delete(&conn, &key) {
         Ok(_) => Ok(Json(json!(true))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -301,7 +302,7 @@ fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<au
 
     match meta::set(&conn, &key, &body) {
         Ok(_) => Ok(Json(json!(true))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 

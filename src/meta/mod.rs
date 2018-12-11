@@ -5,26 +5,9 @@ extern crate serde_json;
 extern crate std;
 extern crate rocket;
 
-#[derive(PartialEq, Debug)]
-pub enum MetaError {
-    NotFound,
-    ListError(String),
-    GetError(String),
-    SetError(String)
-}
+use err::HecateError;
 
-impl MetaError {
-    pub fn to_string(&self) -> String {
-        match *self {
-            MetaError::NotFound => String::from("Key/Value Not Found"),
-            MetaError::ListError(ref msg) => String::from(format!("Could not list Key/Value: {}", msg)),
-            MetaError::GetError(ref msg) => String::from(format!("Could not get Key/Value: {}", msg)),
-            MetaError::SetError(ref msg) => String::from(format!("Could not set Key/Value: {}", msg))
-        }
-    }
-}
-
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Vec<String>, MetaError> {
+pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Vec<String>, HecateError> {
     match conn.query("
         SELECT key FROM meta ORDER BY key
     ", &[ ]) {
@@ -37,16 +20,11 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
 
             Ok(names)
         },
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(MetaError::ListError(e.message.clone())) },
-                _ => Err(MetaError::ListError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<serde_json::Value, MetaError> {
+pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT value::JSON FROM meta WHERE key = $1;
     ", &[ &key ]) {
@@ -57,16 +35,11 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
                 Ok(rows.get(0).get(0))
             }
         },
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(MetaError::GetError(e.message.clone())) },
-                _ => Err(MetaError::GetError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String, value: &serde_json::Value) -> Result<bool, MetaError> {
+pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String, value: &serde_json::Value) -> Result<bool, HecateError> {
     match conn.query("
         INSERT INTO meta (key, value) VALUES ($1, $2)
             ON CONFLICT (key) DO
@@ -75,25 +48,15 @@ pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
                     WHERE meta.key = $1
     ", &[ &key, &value ]) {
         Ok(_) => Ok(true),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(MetaError::SetError(e.message.clone())) },
-                _ => Err(MetaError::SetError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<bool, MetaError> {
+pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<bool, HecateError> {
     match conn.query("
         DELETE FROM meta WHERE key = $1
     ", &[ &key ]) {
         Ok(_) => Ok(true),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(MetaError::SetError(e.message.clone())) },
-                _ => Err(MetaError::SetError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
