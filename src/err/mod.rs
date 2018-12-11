@@ -45,11 +45,6 @@ impl HecateError {
             "reason": self.safe_error
         })
     }
-
-    pub fn as_resp(&self) -> rocket::response::status::Custom<rocket_contrib::json::Json<serde_json::Value>> {
-                                            //TODO: Obv this needs to be selected based on code
-        rocket::response::status::Custom(rocket::http::Status::ServiceUnavailable, rocket_contrib::json::Json(self.as_json()))
-    }
 }
 
 use std::io::Cursor;
