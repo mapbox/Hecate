@@ -1,8 +1,3 @@
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate postgres;
-extern crate serde_json;
-
 use serde_json::Value;
 
 #[derive(PartialEq, Debug)]

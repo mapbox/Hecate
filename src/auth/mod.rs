@@ -1,19 +1,9 @@
-extern crate r2d2;
-
-extern crate r2d2_postgres;
-extern crate postgres;
-extern crate rocket;
-extern crate base64;
-
-extern crate serde_json;
-
-use self::rocket::request::{self, FromRequest};
-use self::rocket::http::Status;
-use self::rocket::{Request, Outcome};
-use self::rocket::response::status;
-use self::rocket::http::Status as HTTPStatus;
+use rocket::request::{self, FromRequest};
+use rocket::http::Status;
+use rocket::{Request, Outcome};
+use rocket::response::status;
+use rocket::http::Status as HTTPStatus;
 use rocket_contrib::json::Json;
-
 
 fn not_authed() -> status::Custom<Json<serde_json::Value>> {
     status::Custom(HTTPStatus::Unauthorized, Json(json!({

@@ -1,10 +1,3 @@
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate postgres;
-extern crate rocket;
-extern crate base64;
-extern crate serde_json;
-
 #[derive(PartialEq, Debug)]
 pub enum UserError {
     NotFound,

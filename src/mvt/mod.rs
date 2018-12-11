@@ -1,10 +1,3 @@
-extern crate postgis;
-extern crate protobuf;
-extern crate serde_json;
-
-use r2d2; 
-use r2d2_postgres;
-
 mod builder;
 mod encoder;
 pub mod geom_encoder;

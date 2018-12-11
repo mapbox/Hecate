@@ -1,8 +1,3 @@
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate postgres;
-extern crate std;
-
 use postgres::types::ToSql;
 use std::io::{Error, ErrorKind};
 use err::HecateError;

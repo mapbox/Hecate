@@ -1,29 +1,7 @@
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate postgres;
-extern crate std;
-extern crate serde_json;
-
 use stream::PGStream;
-use serde_json::value::Value;
 use err::HecateError;
 
-#[derive(PartialEq, Debug)]
-pub enum CloneError {
-    GetError,
-    QueryError(Value)
-}
-
-impl CloneError {
-    pub fn as_json(&self) -> Value {
-        match *self {
-            CloneError::GetError => json!("Failed to clone"),
-            CloneError::QueryError(ref value) => json!(value)
-        }
-    }
-}
-
-pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<PGStream, CloneError> {
+pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<PGStream, HecateError> {
     match PGStream::new(conn, String::from("next_clone"), String::from(r#"
         DECLARE next_clone CURSOR FOR
             SELECT
@@ -41,7 +19,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
             ) t
     "#), &[]) {
         Ok(stream) => Ok(stream),
-        Err(_) =>  Err(CloneError::GetError)
+        Err(err) =>  Err(err)
     }
 }
 

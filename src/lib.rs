@@ -7,6 +7,7 @@ static VERSION: &'static str = "0.54.0";
 #[macro_use] extern crate rocket;
 extern crate r2d2;
 extern crate r2d2_postgres;
+extern crate quick_xml;
 extern crate postgres;
 extern crate postgis;
 extern crate protobuf;

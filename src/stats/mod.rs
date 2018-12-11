@@ -1,8 +1,3 @@
-extern crate serde_json;
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate chrono;
-
 #[derive(PartialEq, Debug)]
 pub enum StatsError {
     GetFail

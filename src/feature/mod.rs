@@ -1,10 +1,3 @@
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate geojson;
-extern crate postgres;
-extern crate valico;
-extern crate serde_json;
-
 use stream::PGStream;
 use serde_json::value::Value;
 

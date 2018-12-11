@@ -1,10 +1,3 @@
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate postgres;
-extern crate serde_json;
-extern crate std;
-extern crate rocket;
-
 use err::HecateError;
 
 pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Vec<String>, HecateError> {
