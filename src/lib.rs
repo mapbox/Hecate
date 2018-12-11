@@ -551,7 +551,7 @@ fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
 
     match style::create(&conn, &uid, &body_str) {
         Ok(style_id) => Ok(Json(json!(style_id))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -564,7 +564,7 @@ fn style_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
 
     match style::access(&conn, &uid, &id, true) {
         Ok(updated) => Ok(Json(json!(updated))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -577,7 +577,7 @@ fn style_private(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
 
     match style::access(&conn, &uid, &id, false) {
         Ok(updated) => Ok(Json(json!(updated))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -606,7 +606,7 @@ fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 
     match style::update(&conn, &uid, &id, &body_str) {
         Ok(updated) => Ok(Json(json!(updated))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -619,7 +619,7 @@ fn style_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
 
     match style::delete(&conn, &uid, &id) {
         Ok(created) => Ok(Json(json!(created))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -632,7 +632,7 @@ fn style_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 
     match style::get(&conn, &auth.uid, &id) {
         Ok(style) => Ok(Json(json!(style))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -644,7 +644,7 @@ fn style_list_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
 
     match style::list_public(&conn) {
         Ok(styles) => Ok(Json(json!(styles))),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -659,19 +659,19 @@ fn style_list_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: S
             if uid == user {
                 match style::list_user(&conn, &user) {
                     Ok(styles) => Ok(Json(json!(styles))),
-                    Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+                    Err(err) => Err(err.as_resp())
                 }
             } else {
                 match style::list_user_public(&conn, &user) {
                     Ok(styles) => Ok(Json(json!(styles))),
-                    Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+                    Err(err) => Err(err.as_resp())
                 }
             }
         },
         _ => {
             match style::list_user_public(&conn, &user) {
                 Ok(styles) => Ok(Json(json!(styles))),
-                Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+                Err(err) => Err(err.as_resp())
             }
         }
     }
