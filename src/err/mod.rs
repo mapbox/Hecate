@@ -6,7 +6,12 @@ pub struct HecateError {
 }
 
 impl HecateError {
-    pub fn new(code: u16, safe_error: String, full_error: String) -> Self {
+    pub fn new(code: u16, safe_error: String, full_error: Option<String>) -> Self {
+        let full_error = match full_error {
+            Some(err) => err,
+            None => safe_error.clone()
+        };
+
         HecateError {
             code: code,
             safe_error: safe_error,

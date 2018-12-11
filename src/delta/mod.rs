@@ -1,30 +1,9 @@
 use postgres;
 use std::collections::HashMap;
-
-#[derive(PartialEq)]
-#[derive(Debug)]
-pub enum DeltaError {
-    CreationFail,
-    ListFail,
-    GetFail,
-    FinalizeFail,
-    NotFound
-}
-
-impl DeltaError {
-    pub fn to_string(&self) -> String {
-        match *self {
-            DeltaError::CreationFail => { String::from("Delta Creation Failure") },
-            DeltaError::ListFail => { String::from("Delta Listing Failed") },
-            DeltaError::GetFail => { String::from("Delta Get Failed") },
-            DeltaError::FinalizeFail => { String::from("Finalization Failure") },
-            DeltaError::NotFound => { String::from("Delta not found") }
-        }
-    }
-}
+use err::HecateError;
 
 ///Get the history of a particular feature
-pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: &i64) -> Result<serde_json::Value, DeltaError> {
+pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: &i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT json_agg(row_to_json(t))
         FROM (
@@ -45,21 +24,18 @@ pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMa
             (feat->>'id')::BIGINT = $1;
     ", &[&feat_id]) {
         Ok(res) => {
-            if res.len() == 0 { return Err(DeltaError::GetFail) }
+            if res.len() == 0 {
+                return Err(HecateError::new(400, String::from("Could not find history for given id"), None))
+            }
 
             let history: serde_json::Value = res.get(0).get(0);
             Ok(history)
         },
-        Err(err) => {
-            match err.as_db() {
-                Some(_e) => { Err(DeltaError::GetFail) },
-                _ => Err(DeltaError::GetFail)
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, DeltaError> {
+pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, HecateError> {
     match trans.query("
         INSERT INTO deltas (id, created, props, uid) VALUES (
             nextval('deltas_id_seq'),
@@ -68,18 +44,13 @@ pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, 
             $2
         ) RETURNING id;
     ", &[&props, &uid]) {
-        Err(err) => {
-            match err.as_db() {
-                Some(_e) => { Err(DeltaError::CreationFail) },
-                _ => Err(DeltaError::CreationFail)
-            }
-        },
+        Err(err) => Err(HecateError::from_db(err)),
         Ok(res) => { Ok(res.get(0).get(0)) }
     }
 
 }
 
-pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, DeltaError> {
+pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, HecateError> {
     let fc_str = serde_json::to_string(&fc).unwrap();
 
     match trans.query("
@@ -92,17 +63,12 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
             $4
         ) RETURNING id;
     ", &[&fc_str, &uid, &props, &affected(&fc)]) {
-        Err(err) => {
-            match err.as_db() {
-                Some(_e) => { Err(DeltaError::CreationFail) },
-                _ => Err(DeltaError::CreationFail)
-            }
-        },
+        Err(err) => Err(HecateError::from_db(err)),
         Ok(res) => { Ok(res.get(0).get(0)) }
     }
 }
 
-pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, start: Option<chrono::NaiveDateTime>, end: Option<chrono::NaiveDateTime>, limit: Option<i64>) -> Result<serde_json::Value, DeltaError> {
+pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, start: Option<chrono::NaiveDateTime>, end: Option<chrono::NaiveDateTime>, limit: Option<i64>) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT COALESCE(array_to_json(Array_Agg(djson.delta)), '[]')::JSON
         FROM (
@@ -138,12 +104,7 @@ pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
             ) d
         ) djson;
     ", &[&start, &end, &limit]) {
-        Err(err) => {
-            match err.as_db() {
-                Some(_e) => { Err(DeltaError::ListFail) },
-                _ => Err(DeltaError::ListFail)
-            }
-        },
+        Err(err) => Err(HecateError::from_db(err)),
         Ok(res) => {
             let d_json: serde_json::Value = res.get(0).get(0);
             Ok(d_json)
@@ -151,7 +112,7 @@ pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
     }
 }
 
-pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, offset: Option<i64>, limit: Option<i64>) -> Result<serde_json::Value, DeltaError> {
+pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, offset: Option<i64>, limit: Option<i64>) -> Result<serde_json::Value, HecateError> {
     let offset = match offset {
         None => String::from("Infinity"),
         Some(offset) => offset.to_string()
@@ -190,12 +151,7 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
             ) d
         ) djson;
     ", &[&offset, &limit]) {
-        Err(err) => {
-            match err.as_db() {
-                Some(_e) => { Err(DeltaError::ListFail) },
-                _ => Err(DeltaError::ListFail)
-            }
-        },
+        Err(err) => Err(HecateError::from_db(err)),
         Ok(res) => {
             let d_json: serde_json::Value = res.get(0).get(0);
             Ok(d_json)
@@ -203,7 +159,7 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
     }
 }
 
-pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<serde_json::Value, DeltaError> {
+pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT COALESCE(row_to_json(d), 'false'::JSON)
         FROM (
@@ -224,12 +180,7 @@ pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
                 AND deltas.id = $1
         ) d
     ", &[&id]) {
-        Err(err) => {
-            match err.as_db() {
-                Some(_e) => { Err(DeltaError::GetFail) },
-                _ => Err(DeltaError::GetFail)
-            }
-        },
+        Err(err) => Err(HecateError::from_db(err)),
         Ok(res) => {
             let d_json: serde_json::Value = res.get(0).get(0);
             Ok(d_json)
@@ -237,7 +188,7 @@ pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
     }
 }
 
-pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, DeltaError> {
+pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, HecateError> {
     match trans.query("
         UPDATE deltas
             SET
@@ -247,17 +198,12 @@ pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props:
                 AND uid = $2
                 AND finalized = false;
     ", &[&id, &uid, &props]) {
-        Err(err) => {
-            match err.as_db() {
-                Some(_e) => { Err(DeltaError::CreationFail) },
-                _ => Err(DeltaError::CreationFail)
-            }
-        },
+        Err(err) => Err(HecateError::from_db(err)),
         _ => { Ok(*id) }
     }
 }
 
-pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, uid: &i64) -> Result<i64, DeltaError> {
+pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, uid: &i64) -> Result<i64, HecateError> {
     let fc_str = serde_json::to_string(&fc).unwrap();
 
     match trans.query("
@@ -270,42 +216,27 @@ pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson
                 AND uid = $3
                 AND finalized = false;
     ", &[&id, &fc_str, &uid, &affected(&fc)]) {
-        Err(err) => {
-            match err.as_db() {
-                Some(_e) => { Err(DeltaError::CreationFail) },
-                _ => Err(DeltaError::CreationFail)
-            }
-        },
+        Err(err) => Err(HecateError::from_db(err)),
         _ => { Ok(*id) }
     }
 }
 
-pub fn finalize(id: &i64, trans: &postgres::transaction::Transaction) -> Result<i64, DeltaError> {
+pub fn finalize(id: &i64, trans: &postgres::transaction::Transaction) -> Result<i64, HecateError> {
     match trans.query("
         UPDATE deltas
             SET finalized = true
             WHERE id = $1
     ", &[&id]) {
-        Err(err) => {
-            match err.as_db() {
-                Some(_e) => { Err(DeltaError::FinalizeFail) },
-                _ => Err(DeltaError::FinalizeFail)
-            }
-        },
+        Err(err) => Err(HecateError::from_db(err)),
         _ => Ok(*id)
     }
 }
 
-pub fn is_open(id: &i64, trans: &postgres::transaction::Transaction) -> Result<bool, DeltaError> {
+pub fn is_open(id: &i64, trans: &postgres::transaction::Transaction) -> Result<bool, HecateError> {
     match trans.query("
         SELECT NOT finalized FROM deltas WHERE id = $1
     ", &[&id]) {
-        Err(err) => {
-            match err.as_db() {
-                Some(_e) => { Err(DeltaError::FinalizeFail) },
-                _ => Err(DeltaError::FinalizeFail)
-            }
-        },
+        Err(err) => Err(HecateError::from_db(err)),
         Ok(row) => {
             if row.is_empty() { return Ok(false); }
             Ok(row.get(0).get(0))

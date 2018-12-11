@@ -694,9 +694,7 @@ fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
     if opts.offset.is_none() && opts.limit.is_none() && opts.start.is_none() && opts.end.is_none() {
         match delta::list_by_offset(&conn, None, None) {
             Ok(deltas) => Ok(Json(deltas)),
-            Err(err) => {
-                return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
-            }
+            Err(err) => Err(err.as_resp())
         }
     } else if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
         return Err(status::Custom(HTTPStatus::BadRequest, Json(json!("Offset cannot be used with start or end"))));
@@ -726,7 +724,7 @@ fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
                 return Ok(Json(deltas));
             },
             Err(err) => {
-                return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
+                return Err(err.as_resp())
             }
         }
     } else if opts.offset.is_some() || opts.limit.is_some() {
@@ -735,7 +733,7 @@ fn delta_list(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
                 return Ok(Json(deltas));
             },
             Err(err) => {
-                return Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))));
+                return Err(err.as_resp())
             }
         }
     } else {
@@ -750,7 +748,7 @@ fn delta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth:
 
     match delta::get_json(&conn, &id) {
         Ok(delta) => Ok(Json(delta)),
-        Err(err) => Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -1025,7 +1023,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
+            Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.as_string()))))
         }
     }
 }
@@ -1093,7 +1091,7 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.as_string()));
         }
     };
 
@@ -1171,7 +1169,7 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.as_string()));
         }
     };
 
@@ -1458,7 +1456,7 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            Err(status::Custom(HTTPStatus::InternalServerError, Json(json!(err.to_string()))))
+            Err(err.as_resp())
         }
     }
 }
@@ -1495,6 +1493,6 @@ fn feature_get_history(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
 
     match delta::history(&conn, &id) {
         Ok(features) => Ok(Json(features)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
