@@ -327,7 +327,7 @@ fn mvt_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
 
     let tile = match mvt::get(&conn, z, x, y, false) {
         Ok(tile) => tile,
-        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string())))); }
+        Err(err) => { return Err(err.as_resp()); }
     };
 
     let mut c = Cursor::new(Vec::new());
@@ -352,7 +352,7 @@ fn mvt_meta(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
 
     match mvt::meta(&conn, z, x, y) {
         Ok(tile) => Ok(Json(tile)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -364,7 +364,7 @@ fn mvt_wipe(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
 
     match mvt::wipe(&conn) {
         Ok(response) => Ok(Json(response)),
-        Err(err) => Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string()))))
+        Err(err) => Err(err.as_resp())
     }
 }
 
@@ -377,7 +377,7 @@ fn mvt_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 
     let tile = match mvt::get(&conn, z, x, y, true) {
         Ok(tile) => tile,
-        Err(err) => { return Err(status::Custom(HTTPStatus::BadRequest, Json(json!(err.to_string())))); }
+        Err(err) => { return Err(err.as_resp()); }
     };
 
     let mut c = Cursor::new(Vec::new());
