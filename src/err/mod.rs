@@ -56,78 +56,18 @@ impl HecateError {
         String::new()
     }
 
-    pub fn code_as_string(&self, code: &u16) -> String {
-        match *code {
-            // 100 Status Codes (Informational)
-            100 => String::from("Continue"),
-            101 => String::from("Switching Protocols"),
-            102 => String::from("Processing"),
-
-            // 200 Status Codes (Success)
-            200 => String::from("OK"),
-            201 => String::from("Created"),
-            202 => String::from("Accepted"),
-            203 => String::from("Non-Authoritative Information"),
-            204 => String::from("No Content"),
-            205 => String::from("Reset Content"),
-            206 => String::from("Partial Content"),
-
-            // 300 Status Codes (Redirection)
-            300 => String::from("Multiple Choices"),
-            301 => String::from("Moved Permanently"),
-            302 => String::from("Found"),
-            303 => String::from("See Other"),
-            304 => String::from("Not Modified"),
-            305 => String::from("Use Proxy"),
-            307 => String::from("Temporary Redirect"),
-            308 => String::from("Permanent Redirect"),
-
-            // 400 Status Codes (Client Error)
-            400 => String::from("Bad Request"),
-            401 => String::from("Unauthorized"),
-            402 => String::from("Payment Required"),
-            403 => String::from("Forbidden"),
-            404 => String::from("Not Found"),
-            405 => String::from("Method Not Allowed"),
-            406 => String::from("Not Acceptable"),
-            407 => String::from("Proxy Authentication Required"),
-            408 => String::from("Request Timeout"),
-            409 => String::from("Conflict"),
-            410 => String::from("Gone"),
-            411 => String::from("Length Required"),
-            412 => String::from("Precondition Failed"),
-            413 => String::from("Payload too Large"),
-            414 => String::from("URI Too Long"),
-            415 => String::from("Unsupported Media Type"),
-            416 => String::from("Range Not Satisfiable"),
-            417 => String::from("Expectation Failed"),
-            418 => String::from("I'm a teapot"),
-            426 => String::from("Upgrade Required"),
-            428 => String::from("Precondition Required"),
-            429 => String::from("Too Many Requests"),
-            431 => String::from("Request Header Fields Too Large"),
-            451 => String::from("Unavailable For Legal Reasons"),
-
-            // 500 Status Codes (Server Error)
-            500 => String::from("Internal Server Error"),
-            501 => String::from("Not Implemented"),
-            502 => String::from("Bad Gateway"),
-            503 => String::from("Service Unavailable"),
-            504 => String::from("Gateway Timeout"),
-
-            // Unknown
-            _ => String::from("Generic")
-        }
-    }
-
     pub fn as_json(self) -> serde_json::Value {
         match self.custom_json {
             Some(custom_json) => custom_json,
-            None => json!({
-                "code": self.code,
-                "status": self.code_as_string(&self.code),
-                "reason": self.safe_error
-            })
+            None => {
+                let status = rocket::http::Status::from_code(self.code).unwrap();
+
+                json!({
+                    "code": self.code,
+                    "status": status.reason,
+                    "reason": self.safe_error
+                })
+            }
         }
     }
 }
@@ -139,10 +79,12 @@ use rocket::http::ContentType;
 
 impl <'r> Responder<'r> for HecateError {
     fn respond_to(self, _: &Request) -> response::Result<'r> {
-        // TODO ADD STATUS CODE
-        Response::build()
+        let status = rocket::http::Status::from_code(self.code).unwrap();
+
+        Ok(Response::build()
+            .status(status)
             .sized_body(Cursor::new(self.as_json().to_string()))
             .header(ContentType::new("application", "json"))
-            .ok()
+            .finalize())
     }
 }
