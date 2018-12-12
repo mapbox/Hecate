@@ -10,6 +10,12 @@
 
 # Version History
 
+## v0.55.0
+
+- :tada: Add standard error class to store and parse errors from across the server
+- :rocket: Change the majority of custom error objects to use the new error class
+- :rocket: Remove unneeded `extern crate` calls
+
 ## v0.54.0
 
 - :arrow_up: [BREAKING] Update to `nightly-2018-12-01` per README instructions to compile
