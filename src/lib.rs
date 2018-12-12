@@ -247,8 +247,7 @@ fn meta_list(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<a
 
     meta::list(&conn)?;
 
-    Ok(Json(json!({})))
-    //Ok(Json(json!(meta::list(&conn)?)))
+    Ok(Json(json!(meta::list(&conn)?)))
 }
 
 #[get("/meta/<key>")]
