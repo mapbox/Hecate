@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.55.1
+
+- :arrow_up: `Rocket@0.4.0`
+
 ## v0.55.0
 
 - :tada: Add standard error class to store and parse errors from across the server
