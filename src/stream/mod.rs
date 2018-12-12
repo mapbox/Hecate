@@ -1,15 +1,6 @@
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate postgres;
-extern crate std;
-extern crate rocket;
-extern crate serde_json;
-
 use postgres::types::ToSql;
-use rocket::response::status;
-use rocket::http::Status as HTTPStatus;
-use rocket_contrib::json::Json;
 use std::io::{Error, ErrorKind};
+use err::HecateError;
 
 use std::mem;
 
@@ -88,7 +79,7 @@ impl std::io::Read for PGStream {
 }
 
 impl PGStream {
-    pub fn new(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, rocket::response::status::Custom<Json<serde_json::Value>>> {
+    pub fn new(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, HecateError> {
         let pg_conn = Box::new(conn);
 
         let trans: postgres::transaction::Transaction = unsafe {
@@ -105,13 +96,7 @@ impl PGStream {
                     conn: pg_conn
                 })
             },
-            Err(err) => {
-                Err(status::Custom(HTTPStatus::ServiceUnavailable, Json(json!({
-                    "code": 500,
-                    "status": "Internal Server Error",
-                    "reason": format!("{:?}", err)
-                }))))
-            }
+            Err(err) => Err(HecateError::from_db(err))
         }
     }
 }

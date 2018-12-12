@@ -1,49 +1,22 @@
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate postgres;
-extern crate rocket;
-extern crate base64;
-extern crate serde_json;
+use err::HecateError;
 
-#[derive(PartialEq, Debug)]
-pub enum UserError {
-    NotFound,
-    NotAuthorized,
-    ListError(String),
-    AdminError(String),
-    CreateError(String),
-    CreateTokenError(String)
-}
-
-impl UserError {
-    pub fn to_string(&self) -> String {
-        match *self {
-            UserError::NotFound => String::from("User Not Found"),
-            UserError::NotAuthorized => String::from("User Not Authorized"),
-            UserError::ListError(ref msg) => String::from(format!("Could not set list users: {}", msg)),
-            UserError::AdminError(ref msg) => String::from(format!("Could not set admin on user: {}", msg)),
-            UserError::CreateError(ref msg) => String::from(format!("Could not create user: {}", msg)),
-            UserError::CreateTokenError(ref msg) => String::from(format!("Could not create token: {}", msg))
-        }
-    }
-}
-
-pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String, email: &String) -> Result<bool, UserError> {
+pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String, email: &String) -> Result<bool, HecateError> {
     match conn.query("
         INSERT INTO users (username, password, email, meta)
             VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, '{}'::JSONB);
     ", &[ &username, &password, &email ]) {
         Ok(_) => Ok(true),
         Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(UserError::CreateError(e.message.clone())) },
-                _ => Err(UserError::CreateError(String::from("generic")))
+            if err.as_db().is_some() && err.as_db().unwrap().code.code() == "23505" {
+                Err(HecateError::new(400, String::from("User/Email Exists"), None))
+            } else {
+                Err(HecateError::from_db(err))
             }
         }
     }
 }
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: &Option<i16>) -> Result<serde_json::Value, UserError> {
+pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: &Option<i16>) -> Result<serde_json::Value, HecateError> {
     let limit: i16 = match limit {
         None => 100,
         Some(limit) => if *limit > 100 { 100 } else { *limit }
@@ -65,16 +38,11 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
         ) row;
     ", &[ &limit ]) {
         Ok(rows) => Ok(rows.get(0).get(0)),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(UserError::CreateError(e.message.clone())) },
-                _ => Err(UserError::CreateError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, filter: &String, limit: &Option<i16>) -> Result<serde_json::Value, UserError> {
+pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, filter: &String, limit: &Option<i16>) -> Result<serde_json::Value, HecateError> {
     let limit: i16 = match limit {
         None => 100,
         Some(limit) => if *limit > 100 { 100 } else { *limit }
@@ -98,16 +66,11 @@ pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
         ) row;
     ", &[ &filter, &limit ]) {
         Ok(rows) => Ok(rows.get(0).get(0)),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(UserError::CreateError(e.message.clone())) },
-                _ => Err(UserError::CreateError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn set_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<bool, UserError> {
+pub fn set_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<bool, HecateError> {
     match conn.query("
         UPDATE users
             SET
@@ -116,16 +79,11 @@ pub fn set_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
                 id = $1
     ", &[ &uid ]) {
         Ok(_) => Ok(true),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(UserError::AdminError(e.message.clone())) },
-                _ => Err(UserError::AdminError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn delete_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<bool, UserError> {
+pub fn delete_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<bool, HecateError> {
     match conn.query("
         UPDATE users
             SET
@@ -134,15 +92,10 @@ pub fn delete_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                 id = $1
     ", &[ &uid ]) {
         Ok(_) => Ok(true),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(UserError::AdminError(e.message.clone())) },
-                _ => Err(UserError::AdminError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
-pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<serde_json::Value, UserError> {
+pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT row_to_json(u)
         FROM (
@@ -157,16 +110,11 @@ pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
         ) u
     ", &[ &uid ]) {
         Ok(res) => Ok(res.get(0).get(0)),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(UserError::CreateTokenError(e.message.clone())) },
-                _ => Err(UserError::CreateTokenError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn create_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<String, UserError> {
+pub fn create_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<String, HecateError> {
     match conn.query("
         INSERT INTO users_tokens (name, uid, token, expiry)
             VALUES (
@@ -181,16 +129,11 @@ pub fn create_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
             let token: String = res.get(0).get(0);
             Ok(token)
         },
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(UserError::CreateTokenError(e.message.clone())) },
-                _ => Err(UserError::CreateTokenError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, token: &String) -> Result<bool, UserError> {
+pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, token: &String) -> Result<bool, HecateError> {
     match conn.query("
         DELETE FROM users_tokens
             WHERE
@@ -198,6 +141,6 @@ pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnec
                 AND uid = $2;
     ", &[ &token, &uid ]) {
         Ok(_) => Ok(true),
-        Err(_) => Err(UserError::NotFound)
+        Err(_) => Err(HecateError::new(404, String::from("Token Not Found"), None))
     }
 }

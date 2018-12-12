@@ -1,10 +1,3 @@
-extern crate postgis;
-extern crate protobuf;
-extern crate serde_json;
-
-use r2d2; 
-use r2d2_postgres;
-
 mod builder;
 mod encoder;
 pub mod geom_encoder;
@@ -21,50 +14,32 @@ mod builder_test;
 #[cfg(test)]
 mod geom_encoder_test;
 
+use err::HecateError;
 pub use self::builder::{Tile, Layer, Feature, Value};
 pub use self::encoder::{Decode, Encode};
 pub use self::grid::{Grid};
 
-#[derive(Debug, PartialEq)]
-pub enum MVTError {
-    NotFound,
-    DB,
-}
-
-impl MVTError {
-    pub fn to_string(&self) -> String {
-        match *self {
-            MVTError::NotFound => { String::from("Tile not found") },
-            MVTError::DB => { String::from("Tile Database Error") }
-
-        }
-    }
-}
-
-pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String) -> Result<Option<proto::Tile>, MVTError> {
-    let rows = match conn.query("
+pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String) -> Result<Option<proto::Tile>, HecateError> {
+    match conn.query("
         SELECT tile
         FROM tiles
         WHERE
             ref = $1
             AND NOW() > created + INTERVAL '4 hours'
     ", &[&coord]) {
-        Ok(rows) => rows,
-        Err(err) => match err.as_db() {
-            Some(_e) => { return Err(MVTError::DB); },
-            _ => { return Err(MVTError::DB); }
-        }
-    };
+        Ok(rows) => {
+            if rows.len() == 0 { return Ok(None); }
 
-    if rows.len() == 0 { return Ok(None); }
+            let bytes: Vec<u8> = rows.get(0).get(0);
+            let tile = proto::Tile::from_bytes(&bytes).unwrap();
 
-    let bytes: Vec<u8> = rows.get(0).get(0);
-    let tile = proto::Tile::from_bytes(&bytes).unwrap();
-
-    Ok(Some(tile))
+            Ok(Some(tile))
+        },
+        Err(err) => Err(HecateError::from_db(err))
+    }
 }
 
-pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: &u8, x: &u32, y: &u32) -> Result<proto::Tile, MVTError> {
+pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: &u8, x: &u32, y: &u32) -> Result<proto::Tile, HecateError> {
     let grid = Grid::web_mercator();
     let bbox = grid.tile_extent(*z, *x, *y);
     let mut tile = Tile::new(&bbox);
@@ -112,33 +87,27 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
 }
 
 
-pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String, tile: &proto::Tile) -> Result<(), MVTError> {
+pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String, tile: &proto::Tile) -> Result<(), HecateError> {
     match conn.query("
         INSERT INTO tiles (ref, tile, created)
             VALUES ($1, $2, NOW())
                 ON CONFLICT (ref) DO UPDATE SET tile = $2;
     ", &[&coord, &tile.to_bytes().unwrap()]) {
-        Err(err) => match err.as_db() {
-            Some(_e) => Err(MVTError::DB),
-            _ => Err(MVTError::DB),
-        }
+        Err(err) => Err(HecateError::from_db(err)),
         _ => Ok(())
     }
 }
 
-pub fn wipe(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<serde_json::Value, MVTError> {
+pub fn wipe(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<serde_json::Value, HecateError> {
     match conn.execute("
         DELETE FROM tiles;
     ", &[]) {
         Ok(_) => Ok(json!(true)),
-        Err(err) => match err.as_db() {
-            Some(_e) => Err(MVTError::DB),
-            _ => Err(MVTError::DB)
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn meta(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<serde_json::Value, MVTError> {
+pub fn meta(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT
             COALESCE(row_to_json(t), '{}'::JSON)
@@ -153,20 +122,17 @@ pub fn meta(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     ", &[&format!("{}/{}/{}", &z, &x, &y)]) {
         Ok(rows) => {
             if rows.len() != 1 {
-                return Err(MVTError::NotFound);
+                Err(HecateError::new(404, String::from("Metadata Not Found"), None))
             } else {
                 let meta: serde_json::Value = rows.get(0).get(0);
-                return Ok(meta);
+                Ok(meta)
             }
         },
-        Err(err) => match err.as_db() {
-            Some(_e) => { return Err(MVTError::DB); },
-            _ => { return Err(MVTError::DB); }
-        }
-    };
+        Err(err) => Err(HecateError::from_db(err))
+    }
 }
 
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32, regen: bool) -> Result<proto::Tile, MVTError> {
+pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32, regen: bool) -> Result<proto::Tile, HecateError> {
     if regen == false {
         match db_get(&conn, format!("{}/{}/{}", &z, &x, &y))? {
             Some(tile) => { return Ok(tile); }

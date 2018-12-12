@@ -61,7 +61,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "\"Body must be valid GeoJSON Feature\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":400,\"reason\":\"Body must be valid GeoJSON Feature\",\"status\":\"Bad Request\"}");
         }
 
         { //Create Point - No Geometry
@@ -77,7 +77,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "\"Body must be valid GeoJSON Feature\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":400,\"reason\":\"Body must be valid GeoJSON Feature\",\"status\":\"Bad Request\"}");
         }
 
         { //Create Point - No Props
@@ -92,7 +92,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "\"Body must be valid GeoJSON Feature\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":400,\"reason\":\"Body must be valid GeoJSON Feature\",\"status\":\"Bad Request\"}");
         }
 
         { //Create Point - No Geom
@@ -108,7 +108,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "\"Body must be valid GeoJSON Feature\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":400,\"reason\":\"Body must be valid GeoJSON Feature\",\"status\":\"Bad Request\"}");
         }
 
         { //Create Point - No Props - Geom
@@ -127,7 +127,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "\"Body must be valid GeoJSON Feature\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":400,\"reason\":\"Body must be valid GeoJSON Feature\",\"status\":\"Bad Request\"}");
         }
 
         { //Create Point - No Message
@@ -144,7 +144,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "\"Feature Must have message property for delta\"");
+            assert_eq!(resp.text().unwrap(), "{\"code\":400,\"reason\":\"Feature Must have message property for delta\",\"status\":\"Bad Request\"}");
         }
 
         { //Create Point - Invalid version on create

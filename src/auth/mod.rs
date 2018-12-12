@@ -1,26 +1,11 @@
-extern crate r2d2;
+use rocket::request::{self, FromRequest};
+use rocket::http::Status;
+use rocket::{Request, Outcome};
 
-extern crate r2d2_postgres;
-extern crate postgres;
-extern crate rocket;
-extern crate base64;
+use err::HecateError;
 
-extern crate serde_json;
-
-use self::rocket::request::{self, FromRequest};
-use self::rocket::http::Status;
-use self::rocket::{Request, Outcome};
-use self::rocket::response::status;
-use self::rocket::http::Status as HTTPStatus;
-use rocket_contrib::json::Json;
-
-
-fn not_authed() -> status::Custom<Json<serde_json::Value>> {
-    status::Custom(HTTPStatus::Unauthorized, Json(json!({
-        "code": 401,
-        "status": "Not Authorized",
-        "reason": "You must be logged in to access this resource"
-    })))
+fn not_authed() -> HecateError {
+    HecateError::new(401, String::from("You must be logged in to access this resource"), None)
 }
 
 ///
@@ -491,7 +476,7 @@ impl ValidAuth for CustomAuth {
 /// Determines whether the current auth state meets or exceeds the
 /// requirements of an endpoint
 ///
-fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
     auth.validate(conn)?;
 
     match required {
@@ -556,260 +541,260 @@ impl CustomAuth {
     }
 
 
-    pub fn is_admin(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn is_admin(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         auth_met(&Some(String::from("admin")), auth, &conn)
     }
 
-    pub fn allows_server(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_server(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         auth_met(&self.server, auth, &conn)
     }
 
-    pub fn allows_meta_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_meta_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.meta {
             None => Err(not_authed()),
             Some(meta) => auth_met(&meta.get, auth, &conn)
         }
     }
 
-    pub fn allows_meta_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_meta_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.meta {
             None => Err(not_authed()),
             Some(meta) => auth_met(&meta.list, auth, &conn)
         }
     }
 
-    pub fn allows_meta_set(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_meta_set(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.meta {
             None => Err(not_authed()),
             Some(meta) => auth_met(&meta.set, auth, &conn)
         }
     }
 
-    pub fn allows_stats_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_stats_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.stats {
             None => Err(not_authed()),
             Some(stats) => auth_met(&stats.get, auth, &conn)
         }
     }
 
-    pub fn allows_stats_bounds(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_stats_bounds(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.stats {
             None => Err(not_authed()),
             Some(stats) => auth_met(&stats.bounds, auth, &conn)
         }
     }
 
-    pub fn allows_mvt_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_mvt_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.mvt {
             None => Err(not_authed()),
             Some(mvt) => auth_met(&mvt.get, auth, &conn)
         }
     }
 
-    pub fn allows_mvt_delete(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_mvt_delete(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.mvt {
             None => Err(not_authed()),
             Some(mvt) => auth_met(&mvt.delete, auth, &conn)
         }
     }
 
-    pub fn allows_mvt_regen(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_mvt_regen(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.mvt {
             None => Err(not_authed()),
             Some(mvt) => auth_met(&mvt.regen, auth, &conn)
         }
     }
 
-    pub fn allows_mvt_meta(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_mvt_meta(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.mvt {
             None => Err(not_authed()),
             Some(mvt) => auth_met(&mvt.meta, auth, &conn)
         }
     }
 
-    pub fn allows_user_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_user_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.user {
             None => Err(not_authed()),
             Some(user) => auth_met(&user.list, auth, &conn)
         }
     }
 
-    pub fn allows_user_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_user_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.user {
             None => Err(not_authed()),
             Some(user) => auth_met(&user.create, auth, &conn)
         }
     }
 
-    pub fn allows_user_info(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_user_info(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.user {
             None => Err(not_authed()),
             Some(user) => auth_met(&user.info, auth, &conn)
         }
     }
 
-    pub fn allows_user_create_session(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_user_create_session(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.user {
             None => Err(not_authed()),
             Some(user) => auth_met(&user.create_session, auth, &conn)
         }
     }
 
-    pub fn allows_style_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_style_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.create, auth, &conn)
         }
     }
 
-    pub fn allows_style_patch(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_style_patch(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.patch, auth, &conn)
         }
     }
 
-    pub fn allows_style_set_public(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_style_set_public(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.set_public, auth, &conn)
         }
     }
 
-    pub fn allows_style_set_private(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_style_set_private(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.set_private, auth, &conn)
         }
     }
 
-    pub fn allows_style_delete(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_style_delete(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.delete, auth, &conn)
         }
     }
 
-    pub fn allows_style_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_style_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.get, auth, &conn)
         }
     }
 
-    pub fn allows_style_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_style_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.list, auth, &conn)
         }
     }
 
-    pub fn allows_delta_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_delta_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.delta {
             None => Err(not_authed()),
             Some(delta) => auth_met(&delta.get, auth, &conn)
         }
     }
 
-    pub fn allows_delta_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_delta_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.delta {
             None => Err(not_authed()),
             Some(delta) => auth_met(&delta.list, auth, &conn)
         }
     }
 
-    pub fn allows_clone_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_clone_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.clone {
             None => Err(not_authed()),
             Some(clone) => auth_met(&clone.get, auth, &conn)
         }
     }
 
-    pub fn allows_clone_query(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_clone_query(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.clone {
             None => Err(not_authed()),
             Some(clone) => auth_met(&clone.query, auth, &conn)
         }
     }
 
-    pub fn allows_bounds_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_bounds_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.bounds {
             None => Err(not_authed()),
             Some(bounds) => auth_met(&bounds.get, auth, &conn)
         }
     }
 
-    pub fn allows_bounds_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_bounds_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.bounds {
             None => Err(not_authed()),
             Some(bounds) => auth_met(&bounds.create, auth, &conn)
         }
     }
 
-    pub fn allows_bounds_delete(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_bounds_delete(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.bounds {
             None => Err(not_authed()),
             Some(bounds) => auth_met(&bounds.delete, auth, &conn)
         }
     }
 
-    pub fn allows_bounds_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_bounds_list(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.bounds {
             None => Err(not_authed()),
             Some(bounds) => auth_met(&bounds.list, auth, &conn)
         }
     }
 
-    pub fn allows_feature_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_feature_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.feature {
             None => Err(not_authed()),
             Some(feature) => auth_met(&feature.create, auth, &conn)
         }
     }
 
-    pub fn allows_feature_force(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_feature_force(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.feature {
             None => Err(not_authed()),
             Some(feature) => auth_met(&feature.force, auth, &conn)
         }
     }
 
-    pub fn allows_feature_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_feature_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.feature {
             None => Err(not_authed()),
             Some(feature) => auth_met(&feature.get, auth, &conn)
         }
     }
 
-    pub fn allows_feature_history(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_feature_history(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.feature {
             None => Err(not_authed()),
             Some(feature) => auth_met(&feature.history, auth, &conn)
         }
     }
 
-    pub fn allows_schema_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_schema_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.schema {
             None => Err(not_authed()),
             Some(schema) => auth_met(&schema.get, auth, &conn)
         }
     }
 
-    pub fn allows_auth_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_auth_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.auth {
             None => Err(not_authed()),
             Some(a) => auth_met(&a.get, auth, &conn)
         }
     }
 
-    pub fn allows_osm_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_osm_get(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.osm {
             None => Err(not_authed()),
             Some(osm) => auth_met(&osm.get, auth, &conn)
         }
     }
 
-    pub fn allows_osm_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, status::Custom<Json<serde_json::Value>>> {
+    pub fn allows_osm_create(&self, auth: &mut Auth, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<bool, HecateError> {
         match &self.osm {
             None => Err(not_authed()),
             Some(osm) => auth_met(&osm.create, auth, &conn)
@@ -862,7 +847,7 @@ impl Auth {
     ///
     /// Note: Once validated the token/basic auth used to validate the user will be set to null
     ///
-    pub fn validate(&mut self, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Option<i64>, status::Custom<Json<serde_json::Value>>> {
+    pub fn validate(&mut self, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Option<i64>, HecateError> {
         if self.basic.is_some() {
             let (username, password) = self.basic.clone().unwrap();
 

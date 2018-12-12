@@ -1,34 +1,7 @@
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate postgres;
-extern crate std;
-extern crate rocket;
-extern crate serde_json;
-
+use err::HecateError;
 use stream::PGStream;
 
-#[derive(PartialEq, Debug)]
-pub enum BoundsError {
-    NotFound,
-    DeleteError(String),
-    SetError(String),
-    ListError(String),
-    GetError(String)
-}
-
-impl BoundsError {
-    pub fn to_string(&self) -> String {
-        match *self {
-            BoundsError::NotFound => String::from("Bounds Not Found"),
-            BoundsError::DeleteError(ref msg) => String::from(format!("Could not delete bounds: {}", msg)),
-            BoundsError::SetError(ref msg) => String::from(format!("Could not set bounds: {}", msg)),
-            BoundsError::ListError(ref msg) => String::from(format!("Could not list bounds: {}", msg)),
-            BoundsError::GetError(ref msg) => String::from(format!("Could not get bounds: {}", msg))
-        }
-    }
-}
-
-pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String, feat: &serde_json::Value) -> Result<bool, BoundsError> {
+pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String, feat: &serde_json::Value) -> Result<bool, HecateError> {
     match conn.execute("
         INSERT INTO bounds (name, geom) VALUES ($1 , ST_Multi(ST_SetSRID(ST_GeomFromGeoJSON($2::JSON->>'geometry'), 4326)))
             ON CONFLICT (name) DO
@@ -37,30 +10,20 @@ pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
                     WHERE bounds.name = $1;
     ", &[ &name, &feat ]) {
         Ok(_) => Ok(true),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(BoundsError::SetError(e.message.clone())) },
-                _ => Err(BoundsError::SetError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String) -> Result<bool, BoundsError> {
+pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String) -> Result<bool, HecateError> {
     match conn.execute("
         DELETE FROM bounds WHERE name = $1
     ", &[ &name ]) {
         Ok(_) => Ok(true),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(BoundsError::DeleteError(e.message.clone())) },
-                _ => Err(BoundsError::DeleteError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, prefix: &String, limit: &Option<i16>) -> Result<Vec<String>, BoundsError> {
+pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, prefix: &String, limit: &Option<i16>) -> Result<Vec<String>, HecateError> {
     let limit: i16 = match limit {
         None => 100,
         Some(limit) => if *limit > 100 { 100 } else { *limit }
@@ -82,16 +45,11 @@ pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
 
             Ok(names)
         },
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
-                _ => Err(BoundsError::ListError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: &Option<i16>) -> Result<Vec<String>, BoundsError> {
+pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: &Option<i16>) -> Result<Vec<String>, HecateError> {
     match conn.query("
         SELECT name
         FROM bounds
@@ -107,16 +65,11 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
 
             Ok(names)
         },
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
-                _ => Err(BoundsError::ListError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<PGStream, BoundsError> {
+pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<PGStream, HecateError> {
     match PGStream::new(conn, String::from("next_bounds"), String::from(r#"
         DECLARE next_bounds CURSOR FOR
             SELECT
@@ -138,11 +91,11 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
             ) t
     "#), &[&bounds]) {
         Ok(stream) => Ok(stream),
-        Err(_) =>  Err(BoundsError::GetError(String::from("db error")))
+        Err(err) => Err(err)
     }
 }
 
-pub fn stats_json(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<serde_json::Value, BoundsError> {
+pub fn stats_json(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT
             row_to_json(t)
@@ -165,11 +118,6 @@ pub fn stats_json(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnection
         ) t
     ", &[ &bounds ]) {
         Ok(rows) => Ok(rows.get(0).get(0)),
-        Err(err) => {
-            match err.as_db() {
-                Some(e) => { Err(BoundsError::ListError(e.message.clone())) },
-                _ => Err(BoundsError::ListError(String::from("generic")))
-            }
-        }
+        Err(err) => Err(HecateError::from_db(err))
     }
 }

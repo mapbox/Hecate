@@ -1,7 +1,3 @@
-extern crate geojson;
-extern crate serde_json;
-extern crate quick_xml;
-
 mod node;
 mod way;
 mod rel;
@@ -16,8 +12,8 @@ use xml::tree::OSMTree;
 use std::string;
 use std::num;
 use std::io::Cursor;
-use self::quick_xml::events as XMLEvents;
-use self::quick_xml::{Reader, Writer};
+use quick_xml::events as XMLEvents;
+use quick_xml::{Reader, Writer};
 use std::collections::HashMap;
 
 #[derive(PartialEq)]
