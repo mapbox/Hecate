@@ -53,7 +53,7 @@ impl HecateError {
     }
 
     pub fn as_string(&self) -> String {
-        String::new()
+        self.safe_error.clone()
     }
 
     pub fn as_json(self) -> serde_json::Value {
@@ -80,10 +80,13 @@ use rocket::http::ContentType;
 impl <'r> Responder<'r> for HecateError {
     fn respond_to(self, _: &Request) -> response::Result<'r> {
         let status = rocket::http::Status::from_code(self.code).unwrap();
+        let body = self.as_json().to_string();
+
+        println!("HecateError: {:?}", &body);
 
         Ok(Response::build()
             .status(status)
-            .sized_body(Cursor::new(self.as_json().to_string()))
+            .sized_body(Cursor::new(body))
             .header(ContentType::new("application", "json"))
             .finalize())
     }
