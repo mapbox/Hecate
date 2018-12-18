@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.56.0
+
+- :bug: Explicitly set the cookie path
+
 ## v0.55.1
 
 - :arrow_up: `Rocket@0.4.0`
