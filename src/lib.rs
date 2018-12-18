@@ -426,7 +426,11 @@ fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
 
     let token = user::create_token(&conn, &uid)?;
 
-    cookies.add_private(Cookie::new("session", token));
+    cookies.add_private(Cookie::build("session", token)
+        .path("/")
+        .finish()
+    );
+
     Ok(Json(json!(uid)))
 }
 
