@@ -82,13 +82,21 @@ pub fn start(
         .limit("json", 20971520)
         .limit("forms", 131072);
 
-    let config = Config::build(Environment::Production)
+    let mut config = Config::build(Environment::Production)
         .address("0.0.0.0")
         .log_level(LoggingLevel::Debug)
         .port(port.unwrap_or(8000))
         .limits(limits)
         .workers(workers.unwrap_or(12))
         .unwrap();
+
+    match std::env::var("HECATE_SECRET") {
+        Ok(secret) => match config.set_secret_key(secret) {
+            Err(_) => panic!("Invalid Base64 Encoded 256 Bit Secret Key"),
+            _ => println!("Using HECATE_SECRET")
+        }
+        _ => ()
+    };
 
     rocket::custom(config)
         .manage(DbReadWrite::new(init_pool(&database)))
