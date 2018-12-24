@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.57.0
+
+- :tada: Add `HECATE_SECRET` option for providing a 256 bit base64 key for cookie signing (`openssl rand --base64 32`)
+
 ## v0.56.0
 
 - :bug: Explicitly set the cookie path
