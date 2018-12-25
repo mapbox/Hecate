@@ -39,119 +39,105 @@ pub fn capabilities() -> Result<String, HecateError> {
         </ows:ServiceProvider>
         <ows:OperationsMetadata>
             <ows:Operation name="GetCapabilities">
-                <ows:DCP>
-                    <ows:HTTP>
+                <ows:DCP><ows:HTTP>
                         <ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
                         <ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
-                    </ows:HTTP>
-                </ows:DCP>
+                </ows:HTTP></ows:DCP>
                 <ows:Parameter name="AcceptVersions">
                     <ows:AllowedValues><ows:Value>2.0.0</ows:Value></ows:AllowedValues>
                 </ows:Parameter>
             </ows:Operation>
             <ows:Operation name="DescribeFeatureType">
-                <ows:DCP>
-                    <ows:HTTP>
+                <ows:DCP><ows:HTTP>
                         <ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
                         <ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
-                    </ows:HTTP>
-                </ows:DCP>
-            <ows:Parameter name="outputFormat">
-<ows:AllowedValues>
-<ows:Value>text/xml; subtype=gml/3.2</ows:Value>
-</ows:AllowedValues>
-</ows:Parameter>
-</ows:Operation>
-<ows:Operation name="GetPropertyValue">
-<ows:DCP>
-<ows:HTTP>
-<ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
-<ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
-</ows:HTTP>
-</ows:DCP>
-</ows:Operation>
-<ows:Operation name="GetFeature">
-<ows:DCP>
-<ows:HTTP>
-<ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
-<ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
-</ows:HTTP>
-</ows:DCP>
-<ows:Parameter name="resultType">
-<ows:AllowedValues>
-<ows:Value>results</ows:Value>
-<ows:Value>hits</ows:Value>
-</ows:AllowedValues>
-</ows:Parameter>
-<ows:Parameter name="outputFormat">
-<ows:AllowedValues>
-<ows:Value>GML32</ows:Value>
-<ows:Value>GML32+ZIP</ows:Value>
-<ows:Value>application/gml+xml; version=3.2</ows:Value>
-<ows:Value>GML3</ows:Value>
-<ows:Value>GML3+ZIP</ows:Value>
-<ows:Value>text/xml; subtype=gml/3.1.1</ows:Value>
-<ows:Value>GML2</ows:Value>
-<ows:Value>GML2+ZIP</ows:Value>
-<ows:Value>text/xml; subtype=gml/2.1.2</ows:Value>
-<ows:Value>GEOJSON</ows:Value>
-<ows:Value>GEOJSON+ZIP</ows:Value>
-<ows:Value>ESRIGEOJSON</ows:Value>
-<ows:Value>ESRIGEOJSON+ZIP</ows:Value>
-<ows:Value>KML</ows:Value>
-<ows:Value>application/vnd.google-earth.kml xml</ows:Value>
-<ows:Value>application/vnd.google-earth.kml+xml</ows:Value>
-<ows:Value>KMZ</ows:Value>
-<ows:Value>application/vnd.google-earth.kmz</ows:Value>
-<ows:Value>SHAPE+ZIP</ows:Value>
-<ows:Value>CSV</ows:Value>
-<ows:Value>CSV+ZIP</ows:Value>
-</ows:AllowedValues>
-</ows:Parameter>
-</ows:Operation>
-<ows:Operation name="GetGmlObject">
-<ows:DCP>
-<ows:HTTP>
-<ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
-<ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
-</ows:HTTP>
-</ows:DCP>
-</ows:Operation>
-<ows:Operation name="ListStoredQueries">
-<ows:DCP>
-<ows:HTTP>
-<ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
-<ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
-</ows:HTTP>
-</ows:DCP>
-</ows:Operation>
-<ows:Operation name="DescribeStoredQueries">
-<ows:DCP>
-<ows:HTTP>
-<ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
-<ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
-</ows:HTTP>
-</ows:DCP>
-</ows:Operation>
-<ows:Constraint name="ImplementsBasicWFS"><ows:NoValues/><ows:DefaultValue>TRUE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="ImplementsTransactionalWFS"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="ImplementsLockingWFS"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="KVPEncoding"><ows:NoValues/><ows:DefaultValue>TRUE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="XMLEncoding"><ows:NoValues/><ows:DefaultValue>TRUE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="SOAPEncoding"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="ImplementsInheritance"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="ImplementsRemoteResolve"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="ImplementsResultPaging"><ows:NoValues/><ows:DefaultValue>TRUE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="ImplementsStandardJoins"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="ImplementsSpatialJoins"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="ImplementsTemporalJoins"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="ImplementsFeatureVersioning"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
-<ows:Constraint name="ManageStoredQueries"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
-</ows:OperationsMetadata>
-<wfs:FeatureTypeList>
-<wfs:FeatureType>
-<wfs:Name>WFS_govunits:Reserve</wfs:Name>
-<wfs:Title>Reserve</wfs:Title>
+                </ows:HTTP></ows:DCP>
+                <ows:Parameter name="outputFormat">
+                    <ows:AllowedValues>
+                        <ows:Value>text/xml; subtype=gml/3.2</ows:Value>
+                    </ows:AllowedValues>
+                </ows:Parameter>
+            </ows:Operation>
+            <ows:Operation name="GetPropertyValue">
+                <ows:DCP><ows:HTTP>
+                    <ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
+                    <ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
+                </ows:HTTP></ows:DCP>
+            </ows:Operation>
+            <ows:Operation name="GetFeature">
+                <ows:DCP><ows:HTTP>
+                    <ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
+                    <ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
+                </ows:HTTP></ows:DCP>
+                <ows:Parameter name="resultType">
+                    <ows:AllowedValues>
+                        <ows:Value>results</ows:Value>
+                        <ows:Value>hits</ows:Value>
+                    </ows:AllowedValues>
+                </ows:Parameter>
+                <ows:Parameter name="outputFormat">
+                    <ows:AllowedValues>
+                        <ows:Value>GML32</ows:Value>
+                        <ows:Value>GML32+ZIP</ows:Value>
+                        <ows:Value>application/gml+xml; version=3.2</ows:Value>
+                        <ows:Value>GML3</ows:Value>
+                        <ows:Value>GML3+ZIP</ows:Value>
+                        <ows:Value>text/xml; subtype=gml/3.1.1</ows:Value>
+                        <ows:Value>GML2</ows:Value>
+                        <ows:Value>GML2+ZIP</ows:Value>
+                        <ows:Value>text/xml; subtype=gml/2.1.2</ows:Value>
+                        <ows:Value>GEOJSON</ows:Value>
+                        <ows:Value>GEOJSON+ZIP</ows:Value>
+                        <ows:Value>ESRIGEOJSON</ows:Value>
+                        <ows:Value>ESRIGEOJSON+ZIP</ows:Value>
+                        <ows:Value>KML</ows:Value>
+                        <ows:Value>application/vnd.google-earth.kml xml</ows:Value>
+                        <ows:Value>application/vnd.google-earth.kml+xml</ows:Value>
+                        <ows:Value>KMZ</ows:Value>
+                        <ows:Value>application/vnd.google-earth.kmz</ows:Value>
+                        <ows:Value>SHAPE+ZIP</ows:Value>
+                        <ows:Value>CSV</ows:Value>
+                        <ows:Value>CSV+ZIP</ows:Value>
+                    </ows:AllowedValues>
+                </ows:Parameter>
+            </ows:Operation>
+            <ows:Operation name="GetGmlObject">
+                <ows:DCP><ows:HTTP>
+                    <ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
+                    <ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
+                </ows:HTTP></ows:DCP>
+            </ows:Operation>
+            <ows:Operation name="ListStoredQueries">
+                <ows:DCP><ows:HTTP>
+                    <ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
+                    <ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
+                </ows:HTTP></ows:DCP>
+            </ows:Operation>
+            <ows:Operation name="DescribeStoredQueries">
+                <ows:DCP><ows:HTTP>
+                    <ows:Get xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer?"/>
+                    <ows:Post xlink:href="https://services.nationalmap.gov/arcgis/services/WFS/govunits/MapServer/WFSServer"/>
+                </ows:HTTP></ows:DCP>
+            </ows:Operation>
+            <ows:Constraint name="ImplementsBasicWFS"><ows:NoValues/><ows:DefaultValue>TRUE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="ImplementsTransactionalWFS"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="ImplementsLockingWFS"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="KVPEncoding"><ows:NoValues/><ows:DefaultValue>TRUE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="XMLEncoding"><ows:NoValues/><ows:DefaultValue>TRUE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="SOAPEncoding"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="ImplementsInheritance"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="ImplementsRemoteResolve"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="ImplementsResultPaging"><ows:NoValues/><ows:DefaultValue>TRUE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="ImplementsStandardJoins"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="ImplementsSpatialJoins"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="ImplementsTemporalJoins"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="ImplementsFeatureVersioning"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
+            <ows:Constraint name="ManageStoredQueries"><ows:NoValues/><ows:DefaultValue>FALSE</ows:DefaultValue></ows:Constraint>
+        </ows:OperationsMetadata>
+        <wfs:FeatureTypeList>
+            <wfs:FeatureType>
+            <wfs:Name>WFS_govunits:Reserve</wfs:Name>
+            <wfs:Title>Reserve</wfs:Title>
 <wfs:DefaultCRS>urn:ogc:def:crs:EPSG::3857</wfs:DefaultCRS>
 <ows:WGS84BoundingBox>
 <ows:LowerCorner>-179.1500822837491 -14.55975325902829</ows:LowerCorner>
