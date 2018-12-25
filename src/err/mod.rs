@@ -36,6 +36,8 @@ impl HecateError {
     }
 
     pub fn from_db(error: postgres::error::Error) -> Self {
+        println!("Database Error: {:?}", &error);
+
         match error.as_db() {
             Some(db_err) => HecateError {
                 code: 500,
