@@ -148,6 +148,10 @@
                         <button @click='submode = "users"' class='fl btn btn--stroke round w36 px12 my6'>
                             <svg class='icon'><use href='#icon-user'/></svg>
                         </button>
+
+                        <button @click='submode = "meta"' class='fl btn btn--stroke round w36 px12 my6'>
+                            <svg class='icon'><use href='#icon-info'/></svg>
+                        </button>
                     </div>
 
                     <div class='fl pl6' style='width: calc(600px - 68px);'>
@@ -229,6 +233,38 @@
                                 </template>
                             </div>
                         </template>
+                        <template v-if='submode === "meta"'>
+                            <div class='col col--12 txt-m txt-bold'>
+                                Server Metadata
+                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                            </div>
+
+                            <div class='py6 col col--12 border--gray-light border-b mb12'>
+                                <span class='txt-m'>Server Information</span>
+                            </div>
+
+                            <div class='col grid grid--gut-12'>
+                                 <div class='col--12'>
+                                    <label>Server Name</label>
+                                    <input v-model='metaData.server.name' class='input' placeholder='Server Name'/>
+                                 </div>
+                                 <div class='col--12'>
+                                    <label>Server Abstract</label>
+                                    <input v-model='metaData.server.abstract' class='input' placeholder='Server Name'/>
+                                 </div>
+                            </div>
+
+                            <div class='py6 col col--12 border--gray-light border-b mb12'>
+                                <span class='txt-m'>Provider Information</span>
+                            </div>
+
+                            <div class='col grid grid--gut-12'>
+                                 <div class='col--12'>
+                                    <label>Provider Name</label>
+                                    <input v-model='metaData.provider.name' class='input' placeholder='Server Name'/>
+                                 </div>
+                             </div>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -253,6 +289,16 @@ export default {
                 name: '',
                 type: ''
             },
+            metaData: {
+                error: '',
+                server: {
+                    name: '',
+                    abstract: ''
+                },
+                provider: {
+
+                }
+            },
             addLayerData: {
                 exists: false,
                 error: '',
@@ -268,6 +314,10 @@ export default {
     mounted: function() {
         this.getLayers();
         this.getUsers();
+
+        this.getMeta('server-name', (meta) => this.metaData.server.name = meta );
+        this.getMeta('server-abstract', (meta) => this.metaData.server.abstract = meta );
+        this.getMeta('provider-name', (meta) => this.metaData.server.provider = meta );
     },
     watch: {
         userFilter: function() {
@@ -315,6 +365,24 @@ export default {
                 if (!layers || !layers.length) layers = [];
 
                 this.layers = layers;
+            }).catch((err) => {
+                this.error = err.message;
+            });
+        },
+        getMeta: function(meta, cb) {
+            if (!meta) return;
+
+            fetch(`${window.location.protocol}//${window.location.host}/api/meta/${meta}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) {
+                    this.error = response.status + ':' + response.statusText;
+                }
+
+                return response.json();
+            }).then((meta) => {
+                return cb(meta)
             }).catch((err) => {
                 this.error = err.message;
             });
