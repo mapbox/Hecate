@@ -70,6 +70,16 @@ impl HecateError {
             }
         }
     }
+
+    pub fn as_wfs(self) -> String {
+        format!(r#"
+            <?xml version="1.0" ?>
+            <ExceptionReport version="1.1.0" xmlns="http://www.opengis.net/ogc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="owsExceptionReport.xsd">
+                <Exception code="{}" locator="">
+                <ExceptionText>{}</ExceptionText>
+            </Exception>
+        "#, &self.code, &self.safe_error)
+    }
 }
 
 use std::io::Cursor;
