@@ -98,7 +98,9 @@ rustup default nightly-2018-12-01
 cargo build
 ```
 
-- Create the `hecate` database using the provided schema file.
+- Ensure you have database dependencies `postgres` and `postgis` installed.
+
+- Create the `hecate` database using the provided schema file. These instructions assume you have set up a role `postgres` with sufficient privileges.
 
 ```bash
 echo "CREATE DATABASE hecate;" | psql -U postgres
@@ -107,7 +109,7 @@ psql -U postgres -f src/schema.sql hecate
 ```
 
 - This step will also create a database role called `hecate` and `hecate_read`. If
-the connection fails due to authentication, you're pg_hba file may not be set up
+the connection fails due to authentication, your pg_hba file may not be set up
 to trust local connections.
 
 Your pb_hba file location can be found using `echo "show hba_file;" | psql -U postgres`
