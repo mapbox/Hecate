@@ -1,6 +1,6 @@
 #![feature(proc_macro_hygiene, decl_macro, plugin, custom_derive, custom_attribute)]
 
-static VERSION: &'static str = "0.57.0";
+static HECATEVERSION: &'static str = "0.57.0";
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
@@ -18,6 +18,7 @@ extern crate geojson;
 extern crate env_logger;
 extern crate chrono;
 
+pub mod wfs;
 pub mod err;
 pub mod meta;
 pub mod stats;
@@ -162,7 +163,8 @@ pub fn start(
             xml_changeset_create,
             xml_changeset_modify,
             xml_changeset_upload,
-            xml_changeset_close
+            xml_changeset_close,
+            wfsall
         ])
         .register(catchers![
            not_authorized,
@@ -244,7 +246,7 @@ fn server(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<auth
     auth_rules.allows_server(&mut auth, &conn.get()?)?;
 
     Ok(Json(json!({
-        "version": VERSION
+        "version": HECATEVERSION
     })))
 }
 
@@ -1344,4 +1346,66 @@ fn feature_get_history(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
     auth_rules.allows_feature_history(&mut auth, &conn)?;
 
     Ok(Json(delta::history(&conn, &id)?))
+}
+
+#[derive(FromForm, Debug)]
+struct WFSReq {
+    SERVICE: Option<String>,
+    VERSION: Option<String>,
+    REQUEST: Option<String>,
+    service: Option<String>,
+    version: Option<String>,
+    request: Option<String>
+}
+
+#[get("/wfs?<wfsreq..>")]
+fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut wfsreq: Form<WFSReq>) -> Result<Response<'static>, HecateError> {
+    let service: Option<String> = match wfsreq.service {
+        Some(ref service) => Some(service.clone()),
+        None => match wfsreq.SERVICE {
+            Some(ref service) => Some(service.clone()),
+            None => None
+        }
+    };
+
+    let request: Option<String> = match wfsreq.request {
+        Some(ref request) => Some(request.clone()),
+        None => match wfsreq.REQUEST {
+            Some(ref request) => Some(request.clone()),
+            None => None
+        }
+    };
+
+    let version: Option<String> = match wfsreq.version {
+        Some(ref version) => Some(version.clone()),
+        None => match wfsreq.VERSION {
+            Some(ref version) => Some(version.clone()),
+            None => None
+        }
+    };
+
+    match request {
+        Some(ref request) => {
+            if &*request == "GetCapabilities" {
+                let capabilities = Cursor::new(wfs::capabilities()?);
+
+                let mut response = Response::new();
+                response.set_status(HTTPStatus::Ok);
+                response.set_sized_body(capabilities);
+                response.set_raw_header("Content-Type", "application/xml");
+                Ok(response)
+            } else {
+                let mut error = HecateError::new(400, String::from("Not a valid request param"), None);
+                error.to_wfsxml();
+
+                Err(error)
+            }
+        },
+        None => {
+            let mut error = HecateError::new(400, String::from("Not a valid request param"), None);
+            error.to_wfsxml();
+
+            Err(error)
+        }
+    }
 }

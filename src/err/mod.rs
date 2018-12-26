@@ -1,9 +1,16 @@
 #[derive(PartialEq, Debug)]
+pub enum HecateErrorResponse {
+    JSON,
+    WFSXML
+}
+
+#[derive(PartialEq, Debug)]
 pub struct HecateError {
     code: u16,
     custom_json: Option<serde_json::Value>,
     safe_error: String,
-    full_error: String
+    full_error: String,
+    response: HecateErrorResponse
 }
 
 impl HecateError {
@@ -17,7 +24,8 @@ impl HecateError {
             code: code,
             custom_json: None,
             safe_error: safe_error,
-            full_error: full_error
+            full_error: full_error,
+            response: HecateErrorResponse::JSON
         }
     }
 
@@ -31,7 +39,8 @@ impl HecateError {
             code: code,
             custom_json: Some(json),
             safe_error: safe_error,
-            full_error: full_error
+            full_error: full_error,
+            response: HecateErrorResponse::JSON
         }
     }
 
@@ -43,15 +52,25 @@ impl HecateError {
                 code: 500,
                 custom_json: None,
                 safe_error: String::from("Database Error"),
-                full_error: format!("{}", db_err)
+                full_error: format!("{}", db_err),
+                response: HecateErrorResponse::JSON
             },
             None => HecateError {
                 code: 500,
                 custom_json: None,
                 safe_error: String::from("Database Error"),
-                full_error: format!("{}", error)
+                full_error: format!("{}", error),
+                response: HecateErrorResponse::JSON
             }
         }
+    }
+
+    pub fn to_json(&mut self) {
+        self.response = HecateErrorResponse::JSON
+    }
+
+    pub fn to_wfsxml(&mut self) {
+        self.response = HecateErrorResponse::WFSXML
     }
 
     pub fn as_string(&self) -> String {
@@ -75,11 +94,11 @@ impl HecateError {
 
     pub fn as_wfs(self) -> String {
         format!(r#"
-            <?xml version="1.0" ?>
-            <ExceptionReport version="2.0.0" xmlns="http://www.opengis.net/ogc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="owsExceptionReport.xsd">
-                <Exception code="{}">
-                <ExceptionText>{}</ExceptionText>
-            </Exception>
+            <ExceptionReport version="2.0.0" xmlns="http://www.opengis.net/ogc" xsi="http://www.w3.org/2001/XMLSchema-instance" schemaLocation="owsExceptionReport.xsd">
+                <Exception exceptionCode="{}">
+                    <ExceptionText>{}</ExceptionText>
+                </Exception>
+            </ExceptionReport>
         "#, &self.code, &self.safe_error)
     }
 }
@@ -92,14 +111,30 @@ use rocket::http::ContentType;
 impl <'r> Responder<'r> for HecateError {
     fn respond_to(self, _: &Request) -> response::Result<'r> {
         let status = rocket::http::Status::from_code(self.code).unwrap();
-        let body = self.as_json().to_string();
 
-        println!("HecateError: {:?}", &body);
+        match self.response {
+            HecateErrorResponse::WFSXML => {
+                let body = self.as_wfs();
 
-        Ok(Response::build()
-            .status(status)
-            .sized_body(Cursor::new(body))
-            .header(ContentType::new("application", "json"))
-            .finalize())
+                println!("HecateError WFS: {:?}", &body);
+
+                Ok(Response::build()
+                    .status(status)
+                    .sized_body(Cursor::new(body))
+                    .header(ContentType::new("application", "xml"))
+                    .finalize())
+            },
+            HecateErrorResponse::JSON => {
+                let body = self.as_json().to_string();
+
+                println!("HecateError JSON: {:?}", &body);
+
+                Ok(Response::build()
+                    .status(status)
+                    .sized_body(Cursor::new(body))
+                    .header(ContentType::new("application", "json"))
+                    .finalize())
+            }
+        }
     }
 }
