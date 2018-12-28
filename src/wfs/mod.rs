@@ -226,3 +226,29 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
         Err(err) => Err(HecateError::from_db(err))
     }
 }
+
+pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<String, HecateError> {
+    match conn.query("
+        SELECT 1;
+    ", &[]) {
+        Ok(res) => {
+            Ok(format!(r#"
+                <xsd:schema xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:publicgis="http://bloomington.in.gov/publicgis" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://bloomington.in.gov/publicgis">
+                    <xsd:import namespace="http://www.opengis.net/gml/3.2" schemaLocation="https://tarantula.bloomington.in.gov:443/geoserver/schemas/gml/3.2.1/gml.xsd"/>
+                    <xsd:complexType name="CityParkingFacilitiesType">
+                        <xsd:complexContent>
+                            <xsd:extension base="gml:AbstractFeatureType">
+                                <xsd:sequence>
+                                    <xsd:element maxOccurs="1" minOccurs="0" name="the_geom" nillable="true" type="gml:PointPropertyType"/>
+                                    <xsd:element maxOccurs="1" minOccurs="0" name="TAG" nillable="true" type="xsd:string"/>
+                            </xsd:sequence>
+                        </xsd:extension>
+                        </xsd:complexContent>
+                    </xsd:complexType>
+                    <xsd:element name="HecateData" substitutionGroup="gml:AbstractFeature" type="publicgis:CityNeighborhoodAssociationsType"/>
+                </xsd:schema>
+            "#))
+        },
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}

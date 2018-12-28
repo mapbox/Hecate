@@ -1411,7 +1411,13 @@ fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth
                 response.set_raw_header("Content-Type", "application/xml");
                 Ok(response)
             } else if &*request == "DescribeFeatureType" {
+                let capabilities = Cursor::new(wfs::describe_feature_type(&conn)?);
 
+                let mut response = Response::new();
+                response.set_status(HTTPStatus::Ok);
+                response.set_sized_body(capabilities);
+                response.set_raw_header("Content-Type", "application/xml");
+                Ok(response)
             } else {
                 let mut error = HecateError::new(400, String::from("Not a valid request param"), None);
                 error.to_wfsxml();
