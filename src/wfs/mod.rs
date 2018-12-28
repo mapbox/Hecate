@@ -148,7 +148,7 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                     </OperationsMetadata>
                     <FeatureTypeList>
                         <FeatureType>
-                            <Name>Hecate Data</Name>
+                            <Name>HecateData</Name>
                             <Title>Hecate Data</Title>
                             <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
                             <WGS84BoundingBox>
@@ -235,7 +235,7 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
             Ok(format!(r#"
                 <xsd:schema xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:publicgis="http://bloomington.in.gov/publicgis" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://bloomington.in.gov/publicgis">
                     <xsd:import namespace="http://www.opengis.net/gml/3.2" schemaLocation="https://tarantula.bloomington.in.gov:443/geoserver/schemas/gml/3.2.1/gml.xsd"/>
-                    <xsd:complexType name="CityParkingFacilitiesType">
+                    <xsd:complexType name="HecateDataType">
                         <xsd:complexContent>
                             <xsd:extension base="gml:AbstractFeatureType">
                                 <xsd:sequence>
@@ -245,7 +245,7 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
                         </xsd:extension>
                         </xsd:complexContent>
                     </xsd:complexType>
-                    <xsd:element name="HecateData" substitutionGroup="gml:AbstractFeature" type="publicgis:CityNeighborhoodAssociationsType"/>
+                    <xsd:element name="HecateData" substitutionGroup="gml:AbstractFeature" type="HecateDataType"/>
                 </xsd:schema>
             "#))
         },
