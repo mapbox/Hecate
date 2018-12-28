@@ -11,13 +11,31 @@ pub struct Req {
     pub service: Option<String>,
     pub version: Option<String>,
     pub request: Option<String>,
-    pub typename: Option<String>,
-    pub typenames: Option<String>,
     pub SERVICE: Option<String>,
     pub VERSION: Option<String>,
     pub REQUEST: Option<String>,
+
+    //Optional Params
     pub TYPENAME: Option<String>,
     pub TYPENAMES: Option<String>,
+    pub typename: Option<String>,
+    pub typeName: Option<String>,
+    pub typenames: Option<String>,
+    pub typeNames: Option<String>,
+
+    pub STARTINDEX: Option<u32>,
+    pub startIndex: Option<u32>,
+    pub startindex: Option<u32>,
+
+    pub COUNT: Option<u32>,
+    pub count: Option<u32>,
+
+    pub SRSNAME: Option<String>,
+    pub SRSName: Option<String>,
+    pub srsname: Option<String>,
+
+    pub BBOX: Option<String>,
+    pub bbox: Option<String>
 }
 
 pub enum RequestType {
@@ -30,7 +48,12 @@ pub enum RequestType {
 pub struct Query {
     pub service: String,
     pub version: String,
-    pub request: RequestType
+    pub request: RequestType,
+    pub typenames: Option<String>,
+    pub startindex: Option<u32>,
+    pub count: Option<u32>,
+    pub srsname: Option<String>,
+    pub bbox: Option<String>  //TODO this should be a vec of EPSG:4326 coords
 }
 
 impl Query {
@@ -38,7 +61,74 @@ impl Query {
         Query {
             service: Query::std_service(&req),
             version: Query::std_version(&req),
-            request: Query::std_request(&req)
+            request: Query::std_request(&req),
+            typenames: Query::std_typenames(&req),
+            startindex: Query::std_startindex(&req),
+            count: Query::std_count(&req),
+            srsname: Query::std_srsname(&req),
+            bbox: Query::std_bbox(&req)
+        }
+    }
+
+    fn std_bbox(req: &Req) -> Option<String> {
+        if req.bbox.is_some() {
+            return Some(req.bbox.clone().unwrap());
+        } else if req.BBOX.is_some() {
+            return Some(req.BBOX.clone().unwrap());
+        } else {
+            return None;
+        }
+    }
+
+    fn std_count(req: &Req) -> Option<u32> {
+        if req.count.is_some() {
+            return Some(req.count.clone().unwrap());
+        } else if req.COUNT.is_some() {
+            return Some(req.COUNT.clone().unwrap());
+        } else {
+            return None;
+        }
+    }
+
+    fn std_srsname(req: &Req) -> Option<String> {
+        if req.srsname.is_some() {
+            return Some(req.srsname.clone().unwrap());
+        } else if req.SRSName.is_some() {
+            return Some(req.SRSName.clone().unwrap());
+        } else if req.SRSNAME.is_some() {
+            return Some(req.SRSNAME.clone().unwrap());
+        } else {
+            return None;
+        }
+    }
+    
+    fn std_startindex(req: &Req) -> Option<u32> {
+        if req.startindex.is_some() {
+            return Some(req.startindex.clone().unwrap());
+        } else if req.startIndex.is_some() {
+            return Some(req.startIndex.clone().unwrap());
+        } else if req.STARTINDEX.is_some() {
+            return Some(req.STARTINDEX.clone().unwrap());
+        } else {
+            return None;
+        }
+    }
+
+    fn std_typenames(req: &Req) -> Option<String> {
+        if req.typename.is_some() {
+            return Some(req.typename.clone().unwrap());
+        } else if req.typeName.is_some() {
+            return Some(req.typeName.clone().unwrap());
+        } else if req.TYPENAME.is_some() {
+            return Some(req.TYPENAME.clone().unwrap());
+        } else if req.typenames.is_some() {
+            return Some(req.typenames.clone().unwrap());
+        } else if req.typeNames.is_some() {
+            return Some(req.typeNames.clone().unwrap());
+        } else if req.TYPENAMES.is_some() {
+            return Some(req.TYPENAMES.clone().unwrap());
+        } else {
+            return None;
         }
     }
 
