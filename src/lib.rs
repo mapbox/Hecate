@@ -1353,9 +1353,11 @@ struct WFSReq {
     SERVICE: Option<String>,
     VERSION: Option<String>,
     REQUEST: Option<String>,
+    TYPENAME: Option<String>,
     service: Option<String>,
     version: Option<String>,
-    request: Option<String>
+    request: Option<String>,
+    typename: Option<String>
 }
 
 #[get("/wfs?<wfsreq..>")]
@@ -1376,10 +1378,19 @@ fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth
         }
     };
 
+    // TODO Error on non 2.0.0 version
     let version: Option<String> = match wfsreq.version {
         Some(ref version) => Some(version.clone()),
         None => match wfsreq.VERSION {
             Some(ref version) => Some(version.clone()),
+            None => None
+        }
+    };
+
+    let typename: Option<String> = match wfsreq.typename {
+        Some(ref typename) => Some(typename.clone()),
+        None => match wfsreq.TYPENAME {
+            Some(ref typename) => Some(typename.clone()),
             None => None
         }
     };
@@ -1399,6 +1410,8 @@ fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth
                 response.set_sized_body(capabilities);
                 response.set_raw_header("Content-Type", "application/xml");
                 Ok(response)
+            } else if &*request == "DescribeFeatureType" {
+
             } else {
                 let mut error = HecateError::new(400, String::from("Not a valid request param"), None);
                 error.to_wfsxml();
@@ -1407,7 +1420,7 @@ fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth
             }
         },
         None => {
-            let mut error = HecateError::new(400, String::from("Not a valid request param"), None);
+            let mut error = HecateError::new(400, String::from("Request param required"), None);
             error.to_wfsxml();
 
             Err(error)

@@ -43,7 +43,7 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                                     <Country></Country>
                                     <ElectronicMailAddress></ElectronicMailAddress>
                                 </Address>
-                                <OnlineResource href=""/>
+                                <OnlineResource href="/admin"/>
                                 <HoursOfService></HoursOfService>
                                 <ContactInstructions></ContactInstructions>
                             </ContactInfo>
@@ -62,8 +62,8 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                         </Operation>
                         <Operation name="DescribeFeatureType">
                             <DCP><HTTP>
-                                    <Get href="/api/wfs?"/>
-                                    <Post href="/api/wfs"/>
+                                <Get href="/api/wfs?"/>
+                                <Post href="/api/wfs"/>
                             </HTTP></DCP>
                             <Parameter name="outputFormat">
                                 <AllowedValues>
@@ -134,7 +134,6 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                         </Operation>
                         <Constraint name="ImplementsBasicWFS"><NoValues/><DefaultValue>TRUE</DefaultValue></Constraint>
                         <Constraint name="ImplementsTransactionalWFS"><NoValues/><DefaultValue>FALSE</DefaultValue></Constraint>
-                        <Constraint name="ImplementsLockingWFS"><NoValues/><DefaultValue>FALSE</DefaultValue></Constraint>
                         <Constraint name="KVPEncoding"><NoValues/><DefaultValue>TRUE</DefaultValue></Constraint>
                         <Constraint name="XMLEncoding"><NoValues/><DefaultValue>TRUE</DefaultValue></Constraint>
                         <Constraint name="SOAPEncoding"><NoValues/><DefaultValue>FALSE</DefaultValue></Constraint>
