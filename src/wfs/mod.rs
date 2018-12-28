@@ -1,6 +1,89 @@
+
 use err::HecateError;
 
-pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<String, HecateError> {
+///
+/// Req is used by Rocket to handle the user's request on the GET wfs? endpoint
+///
+/// It must be converted to a WFSQuery before it is used by any of the functions in this mod
+///
+#[derive(FromForm, Debug)]
+pub struct Req {
+    pub service: Option<String>,
+    pub version: Option<String>,
+    pub request: Option<String>,
+    pub typename: Option<String>,
+    pub typenames: Option<String>,
+    pub SERVICE: Option<String>,
+    pub VERSION: Option<String>,
+    pub REQUEST: Option<String>,
+    pub TYPENAME: Option<String>,
+    pub TYPENAMES: Option<String>,
+}
+
+pub enum RequestType {
+    GetCapabilities,
+    DescribeFeatureType,
+    GetFeature,
+    Invalid
+}
+
+pub struct Query {
+    pub service: String,
+    pub version: String,
+    pub request: RequestType
+}
+
+impl Query {
+    pub fn new(req: &Req) -> Self {
+        Query {
+            service: Query::std_service(&req),
+            version: Query::std_version(&req),
+            request: Query::std_request(&req)
+        }
+    }
+
+    fn std_version(req: &Req) -> String {
+        if req.version.is_some() {
+            return req.version.clone().unwrap();
+        } else if  req.VERSION.is_some() {
+            return req.VERSION.clone().unwrap();
+        } else {
+            return String::from("2.0.0");
+        }
+    }
+
+    fn std_service(req: &Req) -> String {
+        if req.service.is_some() {
+            return req.service.clone().unwrap();
+        } else if  req.SERVICE.is_some() {
+            return req.SERVICE.clone().unwrap();
+        } else {
+            return String::from("WFS");
+        }
+    }
+
+    fn std_request(req: &Req) -> RequestType {
+        let request: String = match req.request {
+            Some(ref request) => request.clone(),
+            None => match req.REQUEST {
+                Some(ref request) => request.clone(),
+                None => String::from("")
+            }
+        };
+
+        if request == "GetCapabilities" {
+            RequestType::GetCapabilities
+        } else if request == "DescribeFeatureType" {
+            RequestType::DescribeFeatureType
+        } else if request == "GetFeature" {
+            RequestType::GetFeature
+        } else {
+            RequestType::Invalid
+        }
+    }
+}
+
+pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, host: &String) -> Result<String, HecateError> {
     match conn.query("
         SELECT
             ST_XMin(extent.extent)||' '|| ST_YMin(extent.extent) as lower,
@@ -53,8 +136,8 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                     <OperationsMetadata>
                         <Operation name="GetCapabilities">
                             <DCP><HTTP>
-                                    <Get href="/api/wfs?"/>
-                                    <Post href="/api/wfs"/>
+                                    <Get href="{host}/api/wfs?"/>
+                                    <Post href="{host}/api/wfs"/>
                             </HTTP></DCP>
                             <Parameter name="AcceptVersions">
                                 <AllowedValues><Value>2.0.0</Value></AllowedValues>
@@ -62,8 +145,8 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                         </Operation>
                         <Operation name="DescribeFeatureType">
                             <DCP><HTTP>
-                                <Get href="/api/wfs?"/>
-                                <Post href="/api/wfs"/>
+                                <Get href="{host}/api/wfs?"/>
+                                <Post href="{host}/api/wfs"/>
                             </HTTP></DCP>
                             <Parameter name="outputFormat">
                                 <AllowedValues>
@@ -73,14 +156,14 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                         </Operation>
                         <Operation name="GetPropertyValue">
                             <DCP><HTTP>
-                                <Get href="/api/wfs?"/>
-                                <Post href="/api/wfs"/>
+                                <Get href="{host}/api/wfs?"/>
+                                <Post href="{host}/api/wfs"/>
                             </HTTP></DCP>
                         </Operation>
                         <Operation name="GetFeature">
                             <DCP><HTTP>
-                                <Get href="/api/wfs?"/>
-                                <Post href="/api/wfs"/>
+                                <Get href="{host}/api/wfs?"/>
+                                <Post href="{host}/api/wfs"/>
                             </HTTP></DCP>
                             <Parameter name="resultType">
                                 <AllowedValues>
@@ -116,20 +199,20 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                         </Operation>
                         <Operation name="GetGmlObject">
                             <DCP><HTTP>
-                                <Get href="/api/wfs?"/>
-                                <Post href="/api/wfs"/>
+                                <Get href="{host}/api/wfs?"/>
+                                <Post href="{host}/api/wfs"/>
                             </HTTP></DCP>
                         </Operation>
                         <Operation name="ListStoredQueries">
                             <DCP><HTTP>
-                                <Get href="/api/wfs?"/>
-                                <Post href="/api/wfs"/>
+                                <Get href="{host}/api/wfs?"/>
+                                <Post href="{host}/api/wfs"/>
                             </HTTP></DCP>
                         </Operation>
                         <Operation name="DescribeStoredQueries">
                             <DCP><HTTP>
-                                <Get href="/api/wfs?"/>
-                                <Post href="/api/wfs"/>
+                                <Get href="{host}/api/wfs?"/>
+                                <Post href="{host}/api/wfs"/>
                             </HTTP></DCP>
                         </Operation>
                         <Constraint name="ImplementsBasicWFS"><NoValues/><DefaultValue>TRUE</DefaultValue></Constraint>
@@ -152,8 +235,8 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                             <Title>Hecate Data</Title>
                             <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
                             <WGS84BoundingBox>
-                                <LowerCorner>{}</LowerCorner>
-                                <UpperCorner>{}</UpperCorner>
+                                <LowerCorner>{lower}</LowerCorner>
+                                <UpperCorner>{upper}</UpperCorner>
                             </WGS84BoundingBox>
                         </FeatureType>
                     </FeatureTypeList>
@@ -221,7 +304,11 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                         </Spatial_Capabilities>
                     </Filter_Capabilities>
                 </WFS_Capabilities>
-            "#, lower, upper))
+            "#,
+                lower = lower,
+                upper = upper,
+                host = host
+            ))
         },
         Err(err) => Err(HecateError::from_db(err))
     }
@@ -248,6 +335,17 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
                     <xsd:element name="HecateData" substitutionGroup="gml:AbstractFeature" type="HecateDataType"/>
                 </xsd:schema>
             "#))
+        },
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}
+
+pub fn get_feature(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<String, HecateError> {
+    match conn.query("
+        SELECT 1;
+    ", &[]) {
+        Ok(res) => {
+            Ok(format!(r#""#))
         },
         Err(err) => Err(HecateError::from_db(err))
     }

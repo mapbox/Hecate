@@ -1348,88 +1348,35 @@ fn feature_get_history(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
     Ok(Json(delta::history(&conn, &id)?))
 }
 
-#[derive(FromForm, Debug)]
-struct WFSReq {
-    SERVICE: Option<String>,
-    VERSION: Option<String>,
-    REQUEST: Option<String>,
-    TYPENAME: Option<String>,
-    service: Option<String>,
-    version: Option<String>,
-    request: Option<String>,
-    typename: Option<String>
-}
-
 #[get("/wfs?<wfsreq..>")]
-fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut wfsreq: Form<WFSReq>) -> Result<Response<'static>, HecateError> {
-    let service: Option<String> = match wfsreq.service {
-        Some(ref service) => Some(service.clone()),
-        None => match wfsreq.SERVICE {
-            Some(ref service) => Some(service.clone()),
-            None => None
-        }
-    };
-
-    let request: Option<String> = match wfsreq.request {
-        Some(ref request) => Some(request.clone()),
-        None => match wfsreq.REQUEST {
-            Some(ref request) => Some(request.clone()),
-            None => None
-        }
-    };
+fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, wfsreq: Form<wfs::Req>) -> Result<Response<'static>, HecateError> {
+    //TODO THIS NEEDS TO BE PARAMATERIZED
+    let host = String::from("http://localhost:8000");
 
     // TODO Error on non 2.0.0 version
-    let version: Option<String> = match wfsreq.version {
-        Some(ref version) => Some(version.clone()),
-        None => match wfsreq.VERSION {
-            Some(ref version) => Some(version.clone()),
-            None => None
-        }
-    };
-
-    let typename: Option<String> = match wfsreq.typename {
-        Some(ref typename) => Some(typename.clone()),
-        None => match wfsreq.TYPENAME {
-            Some(ref typename) => Some(typename.clone()),
-            None => None
-        }
-    };
+    
+    let query = wfs::Query::new(&wfsreq);
 
     let conn = conn.get()?;
 
     //TODO THIS NEEDS TO BE WFS SPECFIC
     auth_rules.allows_feature_history(&mut auth, &conn)?;
 
-    match request {
-        Some(ref request) => {
-            if &*request == "GetCapabilities" {
-                let capabilities = Cursor::new(wfs::capabilities(&conn)?);
-
-                let mut response = Response::new();
-                response.set_status(HTTPStatus::Ok);
-                response.set_sized_body(capabilities);
-                response.set_raw_header("Content-Type", "application/xml");
-                Ok(response)
-            } else if &*request == "DescribeFeatureType" {
-                let capabilities = Cursor::new(wfs::describe_feature_type(&conn)?);
-
-                let mut response = Response::new();
-                response.set_status(HTTPStatus::Ok);
-                response.set_sized_body(capabilities);
-                response.set_raw_header("Content-Type", "application/xml");
-                Ok(response)
-            } else {
-                let mut error = HecateError::new(400, String::from("Not a valid request param"), None);
-                error.to_wfsxml();
-
-                Err(error)
-            }
-        },
-        None => {
-            let mut error = HecateError::new(400, String::from("Request param required"), None);
+    let body = match query.request {
+        wfs::RequestType::GetCapabilities => wfs::capabilities(&conn, &host)?,
+        wfs::RequestType::DescribeFeatureType => wfs::describe_feature_type(&conn)?,
+        wfs::RequestType::GetFeature => String::from("NOT IMPLEENTED"),
+        wfs::RequestType::Invalid => {
+            let mut error = HecateError::new(400, String::from("Not a valid request param"), None);
             error.to_wfsxml();
-
-            Err(error)
+            return Err(error);
         }
-    }
+    };
+
+    let body_cursor = Cursor::new(body);
+    let mut response = Response::new();
+    response.set_status(HTTPStatus::Ok);
+    response.set_sized_body(body_cursor);
+    response.set_raw_header("Content-Type", "application/xml");
+    Ok(response)
 }
