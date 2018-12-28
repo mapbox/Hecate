@@ -430,7 +430,19 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
     }
 }
 
-pub fn get_feature(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<String, HecateError> {
+pub fn get_feature(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &Query) -> Result<String, HecateError> {
+    if query.srsname.is_some() && query.srsname != Some(String::from("urn:ogc:def:crs:EPSG::4326")) {
+        let mut err = HecateError::new(400, String::from("Only srsname=urn:ogc:def:crs:EPSG::4326 supported"), None);
+        err.to_wfsxml();
+        return Err(err);
+    }
+
+    if query.typenames.is_some() && query.typenames != Some(String::from("HecateData")) {
+        let mut err = HecateError::new(400, String::from("Only typenames=HecateData supported"), None);
+        err.to_wfsxml();
+        return Err(err);
+    }
+
     match conn.query("
         SELECT 1;
     ", &[]) {

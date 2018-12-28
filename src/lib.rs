@@ -1365,7 +1365,7 @@ fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth
     let body = match query.request {
         wfs::RequestType::GetCapabilities => wfs::capabilities(&conn, &host)?,
         wfs::RequestType::DescribeFeatureType => wfs::describe_feature_type(&conn)?,
-        wfs::RequestType::GetFeature => wfs::get_feature(&conn)?,
+        wfs::RequestType::GetFeature => wfs::get_feature(&conn, &query)?,
         wfs::RequestType::Invalid => {
             let mut error = HecateError::new(400, String::from("Not a valid request param"), None);
             error.to_wfsxml();
