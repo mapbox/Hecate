@@ -1384,10 +1384,15 @@ fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth
         }
     };
 
+    let conn = conn.get()?;
+
+    //TODO THIS NEEDS TO BE WFS SPECFIC
+    auth_rules.allows_feature_history(&mut auth, &conn)?;
+
     match request {
         Some(ref request) => {
             if &*request == "GetCapabilities" {
-                let capabilities = Cursor::new(wfs::capabilities()?);
+                let capabilities = Cursor::new(wfs::capabilities(&conn)?);
 
                 let mut response = Response::new();
                 response.set_status(HTTPStatus::Ok);
