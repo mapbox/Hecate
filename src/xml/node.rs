@@ -205,7 +205,7 @@ mod tests {
 
         assert_eq!(n.to_feat(&tree).ok(), Some(geojson::Feature {
             bbox: None,
-            id: Some(json!(1)),
+            id: Some(geojson::feature::Id::Number(serde_json::Number::from(1))),
             properties: Some(serde_json::Map::new()),
             geometry: Some(geojson::Geometry::new(geojson::Value::Point(vec!(2.200000047683716, 1.100000023841858)))),
             foreign_members: Some(fmem.clone())
@@ -215,7 +215,7 @@ mod tests {
         fmem.insert(String::from("action"), json!(String::from("modify")));
         assert_eq!(n.to_feat(&tree).ok(), Some(geojson::Feature {
             bbox: None,
-            id: Some(json!(1)),
+            id: Some(geojson::feature::Id::Number(serde_json::Number::from(1))),
             properties: Some(serde_json::Map::new()),
             geometry: Some(geojson::Geometry::new(geojson::Value::Point(vec!(2.200000047683716, 1.100000023841858)))),
             foreign_members: Some(fmem.clone())
@@ -225,7 +225,7 @@ mod tests {
         fmem.insert(String::from("action"), json!(String::from("delete")));
         assert_eq!(n.to_feat(&tree).ok(), Some(geojson::Feature {
             bbox: None,
-            id: Some(json!(1)),
+            id: Some(geojson::feature::Id::Number(serde_json::Number::from(1))),
             properties: Some(serde_json::Map::new()),
             geometry: None,
             foreign_members: Some(fmem.clone())
