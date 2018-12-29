@@ -102,7 +102,7 @@ pub fn get_geom_str(feat: &geojson::Feature) -> Result<String, HecateError> {
         } else if lat < -180.0 {
             return Err(import_error(&feat, "latitude < -180"));
         } else if lat > 180.0 {
-            return Err(import_error(&feat, "longitude > 180"));
+            return Err(import_error(&feat, "latitude > 180"));
         } else {
             Ok(true)
         }
