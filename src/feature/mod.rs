@@ -96,13 +96,13 @@ pub fn get_geom_str(feat: &geojson::Feature) -> Result<String, HecateError> {
         let lat = pt[1];
 
         if lon < -90.0 {
-            return Err(import_error(&feat, "longitude < -90"));
+            return Err(import_error(&feat, "longitude < -180"));
         } else if lon > 90.0 {
-            return Err(import_error(&feat, "longitude > 90"));
+            return Err(import_error(&feat, "longitude > 180"));
         } else if lat < -180.0 {
-            return Err(import_error(&feat, "latitude < -180"));
+            return Err(import_error(&feat, "latitude < -90"));
         } else if lat > 180.0 {
-            return Err(import_error(&feat, "latitude > 180"));
+            return Err(import_error(&feat, "latitude > 90"));
         } else {
             Ok(true)
         }
