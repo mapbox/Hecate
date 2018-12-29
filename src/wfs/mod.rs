@@ -23,6 +23,10 @@ pub struct Req {
     pub typenames: Option<String>,
     pub typeNames: Option<String>,
 
+    pub RESULTTYPE: Option<String>,
+    pub resultType: Option<String>,
+    pub resulttype: Option<String>,
+
     pub STARTINDEX: Option<u32>,
     pub startIndex: Option<u32>,
     pub startindex: Option<u32>,
@@ -53,7 +57,8 @@ pub struct Query {
     pub startindex: Option<u32>,
     pub count: Option<u32>,
     pub srsname: Option<String>,
-    pub bbox: Option<String>  //TODO this should be a vec of EPSG:4326 coords
+    pub bbox: Option<String>,  //TODO this should be a vec of EPSG:4326 coords,
+    pub resulttype: Option<String>
 }
 
 impl Query {
@@ -66,7 +71,8 @@ impl Query {
             startindex: Query::std_startindex(&req),
             count: Query::std_count(&req),
             srsname: Query::std_srsname(&req),
-            bbox: Query::std_bbox(&req)
+            bbox: Query::std_bbox(&req),
+            resulttype: Query::std_resulttype(&req)
         }
     }
 
@@ -85,6 +91,18 @@ impl Query {
             return Some(req.count.clone().unwrap());
         } else if req.COUNT.is_some() {
             return Some(req.COUNT.clone().unwrap());
+        } else {
+            return None;
+        }
+    }
+
+    fn std_resulttype(req: &Req) -> Option<String> {
+        if req.resulttype.is_some() {
+            return Some(req.resulttype.clone().unwrap());
+        } else if req.resultType.is_some() {
+            return Some(req.resultType.clone().unwrap());
+        } else if req.RESULTTYPE.is_some() {
+            return Some(req.RESULTTYPE.clone().unwrap());
         } else {
             return None;
         }
