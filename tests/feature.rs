@@ -236,7 +236,7 @@ mod test {
                     "action": "create",
                     "message": "Creating a Point",
                     "properties": { "number": "123" },
-                    "geometry": { "type": "Point", "coordinates": [ 0, -90 ] }
+                    "geometry": { "type": "Point", "coordinates": [ 0, -100 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -246,10 +246,10 @@ mod test {
             assert!(resp.status().is_client_error());
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
-            assert_eq!(json_body["message"], json!("latitude < -80"));
+            assert_eq!(json_body["message"], json!("latitude < -90"));
         }
 
-        { //Create Point - Invalid lat > 80
+        { //Create Point - Invalid lat > 90
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/data/feature")
                 .body(r#"{
@@ -257,7 +257,7 @@ mod test {
                     "action": "create",
                     "message": "Creating a Point",
                     "properties": { "number": "123" },
-                    "geometry": { "type": "Point", "coordinates": [ 0, 90 ] }
+                    "geometry": { "type": "Point", "coordinates": [ 0, 100 ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -267,7 +267,7 @@ mod test {
             assert!(resp.status().is_client_error());
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
-            assert_eq!(json_body["message"], json!("latitude > 80"));
+            assert_eq!(json_body["message"], json!("latitude > 90"));
         }
 
         { //Create Point
