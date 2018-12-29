@@ -162,7 +162,7 @@
                                 <span @click='helpBaseClick' class='fr cursor-pointer'><svg class='icon'><use href='#icon-info'/></svg></span>
                             </div>
 
-                            <div class='col col--12 hmin120 hmax180 clearfix'>
+                            <div class='col col--12 hmin120 hmax180 clearfix scroll-auto'>
                                 <template v-for='(layer, layer_idx) of layers'>
                                     <div class='w120 fl relative color-gray-light my12 mx12 cursor-pointer'>
                                         <div @click='delLayerClick(layer_idx)' class='absolute bg-red-light bg-red-on-hover round color-white w18 h18' style='top: -9px; right: -9px;'>
