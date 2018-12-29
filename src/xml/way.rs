@@ -85,24 +85,35 @@ impl Generic for Way {
             let mut polycoords: Vec<Vec<geojson::Position>> = Vec::new();
             polycoords.push(linecoords);
 
+
+            let id: Option<geojson::feature::Id> = match self.id {
+                None => None,
+                Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(id.clone())))
+            };
+
             Ok(geojson::Feature {
                 bbox: None,
                 geometry: Some(geojson::Geometry::new(
                     geojson::Value::Polygon(polycoords)
                 )),
-                id: Some(json!(self.id.clone())),
+                id: id,
                 properties: Some(self.tags.clone()),
                 foreign_members: Some(foreign)
             })
         } else {
             //Handle LineStrings
 
+            let id: Option<geojson::feature::Id> = match self.id {
+                None => None,
+                Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(id.clone())))
+            };
+
             Ok(geojson::Feature {
                 bbox: None,
                 geometry: Some(geojson::Geometry::new(
                     geojson::Value::LineString(linecoords)
                 )),
-                id: Some(json!(self.id.clone())),
+                id: id,
                 properties: Some(self.tags.clone()),
                 foreign_members: Some(foreign)
             })

@@ -84,9 +84,15 @@ pub fn get_version(feat: &geojson::Feature) -> Result<i64, HecateError> {
 pub fn get_id(feat: &geojson::Feature) -> Result<i64, HecateError> {
     match feat.id {
         None => { return Err(import_error(&feat, "ID Required")); },
-        Some(ref id) => match id.as_i64() {
-            Some(id) => Ok(id),
-            None => { return Err(import_error(&feat, "ID Required")); },
+        Some(ref id) => match id {
+            geojson::feature::Id::Number(id) => {
+                if id.is_i64() {
+                    Ok(id.as_i64().unwrap())
+                } else {
+                    return Err(import_error(&feat, "Integer ID Required"));
+                }
+            },
+            _ => { return Err(import_error(&feat, "Integer ID Required")); },
         }
     }
 }

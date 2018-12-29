@@ -855,8 +855,8 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
                 return Err(err);
             },
             Ok(res) => {
-                if res.new != None {
-                    feat.id = Some(json!(res.new))
+                if res.new.is_some() {
+                    feat.id = Some(geojson::feature::Id::Number(serde_json::Number::from(res.new.unwrap())))
                 }
             }
         };
@@ -1102,7 +1102,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
             },
             Ok(feat_res) => {
                 if feat_res.old.unwrap_or(0) < 0 {
-                    feat.id = Some(json!(feat_res.new));
+                    feat.id = Some(geojson::feature::Id::Number(serde_json::Number::from(feat_res.new.unwrap())));
                 }
 
                 feat_res
@@ -1274,8 +1274,8 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
 
     match feature::action(&trans, schema.inner(), &feat, &None) {
         Ok(res) => {
-            if res.new != None {
-                feat.id = Some(json!(res.new))
+            if res.new.is_some() {
+                feat.id = Some(geojson::feature::Id::Number(serde_json::Number::from(res.new.unwrap())));
             }
         },
         Err(err) => {

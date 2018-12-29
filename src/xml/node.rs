@@ -79,10 +79,15 @@ impl Generic for Node {
             ));
         }
 
+        let id: Option<geojson::feature::Id> = match self.id {
+            None => None,
+            Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(id.clone())))
+        };
+
         Ok(geojson::Feature {
             bbox: None,
             geometry: geom,
-            id: Some(json!(self.id.clone())),
+            id: id,
             properties: Some(self.tags.clone()),
             foreign_members: Some(foreign)
         })
