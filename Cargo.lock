@@ -455,7 +455,7 @@ dependencies = [
 
 [[package]]
 name = "geojson"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "geo-types 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -483,13 +483,13 @@ dependencies = [
 
 [[package]]
 name = "hecate"
-version = "0.57.0"
+version = "0.58.0"
 dependencies = [
  "base64 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "geojson 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "geojson 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "postgis 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "postgres 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf 1.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2117,7 +2117,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum futures-cpupool 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "ab90cde24b3319636588d0c35fe03b1333857621051837ed769faefb4c2162e4"
 "checksum generic-array 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ef25c5683767570c2bbd7deba372926a55eaae9982d7726ee2a1050239d45b9d"
 "checksum geo-types 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7260ac8abfc04cc21b914254b69875c2548faf6f791f88ad9ec1a131d4251729"
-"checksum geojson 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "fa4fb54bb359e2b2a473704f676c917769faf06f57ddc33ccaadc83d05ea936d"
+"checksum geojson 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ba15ed82ca7885866c6257f6d91f57aeab25ca3dcb7d93204a6d4aa02ecf83ae"
 "checksum h2 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "7dd33bafe2e6370e6c8eb0cf1b8c5f93390b90acde7e9b03723f166b28b648ed"
 "checksum hex 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d6a22814455d41612f41161581c2883c0c6a1c41852729b17d5ed88f01e153aa"
 "checksum hmac 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "44f3bdb08579d99d7dc761c0e266f13b5f2ab8c8c703b9fc9ef333cd8f48f55e"

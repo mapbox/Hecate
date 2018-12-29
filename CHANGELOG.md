@@ -10,6 +10,12 @@
 
 # Version History
 
+## v0.58.0
+
+- :arrow_up: Update to `geojson@13` which adds support for better representation of `Feature::Id` values
+- :tada: Validate coordinates on upload (180,-180,90,-90)
+- [UI] Fix styles overflow in admin panel
+
 ## v0.57.0
 
 - :tada: Add `HECATE_SECRET` option for providing a 256 bit base64 key for cookie signing (`openssl rand --base64 32`)

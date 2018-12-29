@@ -1,5 +1,6 @@
 extern crate reqwest;
 extern crate postgres;
+#[macro_use] extern crate serde_json;
 
 #[cfg(test)]
 mod test {
@@ -183,6 +184,90 @@ mod test {
 
             assert!(resp.status().is_client_error());
             assert_eq!(resp.text().unwrap(), "{\"feature\":{\"geometry\":{\"coordinates\":[0.0,0.0],\"type\":\"Point\"},\"message\":\"Creating a Point\",\"properties\":{\"number\":\"123\"},\"type\":\"Feature\"},\"id\":null,\"message\":\"Action Required\"}");
+        }
+
+        { //Create Point - Invalid lon < 180
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ -190, 0 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body["message"], json!("longitude < -180"));
+        }
+
+        { //Create Point - Invalid lon > 180
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 190, 0 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body["message"], json!("longitude > 180"));
+        }
+
+        { //Create Point - Invalid lat < 90
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, -100 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body["message"], json!("latitude < -90"));
+        }
+
+        { //Create Point - Invalid lat > 90
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, 100 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body["message"], json!("latitude > 90"));
         }
 
         { //Create Point
