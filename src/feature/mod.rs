@@ -81,6 +81,80 @@ pub fn get_version(feat: &geojson::Feature) -> Result<i64, HecateError> {
     }
 }
 
+pub fn get_geom_str(feat: &geojson::Feature) -> Result<String, HecateError> {
+    let geom = match feat.geometry {
+        None => { return Err(import_error(&feat, "Geometry Required")); },
+        Some(ref geom) => geom
+    };
+
+    fn is_valid_coord(feat: &geojson::Feature, pt: &geojson::PointType) -> Result<bool, HecateError> {
+        if pt.len() > 3 {
+            return Err(import_error(&feat, "Coordinate Array has > 3 coords"));
+        }
+
+        let lon = pt[0];
+        let lat = pt[1];
+
+        if lon < -90.0 {
+            return Err(import_error(&feat, "longitude < -90"));
+        } else if lon > 90.0 {
+            return Err(import_error(&feat, "longitude > 90"));
+        } else if lat < -180.0 {
+            return Err(import_error(&feat, "latitude < -180"));
+        } else if lat > 180.0 {
+            return Err(import_error(&feat, "longitude > 180"));
+        } else {
+            Ok(true)
+        }
+    }
+
+    //Ensure coordinates are within bounds
+    match geom.value {
+        geojson::Value::Point(ref pt) => {
+            is_valid_coord(&feat, &pt)?;
+        },
+        geojson::Value::MultiPoint(ref pts) => {
+            for pt in pts {
+                is_valid_coord(&feat, &pt)?;
+            }
+        },
+        geojson::Value::LineString(ref ln) => {
+            for pt in ln {
+                is_valid_coord(&feat, &pt)?;
+            }
+        },
+        geojson::Value::MultiLineString(ref lns) => {
+            for ln in lns {
+                for pt in ln {
+                    is_valid_coord(&feat, &pt)?;
+                }
+            }
+        },
+        geojson::Value::Polygon(ref ply) => {
+            for pl in ply {
+                for pt in pl {
+                    is_valid_coord(&feat, &pt)?;
+                }
+            }
+        },
+        geojson::Value::MultiPolygon(ref plys) => {
+            for ply in plys {
+                for pl in ply {
+                    for pt in pl {
+                        is_valid_coord(&feat, &pt)?;
+                    }
+                }
+            }
+        },
+        _ => ()
+    };
+
+    match serde_json::to_string(&geom) {
+        Ok(geom) => Ok(geom),
+        Err(_) => Err(import_error(&feat, "Failed to stringify geometry"))
+    }
+}
+
 pub fn get_id(feat: &geojson::Feature) -> Result<i64, HecateError> {
     match feat.id {
         None => { return Err(import_error(&feat, "ID Required")); },
@@ -164,11 +238,6 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
         return Err(import_error(&feat, "Cannot have Version"));
     }
 
-    let geom = match feat.geometry {
-        None => { return Err(import_error(&feat, "Geometry Required")); },
-        Some(ref geom) => geom
-    };
-
     let props = match feat.properties {
         None => { return Err(import_error(&feat, "Properties Required")); },
         Some(ref props) => props
@@ -183,10 +252,8 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
 
     if !valid { return Err(import_error(&feat, "Failed to Match Schema")) };
 
-    let geom_str = match serde_json::to_string(&geom) {
-        Ok(geom) => geom,
-        Err(_) => { return Err(import_error(&feat, "Failed to stringify geometry")) }
-    };
+    let geom_str = get_geom_str(&feat)?;
+
     let props_str = match serde_json::to_string(&props) {
         Ok(props) => props,
         Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
@@ -264,11 +331,6 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
 }
 
 pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, HecateError> {
-    let geom = match feat.geometry {
-        None => { return Err(import_error(&feat, "Geometry Required")); },
-        Some(ref geom) => geom
-    };
-
     let props = match feat.properties {
         None => { return Err(import_error(&feat, "Properties Required")); },
         Some(ref props) => props
@@ -287,10 +349,8 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
     let version = get_version(&feat)?;
     let key = get_key(&feat)?;
 
-    let geom_str = match serde_json::to_string(&geom) {
-        Ok(geom) => geom,
-        Err(_) => { return Err(import_error(&feat, "Failed to stringify geometry")) }
-    };
+    let geom_str = get_geom_str(&feat)?;
+
     let props_str = match serde_json::to_string(&props) {
         Ok(props) => props,
         Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
@@ -415,11 +475,6 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
 }
 
 pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, HecateError> {
-    let geom = match feat.geometry {
-        None => { return Err(import_error(&feat, "Geometry Required")); },
-        Some(ref geom) => geom
-    };
-
     let props = match feat.properties {
         None => { return Err(import_error(&feat, "Properties Required")); },
         Some(ref props) => props
@@ -438,10 +493,8 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
     let version = get_version(&feat)?;
     let key = get_key(&feat)?;
 
-    let geom_str = match serde_json::to_string(&geom) {
-        Ok(geom) => geom,
-        Err(_) => { return Err(import_error(&feat, "Failed to stringify geometry")) }
-    };
+    let geom_str = get_geom_str(&feat)?;
+
     let props_str = match serde_json::to_string(&props) {
         Ok(props) => props,
         Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
