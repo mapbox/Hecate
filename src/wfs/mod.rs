@@ -192,6 +192,8 @@ impl Query {
 }
 
 pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, host: &String) -> Result<String, HecateError> {
+    //TODO If ANALYZE hasn't been run or there is no geo in the table, this can return null
+    //Handle this with 0,0 BBOX
     match conn.query("
         SELECT
             ST_XMin(extent.extent)||' '|| ST_YMin(extent.extent) as lower,
@@ -282,26 +284,9 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                             <Parameter name="outputFormat">
                                 <AllowedValues>
                                     <Value>GML32</Value>
-                                    <Value>GML32+ZIP</Value>
-                                    <Value>application/gml+xml; version=3.2</Value>
                                     <Value>GML3</Value>
-                                    <Value>GML3+ZIP</Value>
-                                    <Value>text/xml; subtype=gml/3.1.1</Value>
                                     <Value>GML2</Value>
-                                    <Value>GML2+ZIP</Value>
-                                    <Value>text/xml; subtype=gml/2.1.2</Value>
                                     <Value>GEOJSON</Value>
-                                    <Value>GEOJSON+ZIP</Value>
-                                    <Value>ESRIGEOJSON</Value>
-                                    <Value>ESRIGEOJSON+ZIP</Value>
-                                    <Value>KML</Value>
-                                    <Value>application/vnd.google-earth.kml xml</Value>
-                                    <Value>application/vnd.google-earth.kml+xml</Value>
-                                    <Value>KMZ</Value>
-                                    <Value>application/vnd.google-earth.kmz</Value>
-                                    <Value>SHAPE+ZIP</Value>
-                                    <Value>CSV</Value>
-                                    <Value>CSV+ZIP</Value>
                                 </AllowedValues>
                             </Parameter>
                         </Operation>
@@ -339,8 +324,53 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                     </OperationsMetadata>
                     <FeatureTypeList>
                         <FeatureType>
-                            <Name>HecateData</Name>
-                            <Title>Hecate Data</Title>
+                            <Name>HecatePointData</Name>
+                            <Title>Hecate Point Data</Title>
+                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                            <WGS84BoundingBox>
+                                <LowerCorner>{lower}</LowerCorner>
+                                <UpperCorner>{upper}</UpperCorner>
+                            </WGS84BoundingBox>
+                        </FeatureType>
+                        <FeatureType>
+                            <Name>HecateMultiPointData</Name>
+                            <Title>Hecate MultiPoint Data</Title>
+                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                            <WGS84BoundingBox>
+                                <LowerCorner>{lower}</LowerCorner>
+                                <UpperCorner>{upper}</UpperCorner>
+                            </WGS84BoundingBox>
+                        </FeatureType>
+                        <FeatureType>
+                            <Name>HecateLineStringData</Name>
+                            <Title>Hecate LineString Data</Title>
+                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                            <WGS84BoundingBox>
+                                <LowerCorner>{lower}</LowerCorner>
+                                <UpperCorner>{upper}</UpperCorner>
+                            </WGS84BoundingBox>
+                        </FeatureType>
+                        <FeatureType>
+                            <Name>HecateMultiLineStringData</Name>
+                            <Title>Hecate MultiLineString Data</Title>
+                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                            <WGS84BoundingBox>
+                                <LowerCorner>{lower}</LowerCorner>
+                                <UpperCorner>{upper}</UpperCorner>
+                            </WGS84BoundingBox>
+                        </FeatureType>
+                        <FeatureType>
+                            <Name>HecatePolygonData</Name>
+                            <Title>Hecate Polygon Data</Title>
+                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                            <WGS84BoundingBox>
+                                <LowerCorner>{lower}</LowerCorner>
+                                <UpperCorner>{upper}</UpperCorner>
+                            </WGS84BoundingBox>
+                        </FeatureType>
+                        <FeatureType>
+                            <Name>HecateMultiPolygonData</Name>
+                            <Title>Hecate MultiPolygon Data</Title>
                             <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
                             <WGS84BoundingBox>
                                 <LowerCorner>{lower}</LowerCorner>
@@ -393,8 +423,6 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                                 <GeometryOperand name="gml:LinearRing"/>
                                 <GeometryOperand name="gml:Polygon"/>
                                 <GeometryOperand name="gml:MultiPoint"/>
-                                <GeometryOperand name="gml:MultiCurve"/>
-                                <GeometryOperand name="gml:MultiSurface"/>
                             </GeometryOperands>
                             <SpatialOperators>
                                 <SpatialOperator name="BBOX"/>
@@ -430,17 +458,77 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
             Ok(format!(r#"
                 <xsd:schema xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:publicgis="http://bloomington.in.gov/publicgis" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://bloomington.in.gov/publicgis">
                     <xsd:import namespace="http://www.opengis.net/gml/3.2" schemaLocation="https://tarantula.bloomington.in.gov:443/geoserver/schemas/gml/3.2.1/gml.xsd"/>
-                    <xsd:complexType name="HecateDataType">
+                    <xsd:complexType name="HecatePointDataType">
                         <xsd:complexContent>
                             <xsd:extension base="gml:AbstractFeatureType">
                                 <xsd:sequence>
-                                    <xsd:element maxOccurs="1" minOccurs="0" name="the_geom" nillable="true" type="gml:PointPropertyType"/>
-                                    <xsd:element maxOccurs="1" minOccurs="0" name="TAG" nillable="true" type="xsd:string"/>
-                            </xsd:sequence>
-                        </xsd:extension>
+                                    <xsd:element maxOccurs="1" minOccurs="0" name="hecate:version" nillable="false" type="xsd:string"/>
+                                    <xsd:element ref="gml:Point"/>
+                                </xsd:sequence>
+                            </xsd:extension>
                         </xsd:complexContent>
                     </xsd:complexType>
-                    <xsd:element name="HecateData" substitutionGroup="gml:AbstractFeature" type="HecateDataType"/>
+                    <xsd:element name="HecatePointData" substitutionGroup="gml:AbstractFeature" type="HecatePointDataType"/>
+
+                    <xsd:complexType name="HecateMultiPointDataType">
+                        <xsd:complexContent>
+                            <xsd:extension base="gml:AbstractFeatureType">
+                                <xsd:sequence>
+                                    <xsd:element maxOccurs="1" minOccurs="0" name="hecate:version" nillable="false" type="xsd:string"/>
+                                    <xsd:element ref="gml:MultiPoint"/>
+                                </xsd:sequence>
+                            </xsd:extension>
+                        </xsd:complexContent>
+                    </xsd:complexType>
+                    <xsd:element name="HecateMultiPointData" substitutionGroup="gml:AbstractFeature" type="HecateMultiPointDataType"/>
+
+                    <xsd:complexType name="HecateLineStringDataType">
+                        <xsd:complexContent>
+                            <xsd:extension base="gml:AbstractFeatureType">
+                                <xsd:sequence>
+                                    <xsd:element maxOccurs="1" minOccurs="0" name="hecate:version" nillable="false" type="xsd:string"/>
+                                    <xsd:element ref="gml:LineString"/>
+                                </xsd:sequence>
+                            </xsd:extension>
+                        </xsd:complexContent>
+                    </xsd:complexType>
+                    <xsd:element name="HecateLineStringData" substitutionGroup="gml:AbstractFeature" type="HecateLineStringDataType"/>
+
+                    <xsd:complexType name="HecateMultiLineStringDataType">
+                        <xsd:complexContent>
+                            <xsd:extension base="gml:AbstractFeatureType">
+                                <xsd:sequence>
+                                    <xsd:element maxOccurs="1" minOccurs="0" name="hecate:version" nillable="false" type="xsd:string"/>
+                                    <xsd:element ref="gml:MultiLineString"/>
+                                </xsd:sequence>
+                            </xsd:extension>
+                        </xsd:complexContent>
+                    </xsd:complexType>
+                    <xsd:element name="HecateMultiLineStringData" substitutionGroup="gml:AbstractFeature" type="HecateMultiLineStringDataType"/>
+
+                    <xsd:complexType name="HecatePolygonDataType">
+                        <xsd:complexContent>
+                            <xsd:extension base="gml:AbstractFeatureType">
+                                <xsd:sequence>
+                                    <xsd:element maxOccurs="1" minOccurs="0" name="hecate:version" nillable="false" type="xsd:string"/>
+                                    <xsd:element ref="gml:LineString"/>
+                                </xsd:sequence>
+                            </xsd:extension>
+                        </xsd:complexContent>
+                    </xsd:complexType>
+                    <xsd:element name="HecatePolygonData" substitutionGroup="gml:AbstractFeature" type="HecatePolygonDataType"/>
+
+                    <xsd:complexType name="HecateMultiPolygonDataType">
+                        <xsd:complexContent>
+                            <xsd:extension base="gml:AbstractFeatureType">
+                                <xsd:sequence>
+                                    <xsd:element maxOccurs="1" minOccurs="0" name="hecate:version" nillable="false" type="xsd:string"/>
+                                    <xsd:element ref="gml:MultiLineString"/>
+                                </xsd:sequence>
+                            </xsd:extension>
+                        </xsd:complexContent>
+                    </xsd:complexType>
+                    <xsd:element name="HecateMultiPolygonData" substitutionGroup="gml:AbstractFeature" type="HecateMultiPolygonDataType"/>
                 </xsd:schema>
             "#))
         },
@@ -455,15 +543,46 @@ pub fn get_feature(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnecti
         return Err(err);
     }
 
+    let geom_filter = match query.typenames {
+        None => {
+            let mut err = HecateError::new(400, String::from("typenames param required"), None);
+            err.to_wfsxml();
+            return Err(err);
+        },
+        Some(ref typenames) => {
+            if &*typenames == "HecatePointData" {
+                String::from("GeometryType(geom) = 'POINT'")
+            } else if &*typenames == "HecateMultiPointData" {
+                String::from("GeometryType(geom) = 'MULTIPOINT'")
+            } else if &*typenames == "HecateLineStringData" {
+                String::from("GeometryType(geom) = 'LINESTRING'")
+            } else if &*typenames == "HecateMultiLineStringData" {
+                String::from("GeometryType(geom) = 'MULTILINESTRING'")
+            } else if &*typenames == "HecatePolygonData" {
+                String::from("GeometryType(geom) = 'POLYGON'")
+            } else if &*typenames == "HecateMultiPolygonData" {
+                String::from("GeometryType(geom) = 'MULTIPOLYGON'")
+            } else {
+                let mut err = HecateError::new(400, String::from("Unknown typenames layer"), None);
+                err.to_wfsxml();
+                return Err(err);
+            }
+        }
+    };
+
     if query.typenames.is_some() && query.typenames != Some(String::from("HecateData")) {
         let mut err = HecateError::new(400, String::from("Only typenames=HecateData supported"), None);
         err.to_wfsxml();
         return Err(err);
     }
 
-    match conn.query("
-        SELECT 1;
-    ", &[]) {
+    match conn.query(format!("
+        SELECT
+            ST_AsGML(geom) AS geom,
+        FROM geo
+        WHERE
+            {geom_filter}
+    ", geom_filter = geom_filter).as_str(), &[]) {
         Ok(res) => {
             Ok(format!(r#"
                 <wfs:FeatureCollection xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:publicgis="http://bloomington.in.gov/publicgis" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" next="https://tarantula.bloomington.in.gov:443/geoserver/publicgis/wfs?REQUEST=GetFeature&amp;SRSNAME=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326&amp;VERSION=2.0.0&amp;TYPENAMES=PoliceDistricts&amp;SERVICE=WFS&amp;COUNT=1&amp;STARTINDEX=1" numberMatched="32" numberReturned="1" timeStamp="2018-12-29T18:43:32.160Z" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 https://tarantula.bloomington.in.gov:443/geoserver/schemas/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 https://tarantula.bloomington.in.gov:443/geoserver/schemas/gml/3.2.1/gml.xsd http://bloomington.in.gov/publicgis https://tarantula.bloomington.in.gov:443/geoserver/publicgis/wfs?service=WFS&amp;version=2.0.0&amp;request=DescribeFeatureType&amp;typeName=publicgis%3APoliceDistricts">
