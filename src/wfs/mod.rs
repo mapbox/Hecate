@@ -49,6 +49,12 @@ pub enum RequestType {
     Invalid
 }
 
+pub enum ResultType {
+    Hits,
+    Results,
+    Invalid
+}
+
 pub struct Query {
     pub service: String,
     pub version: String,
@@ -58,7 +64,7 @@ pub struct Query {
     pub count: Option<u32>,
     pub srsname: Option<String>,
     pub bbox: Option<String>,  //TODO this should be a vec of EPSG:4326 coords,
-    pub resulttype: Option<String>
+    pub resulttype: Option<ResultType>
 }
 
 impl Query {
@@ -96,15 +102,29 @@ impl Query {
         }
     }
 
-    fn std_resulttype(req: &Req) -> Option<String> {
-        if req.resulttype.is_some() {
-            return Some(req.resulttype.clone().unwrap());
-        } else if req.resultType.is_some() {
-            return Some(req.resultType.clone().unwrap());
-        } else if req.RESULTTYPE.is_some() {
-            return Some(req.RESULTTYPE.clone().unwrap());
-        } else {
-            return None;
+    fn std_resulttype(req: &Req) -> Option<ResultType> {
+        let restype: Option<&String> = match req.resulttype {
+            Some(ref resulttype) => Some(resulttype),
+            None => match req.RESULTTYPE {
+                Some(ref resulttype) => Some(resulttype),
+                None => match req.resultType {
+                    Some(ref resulttype) => Some(resulttype),
+                    None => None
+                }
+            }
+        };
+
+        match restype {
+            Some(restype) => {
+                if restype == "results" {
+                    Some(ResultType::Results)
+                } else if restype == "hits" {
+                    Some(ResultType::Hits)
+                } else {
+                    Some(ResultType::Invalid)
+                }
+            }
+            None => None
         }
     }
 
@@ -570,16 +590,25 @@ pub fn get_feature(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnecti
         }
     };
 
-    if query.typenames.is_some() && query.typenames != Some(String::from("HecateData")) {
-        let mut err = HecateError::new(400, String::from("Only typenames=HecateData supported"), None);
-        err.to_wfsxml();
-        return Err(err);
-    }
+    let default_select = String::from(r#"
+        ST_AsGML(3, ST_Extent(d.geom), 5, 32) AS extent,
+        Array_Agg(gml) as geoms
+    "#);
+
+    let select_type = match query.resulttype {
+        Some(ResultType::Hits) => default_select,
+        Some(ResultType::Results) => String::from("count(*)"),
+        Some(ResultType::Invalid) => {
+            let mut err = HecateError::new(400, String::from("Unknown result type"), None);
+            err.to_wfsxml();
+            return Err(err);
+        },
+        None => default_select
+    };
 
     match conn.query(format!("
         SELECT
-            ST_AsGML(3, ST_Extent(d.geom), 5, 32) AS extent,
-            Array_Agg(gml) as geoms
+            {select_type}
         FROM (
             SELECT
                 geom AS geom,
@@ -588,7 +617,10 @@ pub fn get_feature(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnecti
             WHERE
                 {geom_filter}
         ) d;
-    ", geom_filter = geom_filter).as_str(), &[]) {
+    ", 
+        geom_filter = geom_filter,
+        select_type = select_type
+    ).as_str(), &[]) {
         Ok(res) => {
             Ok(format!(r#"
                 <wfs:FeatureCollection xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" numberReturned="1" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 https://tarantula.bloomington.in.gov:443/geoserver/schemas/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 https://tarantula.bloomington.in.gov:443/geoserver/schemas/gml/3.2.1/gml.xsd">
