@@ -578,14 +578,20 @@ pub fn get_feature(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnecti
 
     match conn.query(format!("
         SELECT
-            ST_AsGML(geom) AS geom,
-        FROM geo
-        WHERE
-            {geom_filter}
+            ST_AsGML(3, ST_Extent(d.geom), 5, 32) AS extent,
+            Array_Agg(gml) as geoms
+        FROM (
+            SELECT
+                geom AS geom,
+                ST_AsGML(geom) AS gml
+            FROM geo
+            WHERE
+                {geom_filter}
+        ) d;
     ", geom_filter = geom_filter).as_str(), &[]) {
         Ok(res) => {
             Ok(format!(r#"
-                <wfs:FeatureCollection xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:publicgis="http://bloomington.in.gov/publicgis" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" next="https://tarantula.bloomington.in.gov:443/geoserver/publicgis/wfs?REQUEST=GetFeature&amp;SRSNAME=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326&amp;VERSION=2.0.0&amp;TYPENAMES=PoliceDistricts&amp;SERVICE=WFS&amp;COUNT=1&amp;STARTINDEX=1" numberMatched="32" numberReturned="1" timeStamp="2018-12-29T18:43:32.160Z" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 https://tarantula.bloomington.in.gov:443/geoserver/schemas/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 https://tarantula.bloomington.in.gov:443/geoserver/schemas/gml/3.2.1/gml.xsd http://bloomington.in.gov/publicgis https://tarantula.bloomington.in.gov:443/geoserver/publicgis/wfs?service=WFS&amp;version=2.0.0&amp;request=DescribeFeatureType&amp;typeName=publicgis%3APoliceDistricts">
+                <wfs:FeatureCollection xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" numberReturned="1" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 https://tarantula.bloomington.in.gov:443/geoserver/schemas/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 https://tarantula.bloomington.in.gov:443/geoserver/schemas/gml/3.2.1/gml.xsd">
                     <wfs:boundedBy>
                         <gml:Envelope>
                             <gml:lowerCorner>39.14403294075481 -86.56771624997428</gml:lowerCorner>
