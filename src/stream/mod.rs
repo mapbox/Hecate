@@ -10,7 +10,39 @@ pub struct PGStream {
     pending: Option<Vec<u8>>,
     trans: postgres::transaction::Transaction<'static>,
     #[allow(dead_code)]
-    conn: Box<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>>
+    conn: Box<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>>,
+    post: Option<Vec<u8>>
+}
+
+impl PGStream {
+    pub fn new(
+        conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>,
+        cursor: String,
+        query: String,
+        params: &[&ToSql],
+        prestream: Option<Vec<u8>>,
+        poststream: Option<Vec<u8>>
+    ) -> Result<Self, HecateError> {
+        let pg_conn = Box::new(conn);
+
+        let trans: postgres::transaction::Transaction = unsafe {
+            mem::transmute(pg_conn.transaction().unwrap())
+        };
+
+        match trans.execute(&*query, params) {
+            Ok(_) => {
+                Ok(PGStream {
+                    eot: false,
+                    cursor: cursor,
+                    pending: prestream,
+                    trans: trans,
+                    conn: pg_conn,
+                    post: poststream
+                })
+            },
+            Err(err) => Err(HecateError::from_db(err))
+        }
+    }
 }
 
 impl std::io::Read for PGStream {
@@ -78,25 +110,3 @@ impl std::io::Read for PGStream {
     }
 }
 
-impl PGStream {
-    pub fn new(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, HecateError> {
-        let pg_conn = Box::new(conn);
-
-        let trans: postgres::transaction::Transaction = unsafe {
-            mem::transmute(pg_conn.transaction().unwrap())
-        };
-
-        match trans.execute(&*query, params) {
-            Ok(_) => {
-                Ok(PGStream {
-                    eot: false,
-                    cursor: cursor,
-                    pending: None,
-                    trans: trans,
-                    conn: pg_conn
-                })
-            },
-            Err(err) => Err(HecateError::from_db(err))
-        }
-    }
-}

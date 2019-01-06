@@ -89,7 +89,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
                     bounds.name = $1
                     AND ST_Intersects(geo.geom, bounds.geom)
             ) t
-    "#), &[&bounds]) {
+    "#), &[&bounds], None, None) {
         Ok(stream) => Ok(stream),
         Err(err) => Err(err)
     }

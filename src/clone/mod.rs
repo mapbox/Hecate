@@ -17,7 +17,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
                 FROM
                     geo
             ) t
-    "#), &[]) {
+    "#), &[], None, None) {
         Ok(stream) => Ok(stream),
         Err(err) =>  Err(err)
     }
@@ -33,5 +33,5 @@ pub fn query(read_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnection
             ) t
             LIMIT $1
 
-    "#, query), &[&limit])?)
+    "#, query), &[&limit], None, None)?)
 }
