@@ -50,7 +50,7 @@ use rocket::http::Status as HTTPStatus;
 use rocket::config::{Config, Environment, LoggingLevel, Limits};
 use rocket::http::{Cookie, Cookies};
 use rocket::{State, Data};
-use rocket::response::{Response, status, Stream, NamedFile};
+use rocket::response::{Response, status, Stream, NamedFile, Responder};
 use rocket::request::Form;
 use geojson::GeoJson;
 use rocket_contrib::json::Json;
@@ -1348,8 +1348,9 @@ fn feature_get_history(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
     Ok(Json(delta::history(&conn, &id)?))
 }
 
+
 #[get("/wfs?<wfsreq..>")]
-fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, wfsreq: Form<wfs::Req>) -> Result<Response<'static>, HecateError> {
+fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, wfsreq: Form<wfs::Req>) -> Result<impl Responder<'static>, HecateError> {
     //TODO THIS NEEDS TO BE PARAMATERIZED
     let host = String::from("http://localhost:8000");
 
@@ -1357,26 +1358,42 @@ fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth
     
     let query = wfs::Query::new(&wfsreq);
 
-    let conn = conn.get()?;
+    let conn = conn.get().unwrap();
 
     //TODO THIS NEEDS TO BE WFS SPECFIC
-    auth_rules.allows_feature_history(&mut auth, &conn)?;
+    auth_rules.allows_feature_history(&mut auth, &conn).unwrap();
 
-    let body = match query.request {
-        wfs::RequestType::GetCapabilities => wfs::capabilities(&conn, &host)?,
-        wfs::RequestType::DescribeFeatureType => wfs::describe_feature_type(&conn)?,
-        wfs::RequestType::GetFeature => wfs::get_feature(&conn, &query)?,
+    match query.request {
+        wfs::RequestType::GetCapabilities => {
+            let body = wfs::capabilities(&conn, &host)?;
+            let body_cursor = Cursor::new(body);
+            let mut response = Response::new();
+            response.set_status(HTTPStatus::Ok);
+            response.set_sized_body(body_cursor);
+            response.set_raw_header("Content-Type", "application/xml");
+            return Ok(response);
+        },
+        wfs::RequestType::DescribeFeatureType => {
+            let body = wfs::describe_feature_type(&conn)?;
+            let body_cursor = Cursor::new(body);
+            let mut response = Response::new();
+            response.set_status(HTTPStatus::Ok);
+            response.set_sized_body(body_cursor);
+            response.set_raw_header("Content-Type", "application/xml");
+            return Ok(response);
+        },
+        wfs::RequestType::GetFeature => {
+            let body = wfs::get_feature(conn, &query).unwrap();
+            let mut response = Response::new();
+            response.set_status(HTTPStatus::Ok);
+            response.set_streamed_body(body);
+            response.set_raw_header("Content-Type", "application/xml");
+            return Ok(response);
+        },
         wfs::RequestType::Invalid => {
             let mut error = HecateError::new(400, String::from("Not a valid request param"), None);
             error.to_wfsxml();
             return Err(error);
         }
-    };
-
-    let body_cursor = Cursor::new(body);
-    let mut response = Response::new();
-    response.set_status(HTTPStatus::Ok);
-    response.set_sized_body(body_cursor);
-    response.set_raw_header("Content-Type", "application/xml");
-    Ok(response)
+    }
 }

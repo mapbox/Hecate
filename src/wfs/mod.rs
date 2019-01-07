@@ -1,4 +1,3 @@
-use stream::PGStream;
 use err::HecateError;
 
 mod capabilities;
@@ -50,6 +49,7 @@ pub struct Req {
     pub bbox: Option<String>
 }
 
+#[derive(PartialEq, Debug)]
 pub enum RequestType {
     GetCapabilities,
     DescribeFeatureType,
@@ -57,12 +57,14 @@ pub enum RequestType {
     Invalid
 }
 
+#[derive(PartialEq, Debug)]
 pub enum ResultType {
     Hits,
     Results,
     Invalid
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Query {
     pub service: String,
     pub version: String,
