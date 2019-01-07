@@ -602,7 +602,7 @@ pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConne
                     ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
                     OR ST_Within(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
             ) f;
-    "#), &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]], None, None) {
+    "#), &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]], None, Some(vec![0x04])) {
         Ok(stream) => Ok(stream),
         Err(_) => Err(HecateError::new(400, String::from("Not Found"), None))
     }

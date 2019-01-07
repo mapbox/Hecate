@@ -76,7 +76,6 @@ impl std::io::Read for PGStream {
                 self.pending = self.post.clone();
                 self.post = None;
             } else if write.len() == 0 && !self.eot {
-                write.push(0x04); //Write EOT Character To Stream
                 self.eot = true;
             }
 

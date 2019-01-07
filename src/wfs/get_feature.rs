@@ -57,15 +57,13 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
             let gmlenvelope: String = res.get(0).get(0);
 
             let pre = Some(format!(r#"
-                <wfs:FeatureCollection xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" numberReturned="1" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 https://tarantula.bloomington.in.gov:443/geoserver/schemas/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 https://tarantula.bloomington.in.gov:443/geoserver/schemas/gml/3.2.1/gml.xsd">
+                <wfs:FeatureCollection xmlns:HecatePointData="mapbox.com" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" numberReturned="1">
                     <wfs:boundedBy>{gmlenvelope}</wfs:boundedBy>
             "#,
                 gmlenvelope = gmlenvelope
             ).into_bytes());
 
-            let post = Some(format!(r#"
-                </wfs:FeatureCollection>
-            "#).into_bytes());
+            let post = Some(String::from("</wfs:FeatureCollection>").into_bytes());
 
             //TODO handle resulttype = hits
 
@@ -75,7 +73,6 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
                         '<wfs:member><HecatePointData gml:id="HecatePointData.' || id::TEXT || '">'
                             || '<gml:boundedBy>' || ST_AsGML(3, geom, 5, 32)::TEXT || '</gml:boundedBy>'
                             || xmlelement(name "HecatePointData:geom", ST_AsGML(geom)::XML)::TEXT
-                            || '</HecatePointData:geom>'
                             || (
                                 SELECT
                                     xmlagg(format('<HecatePointData:%1$s>%2$s</HecatePointData:%1$s>', d.key, d.value)::XML)
