@@ -38,22 +38,21 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
         }
     };
 
+    //TODO support custom limits
     let limit = 1000;
 
     match conn.query(format!("
         SELECT
-            ST_AsGML(3, ST_Extent(d.geom), 5, 32) AS extent,
-            count(*) as count
+            ST_AsGML(3, ST_Extent(d.geom), 5, 32) AS extent
         FROM (
             SELECT geom
             FROM geo
             WHERE
                 {geom_filter}
-            LIMIT $1
         ) d;
     ",
         geom_filter = geom_filter
-    ).as_str(), &[ &limit ]) {
+    ).as_str(), &[ ]) {
         Ok(res) => {
             let gmlenvelope: String = res.get(0).get(0);
 
@@ -71,23 +70,23 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
             //TODO handle resulttype = hits
 
             Ok(PGStream::new(conn, String::from("next_wfsfeature"), format!(r#"
-                SELECT
-                    '<wfs:member><HecatePointData gml:id="HecatePointData.' || id::TEXT || '">'
-                        || '<gml:boundedBy>' || ST_AsGML(3, geom, 5, 32)::TEXT || '</gml:boundedBy>'
-                        || xmlelement(name "HecatePointData:geom", ST_AsGML(geom)::XML)::TEXT
-                        || '</HecatePointData:geom>'
-                        || (
-                            SELECT
-                                xmlagg(format('<HecatePointData:%1$s>%2$s</HecatePointData:%1$s>', d.key, d.value)::XML)
-                            FROM
-                                jsonb_each_text(geo.props) AS d
-                        )::TEXT
-                    || '</HecatePointData></wfs:member>'
-                FROM
-                    geo
-                WHERE
-                    {geom_filter}
-                LIMIT 1;
+                DECLARE next_wfsfeature CURSOR FOR
+                    SELECT
+                        '<wfs:member><HecatePointData gml:id="HecatePointData.' || id::TEXT || '">'
+                            || '<gml:boundedBy>' || ST_AsGML(3, geom, 5, 32)::TEXT || '</gml:boundedBy>'
+                            || xmlelement(name "HecatePointData:geom", ST_AsGML(geom)::XML)::TEXT
+                            || '</HecatePointData:geom>'
+                            || (
+                                SELECT
+                                    xmlagg(format('<HecatePointData:%1$s>%2$s</HecatePointData:%1$s>', d.key, d.value)::XML)
+                                FROM
+                                    jsonb_each_text(geo.props) AS d
+                            )::TEXT
+                        || '</HecatePointData></wfs:member>'
+                    FROM
+                        geo
+                    WHERE
+                        {geom_filter}
             "#,
                 geom_filter = geom_filter
             ), &[], None, None)?)
