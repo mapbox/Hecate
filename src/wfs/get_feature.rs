@@ -56,16 +56,16 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
         Ok(res) => {
             let gmlenvelope: String = res.get(0).get(0);
 
-            let pre = format!(r#"
+            let pre = Some(format!(r#"
                 <wfs:FeatureCollection xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" numberReturned="1" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 https://tarantula.bloomington.in.gov:443/geoserver/schemas/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 https://tarantula.bloomington.in.gov:443/geoserver/schemas/gml/3.2.1/gml.xsd">
                     <wfs:boundedBy>{gmlenvelope}</wfs:boundedBy>
             "#,
                 gmlenvelope = gmlenvelope
-            );
+            ).into_bytes());
 
-            let post = format!(r#"
+            let post = Some(format!(r#"
                 </wfs:FeatureCollection>
-            "#);
+            "#).into_bytes());
 
             //TODO handle resulttype = hits
 
@@ -89,7 +89,7 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
                         {geom_filter}
             "#,
                 geom_filter = geom_filter
-            ), &[], None, None)?)
+            ), &[], pre, post)?)
         },
         Err(err) => Err(HecateError::from_db(err))
     }
