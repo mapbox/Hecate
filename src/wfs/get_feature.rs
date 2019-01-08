@@ -71,7 +71,7 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
                 DECLARE next_wfsfeature CURSOR FOR
                     SELECT
                         '<wfs:member><HecatePointData gml:id="HecatePointData.' || id::TEXT || '">'
-                            || '<gml:boundedBy>' || ST_AsGML(3, geom, 5, 32)::TEXT || '</gml:boundedBy>'
+                            || xmlelement(name "gml:boundedBy", ST_AsGML(3, geom, 5, 32)::XML)::TEXT
                             || xmlelement(name "HecatePointData:geom", ST_AsGML(geom)::XML)::TEXT
                             || (
                                 SELECT
