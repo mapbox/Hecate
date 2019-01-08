@@ -5,6 +5,7 @@ use stream::PGStream;
 use err::HecateError;
 
 pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &Query) -> Result<PGStream, HecateError> {
+
     if query.srsname.is_some() && query.srsname != Some(String::from("urn:ogc:def:crs:EPSG::4326")) {
         let mut err = HecateError::new(400, String::from("Only srsname=urn:ogc:def:crs:EPSG::4326 supported"), None);
         err.to_wfsxml();
@@ -77,7 +78,8 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
                                     xmlelement(name "gml:boundedBy", ST_AsGML(3, geom, 5, 32)::XML),
                                     xmlelement(name "hecate_key", key),
                                     xmlelement(name "hecate_version", version),
-                                    xmlelement(name "hecate_geom", ST_AsGML(3, ST_FlipCoordinates(geom), 5, 17)::XML),
+                                    xmlelement(name "props", props::TEXT),
+                                    xmlelement(name "hecate_geom", ST_AsGML(3, ST_FlipCoordinates(geom), 5, 21)::XML),
                                     xmlconcat((
                                         SELECT
                                             xmlagg(format('<%1$s>%2$s</%1$s>', d.key, d.value)::XML)
