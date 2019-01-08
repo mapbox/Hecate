@@ -75,11 +75,12 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
                             xmlelement(name "{typename}", xmlattributes(CONCAT('{typename}.', id) AS "gml:id"),
                                 xmlconcat(
                                     xmlelement(name "gml:boundedBy", ST_AsGML(3, geom, 5, 32)::XML),
-                                    xmlelement(name "{typename}:geom", ST_AsGML(geom)::XML),
-                                    xmlelement(name "{typename}:version", version),
+                                    xmlelement(name "hecate_key", key),
+                                    xmlelement(name "hecate_version", version),
+                                    xmlelement(name "hecate_geom", ST_AsGML(3, ST_FlipCoordinates(geom), 5, 17)::XML),
                                     xmlconcat((
                                         SELECT
-                                            xmlagg(format('<{typename}:%1$s>%2$s</{typename}:%1$s>', d.key, d.value)::XML)
+                                            xmlagg(format('<%1$s>%2$s</%1$s>', d.key, d.value)::XML)
                                         FROM
                                             jsonb_each_text(geo.props) AS d
                                     ))

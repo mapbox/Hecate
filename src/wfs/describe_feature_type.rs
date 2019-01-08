@@ -6,18 +6,19 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
     ", &[]) {
         Ok(res) => {
             let default_type = String::from(r#"
-                <xsd:element maxOccurs="1" minOccurs="0" name="hecate:version" nillable="false" type="xsd:integer"/>
+                <xsd:element minOccurs="0" maxOccurs="1" name="hecate_version" nillable="false" type="xsd:int"/>
+                <xsd:element minOccurs="0" maxOccurs="1" name="hecate_key" nillable="false" type="xsd:string"/>
             "#);
 
             Ok(format!(r#"
-                <xsd:schema xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:publicgis="http://bloomington.in.gov/publicgis" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://bloomington.in.gov/publicgis">
-                    <xsd:import namespace="http://www.opengis.net/gml/3.2" schemaLocation="https://tarantula.bloomington.in.gov:443/geoserver/schemas/gml/3.2.1/gml.xsd"/>
+                <xsd:schema xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+                    <xsd:import namespace="http://www.opengis.net/gml/3.2" schemaLocation="http://schemas.opengis.net/gml/3.2.1/gml.xsd"/>
                     <xsd:complexType name="HecatePointDataType">
                         <xsd:complexContent>
                             <xsd:extension base="gml:AbstractFeatureType">
                                 <xsd:sequence>
                                     {default_type}
-                                    <xsd:element ref="gml:pointProperty"/>
+                                    <xsd:element minOccurs="0" maxOccurs="1" name="hecate_geom" type="gml:PointPropertyType"/>
                                 </xsd:sequence>
                             </xsd:extension>
                         </xsd:complexContent>
@@ -29,7 +30,7 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
                             <xsd:extension base="gml:AbstractFeatureType">
                                 <xsd:sequence>
                                     {default_type}
-                                    <xsd:element name="geom" type="gml:MultiPoint"/>
+                                    <xsd:element name="hecate_geom" type="gml:MultiPoint"/>
                                 </xsd:sequence>
                             </xsd:extension>
                         </xsd:complexContent>
@@ -41,7 +42,7 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
                             <xsd:extension base="gml:AbstractFeatureType">
                                 <xsd:sequence>
                                     {default_type}
-                                    <xsd:element name="geom" type="gml:LineString"/>
+                                    <xsd:element name="hecate_geom" type="gml:LineString"/>
                                 </xsd:sequence>
                             </xsd:extension>
                         </xsd:complexContent>
@@ -53,7 +54,7 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
                             <xsd:extension base="gml:AbstractFeatureType">
                                 <xsd:sequence>
                                     {default_type}
-                                    <xsd:element name="geom" type="gml:MultiLineString"/>
+                                    <xsd:element name="hecate_geom" type="gml:MultiLineString"/>
                                 </xsd:sequence>
                             </xsd:extension>
                         </xsd:complexContent>
@@ -65,7 +66,7 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
                             <xsd:extension base="gml:AbstractFeatureType">
                                 <xsd:sequence>
                                     {default_type}
-                                    <xsd:element name="geom" type="gml:LineString"/>
+                                    <xsd:element name="hecate_geom" type="gml:LineString"/>
                                 </xsd:sequence>
                             </xsd:extension>
                         </xsd:complexContent>
@@ -77,7 +78,7 @@ pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::Postgr
                             <xsd:extension base="gml:AbstractFeatureType">
                                 <xsd:sequence>
                                     {default_type}
-                                    <xsd:element name="geom" type="gml:MultiLineString"/>
+                                    <xsd:element name="hecate_geom" type="gml:MultiLineString"/>
                                 </xsd:sequence>
                             </xsd:extension>
                         </xsd:complexContent>
