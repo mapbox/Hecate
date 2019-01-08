@@ -57,10 +57,11 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
             let gmlenvelope: String = res.get(0).get(0);
 
             let pre = Some(format!(r#"
-                <wfs:FeatureCollection xmlns:HecatePointData="mapbox.com" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" numberReturned="1">
+                <wfs:FeatureCollection xmlns:{typename}="mapbox.com" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" numberReturned="1">
                     <wfs:boundedBy>{gmlenvelope}</wfs:boundedBy>
             "#,
-                gmlenvelope = gmlenvelope
+                gmlenvelope = gmlenvelope,
+                typename = query.typenames.as_ref().unwrap()
             ).into_bytes());
 
             let post = Some(String::from("</wfs:FeatureCollection>").into_bytes());
@@ -70,22 +71,28 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
             Ok(PGStream::new(conn, String::from("next_wfsfeature"), format!(r#"
                 DECLARE next_wfsfeature CURSOR FOR
                     SELECT
-                        '<wfs:member><HecatePointData gml:id="HecatePointData.' || id::TEXT || '">'
-                            || xmlelement(name "gml:boundedBy", ST_AsGML(3, geom, 5, 32)::XML)::TEXT
-                            || xmlelement(name "HecatePointData:geom", ST_AsGML(geom)::XML)::TEXT
-                            || (
-                                SELECT
-                                    xmlagg(format('<HecatePointData:%1$s>%2$s</HecatePointData:%1$s>', d.key, d.value)::XML)
-                                FROM
-                                    jsonb_each_text(geo.props) AS d
-                            )::TEXT
-                        || '</HecatePointData></wfs:member>'
+                        xmlelement(name "wfs:member", (
+                            xmlelement(name "{typename}", xmlattributes(CONCAT('{typename}.', id) AS "gml:id"),
+                                xmlconcat(
+                                    xmlelement(name "gml:boundedBy", ST_AsGML(3, geom, 5, 32)::XML),
+                                    xmlelement(name "{typename}:geom", ST_AsGML(geom)::XML),
+                                    xmlelement(name "{typename}:version", version),
+                                    xmlconcat((
+                                        SELECT
+                                            xmlagg(format('<{typename}:%1$s>%2$s</{typename}:%1$s>', d.key, d.value)::XML)
+                                        FROM
+                                            jsonb_each_text(geo.props) AS d
+                                    ))
+                                )
+                            )
+                        )::XML)::TEXT
                     FROM
                         geo
                     WHERE
                         {geom_filter}
             "#,
-                geom_filter = geom_filter
+                geom_filter = geom_filter,
+                typename = query.typenames.as_ref().unwrap()
             ), &[], pre, post)?)
         },
         Err(err) => Err(HecateError::from_db(err))
