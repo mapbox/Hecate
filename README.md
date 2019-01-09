@@ -18,7 +18,7 @@
 | Multi User Support    | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | Feature History       | :heavy_check_mark: | :x:                | :heavy_check_mark: |
 | Atomic API Operations | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| GeoJSON Based API     | :heavy_check_mark: | :x:                | :heavy_check_mark: |
+| GeoJSON-LD Based API  | :heavy_check_mark: | :x:                | :heavy_check_mark: |
 | Mapbox GL JS Styling  | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | Integrated Data Stats | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 
