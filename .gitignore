@@ -7,3 +7,5 @@
 /target/
 **/*.rs.bk
 node_modules/
+ets-wfs20-master/
+test-run-props.xml

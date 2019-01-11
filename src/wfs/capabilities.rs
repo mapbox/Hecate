@@ -17,7 +17,7 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
             let upper: String = res.get(0).get(1);
 
             Ok(format!(r#"
-                <WFS_Capabilities version="2.0.0" schemaLocation="http://www.opengis.net/wfs/2.0 http://ggcity.org:80/geoserver/schemas/wfs/2.0/wfs.xsd" updateSequence="4682">
+                <WFS_Capabilities version="2.0.0" schemaLocation="http://www.opengis.net/wfs/2.0" updateSequence="4682">
                     <ServiceIdentification>
                         <Title>WFS</Title>
                         <Abstract></Abstract>
