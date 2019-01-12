@@ -746,8 +746,8 @@ fn schema_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
     auth_rules.allows_schema_get(&mut auth, &conn)?;
 
-    match schema.inner().clone() {
-        Some(s) => Ok(Json(json!(s.clone()))),
+    match schema.inner() {
+        Some(ref s) => Ok(Json(json!(s))),
         None => Err(HecateError::new(404, String::from("No schema Validation Enforced"), None))
     }
 }
