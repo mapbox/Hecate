@@ -843,7 +843,10 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
         }
     };
 
-    let trans = conn.transaction().unwrap();
+    let trans = match conn.transaction() {
+        Ok(trans) => trans,
+        Err(err) => { return Err(HecateError::new(500, String::from("Could not open transaction"), Some(err.to_string()))); }
+    };
 
     let mut map: HashMap<String, Option<String>> = HashMap::new();
     map.insert(String::from("message"), Some(delta_message));
@@ -953,7 +956,7 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
         body_str = match String::from_utf8(body_vec) {
             Ok(body_str) => body_str,
-            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+            Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Invalid JSON - Non-UTF8"))); }
         }
     }
 
@@ -964,7 +967,10 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         Err(err) => { return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); }
     };
 
-    let trans = conn.transaction().unwrap();
+    let trans = match conn.transaction() {
+        Ok(trans) => trans,
+        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not open transaction"))); }
+    };
 
     let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
@@ -1019,7 +1025,10 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let uid = auth.uid.unwrap();
 
-    let trans = conn.transaction().unwrap();
+    let trans = match conn.transaction() {
+        Ok(trans) => trans,
+        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not open transaction"))); }
+    };
 
     match delta::is_open(&delta_id, &trans) {
         Ok(true) => (),
@@ -1085,7 +1094,10 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let uid = auth.uid.unwrap();
 
-    let trans = conn.transaction().unwrap();
+    let trans = match conn.transaction() {
+        Ok(trans) => trans,
+        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not open transaction"))); }
+    };
 
     match delta::is_open(&delta_id, &trans) {
         Ok(true) => (),
@@ -1283,7 +1295,10 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
         }
     };
 
-    let trans = conn.transaction().unwrap();
+    let trans = match conn.transaction() {
+        Ok(trans) => trans,
+        Err(err) => { return Err(HecateError::new(500, String::from("Could not open transaction"), Some(err.to_string()))); }
+    };
 
     let mut map: HashMap<String, Option<String>> = HashMap::new();
     map.insert(String::from("message"), Some(delta_message));
