@@ -857,7 +857,7 @@ impl Auth {
                 WHERE
                     username = $1
                     AND password = crypt($2, password)
-            ", &[ &self.basic.unwrap().0 , &self.basic.as_ref().unwrap().1 ]) {
+            ", &[ &self.basic.as_ref().unwrap().0 , &self.basic.as_ref().unwrap().1 ]) {
                 Ok(res) => {
                     if res.len() != 1 {
                         return Err(not_authed());

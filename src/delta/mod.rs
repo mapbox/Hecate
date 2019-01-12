@@ -249,7 +249,7 @@ pub fn affected(fc: &geojson::FeatureCollection) -> Vec<i64> {
     for feat in &fc.features {
         match feat.id {
             Some(ref id) => match id {
-                geojson::feature::Id::Number(num_id) => affected.push(num_id.clone().as_i64().unwrap()),
+                geojson::feature::Id::Number(num_id) => affected.push(num_id.as_i64().unwrap()),
                 _ => ()
             },
             None => ()
