@@ -849,8 +849,6 @@ impl Auth {
     ///
     pub fn validate(&mut self, conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Option<i64>, HecateError> {
         if self.basic.is_some() {
-            let (username, password) = self.basic.clone().unwrap();
-
             match conn.query("
                 SELECT
                     id,
@@ -859,7 +857,7 @@ impl Auth {
                 WHERE
                     username = $1
                     AND password = crypt($2, password)
-            ", &[ &username, &password ]) {
+            ", &[ &self.basic.unwrap().0 , &self.basic.as_ref().unwrap().1 ]) {
                 Ok(res) => {
                     if res.len() != 1 {
                         return Err(not_authed());
