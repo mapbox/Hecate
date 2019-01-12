@@ -18,9 +18,9 @@ pub struct Response {
 
 pub fn import_error(feat: &geojson::Feature, error: &str) -> HecateError {
     HecateError::from_json(400, json!({
-        "id": feat.id.clone(),
+        "id": &feat.id,
         "message": error,
-        "feature": feat.clone()
+        "feature": &feat
     }), String::from("Import Error"), None)
 }
 
@@ -292,7 +292,7 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
             Err(err) => {
                 match err.as_db() {
                     Some(e) => {
-                        Err(import_error(&feat, &*e.message.clone()))
+                        Err(import_error(&feat, e.message.as_str()))
                     },
                     _ => Err(import_error(&feat, "Generic Error"))
                 }
@@ -320,7 +320,7 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
                         if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
                             Err(import_error(&feat, "Duplicate Key Value"))
                         } else {
-                            Err(import_error(&feat, &*e.message.clone()))
+                            Err(import_error(&feat, e.message.as_str()))
                         }
                     },
                     _ => Err(import_error(&feat, "Generic Error"))
@@ -370,7 +370,7 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
                     } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
                         Err(import_error(&feat, "Duplicate Key Value"))
                     } else {
-                        Err(import_error(&feat, &*e.message.clone()))
+                        Err(import_error(&feat, e.message.as_str()))
                     }
                 },
                 _ => Err(import_error(&feat, "Generic Error"))
@@ -395,7 +395,7 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
                     if e.message == "DELETE: ID or VERSION Mismatch" {
                         Err(import_error(&feat, "Delete Version Mismatch"))
                     } else {
-                        Err(import_error(&feat, &*e.message.clone()))
+                        Err(import_error(&feat, e.message.as_str()))
                     }
                 },
                 _ => Err(import_error(&feat, "Generic Error"))
