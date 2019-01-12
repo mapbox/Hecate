@@ -875,8 +875,6 @@ impl Auth {
                 }
             }
         } else if self.token.is_some() {
-            let token = self.token.clone().unwrap();
-
             match conn.query("
                 SELECT
                     users_tokens.uid,
@@ -888,7 +886,7 @@ impl Auth {
                     token = $1
                     AND now() < expiry
                     AND users_tokens.uid = users.id
-            ", &[ &token ]) {
+            ", &[ &self.token.as_ref().unwrap() ]) {
                 Ok(res) => {
                     if res.len() == 0 {
                         return Err(not_authed());
