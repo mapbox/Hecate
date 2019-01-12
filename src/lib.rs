@@ -845,7 +845,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 
     let trans = match conn.transaction() {
         Ok(trans) => trans,
-        Err(err) => { return Err(HecateError::new(500, String::from("Could not open transaction"), Some(err.to_string()))); }
+        Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
     };
 
     let mut map: HashMap<String, Option<String>> = HashMap::new();
@@ -897,7 +897,10 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 
     match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
-            trans.commit().unwrap();
+            if trans.commit().is_err() {
+                return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
+            }
+
             Ok(Json(json!(true)))
         },
         Err(err) => {
@@ -969,7 +972,7 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let trans = match conn.transaction() {
         Ok(trans) => trans,
-        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not open transaction"))); }
+        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to open transaction"))); }
     };
 
     let delta_id = match delta::open(&trans, &map, &uid) {
@@ -981,7 +984,9 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         }
     };
 
-    trans.commit().unwrap();
+    if trans.commit().is_err() {
+        return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to commit transaction")));
+    }
 
     Ok(delta_id.to_string())
 }
@@ -1027,7 +1032,7 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let trans = match conn.transaction() {
         Ok(trans) => trans,
-        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not open transaction"))); }
+        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to open transaction"))); }
     };
 
     match delta::is_open(&delta_id, &trans) {
@@ -1062,7 +1067,9 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         }
     };
 
-    trans.commit().unwrap();
+    if trans.commit().is_err() {
+        return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to commit transaction")));
+    }
 
     Err(status::Custom(HTTPStatus::Ok, delta_id.to_string()))
 }
@@ -1096,7 +1103,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let trans = match conn.transaction() {
         Ok(trans) => trans,
-        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not open transaction"))); }
+        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to open transaction"))); }
     };
 
     match delta::is_open(&delta_id, &trans) {
@@ -1168,7 +1175,10 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     match delta::finalize(&delta_id, &trans) {
         Ok (_) => {
-            trans.commit().unwrap();
+            if trans.commit().is_err() {
+                return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to commit transaction")));
+            }
+
             Err(status::Custom(HTTPStatus::Ok, diffres))
         },
         Err(_) => {
@@ -1297,7 +1307,7 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
 
     let trans = match conn.transaction() {
         Ok(trans) => trans,
-        Err(err) => { return Err(HecateError::new(500, String::from("Could not open transaction"), Some(err.to_string()))); }
+        Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
     };
 
     let mut map: HashMap<String, Option<String>> = HashMap::new();
@@ -1341,7 +1351,10 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
 
     match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
-            trans.commit().unwrap();
+            if trans.commit().is_err() {
+                return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
+            }
+
             Ok(Json(json!(true)))
         },
         Err(err) => {
