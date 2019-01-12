@@ -56,12 +56,18 @@ fn main() {
     };
 
     let port: Option<u16> = match matched.value_of("port") {
-        Some(port) => Some(port.parse().unwrap()),
+        Some(port) => match port.parse() {
+            Ok(port) => Some(port),
+            _ => { panic!("Port must be an integer > 1000") }
+        },
         None => None
     };
 
     let workers: Option<u16> = match matched.value_of("workers") {
-        Some(workers) => Some(workers.parse().unwrap()),
+        Some(workers) => match workers.parse() {
+            Ok(workers) => Some(workers),
+            _ => { panic!("workers arg must be integer value") }
+        },
         None => None
     };
 
