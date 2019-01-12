@@ -68,7 +68,10 @@ pub fn start(
         None => auth::CustomAuth::new(),
         Some(auth) => {
             match auth.is_valid() {
-                Err(err_msg) => { panic!(err_msg); },
+                Err(err_msg) => {
+                    println!("ERROR: {}", err_msg);
+                    std::process::exit(1);
+                },
                 Ok(_) => ()
             };
 
@@ -92,7 +95,10 @@ pub fn start(
 
     match std::env::var("HECATE_SECRET") {
         Ok(secret) => match config.set_secret_key(secret) {
-            Err(_) => panic!("Invalid Base64 Encoded 256 Bit Secret Key"),
+            Err(_) => {
+                println!("ERROR: Invalid Base64 Encoded 256 Bit Secret Key");
+                std::process::exit(1);
+            },
             _ => println!("Using HECATE_SECRET")
         }
         _ => ()
@@ -179,7 +185,10 @@ fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionMana
     let manager = ::r2d2_postgres::PostgresConnectionManager::new(format!("postgres://{}", database), TlsMode::None).unwrap();
     match r2d2::Pool::builder().max_size(15).build(manager) {
         Ok(pool) => pool,
-        Err(_) => { panic!("Failed to connect to database"); }
+        Err(_) => {
+            println!("ERROR: Failed to connect to database");
+            std::process::exit(1);
+        }
     }
 }
 
