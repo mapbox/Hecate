@@ -494,7 +494,10 @@ fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
             body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
-        body_str = String::from_utf8(body_vec).unwrap();
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
     }
 
     Ok(Json(json!(style::create(&conn, &uid, &body_str)?)))
@@ -540,7 +543,10 @@ fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
             body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
-        body_str = String::from_utf8(body_vec).unwrap();
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
     }
 
     Ok(Json(json!(style::update(&conn, &uid, &id, &body_str)?)))
@@ -690,7 +696,10 @@ fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
             body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
-        body_str = String::from_utf8(body_vec).unwrap();
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
     }
 
     let geom: serde_json::Value = match serde_json::from_str(&*body_str) {
@@ -809,7 +818,10 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
             body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
-        body_str = String::from_utf8(body_vec).unwrap();
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
     }
 
     let mut fc = match body_str.parse::<GeoJson>() {
@@ -939,7 +951,10 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
             body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
-        body_str = String::from_utf8(body_vec).unwrap();
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
     }
 
     let uid = auth.uid.unwrap();
