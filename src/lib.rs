@@ -28,7 +28,7 @@ pub mod bounds;
 pub mod clone;
 pub mod stream;
 pub mod style;
-pub mod xml;
+pub mod osm;
 pub mod user;
 pub mod auth;
 
@@ -161,14 +161,14 @@ pub fn start(
             bounds_delete,
             clone_get,
             clone_query,
-            xml_capabilities,
-            xml_06capabilities,
-            xml_user,
-            xml_map,
-            xml_changeset_create,
-            xml_changeset_modify,
-            xml_changeset_upload,
-            xml_changeset_close
+            osm_capabilities,
+            osm_06capabilities,
+            osm_user,
+            osm_map,
+            osm_changeset_create,
+            osm_changeset_modify,
+            osm_changeset_upload,
+            osm_changeset_close
         ])
         .register(catchers![
            not_authorized,
@@ -912,7 +912,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 }
 
 #[get("/0.6/map?<map..>")]
-fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<String, status::Custom<String>> {
+fn osm_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -927,7 +927,7 @@ fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
         Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json().to_string())) }
     };
 
-    let xml_str = match xml::from_features(&fc) {
+    let xml_str = match osm::from_features(&fc) {
         Ok(xml_str) => xml_str,
         Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())) }
     };
@@ -936,7 +936,7 @@ fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, body: Data) -> Result<String, status::Custom<String>> {
+fn osm_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, body: Data) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -965,7 +965,7 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let uid = auth.uid.unwrap();
 
-    let map = match xml::to_delta(&body_str) {
+    let map = match osm::to_delta(&body_str) {
         Ok(map) => map,
         Err(err) => { return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); }
     };
@@ -992,7 +992,7 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 }
 
 #[put("/0.6/changeset/<id>/close")]
-fn xml_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, id: i64) -> Result<String, status::Custom<String>> {
+fn osm_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, id: i64) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1004,7 +1004,7 @@ fn xml_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
+fn osm_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1049,7 +1049,7 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         }
     }
 
-    let map = match xml::to_delta(&body_str) {
+    let map = match osm::to_delta(&body_str) {
         Ok(map) => map,
         Err(err) => {
             trans.set_rollback();
@@ -1075,7 +1075,7 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
+fn osm_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1120,7 +1120,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         }
     }
 
-    let (mut fc, tree) = match xml::to_features(&body_str) {
+    let (mut fc, tree) = match osm::to_features(&body_str) {
         Ok(fctree) => fctree,
         Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())); }
     };
@@ -1155,7 +1155,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         ids.insert(feat_res.old.unwrap(), feat_res);
     }
 
-    let diffres = match xml::to_diffresult(ids, tree) {
+    let diffres = match osm::to_diffresult(ids, tree) {
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
@@ -1190,7 +1190,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 }
 
 #[get("/capabilities")]
-fn xml_capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+fn osm_capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1213,7 +1213,7 @@ fn xml_capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: 
 }
 
 #[get("/0.6/capabilities")]
-fn xml_06capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+fn osm_06capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1236,7 +1236,7 @@ fn xml_06capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules
 }
 
 #[get("/0.6/user/details")]
-fn xml_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+fn osm_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
