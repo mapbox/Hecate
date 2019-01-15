@@ -474,7 +474,7 @@ pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
                 props AS properties
             FROM geo
             WHERE
-                ST_Intersects(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)
+                ST_Intersects(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326))
         ) f
         LIMIT 1
     ", &[&lng, &lat]) {
