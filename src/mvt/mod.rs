@@ -74,8 +74,7 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
         let props = props.as_object().unwrap();
 
         for (k, v) in props.iter() {
-            let v = serde_json::to_string(v).unwrap();
-            feature.add_property(k.clone(), Value::String(v));
+            feature.add_property(k.to_string(), Value::String(v.to_string()));
         }
 
         layer.add_feature(feature);

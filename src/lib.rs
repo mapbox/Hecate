@@ -28,7 +28,7 @@ pub mod bounds;
 pub mod clone;
 pub mod stream;
 pub mod style;
-pub mod xml;
+pub mod osm;
 pub mod user;
 pub mod auth;
 
@@ -68,7 +68,10 @@ pub fn start(
         None => auth::CustomAuth::new(),
         Some(auth) => {
             match auth.is_valid() {
-                Err(err_msg) => { panic!(err_msg); },
+                Err(err_msg) => {
+                    println!("ERROR: {}", err_msg);
+                    std::process::exit(1);
+                },
                 Ok(_) => ()
             };
 
@@ -92,7 +95,10 @@ pub fn start(
 
     match std::env::var("HECATE_SECRET") {
         Ok(secret) => match config.set_secret_key(secret) {
-            Err(_) => panic!("Invalid Base64 Encoded 256 Bit Secret Key"),
+            Err(_) => {
+                println!("ERROR: Invalid Base64 Encoded 256 Bit Secret Key");
+                std::process::exit(1);
+            },
             _ => println!("Using HECATE_SECRET")
         }
         _ => ()
@@ -155,14 +161,14 @@ pub fn start(
             bounds_delete,
             clone_get,
             clone_query,
-            xml_capabilities,
-            xml_06capabilities,
-            xml_user,
-            xml_map,
-            xml_changeset_create,
-            xml_changeset_modify,
-            xml_changeset_upload,
-            xml_changeset_close
+            osm_capabilities,
+            osm_06capabilities,
+            osm_user,
+            osm_map,
+            osm_changeset_create,
+            osm_changeset_modify,
+            osm_changeset_upload,
+            osm_changeset_close
         ])
         .register(catchers![
            not_authorized,
@@ -179,7 +185,10 @@ fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionMana
     let manager = ::r2d2_postgres::PostgresConnectionManager::new(format!("postgres://{}", database), TlsMode::None).unwrap();
     match r2d2::Pool::builder().max_size(15).build(manager) {
         Ok(pool) => pool,
-        Err(_) => { panic!("Failed to connect to database"); }
+        Err(_) => {
+            println!("ERROR: Failed to connect to database");
+            std::process::exit(1);
+        }
     }
 }
 
@@ -485,7 +494,10 @@ fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
             body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
-        body_str = String::from_utf8(body_vec).unwrap();
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
     }
 
     Ok(Json(json!(style::create(&conn, &uid, &body_str)?)))
@@ -531,7 +543,10 @@ fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
             body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
-        body_str = String::from_utf8(body_vec).unwrap();
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
     }
 
     Ok(Json(json!(style::update(&conn, &uid, &id, &body_str)?)))
@@ -681,7 +696,10 @@ fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
             body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
-        body_str = String::from_utf8(body_vec).unwrap();
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
     }
 
     let geom: serde_json::Value = match serde_json::from_str(&*body_str) {
@@ -746,8 +764,8 @@ fn schema_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
 
     auth_rules.allows_schema_get(&mut auth, &conn)?;
 
-    match schema.inner().clone() {
-        Some(s) => Ok(Json(json!(s.clone()))),
+    match schema.inner() {
+        Some(ref s) => Ok(Json(json!(s))),
         None => Err(HecateError::new(404, String::from("No schema Validation Enforced"), None))
     }
 }
@@ -800,7 +818,10 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
             body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
-        body_str = String::from_utf8(body_vec).unwrap();
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
     }
 
     let mut fc = match body_str.parse::<GeoJson>() {
@@ -822,7 +843,10 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
         }
     };
 
-    let trans = conn.transaction().unwrap();
+    let trans = match conn.transaction() {
+        Ok(trans) => trans,
+        Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
+    };
 
     let mut map: HashMap<String, Option<String>> = HashMap::new();
     map.insert(String::from("message"), Some(delta_message));
@@ -873,7 +897,10 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 
     match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
-            trans.commit().unwrap();
+            if trans.commit().is_err() {
+                return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
+            }
+
             Ok(Json(json!(true)))
         },
         Err(err) => {
@@ -885,7 +912,7 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
 }
 
 #[get("/0.6/map?<map..>")]
-fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<String, status::Custom<String>> {
+fn osm_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -900,7 +927,7 @@ fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
         Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json().to_string())) }
     };
 
-    let xml_str = match xml::from_features(&fc) {
+    let xml_str = match osm::from_features(&fc) {
         Ok(xml_str) => xml_str,
         Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())) }
     };
@@ -909,7 +936,7 @@ fn xml_map(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
 }
 
 #[put("/0.6/changeset/create", data="<body>")]
-fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, body: Data) -> Result<String, status::Custom<String>> {
+fn osm_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, body: Data) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -930,17 +957,23 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
             body_vec.append(&mut buffer[..buffer_size].to_vec());
         }
 
-        body_str = String::from_utf8(body_vec).unwrap();
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Invalid JSON - Non-UTF8"))); }
+        }
     }
 
     let uid = auth.uid.unwrap();
 
-    let map = match xml::to_delta(&body_str) {
+    let map = match osm::to_delta(&body_str) {
         Ok(map) => map,
         Err(err) => { return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); }
     };
 
-    let trans = conn.transaction().unwrap();
+    let trans = match conn.transaction() {
+        Ok(trans) => trans,
+        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to open transaction"))); }
+    };
 
     let delta_id = match delta::open(&trans, &map, &uid) {
         Ok(id) => id,
@@ -951,13 +984,15 @@ fn xml_changeset_create(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         }
     };
 
-    trans.commit().unwrap();
+    if trans.commit().is_err() {
+        return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to commit transaction")));
+    }
 
     Ok(delta_id.to_string())
 }
 
 #[put("/0.6/changeset/<id>/close")]
-fn xml_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, id: i64) -> Result<String, status::Custom<String>> {
+fn osm_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, id: i64) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -969,7 +1004,7 @@ fn xml_changeset_close(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>
 }
 
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
-fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
+fn osm_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -995,7 +1030,10 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let uid = auth.uid.unwrap();
 
-    let trans = conn.transaction().unwrap();
+    let trans = match conn.transaction() {
+        Ok(trans) => trans,
+        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to open transaction"))); }
+    };
 
     match delta::is_open(&delta_id, &trans) {
         Ok(true) => (),
@@ -1011,7 +1049,7 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         }
     }
 
-    let map = match xml::to_delta(&body_str) {
+    let map = match osm::to_delta(&body_str) {
         Ok(map) => map,
         Err(err) => {
             trans.set_rollback();
@@ -1029,13 +1067,15 @@ fn xml_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         }
     };
 
-    trans.commit().unwrap();
+    if trans.commit().is_err() {
+        return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to commit transaction")));
+    }
 
     Err(status::Custom(HTTPStatus::Ok, delta_id.to_string()))
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
+fn osm_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1061,7 +1101,10 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     let uid = auth.uid.unwrap();
 
-    let trans = conn.transaction().unwrap();
+    let trans = match conn.transaction() {
+        Ok(trans) => trans,
+        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to open transaction"))); }
+    };
 
     match delta::is_open(&delta_id, &trans) {
         Ok(true) => (),
@@ -1077,7 +1120,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         }
     }
 
-    let (mut fc, tree) = match xml::to_features(&body_str) {
+    let (mut fc, tree) = match osm::to_features(&body_str) {
         Ok(fctree) => fctree,
         Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())); }
     };
@@ -1112,7 +1155,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
         ids.insert(feat_res.old.unwrap(), feat_res);
     }
 
-    let diffres = match xml::to_diffresult(ids, tree) {
+    let diffres = match osm::to_diffresult(ids, tree) {
         Err(_) => {
             trans.set_rollback();
             trans.finish().unwrap();
@@ -1132,7 +1175,10 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 
     match delta::finalize(&delta_id, &trans) {
         Ok (_) => {
-            trans.commit().unwrap();
+            if trans.commit().is_err() {
+                return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to commit transaction")));
+            }
+
             Err(status::Custom(HTTPStatus::Ok, diffres))
         },
         Err(_) => {
@@ -1144,7 +1190,7 @@ fn xml_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 }
 
 #[get("/capabilities")]
-fn xml_capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+fn osm_capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1167,7 +1213,7 @@ fn xml_capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: 
 }
 
 #[get("/0.6/capabilities")]
-fn xml_06capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+fn osm_06capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1190,7 +1236,7 @@ fn xml_06capabilities(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules
 }
 
 #[get("/0.6/user/details")]
-fn xml_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
+fn osm_user(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1259,7 +1305,10 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
         }
     };
 
-    let trans = conn.transaction().unwrap();
+    let trans = match conn.transaction() {
+        Ok(trans) => trans,
+        Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
+    };
 
     let mut map: HashMap<String, Option<String>> = HashMap::new();
     map.insert(String::from("message"), Some(delta_message));
@@ -1302,7 +1351,10 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
 
     match delta::finalize(&delta_id, &trans) {
         Ok(_) => {
-            trans.commit().unwrap();
+            if trans.commit().is_err() {
+                return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
+            }
+
             Ok(Json(json!(true)))
         },
         Err(err) => {
