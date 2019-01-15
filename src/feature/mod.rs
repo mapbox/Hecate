@@ -439,6 +439,64 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
     }
 }
 
+pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<geojson::Feature, HecateError> {
+    let lnglat = point.split(":").collect::<Vec<&str>>();
+
+    if lnglat.len() != 2 {
+        return Err(HecateError::new(400, String::from("Point must be Lng,Lat"), None));
+    }
+
+    let lng: f32 = match lnglat[0].parse() {
+        Ok(lng) => lng,
+        _ => { return Err(HecateError::new(400, String::from("Longitude coordinate must be numeric"), None)); }
+    };
+    let lat: f32 = match lnglat[1].parse() {
+        Ok(lat) => lat,
+        _ => { return Err(HecateError::new(400, String::from("Latitude coordinate must be numeric"), None)); }
+    };
+
+    if lng < -180.0 || lng > 180.0 {
+        return Err(HecateError::new(400, String::from("Longitude exceeds bounds"), None));
+    } else if lat < -90.0 || lat > 90.0 {
+        return Err(HecateError::new(400, String::from("Latitude exceeds bounds"), None));
+    }
+
+    match conn.query("
+        SELECT
+            row_to_json(f)::TEXT AS feature
+        FROM (
+            SELECT
+                id AS id,
+                key AS key,
+                'Feature' AS type,
+                version AS version,
+                ST_AsGeoJSON(geom)::JSON AS geometry,
+                props AS properties
+            FROM geo
+            WHERE
+                ST_Intersects(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)
+        ) f
+        LIMIT 1
+    ", &[&lng, &lat]) {
+        Ok(res) => {
+            if res.len() != 1 { return Err(HecateError::new(404, String::from("Feature not found"), None)); }
+
+            let feat: postgres::rows::Row = res.get(0);
+            let feat: String = feat.get(0);
+            let feat: geojson::Feature = match feat.parse() {
+                Ok(feat) => match feat {
+                    geojson::GeoJson::Feature(feat) => feat,
+                    _ => { return Err(HecateError::new(400, String::from("Invalid Feature"), None)); }
+                },
+                Err(_) => { return Err(HecateError::new(400, String::from("Invalid Feature"), None)); }
+            };
+
+            Ok(feat)
+        },
+        Err(_) => Err(HecateError::new(400, String::from("Invalid feature"), None))
+    }
+}
+
 pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, HecateError> {
     match conn.query("
         SELECT
