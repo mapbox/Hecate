@@ -488,12 +488,12 @@ pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
                     geojson::GeoJson::Feature(feat) => feat,
                     _ => { return Err(HecateError::new(400, String::from("Invalid Feature"), None)); }
                 },
-                Err(_) => { return Err(HecateError::new(400, String::from("Invalid Feature"), None)); }
+                Err(err) => { return Err(HecateError::new(400, String::from("Invalid Feature"), Some(err.to_string()))); }
             };
 
             Ok(feat)
         },
-        Err(_) => Err(HecateError::new(400, String::from("Invalid feature"), None))
+        Err(err) => Err(HecateError::new(400, String::from("Invalid feature"), Some(err.to_string())))
     }
 }
 
