@@ -1393,7 +1393,7 @@ fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: a
             Err(err) => Err(err)
         }
     } else if fquery.point.is_some() {
-        match feature::query_by_point(&read_conn.get()?, &fquery.key.as_ref().unwrap()) {
+        match feature::query_by_point(&read_conn.get()?, &fquery.point.as_ref().unwrap()) {
             Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
             Err(err) => Err(err)
         }
