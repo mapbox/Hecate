@@ -16,7 +16,7 @@ categories = ["database"]
 reqwest = "0.9.5"
 
 [dependencies]
-valico = "2.3"
+valico = "2.4"
 rand = "0.6"
 postgis = "0.6.0"
 protobuf = "1.5"
@@ -24,7 +24,7 @@ base64 = "0.10"
 rocket = "0.4.0"
 rocket_contrib="0.4.0"
 geojson = "0.13.0"
-quick-xml = "0.13.1"
+quick-xml = "0.13.2"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
