@@ -127,6 +127,75 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
+        { //Invalid Point Lng,Lat - Lng out of bounds neg
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=-190%2C1").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "Longitude exceeds bounds",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+        { //Invalid Point Lng,Lat - Lng out of bounds pos
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=190%2C1").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "Longitude exceeds bounds",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+        { //Invalid Point Lng,Lat - Lat out of bounds neg
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=1%2C-100").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "Latitude exceeds bounds",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+        { //Invalid Point Lng,Lat - Lat out of bounds pos
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=1%2C100").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "Latitude exceeds bounds",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+        { //Check Point 1
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=0.0%2C0.0").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 1,
+                "type": "Feature",
+                "key": "Q1233",
+                "version": 1,
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 0.0, 0.0 ] }
+            }));
+
+            assert!(resp.status().is_success());
+        }
+
         server.kill().unwrap();
     }
 }

@@ -440,7 +440,7 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
 }
 
 pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<geojson::Feature, HecateError> {
-    let lnglat = point.split(":").collect::<Vec<&str>>();
+    let lnglat = point.split(",").collect::<Vec<&str>>();
 
     if lnglat.len() != 2 {
         return Err(HecateError::new(400, String::from("Point must be Lng,Lat"), None));
