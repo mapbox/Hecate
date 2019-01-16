@@ -435,7 +435,7 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
 
             Ok(feat)
         },
-        Err(_) => Err(HecateError::new(400, String::from("Invalid feature"), None))
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
@@ -481,8 +481,7 @@ pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
         Ok(res) => {
             if res.len() != 1 { return Err(HecateError::new(404, String::from("Feature not found"), None)); }
 
-            let feat: postgres::rows::Row = res.get(0);
-            let feat: String = feat.get(0);
+            let feat: String = res.get(0).get(0);
             let feat: geojson::Feature = match feat.parse() {
                 Ok(feat) => match feat {
                     geojson::GeoJson::Feature(feat) => feat,
@@ -493,7 +492,7 @@ pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
 
             Ok(feat)
         },
-        Err(err) => Err(HecateError::new(400, String::from("Invalid feature"), Some(err.to_string())))
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
@@ -528,7 +527,7 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
 
             Ok(feat)
         },
-        Err(_) => Err(HecateError::new(400, String::from("Invalid Feature"), None))
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
@@ -643,7 +642,7 @@ pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConne
         return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
     }
 
-    match PGStream::new(conn, String::from("next_features"), String::from(r#"
+    Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
         DECLARE next_features CURSOR FOR
             SELECT
                 row_to_json(f)::TEXT AS feature
@@ -660,10 +659,7 @@ pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConne
                     ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
                     OR ST_Within(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
             ) f;
-    "#), &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]]) {
-        Ok(stream) => Ok(stream),
-        Err(_) => Err(HecateError::new(400, String::from("Not Found"), None))
-    }
+    "#), &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]])?)
 }
 
 pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, HecateError> {
@@ -707,6 +703,6 @@ pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
 
             Ok(fc)
         },
-        Err(_) => Err(HecateError::new(400, String::from("Invalid Feature"), None))
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
