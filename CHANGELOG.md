@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.59.0
+
+- :tada: Feature query by lat/lng.
+
 ## v0.58.1
 
 - :rocket: Reduce `clone()` calls where possible to decrease allocation calls
