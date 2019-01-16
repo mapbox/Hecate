@@ -1223,14 +1223,19 @@ Return a single GeoJSON `Feature` given a query parameter
 
 *Options*
 
-| Option      | Notes                                                |
-| :----:      | ---------------------------------------------------- |
-| `key=<key>` | `Optional` Key value to retrieve a given feature by  |
+| Option            | Notes                                                     |
+| :----:            | --------------------------------------------------------- |
+| `key=<key>`       | `Optional` Key value to retrieve a given feature by       |
+| `point=<lng,lat>` | `Optional` Query for a single feature at the given point  |
 
 *Example*
 
 ```bash
 curl -X GET 'http://localhost:8000/api/data/feature?key=123
+```
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/feature?point=1.1324%2C-45.322
 ```
 
 ---
