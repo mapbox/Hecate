@@ -404,10 +404,10 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
-pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<geojson::Feature, HecateError> {
+pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<serde_json::value::Value, HecateError> {
     match conn.query("
         SELECT
-            row_to_json(f)::TEXT AS feature
+            row_to_json(f)::JSON AS feature
         FROM (
             SELECT
                 id AS id,
@@ -423,34 +423,25 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
         Ok(res) => {
             if res.len() != 1 { return Err(HecateError::new(404, String::from("Feature not found"), None)); }
 
-            let feat: postgres::rows::Row = res.get(0);
-            let feat: String = feat.get(0);
-            let feat: geojson::Feature = match feat.parse() {
-                Ok(feat) => match feat {
-                    geojson::GeoJson::Feature(feat) => feat,
-                    _ => { return Err(HecateError::new(400, String::from("Invalid Feature"), None)); }
-                },
-                Err(_) => { return Err(HecateError::new(400, String::from("Invalid Feature"), None)); }
-            };
-
+            let feat: serde_json::value::Value = res.get(0).get(0);
             Ok(feat)
         },
         Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<geojson::Feature, HecateError> {
+pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<serde_json::value::Value, HecateError> {
     let lnglat = point.split(",").collect::<Vec<&str>>();
 
     if lnglat.len() != 2 {
         return Err(HecateError::new(400, String::from("Point must be Lng,Lat"), None));
     }
 
-    let lng: f32 = match lnglat[0].parse() {
+    let lng: f64 = match lnglat[0].parse() {
         Ok(lng) => lng,
         _ => { return Err(HecateError::new(400, String::from("Longitude coordinate must be numeric"), None)); }
     };
-    let lat: f32 = match lnglat[1].parse() {
+    let lat: f64 = match lnglat[1].parse() {
         Ok(lat) => lat,
         _ => { return Err(HecateError::new(400, String::from("Latitude coordinate must be numeric"), None)); }
     };
@@ -463,7 +454,7 @@ pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
 
     match conn.query("
         SELECT
-            row_to_json(f)::TEXT AS feature
+            row_to_json(f)::JSON AS feature
         FROM (
             SELECT
                 id AS id,
@@ -481,15 +472,7 @@ pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
         Ok(res) => {
             if res.len() != 1 { return Err(HecateError::new(404, String::from("Feature not found"), None)); }
 
-            let feat: String = res.get(0).get(0);
-            let feat: geojson::Feature = match feat.parse() {
-                Ok(feat) => match feat {
-                    geojson::GeoJson::Feature(feat) => feat,
-                    _ => { return Err(HecateError::new(400, String::from("Invalid Feature"), None)); }
-                },
-                Err(err) => { return Err(HecateError::new(400, String::from("Invalid Feature"), Some(err.to_string()))); }
-            };
-
+            let feat: serde_json::value::Value = res.get(0).get(0);
             Ok(feat)
         },
         Err(err) => Err(HecateError::from_db(err))

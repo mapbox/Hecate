@@ -1382,21 +1382,15 @@ struct FeatureQuery {
 }
 
 #[get("/data/feature?<fquery..>")]
-fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: Form<FeatureQuery>) -> Result<String, HecateError> {
+fn feature_query(conn: State<DbReadWrite>, read_conn: State<DbRead>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, fquery: Form<FeatureQuery>) -> Result<Json<serde_json::Value>, HecateError> {
     auth_rules.allows_feature_get(&mut auth, &conn.get()?)?;
 
     if fquery.key.is_some() && fquery.point.is_some() {
         Err(HecateError::new(400, String::from("key and point params cannot be used together"), None))
     } else if fquery.key.is_some() {
-        match feature::query_by_key(&read_conn.get()?, &fquery.key.as_ref().unwrap()) {
-            Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
-            Err(err) => Err(err)
-        }
+        Ok(Json(feature::query_by_key(&read_conn.get()?, &fquery.key.as_ref().unwrap())?))
     } else if fquery.point.is_some() {
-        match feature::query_by_point(&read_conn.get()?, &fquery.point.as_ref().unwrap()) {
-            Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
-            Err(err) => Err(err)
-        }
+        Ok(Json(feature::query_by_point(&read_conn.get()?, &fquery.point.as_ref().unwrap())?))
     } else {
         Err(HecateError::new(400, String::from("key or point param must be used"), None))
     }
