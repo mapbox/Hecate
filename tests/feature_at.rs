@@ -190,7 +190,7 @@ mod test {
                 "key": "Q1233",
                 "version": 1,
                 "properties": { "number": "123" },
-                "geometry": { "type": "Point", "coordinates": [ 0.0, 0.0 ] }
+                "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
             }));
 
             assert!(resp.status().is_success());
