@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.59.1
+
+- :bug: Optimize Bounds#Get with `ST_Subdivide`
+
 ## v0.59.0
 
 - :tada: Feature query by lat/lng.
