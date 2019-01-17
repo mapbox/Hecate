@@ -72,7 +72,7 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
 pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<PGStream, HecateError> {
     match PGStream::new(conn, String::from("next_bounds"), String::from(r#"
         DECLARE next_bounds CURSOR FOR
-            SELECT
+            EXPLAIN SELECT
                 row_to_json(t)::TEXT
             FROM (
                 SELECT
@@ -84,10 +84,16 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
                     geo.props AS properties
                 FROM
                     geo,
-                    bounds
+                    (
+                        SELECT
+                            ST_Subdivide(bounds.geom) as subgeom
+                        FROM
+                            bounds
+                        WHERE
+                            name = 'us_wv'
+                    ) as b
                 WHERE
-                    bounds.name = $1
-                    AND ST_Intersects(geo.geom, bounds.geom)
+                    ST_Intersects(geo.geom, b.subgeom)
             ) t
     "#), &[&bounds]) {
         Ok(stream) => Ok(stream),
