@@ -1,6 +1,6 @@
 #![feature(proc_macro_hygiene, decl_macro, plugin, custom_derive, custom_attribute)]
 
-static VERSION: &'static str = "0.59.0";
+static VERSION: &'static str = "0.59.1";
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
