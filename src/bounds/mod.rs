@@ -72,7 +72,7 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
 pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<PGStream, HecateError> {
     match PGStream::new(conn, String::from("next_bounds"), String::from(r#"
         DECLARE next_bounds CURSOR FOR
-            EXPLAIN SELECT
+            SELECT
                 row_to_json(t)::TEXT
             FROM (
                 SELECT
@@ -90,7 +90,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
                         FROM
                             bounds
                         WHERE
-                            name = 'us_wv'
+                            name = $1
                     ) as b
                 WHERE
                     ST_Intersects(geo.geom, b.subgeom)
