@@ -12,7 +12,7 @@
 
 ## v0.60.0
 
-- :todo: Add postgres/posgis version checking to database checks
+- :tada: Add postgres/posgis version checking to database checks
 
 ## v0.59.1
 
