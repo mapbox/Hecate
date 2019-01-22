@@ -18,9 +18,9 @@ pub struct Response {
 
 pub fn import_error(feat: &geojson::Feature, error: &str) -> HecateError {
     HecateError::from_json(400, json!({
-        "id": feat.id.clone(),
+        "id": &feat.id,
         "message": error,
-        "feature": feat.clone()
+        "feature": &feat
     }), String::from("Import Error"), None)
 }
 
@@ -292,7 +292,7 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
             Err(err) => {
                 match err.as_db() {
                     Some(e) => {
-                        Err(import_error(&feat, &*e.message.clone()))
+                        Err(import_error(&feat, e.message.as_str()))
                     },
                     _ => Err(import_error(&feat, "Generic Error"))
                 }
@@ -320,7 +320,7 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
                         if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
                             Err(import_error(&feat, "Duplicate Key Value"))
                         } else {
-                            Err(import_error(&feat, &*e.message.clone()))
+                            Err(import_error(&feat, e.message.as_str()))
                         }
                     },
                     _ => Err(import_error(&feat, "Generic Error"))
@@ -370,7 +370,7 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
                     } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
                         Err(import_error(&feat, "Duplicate Key Value"))
                     } else {
-                        Err(import_error(&feat, &*e.message.clone()))
+                        Err(import_error(&feat, e.message.as_str()))
                     }
                 },
                 _ => Err(import_error(&feat, "Generic Error"))
@@ -395,7 +395,7 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
                     if e.message == "DELETE: ID or VERSION Mismatch" {
                         Err(import_error(&feat, "Delete Version Mismatch"))
                     } else {
-                        Err(import_error(&feat, &*e.message.clone()))
+                        Err(import_error(&feat, e.message.as_str()))
                     }
                 },
                 _ => Err(import_error(&feat, "Generic Error"))
@@ -404,10 +404,10 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
-pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<geojson::Feature, HecateError> {
+pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<serde_json::value::Value, HecateError> {
     match conn.query("
         SELECT
-            row_to_json(f)::TEXT AS feature
+            row_to_json(f)::JSON AS feature
         FROM (
             SELECT
                 id AS id,
@@ -423,19 +423,59 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
         Ok(res) => {
             if res.len() != 1 { return Err(HecateError::new(404, String::from("Feature not found"), None)); }
 
-            let feat: postgres::rows::Row = res.get(0);
-            let feat: String = feat.get(0);
-            let feat: geojson::Feature = match feat.parse() {
-                Ok(feat) => match feat {
-                    geojson::GeoJson::Feature(feat) => feat,
-                    _ => { return Err(HecateError::new(400, String::from("Invalid Feature"), None)); }
-                },
-                Err(_) => { return Err(HecateError::new(400, String::from("Invalid Feature"), None)); }
-            };
-
+            let feat: serde_json::value::Value = res.get(0).get(0);
             Ok(feat)
         },
-        Err(_) => Err(HecateError::new(400, String::from("Invalid feature"), None))
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}
+
+pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<serde_json::value::Value, HecateError> {
+    let lnglat = point.split(",").collect::<Vec<&str>>();
+
+    if lnglat.len() != 2 {
+        return Err(HecateError::new(400, String::from("Point must be Lng,Lat"), None));
+    }
+
+    let lng: f64 = match lnglat[0].parse() {
+        Ok(lng) => lng,
+        _ => { return Err(HecateError::new(400, String::from("Longitude coordinate must be numeric"), None)); }
+    };
+    let lat: f64 = match lnglat[1].parse() {
+        Ok(lat) => lat,
+        _ => { return Err(HecateError::new(400, String::from("Latitude coordinate must be numeric"), None)); }
+    };
+
+    if lng < -180.0 || lng > 180.0 {
+        return Err(HecateError::new(400, String::from("Longitude exceeds bounds"), None));
+    } else if lat < -90.0 || lat > 90.0 {
+        return Err(HecateError::new(400, String::from("Latitude exceeds bounds"), None));
+    }
+
+    match conn.query("
+        SELECT
+            row_to_json(f)::JSON AS feature
+        FROM (
+            SELECT
+                id AS id,
+                key AS key,
+                'Feature' AS type,
+                version AS version,
+                ST_AsGeoJSON(geom)::JSON AS geometry,
+                props AS properties
+            FROM geo
+            WHERE
+                ST_Intersects(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326))
+        ) f
+        LIMIT 1
+    ", &[&lng, &lat]) {
+        Ok(res) => {
+            if res.len() != 1 { return Err(HecateError::new(404, String::from("Feature not found"), None)); }
+
+            let feat: serde_json::value::Value = res.get(0).get(0);
+            Ok(feat)
+        },
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
@@ -470,7 +510,7 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
 
             Ok(feat)
         },
-        Err(_) => Err(HecateError::new(400, String::from("Invalid Feature"), None))
+        Err(err) => Err(HecateError::from_db(err))
     }
 }
 
@@ -649,6 +689,6 @@ pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
 
             Ok(fc)
         },
-        Err(_) => Err(HecateError::new(400, String::from("Invalid Feature"), None))
+        Err(err) => Err(HecateError::from_db(err))
     }
 }

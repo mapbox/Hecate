@@ -10,6 +10,19 @@
 
 # Version History
 
+## v0.59.1
+
+- :bug: Optimize Bounds#Get with `ST_Subdivide`
+
+## v0.59.0
+
+- :tada: Feature query by lat/lng.
+
+## v0.58.1
+
+- :rocket: Reduce `clone()` calls where possible to decrease allocation calls
+- :rocket: Rename `xml` => `osm` mod to better reflect contents
+
 ## v0.58.0
 
 - :arrow_up: Update to `geojson@13` which adds support for better representation of `Feature::Id` values

@@ -4,10 +4,10 @@ mod rel;
 mod tree;
 
 use feature;
-use xml::node::Node;
-use xml::way::Way;
-use xml::rel::Rel;
-use xml::tree::OSMTree;
+use osm::node::Node;
+use osm::way::Way;
+use osm::rel::Rel;
+use osm::tree::OSMTree;
 
 use std::string;
 use std::num;

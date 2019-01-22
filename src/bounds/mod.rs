@@ -84,10 +84,16 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
                     geo.props AS properties
                 FROM
                     geo,
-                    bounds
+                    (
+                        SELECT
+                            ST_Subdivide(bounds.geom) as subgeom
+                        FROM
+                            bounds
+                        WHERE
+                            name = $1
+                    ) as b
                 WHERE
-                    bounds.name = $1
-                    AND ST_Intersects(geo.geom, bounds.geom)
+                    ST_Intersects(geo.geom, b.subgeom)
             ) t
     "#), &[&bounds], None, Some(vec![0x04])) {
         Ok(stream) => Ok(stream),

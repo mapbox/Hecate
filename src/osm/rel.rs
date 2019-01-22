@@ -1,5 +1,5 @@
 use std::fmt;
-use xml::*;
+use osm::*;
 
 pub struct Rel {
     pub id: Option<i64>,

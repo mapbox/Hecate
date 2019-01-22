@@ -15,10 +15,10 @@
 | --------------------- | ------------------ | ------------------ | ------------------ |
 | Vector Tile Creation  | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | Streaming Query API   | :heavy_check_mark: | :x:                | :x:                |
-| Multi User Support    | :heavy_check_mark: | :x:                | :heavy_check_mark: |
+| Multi User Support    | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | Feature History       | :heavy_check_mark: | :x:                | :heavy_check_mark: |
 | Atomic API Operations | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| GeoJSON Based API     | :heavy_check_mark: | :x:                | :heavy_check_mark: |
+| GeoJSON-LD Based API  | :heavy_check_mark: | :x:                | :heavy_check_mark: |
 | Mapbox GL JS Styling  | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | Integrated Data Stats | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 
@@ -1223,14 +1223,19 @@ Return a single GeoJSON `Feature` given a query parameter
 
 *Options*
 
-| Option      | Notes                                                |
-| :----:      | ---------------------------------------------------- |
-| `key=<key>` | `Optional` Key value to retrieve a given feature by  |
+| Option            | Notes                                                     |
+| :----:            | --------------------------------------------------------- |
+| `key=<key>`       | `Optional` Key value to retrieve a given feature by       |
+| `point=<lng,lat>` | `Optional` Query for a single feature at the given point  |
 
 *Example*
 
 ```bash
 curl -X GET 'http://localhost:8000/api/data/feature?key=123
+```
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/feature?point=1.1324%2C-45.322
 ```
 
 ---
