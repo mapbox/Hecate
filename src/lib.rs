@@ -1,6 +1,8 @@
 #![feature(proc_macro_hygiene, decl_macro, plugin, custom_derive, custom_attribute)]
 
-static VERSION: &'static str = "0.59.1";
+pub static VERSION: &'static str = "0.59.1";
+pub static POSTGRES: f64 = 11.0;
+pub static POSTGIS: f64 = 2.4;
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
