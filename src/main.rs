@@ -97,8 +97,8 @@ fn database_check(conn_str: &String, is_read: bool) {
 
             match conn.query("
                 SELECT 
-                    (regexp_matches(version(), 'PostgreSQL (.*?) '))[1] AS postgres_v,
-                    (regexp_matches(postgis_version(), '^(.*?) '))[1] AS postgis_v
+                    (regexp_matches(version(), 'PostgreSQL (.*?) '))[1]::FLOAT AS postgres_v,
+                    (regexp_matches(postgis_version(), '^(.*?) '))[1]::FLOAT AS postgis_v
             ", &[]) {
                 Ok(res) => {
                     if res.len() != 1 {
