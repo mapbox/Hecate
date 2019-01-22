@@ -5,7 +5,7 @@ ENV SHELL /bin/bash
 
 # set the locale
 RUN apt-get update -y \
-    && apt-get install -y \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
         software-properties-common \
         libcurl4-openssl-dev \
         apt-transport-https \
