@@ -1,6 +1,6 @@
 #![feature(proc_macro_hygiene, decl_macro, plugin, custom_derive, custom_attribute)]
 
-pub static VERSION: &'static str = "0.61.0";
+pub static VERSION: &'static str = "0.61.1";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
 
