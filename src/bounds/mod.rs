@@ -117,10 +117,16 @@ pub fn stats_json(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnection
                 to_char(now(), 'YYYY-MM-DD HH24:MI:SS') AS last_calc
             FROM
                 geo,
-                bounds
+                (
+                    SELECT
+                        ST_Subdivide(bounds.geom) as subgeom
+                    FROM
+                        bounds
+                    WHERE
+                        name = $1
+                ) as b
             WHERE
-                bounds.name = $1
-                AND ST_Intersects(geo.geom, bounds.geom)
+                ST_Intersects(geo.geom, b.subgeom)
         ) t
     ", &[ &bounds ]) {
         Ok(rows) => Ok(rows.get(0).get(0)),
