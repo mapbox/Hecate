@@ -334,11 +334,13 @@ cargo run
 
 <details>
 
-By default hecate will attempt to connect to `hecate@localhost:5432/hecate` for write
-operations and simultaneously connect to `hecate_read@localhost:5432/hecate` for
-read only operations.
+#### Main Connection
 
-Note that only postgres/postgis backed databases are currently supported.
+By default hecate will attempt to connect to `hecate@localhost:5432/hecate` for read/write
+operations and simultaneously connect to `hecate_read@localhost:5432/hecate` for
+sandboxed read only operations.
+
+Note that only postgres w/ postgis enabled is supported.
 
 This database should be created prior to launching hecate. For instructions on setting up the database
 see the [Build Environment](#build-environment) section of this doc.
@@ -353,22 +355,38 @@ cargo run -- --database "<USER>:<PASSWORD>@<HOST>/<DATABASE>"
 cargo run -- --database "<USER>@<HOST>/<DATABASE>"
 ```
 
+#### Sandbox Connection
+
 A second read-only account should also be created with permissions to SELECT from the
-`geo` & `deltas` table. All query endpoints - query, clone, bbox, etc will use this readonly connection
-A sample implementation can be found in the `schema.sql` document
+`geo` & `deltas` table. This endpoint will only be used for the `query` endpoint, which
+allows arbitrary user query execution. A sample implementation can be found in the `schema.sql` document
 
 Note: It is up to the DB Admin to ensure the permissions are limited in scope for this user. Hecate will
 expose access to this user via the query endpoint.
 
-If multiple instances of `database_read` are present, hecate will load balance accross the multiple read instances.
+If multiple instances of `database_sandbox` are present, hecate will load balance accross the multiple read instances.
 
 ```bash
-cargo run -- --database_read "<USER>:<PASSWORD>@<HOST>/<DATABASE>"
+cargo run -- --database_sandbox "<USER>:<PASSWORD>@<HOST>/<DATABASE>"
 
-cargo run -- --database_read "<USER>@<HOST>/<DATABASE>"
+cargo run -- --database_sandbox "<USER>@<HOST>/<DATABASE>"
 
-cargo run -- --database_read "<USER>@<HOST>/<DATABASE>" --database_read "<USER>@<HOST>/<DATABASE>"
+cargo run -- --database_sandbox "<USER>@<HOST>/<DATABASE>" --database_sandbox "<USER>@<HOST>/<DATABASE>"
 ```
+
+#### Replica Connection [optional]
+
+Finally, optionally multiple `--database_replica` conncetions can be specified which hecate
+will use to load balance read traffic accross, alleviating capacity on the master db for write operations.
+
+```bash
+cargo run -- --database_replica "<USER>:<PASSWORD>@<HOST>/<DATABASE>"
+
+cargo run -- --database_replica "<USER>@<HOST>/<DATABASE>"
+
+cargo run -- --database_replica"<USER>@<HOST>/<DATABASE>" --database_replica "<USER>@<HOST>/<DATABASE>"
+```
+
 
 </details>
 

@@ -10,10 +10,17 @@ args:
         help: Specify an alternate database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
         takes_value: true
 
-    - database_read:
-        long: database_read
-        value_name: DATABASE_READ
-        help: \[optional\] Specify the read user connection(s) for the database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
+    - database_replica:
+        long: database_replica
+        value_name: DATABASE_REPLICA
+        help: \[optional\] Specify the any replica db connection(s) in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
+        takes_value: true
+        multiple: true
+
+    - database_sandbox:
+        long: database_sandbox_
+        value_name: DATABASE_SANDBOX
+        help: \[optional\] Specify the sandboxed read user connection(s) for the database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
         takes_value: true
         multiple: true
 
