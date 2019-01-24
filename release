@@ -62,6 +62,12 @@ if [[ ! $(git diff ./src/cli.yml | grep '^+' | wc -l | grep -Po '^\d+') -eq 2 ]]
     exit 1
 fi
 
+# Get CHANGELOG INFO
+
+CHANGE_START=$(grep -n "## v${NVER}" CHANGELOG.md | grep -Po '^\d+')
+CHANGE_END=$(grep -n "## v${CVER}" CHANGELOG.md | grep -Po '^\d+')
+CHANGE="$(sed -n "${CHANGE_START},${CHANGE_END}p")"
+
 cargo build --release
 
 git commit -am "v${NVER}"
@@ -72,5 +78,5 @@ git push --tags
 
 echo "ok - $CVER => $NVER"
 echo "ok - release pushed!"
-echo
+echo "${CHANGE}"
 echo "ok - publish the new release - https://github.com/mapbox/Hecate/releases/new?tag=v${NVER}"
