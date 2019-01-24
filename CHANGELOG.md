@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.61.1
+
+- :bug: Dynamic PostGIS/PostgreSQL version error message
+- :rocket: only test version of write DB connection
+
 ## v0.61.0
 
 - :tada: Optimize Boundary Stats by subdividing large/irregularly shaped geometries for faster indexed retrieval.
