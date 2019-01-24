@@ -124,9 +124,11 @@ pub fn stats_json(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnection
                         bounds
                     WHERE
                         name = $1
-                ) as b
+                ) as b,
+                bounds
             WHERE
                 ST_Intersects(geo.geom, b.subgeom)
+                AND bounds.name = $1
         ) t
     ", &[ &bounds ]) {
         Ok(rows) => Ok(rows.get(0).get(0)),
