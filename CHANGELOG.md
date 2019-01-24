@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.61.2
+
+- :bug: Database Sandbox arg fix
+
 ## v0.61.1
 
 - :bug: Dynamic PostGIS/PostgreSQL version error message
