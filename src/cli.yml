@@ -18,7 +18,7 @@ args:
         multiple: true
 
     - database_sandbox:
-        long: database_sandbox_
+        long: database_sandbox
         value_name: DATABASE_SANDBOX
         help: \[optional\] Specify the sandboxed read user connection(s) for the database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
         takes_value: true
