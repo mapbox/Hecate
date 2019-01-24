@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.61.0
+
+- :tada: Optimize Boundary Stats by subdividing large/irregularly shaped geometries for faster indexed retrieval.
+- :rocket: Redefine database connections into `database`, `database_replica`, `database_sandbox`
+
 ## v0.60.0
 
 - :tada: Add postgres/posgis version checking to database checks
