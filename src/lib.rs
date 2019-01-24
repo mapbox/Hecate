@@ -56,9 +56,24 @@ use rocket::request::Form;
 use geojson::GeoJson;
 use rocket_contrib::json::Json;
 
+pub struct Database {
+    main: String,
+    replica: Vec<String>,
+    sandbox: Vec<String>
+}
+
+impl Database {
+    pub fn new(main: String, replica: Vec<String>, sandbox: Vec<String>) -> Self {
+        Database {
+            main: main,
+            replica: replica,
+            sandbox: sandbox
+        }
+    }
+}
+
 pub fn start(
-    database: String,
-    database_read: Vec<String>,
+    database: Database,
     port: Option<u16>,
     workers: Option<u16>,
     schema: Option<serde_json::value::Value>,
@@ -81,7 +96,8 @@ pub fn start(
         }
     };
 
-    let db_read: DbRead = DbRead::new(Some(database_read.iter().map(|db| init_pool(&db)).collect()));
+    let db_replica: DbReplica = DbReplica::new(Some(database.replica.iter().map(|db| init_pool(&db)).collect()));
+    let db_sandbox: DbSandbox = DbSandbox::new(Some(database.sandbox.iter().map(|db| init_pool(&db)).collect()));
 
     let limits = Limits::new()
         .limit("json", 20971520)
@@ -107,8 +123,9 @@ pub fn start(
     };
 
     rocket::custom(config)
-        .manage(DbReadWrite::new(init_pool(&database)))
-        .manage(db_read)
+        .manage(DbReadWrite::new(init_pool(&database.main)))
+        .manage(db_replica)
+        .manage(db_sandbox)
         .manage(schema)
         .manage(auth_rules)
         .mount("/", routes![
@@ -194,20 +211,42 @@ fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionMana
     }
 }
 
-pub struct DbRead(pub Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>);
-impl DbRead {
+pub struct DbReplica(pub Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>);
+impl DbReplica {
     fn new(database: Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>) -> Self {
-        DbRead(database)
+        DbReplica(database)
     }
 
     fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, HecateError> {
         match self.0 {
-            None => Err(HecateError::new(503, String::from("No Database Read Connection"), None)),
-            Some(ref db_read) => {
+            None => Err(HecateError::new(503, String::from("No Database Replica Connection"), None)),
+            Some(ref db_replica) => {
                 let mut rng = thread_rng();
-                let db_read_it = rng.gen_range(0, db_read.len());
+                let db_replica_it = rng.gen_range(0, db_replica.len());
 
-                match db_read.get(db_read_it).unwrap().get() {
+                match db_replica.get(db_replica_it).unwrap().get() {
+                    Ok(conn) => Ok(conn),
+                    Err(_) => Err(HecateError::new(503, String::from("Could not connect to database"), None))
+                }
+            }
+        }
+    }
+}
+
+pub struct DbSandbox(pub Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>);
+impl DbSandbox {
+    fn new(database: Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>) -> Self {
+        DbSandbox(database)
+    }
+
+    fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, HecateError> {
+        match self.0 {
+            None => Err(HecateError::new(503, String::from("No Database Sandbox Connection"), None)),
+            Some(ref db_sandbox) => {
+                let mut rng = thread_rng();
+                let db_sandbox_it = rng.gen_range(0, db_sandbox.len());
+
+                match db_sandbox.get(db_sandbox_it).unwrap().get() {
                     Ok(conn) => Ok(conn),
                     Err(_) => Err(HecateError::new(503, String::from("Could not connect to database"), None))
                 }
