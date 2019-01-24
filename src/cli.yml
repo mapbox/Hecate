@@ -10,7 +10,7 @@ args:
         help: Specify an alternate database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
         takes_value: true
 
-    - database_replica
+    - database_replica:
         long: database_replica
         value_name: DATABASE_REPLICA
         help: \[optional\] Specify the any replica db connection(s) in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
