@@ -14,7 +14,6 @@
     "@mapbox/assembly": "^0.23.0",
     "@mapbox/mapbox-gl-geocoder": "^3.0.0",
     "@turf/turf": "^5.1.6",
-    "js-cookie": "^2.2.0",
     "moment": "^2.22.2",
     "vue": "^2.5.16"
   },
