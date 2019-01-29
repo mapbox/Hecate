@@ -484,8 +484,9 @@ fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
 
     let token = user::create_token(&conn, &uid)?;
 
-    cookies.add_private(Cookie::build("session", token)
+    cookies.add(Cookie::build("session", token)
         .path("/")
+        .http_only(true)
         .finish()
     );
 
@@ -493,20 +494,30 @@ fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
 }
 
 #[delete("/user/session")]
-fn user_delete_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, mut cookies: Cookies) -> Result<Json<serde_json::Value>, HecateError> {
-    let conn = conn.get()?;
+fn user_delete_session(conn: State<DbReadWrite>, auth: auth::Auth, mut cookies: Cookies) -> Result<Json<serde_json::Value>, HecateError> {
+    // there is no auth check here for deleting tokens, the web interface should
+    // always be able to de-authenticate to prevent errors
 
-    auth_rules.allows_user_create_session(&mut auth, &conn)?;
+    let token = match cookies.get("session") {
+        Some(session) => Some(String::from(session.value())),
+        None => None
+    };
 
-    let uid = auth.uid.unwrap();
+    cookies.remove(Cookie::build("session", String::from(""))
+        .path("/")
+        .http_only(true)
+        .finish()
+    );
 
-    match cookies.get_private("session") {
-        Some(session) => {
-            let token = String::from(session.value());
+    match token {
+        Some(token) => {
+            let uid = match auth.uid {
+                Some(uid) => uid,
+                None => { return Ok(Json(json!(true))); }
+            };
 
-            match user::destroy_token(&conn, &uid, &token) {
+            match user::destroy_token(&conn.get()?, &uid, &token) {
                 _ => {
-                    cookies.remove_private(session);
                     Ok(Json(json!(true)))
                 }
             }

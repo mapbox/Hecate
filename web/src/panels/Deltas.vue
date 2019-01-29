@@ -31,32 +31,40 @@
             <button @click="getDeltas" class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-refresh'/></button>
         </div>
 
-        <div v-if="!deltas.length" class="px12 py3 clearfix bg-white">
-            <div align="center">No Deltas</div>
-        </div>
+        <template v-if='loading'>
+            <div class='flex-child loading h60 py12'></div>
+        </template>
+        <template v-else>
+            <template v-if='deltas.length'>
+                <div class="flex-child scroll-auto">
+                    <div v-for="delta in deltas" @click="getDelta(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer clearfix">
+                        <div class="clearfix">
+                            <div @click.stop='userClick(delta.uid)' class="fl txt-bold txt-underline-on-hover" v-text="delta.username"></div>
+                            <div class="fr txt-em" v-text="moment(delta.created).add(moment().utcOffset(), 'minutes').fromNow()"></div>
+                        </div>
+                        <div class='txt-s' style="word-wrap: break-word;" v-text="delta.props.message ? delta.props.message : (delta.props.comment ? delta.props.comment : '<No Delta Message>')"></div>
+                        <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
+                    </div>
 
-        <div class="flex-child scroll-auto">
-            <div v-for="delta in deltas" @click="getDelta(delta.id)" class="px12 py12 border-b bg-darken10-on-hover border--gray-light cursor-pointer clearfix">
-                <div class="clearfix">
-                    <div @click.stop='userClick(delta.uid)' class="fl txt-bold txt-underline-on-hover" v-text="delta.username"></div>
-                    <div class="fr txt-em" v-text="moment(delta.created).add(moment().utcOffset(), 'minutes').fromNow()"></div>
+                    <div class="grid col px12 py12 wfull txt-l color-gray">
+                        <div class='col--4'>
+                            <span @click='getDeltas("left")'class='fr cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use href='#icon-arrow-left'/></svg></span>
+                        </div>
+                        <div class='col--4 flex-parent flex-parent--center-main'>
+                            <span @click='getDeltas("home")'class='cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use href='#icon-home'/></svg></span>
+                        </div>
+                        <div class='col--4'>
+                            <span @click='getDeltas("right")'class='fl cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use href='#icon-arrow-right'/></svg></span>
+                        </div>
+                    </div>
                 </div>
-                <div class='txt-s' style="word-wrap: break-word;" v-text="delta.props.message ? delta.props.message : (delta.props.comment ? delta.props.comment : '<No Delta Message>')"></div>
-                <span class='bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round fr' v-text="delta.id"></span>
-            </div>
-
-            <div class="grid col px12 py12 wfull txt-l color-gray">
-                <div class='col--4'>
-                    <span @click='getDeltas("left")'class='fr cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use href='#icon-arrow-left'/></svg></span>
+            </template>
+            <template v-else>
+                <div class="px12 py12 clearfix bg-white">
+                    <div align="center">No Deltas</div>
                 </div>
-                <div class='col--4 flex-parent flex-parent--center-main'>
-                    <span @click='getDeltas("home")'class='cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use href='#icon-home'/></svg></span>
-                </div>
-                <div class='col--4'>
-                    <span @click='getDeltas("right")'class='fl cursor-pointer color-gray-dark-on-hover'><svg class='icon'><use href='#icon-arrow-right'/></svg></span>
-                </div>
-            </div>
-        </div>
+            </template>
+        </template>
     </template>
 
     <foot/>
@@ -72,6 +80,7 @@ export default {
     name: 'deltas',
     data: function() {
         return {
+            loading: true,
             maxoffset: false,
             offset: false,
             deltas: [],
@@ -115,6 +124,8 @@ export default {
             }).then((response) => {
                   return response.json();
             }).then((body) => {
+                this.loading = false;
+
                 this.deltas.splice(0, this.deltas.length);
                 this.deltas = this.deltas.concat(body);
 

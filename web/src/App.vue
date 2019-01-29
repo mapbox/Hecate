@@ -108,7 +108,6 @@
 <script>
 //Libaries
 import mapboxglgeo from '@mapbox/mapbox-gl-geocoder';
-import Cookies from 'js-cookie';
 
 // === Components ===
 import Foot from './components/Foot.vue';
@@ -270,23 +269,19 @@ export default {
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
 
-        if (Cookies.get('session')) {
-            this.getSelf((err, user) => {
-                if (err || !user) {
-                    Cookies.remove('session');
-                } else {
-                    this.credentials.authed = true;
-                    this.credentials.username = user.username;
-                    this.credentials.uid = user.id;
-                }
+        this.getSelf((err, user) => {
+            if (err || !user) {
+                this.getSettings();
+                this.getAuth();
+            } else {
+                this.credentials.authed = true;
+                this.credentials.username = user.username;
+                this.credentials.uid = user.id;
 
                 this.getSettings();
                 this.getAuth();
-            });
-        } else {
-            this.getSettings();
-            this.getAuth();
-        }
+            }
+        });
 
         this.map.gl = new mapboxgl.Map({
             container: 'map',
@@ -377,7 +372,9 @@ export default {
             fetch(`${window.location.protocol}//${window.location.host}/api/user/info`, {
                 credentials: 'same-origin'
             }).then((response) => {
-                if (response.status !== 200) {
+                if (response.status === 401) {
+                    return this.logout();
+                } else if (response.status !== 200) {
                     return cb(new Error('not logged in'));
                 } else {
                     return response.json();
@@ -393,6 +390,7 @@ export default {
         logout: function(reload) {
             this.credentials.authed = false;
 
+            console.error('LOGOUT');
             fetch(`${window.location.protocol}//${window.location.host}/api/user/session`, {
                 method: 'DELETE',
                 credentials: 'same-origin'
