@@ -10,6 +10,28 @@
 
 # Version History
 
+## v0.62.0
+
+- :bug: Improved session handling to ensure server restarts without `HECATE_SECRET` don't lock session cookie
+
+## v0.61.2
+
+- :bug: Database Sandbox arg fix
+
+## v0.61.1
+
+- :bug: Dynamic PostGIS/PostgreSQL version error message
+- :rocket: only test version of write DB connection
+
+## v0.61.0
+
+- :tada: Optimize Boundary Stats by subdividing large/irregularly shaped geometries for faster indexed retrieval.
+- :rocket: Redefine database connections into `database`, `database_replica`, `database_sandbox`
+
+## v0.60.0
+
+- :tada: Add postgres/posgis version checking to database checks
+
 ## v0.59.1
 
 - :bug: Optimize Bounds#Get with `ST_Subdivide`

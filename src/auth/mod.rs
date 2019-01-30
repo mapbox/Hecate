@@ -914,7 +914,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Auth, ()> {
         let mut auth = Auth::new();
 
-        match request.cookies().get_private("session") {
+        match request.cookies().get("session") {
             Some(token) => {
                 auth.token = Some(String::from(token.value()));
 

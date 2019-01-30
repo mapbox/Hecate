@@ -1,7 +1,7 @@
 name: Hecate
 author: Nicholas Ingalls <ingalls@protonmail.com>
 about: Data Storage Backend Focused on Speed and GeoJSON Interchange
-version: 0.59.1
+version: 0.62.0
 args:
     - database:
         short: d
@@ -10,10 +10,17 @@ args:
         help: Specify an alternate database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
         takes_value: true
 
-    - database_read:
-        long: database_read
-        value_name: DATABASE_READ
-        help: \[optional\] Specify the read user connection(s) for the database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
+    - database_replica:
+        long: database_replica
+        value_name: DATABASE_REPLICA
+        help: \[optional\] Specify the any replica db connection(s) in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
+        takes_value: true
+        multiple: true
+
+    - database_sandbox:
+        long: database_sandbox
+        value_name: DATABASE_SANDBOX
+        help: \[optional\] Specify the sandboxed read user connection(s) for the database in format USER@HOST:PORT/DATABASE or USER:PASS@PORT/DATABASE
         takes_value: true
         multiple: true
 

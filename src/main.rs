@@ -16,8 +16,13 @@ fn main() {
 
     let database = String::from(matched.value_of("database").unwrap_or("hecate@localhost:5432/hecate"));
 
-    let database_read = match matched.values_of("database_read") {
+    let database_sandbox = match matched.values_of("database_sandbox") {
         None => vec![String::from("hecate_read@localhost:5432/hecate")],
+        Some(db_read) => db_read.map(|db| String::from(db)).collect()
+    };
+
+    let database_replica = match matched.values_of("database_replica") {
+        None => vec![database.clone()],
         Some(db_read) => db_read.map(|db| String::from(db)).collect()
     };
 
@@ -73,13 +78,16 @@ fn main() {
 
     database_check(&database, false);
 
-    for db_read in &database_read {
-        database_check(db_read, true);
+    for db_replica in &database_replica {
+        database_check(db_replica, true);
+    }
+
+    for db_sandbox in &database_sandbox {
+        database_check(db_sandbox, true);
     }
 
     hecate::start(
-        database,
-        database_read,
+        hecate::Database::new(database, database_replica, database_sandbox),
         port,
         workers,
         schema,
@@ -94,6 +102,39 @@ fn database_check(conn_str: &String, is_read: bool) {
                 true => String::from("READ"),
                 false => String::from("READ/WRITE")
             };
+
+            if !is_read {
+                match conn.query("
+                    SELECT
+                        (regexp_matches(version(), 'PostgreSQL (.*?) '))[1]::FLOAT AS postgres_v,
+                        (regexp_matches(postgis_version(), '^(.*?) '))[1]::FLOAT AS postgis_v
+                ", &[]) {
+                    Ok(res) => {
+                        if res.len() != 1 {
+                            println!("ERROR: Connection unable obtain postgres version using ({}) {}", conn_type, conn_str);
+                            std::process::exit(1);
+                        }
+
+                        let postgres_v: f64 = res.get(0).get(0);
+                        if postgres_v < hecate::POSTGRES {
+                            println!("ERROR: Hecate requires a min postgres version of {}", hecate::POSTGRES);
+                            std::process::exit(1);
+                        }
+
+                        let postgis_v: f64 = res.get(0).get(1);
+                        if postgis_v < hecate::POSTGIS {
+                            println!("ERROR: Hecate requires a min postgis version of {}", hecate::POSTGIS);
+                            std::process::exit(1);
+                        }
+                    },
+                    Err(err) => {
+                        println!("ERROR: Connection unable obtain postgres version using ({}) {}", conn_type, conn_str);
+                        println!("ERROR: {}", err.description());
+                        println!("ERROR: Caused by: {}", err.cause().unwrap());
+                        std::process::exit(1);
+                    }
+                }
+            }
 
             match conn.query("
                 SELECT id FROM geo LIMIT 1

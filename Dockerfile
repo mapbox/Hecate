@@ -1,4 +1,4 @@
-FROM ubuntu:18.10
+FROM ubuntu:18.04
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 ENV SHELL /bin/bash
@@ -10,7 +10,6 @@ RUN apt-get update -y \
         libcurl4-openssl-dev \
         apt-transport-https \
         postgresql-contrib \
-        python-setuptools \
         build-essential \
         libiberty-dev \
         openjdk-8-jdk \
@@ -18,7 +17,6 @@ RUN apt-get update -y \
         pkg-config \
         zlib1g-dev \
         postgresql \
-        python-dev \
         libssl-dev \
         libelf-dev \
         libdw-dev \
