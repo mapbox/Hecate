@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.62.1
+
+- :arrow_up: Update all deps to latest versions
+
 ## v0.62.0
 
 - :bug: Improved session handling to ensure server restarts without `HECATE_SECRET` don't lock session cookie

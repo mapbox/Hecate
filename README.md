@@ -1271,7 +1271,7 @@ Return a single GeoJSON `Feature` given its' ID.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/features/1542
+curl -X GET 'http://localhost:8000/api/data/feature/1542
 ```
 
 ---
