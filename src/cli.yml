@@ -48,3 +48,9 @@ args:
         value_name: AUTH
         help: \[optional\] Specify a custom authentication schema to apply to the API
         takes_value: true
+
+    - domain:
+        long: domain
+        value_name: DOMAIN
+        help: \[optional\] Specify the domain for WFS paths - defaults to "http://localhost:<port>"
+        takes_value: true

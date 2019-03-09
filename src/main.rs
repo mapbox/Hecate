@@ -68,6 +68,11 @@ fn main() {
         None => None
     };
 
+    let domain: Option<String> = match matched.value_of("domain") {
+        Some(domain) => Some(domain.to_string()),
+        None => None
+    };
+
     let workers: Option<u16> = match matched.value_of("workers") {
         Some(workers) => match workers.parse() {
             Ok(workers) => Some(workers),
@@ -89,6 +94,7 @@ fn main() {
     hecate::start(
         hecate::Database::new(database, database_replica, database_sandbox),
         port,
+        domain,
         workers,
         schema,
         auth

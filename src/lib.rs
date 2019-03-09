@@ -76,11 +76,14 @@ impl Database {
 pub fn start(
     database: Database,
     port: Option<u16>,
+    domain: Option<String>,
     workers: Option<u16>,
     schema: Option<serde_json::value::Value>,
     auth: Option<auth::CustomAuth>
 ) {
     env_logger::init();
+
+    let domain: String = domain.unwrap_or(format!("http://localhost:{}", port.unwrap_or(8000)));
 
     let auth_rules: auth::CustomAuth = match auth {
         None => auth::CustomAuth::new(),
@@ -125,6 +128,7 @@ pub fn start(
 
     rocket::custom(config)
         .manage(DbReadWrite::new(init_pool(&database.main)))
+        .manage(domain)
         .manage(db_replica)
         .manage(db_sandbox)
         .manage(schema)
@@ -1463,10 +1467,7 @@ fn feature_get_history(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules:
 
 
 #[get("/wfs?<wfsreq..>")]
-fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, wfsreq: Form<wfs::Req>) -> Result<impl Responder<'static>, HecateError> {
-    //TODO THIS NEEDS TO BE PARAMATERIZED
-    let host = String::from("http://localhost:8000");
-
+fn wfsall(conn: State<DbReadWrite>, domain: State<String>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, wfsreq: Form<wfs::Req>) -> Result<impl Responder<'static>, HecateError> {
     // TODO Error on non 2.0.0 version
     
     let query = wfs::Query::new(&wfsreq);
@@ -1478,7 +1479,7 @@ fn wfsall(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<auth
 
     match query.request {
         wfs::RequestType::GetCapabilities => {
-            let body = wfs::capabilities(&conn, &host)?;
+            let body = wfs::capabilities(&conn, &domain)?;
             let body_cursor = Cursor::new(body);
             let mut response = Response::new();
             response.set_status(HTTPStatus::Ok);
