@@ -13,8 +13,73 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
         ) as extent
     ", &[]) {
         Ok(res) => {
-            let lower: String = res.get(0).get(0);
-            let upper: String = res.get(0).get(1);
+            let lower: Option<String> = res.get(0).get(0);
+            let upper: Option<String> = res.get(0).get(1);
+
+            let featuretypes: String;
+            if lower.is_none() || upper.is_none() {
+                featuretypes = String::from("");
+            } else {
+                featuretypes = format!(r#"
+                    <FeatureType>
+                        <Name>HecatePointData</Name>
+                        <Title>Hecate Point Data</Title>
+                        <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                        <ows:WGS84BoundingBox>
+                            <ows:LowerCorner>{lower}</ows:LowerCorner>
+                            <ows:UpperCorner>{upper}</ows:UpperCorner>
+                        </ows:WGS84BoundingBox>
+                    </FeatureType>
+                    <FeatureType>
+                        <Name>HecateMultiPointData</Name>
+                        <Title>Hecate MultiPoint Data</Title>
+                        <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                        <ows:WGS84BoundingBox>
+                            <ows:LowerCorner>{lower}</ows:LowerCorner>
+                            <ows:UpperCorner>{upper}</ows:UpperCorner>
+                        </ows:WGS84BoundingBox>
+                    </FeatureType>
+                    <FeatureType>
+                        <Name>HecateLineStringData</Name>
+                        <Title>Hecate LineString Data</Title>
+                        <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                        <ows:WGS84BoundingBox>
+                            <ows:LowerCorner>{lower}</ows:LowerCorner>
+                            <ows:UpperCorner>{upper}</ows:UpperCorner>
+                        </ows:WGS84BoundingBox>
+                    </FeatureType>
+                    <FeatureType>
+                        <Name>HecateMultiLineStringData</Name>
+                        <Title>Hecate MultiLineString Data</Title>
+                        <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                        <ows:WGS84BoundingBox>
+                            <ows:LowerCorner>{lower}</ows:LowerCorner>
+                            <ows:UpperCorner>{upper}</ows:UpperCorner>
+                        </ows:WGS84BoundingBox>
+                    </FeatureType>
+                    <FeatureType>
+                        <Name>HecatePolygonData</Name>
+                        <Title>Hecate Polygon Data</Title>
+                        <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                        <ows:WGS84BoundingBox>
+                            <ows:LowerCorner>{lower}</ows:LowerCorner>
+                            <ows:UpperCorner>{upper}</ows:UpperCorner>
+                        </ows:WGS84BoundingBox>
+                    </FeatureType>
+                    <FeatureType>
+                        <Name>HecateMultiPolygonData</Name>
+                        <Title>Hecate MultiPolygon Data</Title>
+                        <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+                        <ows:WGS84BoundingBox>
+                            <ows:LowerCorner>{lower}</ows:LowerCorner>
+                            <ows:UpperCorner>{upper}</ows:UpperCorner>
+                        </ows:WGS84BoundingBox>
+                    </FeatureType>
+                "#,
+                    lower = lower.unwrap(),
+                    upper = upper.unwrap(),
+                );
+            }
 
             Ok(format!(r#"<?xml version="1.0" encoding="UTF-8"?>
                 <wfs:WFS_Capabilities
@@ -170,60 +235,7 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                     </ows:Constraint>
                     </ows:OperationsMetadata>
                     <FeatureTypeList>
-                        <FeatureType>
-                            <Name>HecatePointData</Name>
-                            <Title>Hecate Point Data</Title>
-                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
-                            <ows:WGS84BoundingBox>
-                                <ows:LowerCorner>{lower}</ows:LowerCorner>
-                                <ows:UpperCorner>{upper}</ows:UpperCorner>
-                            </ows:WGS84BoundingBox>
-                        </FeatureType>
-                        <FeatureType>
-                            <Name>HecateMultiPointData</Name>
-                            <Title>Hecate MultiPoint Data</Title>
-                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
-                            <ows:WGS84BoundingBox>
-                                <ows:LowerCorner>{lower}</ows:LowerCorner>
-                                <ows:UpperCorner>{upper}</ows:UpperCorner>
-                            </ows:WGS84BoundingBox>
-                        </FeatureType>
-                        <FeatureType>
-                            <Name>HecateLineStringData</Name>
-                            <Title>Hecate LineString Data</Title>
-                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
-                            <ows:WGS84BoundingBox>
-                                <ows:LowerCorner>{lower}</ows:LowerCorner>
-                                <ows:UpperCorner>{upper}</ows:UpperCorner>
-                            </ows:WGS84BoundingBox>
-                        </FeatureType>
-                        <FeatureType>
-                            <Name>HecateMultiLineStringData</Name>
-                            <Title>Hecate MultiLineString Data</Title>
-                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
-                            <ows:WGS84BoundingBox>
-                                <ows:LowerCorner>{lower}</ows:LowerCorner>
-                                <ows:UpperCorner>{upper}</ows:UpperCorner>
-                            </ows:WGS84BoundingBox>
-                        </FeatureType>
-                        <FeatureType>
-                            <Name>HecatePolygonData</Name>
-                            <Title>Hecate Polygon Data</Title>
-                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
-                            <ows:WGS84BoundingBox>
-                                <ows:LowerCorner>{lower}</ows:LowerCorner>
-                                <ows:UpperCorner>{upper}</ows:UpperCorner>
-                            </ows:WGS84BoundingBox>
-                        </FeatureType>
-                        <FeatureType>
-                            <Name>HecateMultiPolygonData</Name>
-                            <Title>Hecate MultiPolygon Data</Title>
-                            <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
-                            <ows:WGS84BoundingBox>
-                                <ows:LowerCorner>{lower}</ows:LowerCorner>
-                                <ows:UpperCorner>{upper}</ows:UpperCorner>
-                            </ows:WGS84BoundingBox>
-                        </FeatureType>
+                        {featuretypes}
                     </FeatureTypeList>
                     <fes:Filter_Capabilities>
                         <fes:Conformance>
@@ -330,8 +342,7 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                     </fes:Filter_Capabilities>
                 </wfs:WFS_Capabilities>
             "#,
-                lower = lower,
-                upper = upper,
+                featuretypes = featuretypes,
                 host = host
             ))
         },
