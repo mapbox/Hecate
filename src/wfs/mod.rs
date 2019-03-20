@@ -30,6 +30,9 @@ pub struct Req {
     pub typenames: Option<String>,
     pub typeNames: Option<String>,
 
+    pub namespaces: Option<String>,
+    pub NAMESPACES: Option<String>,
+
     pub RESULTTYPE: Option<String>,
     pub resultType: Option<String>,
     pub resulttype: Option<String>,
@@ -69,6 +72,7 @@ pub struct Query {
     pub service: String,
     pub version: String,
     pub request: RequestType,
+    pub namespaces: Option<String>,
     pub typenames: Option<String>,
     pub startindex: Option<u32>,
     pub count: Option<u32>,
@@ -83,6 +87,7 @@ impl Query {
             service: Query::std_service(&req),
             version: Query::std_version(&req),
             request: Query::std_request(&req),
+            namespaces: Query::std_namespaces(&req),
             typenames: Query::std_typenames(&req),
             startindex: Query::std_startindex(&req),
             count: Query::std_count(&req),
@@ -153,6 +158,16 @@ impl Query {
             return Some(req.startIndex.clone().unwrap());
         } else if req.STARTINDEX.is_some() {
             return Some(req.STARTINDEX.clone().unwrap());
+        } else {
+            return None;
+        }
+    }
+
+    fn std_namespaces(req: &Req) -> Option<String> {
+        if req.namespaces.is_some() {
+            return Some(req.namespaces.clone().unwrap());
+        } else if req.NAMESPACES.is_some() {
+            return Some(req.NAMESPACES.clone().unwrap());
         } else {
             return None;
         }
