@@ -1419,12 +1419,22 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
 }
 
 #[get("/data/feature/<id>")]
-fn feature_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<String, HecateError> {
+fn feature_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, id: i64) -> Result<Response<'static>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_feature_get(&mut auth, &conn)?;
 
     match feature::get(&conn, &id) {
-        Ok(features) => Ok(geojson::GeoJson::from(features).to_string()),
+        Ok(feature) => {
+            let feature = geojson::GeoJson::from(feature).to_string();
+
+            let mut response = Response::new();
+
+            response.set_status(HTTPStatus::Ok);
+            response.set_sized_body(Cursor::new(feature));
+            response.set_raw_header("Content-Type", "application/json");
+
+            Ok(response)
+        },
         Err(err) => Err(err)
     }
 }
