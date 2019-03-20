@@ -174,20 +174,27 @@ impl Query {
     }
 
     fn std_typenames(req: &Req) -> Option<String> {
+        let typename: Option<String>;
+
         if req.typename.is_some() {
-            return Some(req.typename.clone().unwrap());
+            typename = Some(req.typename.clone().unwrap());
         } else if req.typeName.is_some() {
-            return Some(req.typeName.clone().unwrap());
+            typename = Some(req.typeName.clone().unwrap());
         } else if req.TYPENAME.is_some() {
-            return Some(req.TYPENAME.clone().unwrap());
+            typename = Some(req.TYPENAME.clone().unwrap());
         } else if req.typenames.is_some() {
-            return Some(req.typenames.clone().unwrap());
+            typename = Some(req.typenames.clone().unwrap());
         } else if req.typeNames.is_some() {
-            return Some(req.typeNames.clone().unwrap());
+            typename = Some(req.typeNames.clone().unwrap());
         } else if req.TYPENAMES.is_some() {
-            return Some(req.TYPENAMES.clone().unwrap());
+            typename =  Some(req.TYPENAMES.clone().unwrap());
         } else {
-            return None;
+            typename = None;
+        }
+
+        match typename {
+            Some(typename) => Some(typename.replace("wfs:", "")),
+            None => None
         }
     }
 
