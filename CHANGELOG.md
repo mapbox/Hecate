@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.63.0
+
+- [UI] Add bounds filtering and limit number of bounds shown in API
+
 ## v0.62.2
 
 - :rocket: Return `application/json` when retrieving individual features
