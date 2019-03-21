@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.62.2
+
+- :rocket: Return `application/json` when retrieving individual features
+
 ## v0.62.1
 
 - :arrow_up: Update all deps to latest versions
