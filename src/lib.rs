@@ -9,6 +9,7 @@ pub static POSTGIS: f64 = 2.4;
 #[macro_use] extern crate rocket;
 extern crate r2d2;
 extern crate r2d2_postgres;
+extern crate crossbeam;
 extern crate quick_xml;
 extern crate postgres;
 extern crate postgis;
@@ -33,6 +34,7 @@ pub mod style;
 pub mod osm;
 pub mod user;
 pub mod auth;
+pub mod worker;
 
 use auth::ValidAuth;
 use err::HecateError;
