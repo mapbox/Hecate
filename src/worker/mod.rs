@@ -1,3 +1,4 @@
+use tilecover;
 use crossbeam;
 use std::thread;
 

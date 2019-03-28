@@ -9,6 +9,7 @@ pub static POSTGIS: f64 = 2.4;
 #[macro_use] extern crate rocket;
 extern crate r2d2;
 extern crate r2d2_postgres;
+extern crate tilecover;
 extern crate crossbeam;
 extern crate quick_xml;
 extern crate postgres;
