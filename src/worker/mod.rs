@@ -10,6 +10,14 @@ pub struct Task {
     job: TaskType
 }
 
+impl Task {
+    pub fn new(tasktype: TaskType) -> Self {
+        Task {
+            job: tasktype
+        }
+    }
+}
+
 pub struct Worker {
     sender: crossbeam::Sender<Task>
 }
