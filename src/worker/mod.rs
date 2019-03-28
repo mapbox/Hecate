@@ -1,5 +1,6 @@
 use tilecover;
 use crossbeam;
+use postgres;
 use std::thread;
 
 pub enum TaskType {
@@ -23,15 +24,15 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new() -> Self {
+    pub fn new(database: String) -> Self {
         let (tx, rx) = crossbeam::channel::unbounded();
 
         thread::Builder::new().name(String::from("Hecate Daemon")).spawn(move || {
-            worker(rx);
+            worker(rx, database);
         }).unwrap();
 
         Worker {
-            sender: tx,
+            sender: tx
         }
     }
 
@@ -45,7 +46,9 @@ impl Worker {
 ///
 /// Main logic for web worker
 ///
-fn worker(rx: crossbeam::Receiver<Task>) {
+fn worker(rx: crossbeam::Receiver<Task>, database: String) {
+    let conn = postgres::Connection::connect(format!("postgres://{}", database), postgres::TlsMode::None).unwrap();
+
     loop {
         let task = rx.recv().unwrap();
 

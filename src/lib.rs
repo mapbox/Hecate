@@ -125,7 +125,7 @@ pub fn start(
         _ => ()
     };
 
-    let worker = worker::Worker::new();
+    let worker = worker::Worker::new(database.main.clone());
 
     rocket::custom(config)
         .manage(DbReadWrite::new(init_pool(&database.main)))
