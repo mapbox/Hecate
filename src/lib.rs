@@ -1147,6 +1147,7 @@ fn osm_changeset_upload(
     auth_rules: State<auth::CustomAuth>,
     conn: State<DbReadWrite>,
     schema: State<Option<serde_json::value::Value>>,
+    worker: State<worker::Worker>,
     delta_id: i64,
     body: Data
 ) -> Result<Response<'static>, status::Custom<String>> {

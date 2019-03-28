@@ -1,6 +1,5 @@
 use crossbeam;
 use std::thread;
-use err::HecateError;
 
 pub enum TaskType {
     Delta(i64)
@@ -26,7 +25,7 @@ impl Worker {
     pub fn new() -> Self {
         let (tx, rx) = crossbeam::channel::unbounded();
 
-        let thread = thread::Builder::new().name(String::from("Hecate Daemon")).spawn(move || {
+        thread::Builder::new().name(String::from("Hecate Daemon")).spawn(move || {
             worker(rx);
         }).unwrap();
 
@@ -36,7 +35,9 @@ impl Worker {
     }
 
     pub fn queue(&self, task: Task) {
-        self.sender.send(task);
+        if self.sender.send(task).is_err() {
+            format!("WARN: Failed to write task to queue");
+        }
     }
 }
 
@@ -44,6 +45,12 @@ impl Worker {
 /// Main logic for web worker
 ///
 fn worker(rx: crossbeam::Receiver<Task>) {
+    let task = rx.recv().unwrap();
 
+    match task.job {
+        TaskType::Delta(delta_id) => {
+            println!("{}", delta_id);
+        }
+    }
 }
 
