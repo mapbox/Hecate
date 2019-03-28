@@ -45,11 +45,13 @@ impl Worker {
 /// Main logic for web worker
 ///
 fn worker(rx: crossbeam::Receiver<Task>) {
-    let task = rx.recv().unwrap();
+    loop {
+        let task = rx.recv().unwrap();
 
-    match task.job {
-        TaskType::Delta(delta_id) => {
-            println!("{}", delta_id);
+        match task.job {
+            TaskType::Delta(delta_id) => {
+                println!("{}", delta_id);
+            }
         }
     }
 }
