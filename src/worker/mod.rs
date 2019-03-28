@@ -3,11 +3,11 @@ use std::thread;
 use err::HecateError;
 
 pub enum TaskType {
-    TileRegen
+    Delta(i64)
 }
 
 pub struct Task {
-    job: TaskType,
+    job: TaskType
 }
 
 pub struct Worker {
@@ -25,6 +25,10 @@ impl Worker {
         Worker {
             sender: tx,
         }
+    }
+
+    pub fn queue(&self, task: Task) {
+        self.sender.send(task);
     }
 }
 
