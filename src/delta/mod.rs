@@ -1,6 +1,7 @@
 use postgres;
 use std::collections::HashMap;
 use err::HecateError;
+use geo::ToGeo;
 
 ///Get the history of a particular feature
 pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: &i64) -> Result<serde_json::Value, HecateError> {
@@ -159,6 +160,32 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
     }
 }
 
+pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<String>, HecateError> {
+    match conn.query("
+        SELECT
+            ST_GeomFromGeoJSON(json_array_elements((features->>'features')::JSON)->>'geometry')
+        FROM
+            deltas
+        WHERE
+            id = $1
+    ", &[&id]) {
+        Err(err) => Err(HecateError::from_db(err)),
+        Ok(results) => {
+            if results.len() == 0 {
+                return Ok(Vec::new());
+            }
+
+            for res in results.iter() {
+                let geom: postgis::ewkb::Geometry = res.get(0);
+                let geom: geo::Geometry<f64> = geom.from_postgis();
+            }
+
+            Ok(Vec::new())
+        }
+    }
+
+}
+
 pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT COALESCE(row_to_json(d), 'false'::JSON)
@@ -258,4 +285,3 @@ pub fn affected(fc: &geojson::FeatureCollection) -> Vec<i64> {
 
     return affected;
 }
-

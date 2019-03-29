@@ -7,6 +7,7 @@ pub static POSTGIS: f64 = 2.4;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate rocket;
+extern crate geo;
 extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate tilecover;

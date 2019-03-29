@@ -1,7 +1,7 @@
-use tilecover;
 use crossbeam;
 use postgres;
 use std::thread;
+use crate::delta;
 
 pub enum TaskType {
     Delta(i64)
@@ -54,7 +54,15 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
 
         match task.job {
             TaskType::Delta(delta_id) => {
-                println!("{}", delta_id);
+                let tiles = delta::tiles(&conn, &delta_id).unwrap();
+
+                if tiles.len() == 0 {
+                    continue;
+                }
+
+                for tile in tiles {
+                    println!("{}", tile);
+                }
             }
         }
     }
