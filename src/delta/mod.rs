@@ -175,9 +175,18 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<St
                 return Ok(Vec::new());
             }
 
+            let tiles: HashMap<String, bool> = HashMap::new();
+
             for res in results.iter() {
                 let geom: postgis::ewkb::GeometryT<postgis::ewkb::Point> = res.get(0);
                 let geom: Option<geo::Geometry<f64>> = FromPostgis::from_postgis(&geom);
+
+                match geom {
+                    Some(geom) => {
+                        tilecover::tiles(&geom, 14);
+                    },
+                    None => ()
+                };
             }
 
             Ok(Vec::new())
