@@ -577,6 +577,7 @@ dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "geo-types 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "postgis 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rstar 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

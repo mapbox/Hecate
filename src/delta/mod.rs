@@ -1,7 +1,7 @@
 use postgres;
+use geo::prelude::*;
 use std::collections::HashMap;
 use err::HecateError;
-use geo::ToGeo;
 
 ///Get the history of a particular feature
 pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: &i64) -> Result<serde_json::Value, HecateError> {
@@ -176,8 +176,8 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<St
             }
 
             for res in results.iter() {
-                let geom: postgis::ewkb::Geometry = res.get(0);
-                let geom: geo::Geometry<f64> = geom.from_postgis();
+                let geom: postgis::ewkb::GeometryT<postgis::ewkb::Point> = res.get(0);
+                let geom: Option<geo::Geometry<f64>> = FromPostgis::from_postgis(&geom);
             }
 
             Ok(Vec::new())
