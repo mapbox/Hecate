@@ -175,7 +175,7 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<St
                 return Ok(Vec::new());
             }
 
-            let tiles: HashMap<String, bool> = HashMap::new();
+            let mut tiles: HashMap<String, bool> = HashMap::new();
 
             for res in results.iter() {
                 let geom: postgis::ewkb::GeometryT<postgis::ewkb::Point> = res.get(0);
@@ -183,13 +183,21 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<St
 
                 match geom {
                     Some(geom) => {
-                        tilecover::tiles(&geom, 14);
+                        let geomtiles = tilecover::tiles(&geom, 14);
+
+                        for geomtile in geomtiles {
+                            tiles.insert(format!("{:?}/{:?}/{:?}",
+                                geomtile[0],
+                                geomtile[1],
+                                geomtile[2]
+                            ), true);
+                        }
                     },
                     None => ()
                 };
             }
 
-            Ok(Vec::new())
+            Ok(tiles.keys().collect())
         }
     }
 
