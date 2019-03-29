@@ -197,7 +197,9 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<St
                 };
             }
 
-            Ok(tiles.keys().collect())
+            Ok(tiles.keys().map(|key| {
+                key.clone()
+            }.collect())
         }
     }
 
