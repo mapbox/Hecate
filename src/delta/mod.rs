@@ -183,13 +183,18 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<St
 
                 match geom {
                     Some(geom) => {
-                        let geomtiles = tilecover::tiles(&geom, 14);
+                        let geomtiles = match tilecover::tiles(&geom, 14) {
+                            Ok(geomtiles) => geomtiles,
+                            Err(err) => {
+                                return Err(HecateError::new(500, String::from("Could not generate tilecover"), None));
+                            }
+                        };
 
                         for geomtile in geomtiles {
                             tiles.insert(format!("{:?}/{:?}/{:?}",
-                                geomtile[0],
-                                geomtile[1],
-                                geomtile[2]
+                                geomtile.0,
+                                geomtile.1,
+                                geomtile.2
                             ), true);
                         }
                     },
@@ -199,7 +204,7 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<St
 
             Ok(tiles.keys().map(|key| {
                 key.clone()
-            }.collect())
+            }).collect())
         }
     }
 
