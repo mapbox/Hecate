@@ -1,7 +1,7 @@
 use crossbeam;
 use postgres;
 use std::thread;
-use crate::delta;
+use crate::{delta, mvt};
 
 pub enum TaskType {
     Delta(i64)
@@ -61,7 +61,7 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
                 }
 
                 for tile in tiles {
-                    println!("{}", tile);
+                    mvt::db_create(&conn, &tile.2, &(tile.0 as u32), &(tile.1 as u32));
                 }
             }
         }

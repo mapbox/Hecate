@@ -160,7 +160,7 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
     }
 }
 
-pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<String>, HecateError> {
+pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<(i32, i32, u8)>, HecateError> {
     match conn.query("
         SELECT
             ST_GeomFromGeoJSON(json_array_elements((features->>'features')::JSON)->>'geometry')
@@ -175,11 +175,15 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<St
                 return Ok(Vec::new());
             }
 
-            let mut tiles: HashMap<String, bool> = HashMap::new();
+            let mut tiles: HashMap<(i32, i32, u8), bool> = HashMap::new();
 
             for res in results.iter() {
-                let geom: postgis::ewkb::GeometryT<postgis::ewkb::Point> = res.get(0);
-                let geom: Option<geo::Geometry<f64>> = FromPostgis::from_postgis(&geom);
+                let geom: Option<postgis::ewkb::GeometryT<postgis::ewkb::Point>> = res.get(0);
+
+                let geom: Option<geo::Geometry<f64>> = match geom {
+                    Some(geom) => FromPostgis::from_postgis(&geom),
+                    None => continue
+                };
 
                 match geom {
                     Some(geom) => {
@@ -191,11 +195,7 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<St
                         };
 
                         for geomtile in geomtiles {
-                            tiles.insert(format!("{:?}/{:?}/{:?}",
-                                geomtile.0,
-                                geomtile.1,
-                                geomtile.2
-                            ), true);
+                            tiles.insert(geomtile, true);
                         }
                     },
                     None => ()
