@@ -357,7 +357,7 @@ fn mvt_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
 
     if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    let tile = mvt::get(&conn, z, x, y, false)?;
+    let tile = mvt::get(&*conn, z, x, y, false)?;
 
     let mut c = Cursor::new(Vec::new());
     match tile.to_writer(&mut c) {
@@ -379,7 +379,7 @@ fn mvt_meta(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth
 
     if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    Ok(Json(mvt::meta(&conn, z, x, y)?))
+    Ok(Json(mvt::meta(&*conn, z, x, y)?))
 }
 
 
@@ -388,7 +388,7 @@ fn mvt_wipe(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
     let conn = conn.get()?;
     auth_rules.allows_mvt_delete(&mut auth, &conn)?;
 
-    Ok(Json(mvt::wipe(&conn)?))
+    Ok(Json(mvt::wipe(&*conn)?))
 }
 
 #[get("/tiles/<z>/<x>/<y>/regen")]
@@ -398,7 +398,7 @@ fn mvt_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 
     if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    let tile = mvt::get(&conn, z, x, y, true)?;
+    let tile = mvt::get(&*conn, z, x, y, true)?;
 
     let mut c = Cursor::new(Vec::new());
     match tile.to_writer(&mut c) {

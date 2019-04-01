@@ -50,7 +50,13 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
     let conn = postgres::Connection::connect(format!("postgres://{}", database), postgres::TlsMode::None).unwrap();
 
     loop {
-        let task = rx.recv().unwrap();
+        let task = match rx.recv() {
+            Ok(task) => task,
+            Err(err) => {
+                println!("Daemon: Failed to obtain task: {}", err);
+                continue;
+            }
+        };
 
         match task.job {
             TaskType::Delta(delta_id) => {
@@ -61,7 +67,9 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
                 }
 
                 for tile in tiles {
-                    mvt::db_create(&conn, &tile.2, &(tile.0 as u32), &(tile.1 as u32));
+                    if mvt::db_create(&conn, &tile.2, &(tile.0 as u32), &(tile.1 as u32)).is_err() {
+                        println!("Daemon: Failed to generate tile: {:?}", tile);
+                    }
                 }
             }
         }
