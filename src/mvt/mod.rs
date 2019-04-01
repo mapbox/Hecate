@@ -50,11 +50,12 @@ pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u
     if *z < 10 { limit = Some(10) }
     else if *z < 14 { limit = Some(100) }
 
+    println!("{} {} {}", z, x, y);
     let rows = conn.query("
         SELECT
             id,
             props,
-            ST_Transform(geom::geometry,3857)
+            ST_Transform(geom::geometry, 3857)
         FROM geo
         WHERE
             geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326)

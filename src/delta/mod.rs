@@ -163,7 +163,7 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
 pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<(i32, i32, u8)>, HecateError> {
     match conn.query("
         SELECT
-            ST_GeomFromGeoJSON(json_array_elements((features->>'features')::JSON)->>'geometry')
+            ST_FlipCoordinates(ST_GeomFromGeoJSON(json_array_elements((features->>'features')::JSON)->>'geometry'))
         FROM
             deltas
         WHERE

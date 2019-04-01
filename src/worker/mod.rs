@@ -67,7 +67,7 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
                 }
 
                 for tile in tiles {
-                    if mvt::db_create(&conn, &tile.2, &(tile.0 as u32), &(tile.1 as u32)).is_err() {
+                    if mvt::get(&conn, tile.2, tile.0 as u32, tile.1 as u32, true).is_err() {
                         println!("Daemon: Failed to generate tile: {:?}", tile);
                     }
                 }
