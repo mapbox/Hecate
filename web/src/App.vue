@@ -47,9 +47,10 @@
             </div>
 
             <template v-if='panel === "deltas"'>
-                <deltas :map='map' v-on:user='modal = "user"; user_id = $event'/></template>
+                <deltas :map='map' v-on:user='modal = "user"; user_id = $event'/>
+            </template>
             <template v-else-if='panel === "bounds"'>
-                <bounds/>
+                <bounds :map='map' :panel='panel'/>
             </template>
             <template v-else-if='panel === "styles"'>
                 <styles :credentials='credentials' v-on:style='modal = "style"; style_id = $event'/>
@@ -153,6 +154,22 @@ export default {
                     this.gl.addSource('hecate-delta', {
                         type: 'geojson',
                         data: { type: 'FeatureCollection', features: [] }
+                    });
+
+                    this.gl.addSource('hecate-bounds', {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features: [] }
+                    });
+
+                    this.gl.addLayer({
+                        id: 'hecate-bounds',
+                        type: 'fill',
+                        source: 'hecate-bounds',
+                        filter: ['==', '$type', 'Polygon'],
+                        paint: {
+                            'fill-opacity': 0.3,
+                            'fill-color': '#FF0000'
+                        }
                     });
 
                     const foregroundColor = '#FF0000';
@@ -329,6 +346,17 @@ export default {
                 this.feature = clicked.properties['hecate:id'];
             }
         });
+    },
+    watch: {
+        panel: function() {
+            console.error(this.panel);
+            if (this.panel !=='bounds') {
+                this.map.gl.getSource('hecate-bounds').setData({
+                    type: 'Feature',
+                    features: []
+                });
+            }
+        }
     },
     methods: {
         settings_close: function() {
