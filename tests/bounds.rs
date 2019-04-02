@@ -242,6 +242,22 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { //Get Meta Bounds
+            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds/dc/meta").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "type": "Feature",
+                "properties": { },
+                "geometry": {
+                    "type": "MultiPolygon",
+                    "coordinates": [ [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] ]
+                }
+            }));
+            assert!(resp.status().is_success());
+        }
+
         { //Get Boundary Stats
             let mut resp = reqwest::get("http://localhost:8000/api/data/bounds/dc/stats").unwrap();
 
