@@ -81,7 +81,15 @@ mod test {
 
         { //Ensure Tile was places in DB tilecache
             let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
-            let res = conn.query("SELECT ref, tile FROM tiles", &[]).unwrap();
+            let res = conn.query("
+                SELECT
+                    ref,
+                    tile
+                FROM
+                    tiles
+                ORDER BY
+                    ref
+            ", &[]).unwrap();
 
             assert_eq!(res.len(), 2);
 
