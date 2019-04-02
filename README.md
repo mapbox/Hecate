@@ -1227,6 +1227,24 @@ Return statistics about geometries that intersect a given bounds
 curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats
 ```
 
+---
+
+#### `GET` `/api/data/bounds/<bounds>/meta`
+
+Return GeoJSON feature representing the bound
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<bounds>` | `REQUIRED` One of the boundary files as specified via the `/ap/data/bounds` |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/meta
+```
+
 </details>
 
 ---
