@@ -264,7 +264,7 @@ mod test {
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
-            assert_eq!(json_body["bbox"], json!([-77.1336364746094, 38.835428840073, -76.9640350341797, 38.9748910643417]));
+            assert_eq!(json_body["bbox"], json!([-77.13363, 38.83542, -76.96403, 38.97489]));
             assert_eq!(json_body["total"], json!(1));
         }
 
