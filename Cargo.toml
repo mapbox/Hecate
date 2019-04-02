@@ -16,7 +16,7 @@ categories = ["database"]
 reqwest = "0.9.5"
 
 [dependencies]
-tilecover = "1.1.0"
+tilecover = "1.1.1"
 crossbeam = "0.7"
 valico = "3.0"
 rand = "0.6"
