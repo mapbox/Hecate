@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.64.0
+
+- :tada: Add daemon for performing background tasks based on api events
+- :tada: Regenerate tiles proactively based on tilecover of uploaded geometries
+
 ## v0.63.0
 
 - [UI] Add bounds filtering and limit number of bounds shown in API
