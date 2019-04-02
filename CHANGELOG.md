@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.65.0
+
+- :tada: Introduce bounds meta API for accessing underlying bounds data
+- [UI] Display bounds in UI
+
 ## v0.64.0
 
 - :tada: Add daemon for performing background tasks based on api events
