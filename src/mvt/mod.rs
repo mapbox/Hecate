@@ -50,7 +50,6 @@ pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u
     if *z < 10 { limit = Some(10) }
     else if *z < 14 { limit = Some(100) }
 
-    println!("{} {} {}", z, x, y);
     let rows = conn.query("
         SELECT
             id,
