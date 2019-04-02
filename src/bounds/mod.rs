@@ -107,7 +107,7 @@ pub fn meta(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
             JSON_Build_Object(
                 'id', bounds.id,
                 'type', 'Feature',
-                'properties', props,
+                'properties', COALESCE(props, '{}'::JSONB),
                 'geometry', ST_AsGeoJSON(bounds.geom)::JSON
             )::JSON
             FROM
