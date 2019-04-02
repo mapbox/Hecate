@@ -19,7 +19,7 @@ pub use self::builder::{Tile, Layer, Feature, Value};
 pub use self::encoder::{Decode, Encode};
 pub use self::grid::{Grid};
 
-pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String) -> Result<Option<proto::Tile>, HecateError> {
+pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<Option<proto::Tile>, HecateError> {
     match conn.query("
         SELECT tile
         FROM tiles
@@ -39,7 +39,7 @@ pub fn db_get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: &u8, x: &u32, y: &u32) -> Result<proto::Tile, HecateError> {
+pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u32) -> Result<proto::Tile, HecateError> {
     let grid = Grid::web_mercator();
     let bbox = grid.tile_extent(*z, *x, *y);
     let mut tile = Tile::new(&bbox);
@@ -54,7 +54,7 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
         SELECT
             id,
             props,
-            ST_Transform(geom::geometry,3857)
+            ST_Transform(geom::geometry, 3857)
         FROM geo
         WHERE
             geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326)
@@ -86,7 +86,7 @@ pub fn db_create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
 }
 
 
-pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, coord: String, tile: &proto::Tile) -> Result<(), HecateError> {
+pub fn db_cache(conn: &impl postgres::GenericConnection, coord: String, tile: &proto::Tile) -> Result<(), HecateError> {
     match conn.query("
         INSERT INTO tiles (ref, tile, created)
             VALUES ($1, $2, NOW())
@@ -97,7 +97,7 @@ pub fn db_cache(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionM
     }
 }
 
-pub fn wipe(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<serde_json::Value, HecateError> {
+pub fn wipe(conn: &impl postgres::GenericConnection) -> Result<serde_json::Value, HecateError> {
     match conn.execute("
         DELETE FROM tiles;
     ", &[]) {
@@ -106,7 +106,7 @@ pub fn wipe(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     }
 }
 
-pub fn meta(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32) -> Result<serde_json::Value, HecateError> {
+pub fn meta(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT
             COALESCE(row_to_json(t), '{}'::JSON)
@@ -131,17 +131,17 @@ pub fn meta(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     }
 }
 
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, z: u8, x: u32, y: u32, regen: bool) -> Result<proto::Tile, HecateError> {
+pub fn get(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32, regen: bool) -> Result<proto::Tile, HecateError> {
     if regen == false {
-        match db_get(&conn, format!("{}/{}/{}", &z, &x, &y))? {
+        match db_get(conn, format!("{}/{}/{}", &z, &x, &y))? {
             Some(tile) => { return Ok(tile); }
             _ => ()
         };
     }
 
-    let tile = db_create(&conn, &z, &x, &y)?;
+    let tile = db_create(conn, &z, &x, &y)?;
 
-    db_cache(&conn, format!("{}/{}/{}", &z, &x, &y), &tile)?;
+    db_cache(conn, format!("{}/{}/{}", &z, &x, &y), &tile)?;
 
     Ok(tile)
 }

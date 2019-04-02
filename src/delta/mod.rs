@@ -1,4 +1,5 @@
 use postgres;
+use geo::prelude::*;
 use std::collections::HashMap;
 use err::HecateError;
 
@@ -159,6 +160,56 @@ pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
     }
 }
 
+pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<(i32, i32, u8)>, HecateError> {
+    match conn.query("
+        SELECT
+            ST_GeomFromGeoJSON(json_array_elements((features->>'features')::JSON)->>'geometry')
+        FROM
+            deltas
+        WHERE
+            id = $1
+    ", &[&id]) {
+        Err(err) => Err(HecateError::from_db(err)),
+        Ok(results) => {
+            if results.len() == 0 {
+                return Ok(Vec::new());
+            }
+
+            let mut tiles: HashMap<(i32, i32, u8), bool> = HashMap::new();
+
+            for res in results.iter() {
+                let geom: Option<postgis::ewkb::GeometryT<postgis::ewkb::Point>> = res.get(0);
+
+                let geom: Option<geo::Geometry<f64>> = match geom {
+                    Some(geom) => FromPostgis::from_postgis(&geom),
+                    None => continue
+                };
+
+                match geom {
+                    Some(geom) => {
+                        let geomtiles = match tilecover::tiles(&geom, 14) {
+                            Ok(geomtiles) => geomtiles,
+                            Err(err) => {
+                                return Err(HecateError::new(500, String::from("Could not generate tilecover"), None));
+                            }
+                        };
+
+                        for geomtile in geomtiles {
+                            tiles.insert(geomtile, true);
+                        }
+                    },
+                    None => ()
+                };
+            }
+
+            Ok(tiles.keys().map(|key| {
+                key.clone()
+            }).collect())
+        }
+    }
+
+}
+
 pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT COALESCE(row_to_json(d), 'false'::JSON)
@@ -258,4 +309,3 @@ pub fn affected(fc: &geojson::FeatureCollection) -> Vec<i64> {
 
     return affected;
 }
-

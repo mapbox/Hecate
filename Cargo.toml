@@ -16,6 +16,8 @@ categories = ["database"]
 reqwest = "0.9.5"
 
 [dependencies]
+tilecover = "1.1.1"
+crossbeam = "0.7"
 valico = "3.0"
 rand = "0.6"
 postgis = "0.6.0"
@@ -31,6 +33,10 @@ serde_json = "1.0"
 r2d2 = "0.8.3"
 r2d2_postgres = "0.14.0"
 env_logger = "0.6"
+
+[dependencies.geo]
+version = "0.12"
+features = ["postgis-integration"]
 
 
 [dependencies.chrono]

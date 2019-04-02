@@ -7,8 +7,11 @@ pub static POSTGIS: f64 = 2.4;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate rocket;
+extern crate geo;
 extern crate r2d2;
 extern crate r2d2_postgres;
+extern crate tilecover;
+extern crate crossbeam;
 extern crate quick_xml;
 extern crate postgres;
 extern crate postgis;
@@ -33,6 +36,7 @@ pub mod style;
 pub mod osm;
 pub mod user;
 pub mod auth;
+pub mod worker;
 
 use auth::ValidAuth;
 use err::HecateError;
@@ -122,12 +126,15 @@ pub fn start(
         _ => ()
     };
 
+    let worker = worker::Worker::new(database.main.clone());
+
     rocket::custom(config)
         .manage(DbReadWrite::new(init_pool(&database.main)))
         .manage(db_replica)
         .manage(db_sandbox)
         .manage(schema)
         .manage(auth_rules)
+        .manage(worker)
         .mount("/", routes![
             index
         ])
@@ -350,7 +357,7 @@ fn mvt_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<aut
 
     if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    let tile = mvt::get(&conn, z, x, y, false)?;
+    let tile = mvt::get(&*conn, z, x, y, false)?;
 
     let mut c = Cursor::new(Vec::new());
     match tile.to_writer(&mut c) {
@@ -372,7 +379,7 @@ fn mvt_meta(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth
 
     if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    Ok(Json(mvt::meta(&conn, z, x, y)?))
+    Ok(Json(mvt::meta(&*conn, z, x, y)?))
 }
 
 
@@ -381,7 +388,7 @@ fn mvt_wipe(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<au
     let conn = conn.get()?;
     auth_rules.allows_mvt_delete(&mut auth, &conn)?;
 
-    Ok(Json(mvt::wipe(&conn)?))
+    Ok(Json(mvt::wipe(&*conn)?))
 }
 
 #[get("/tiles/<z>/<x>/<y>/regen")]
@@ -391,7 +398,7 @@ fn mvt_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 
     if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    let tile = mvt::get(&conn, z, x, y, true)?;
+    let tile = mvt::get(&*conn, z, x, y, true)?;
 
     let mut c = Cursor::new(Vec::new());
     match tile.to_writer(&mut c) {
@@ -851,7 +858,14 @@ fn stats_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
-fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: Data) -> Result<Json<serde_json::Value>, HecateError> {
+fn features_action(
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>,
+    conn: State<DbReadWrite>,
+    worker: State<worker::Worker>,
+    schema: State<Option<serde_json::value::Value>>,
+    body: Data
+) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.allows_feature_create(&mut auth, &conn)?;
@@ -953,6 +967,8 @@ fn features_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, co
             if trans.commit().is_err() {
                 return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
             }
+
+            worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
 
             Ok(Json(json!(true)))
         },
@@ -1128,7 +1144,15 @@ fn osm_changeset_modify(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
 }
 
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
-fn osm_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, delta_id: i64, body: Data) -> Result<Response<'static>, status::Custom<String>> {
+fn osm_changeset_upload(
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>,
+    conn: State<DbReadWrite>,
+    schema: State<Option<serde_json::value::Value>>,
+    worker: State<worker::Worker>,
+    delta_id: i64,
+    body: Data
+) -> Result<Response<'static>, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
     match auth_rules.allows_osm_get(&mut auth, &conn) {
@@ -1232,6 +1256,8 @@ fn osm_changeset_upload(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth
                 return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to commit transaction")));
             }
 
+            worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
+
             Err(status::Custom(HTTPStatus::Ok, diffres))
         },
         Err(_) => {
@@ -1312,7 +1338,14 @@ fn osm_user(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth
 }
 
 #[post("/data/feature", format="application/json", data="<body>")]
-fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, conn: State<DbReadWrite>, schema: State<Option<serde_json::value::Value>>, body: Data) -> Result<Json<serde_json::Value>, HecateError> {
+fn feature_action(
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>,
+    conn: State<DbReadWrite>,
+    schema: State<Option<serde_json::value::Value>>,
+    worker: State<worker::Worker>,
+    body: Data
+) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.allows_feature_create(&mut auth, &conn)?;
@@ -1407,6 +1440,8 @@ fn feature_action(mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, con
             if trans.commit().is_err() {
                 return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
             }
+
+            worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
 
             Ok(Json(json!(true)))
         },
