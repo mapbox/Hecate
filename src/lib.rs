@@ -182,6 +182,7 @@ pub fn start(
             features_get,
             bounds,
             bounds_stats,
+            bounds_meta,
             bounds_get,
             bounds_set,
             bounds_delete,
@@ -787,6 +788,15 @@ fn bounds_stats(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<
     auth_rules.allows_stats_bounds(&mut auth, &conn)?;
 
     Ok(Json(bounds::stats_json(conn, bounds)?))
+}
+
+#[get("/data/bounds/<bounds>/meta")]
+fn bounds_meta(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Json<serde_json::Value>, HecateError> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_bounds_get(&mut auth, &conn)?;
+
+    Ok(Json(bounds::meta(conn, bounds)?))
 }
 
 #[derive(FromForm, Debug)]

@@ -22,10 +22,13 @@
                 <div align="center">No Boundaries</div>
             </div>
             <div v-else>
-                <div v-for="(bound, bound_it) in bounds" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
-                    <a v-bind:href="`/api/data/bounds/${bound}`" target="_blank" class="w-full clearfix">
+                <div v-for="(bound_name, bound_it) in bounds" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+                    <div @click="bound = bound_name" class="w-full clearfix">
                         <span class="fl py6 px6"><svg class='icon'><use href='#icon-database'/></span>
-                        <span class="fl" v-text="bound"></span>
+                        <span class="fl" v-text="bound_name"></span>
+                        <a v-bind:href="`/api/data/bounds/${bound_name}`" target="_blank">
+                            <button @click="getBounds" class='btn btn--stroke btn--s my6 mr6 round bg-transparent bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-arrow-down'/></button>
+                        </div>
                     </a>
                 </div>
             </div>
@@ -38,6 +41,7 @@
 
 <script>
 import Foot from '../components/Foot.vue';
+import { bbox } from '@turf/turf';
 
 export default {
     name: 'bounds',
@@ -46,7 +50,8 @@ export default {
             loading: true,
             filter: '',
             filterToggle: false,
-            bounds: []
+            bounds: [],
+            bound: false
         }
     },
     created: function() {
@@ -55,12 +60,31 @@ export default {
     watch: {
         filter: function() {
             this.getBounds();
+        },
+        bound: function() {
+            this.showBounds();
         }
     },
     components: {
         foot: Foot
     },
     methods: {
+        showBounds: function() {
+            this.loading = true;
+
+            fetch(`${window.location.protocol}//${window.location.host}/api/data/bounds/${this.bound}/meta`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                  return response.json();
+            }).then((body) => {
+                this.loading = false;
+
+                this.map.gl.getSource('hecate-bounds').setData(body);
+                this.map.gl.fitBounds(bbox(body));
+            });
+
+        },
         getBounds: function() {
             this.loading = true;
 
@@ -81,6 +105,6 @@ export default {
         }
     },
     render: h => h(App),
-    props: []
+    props: [ 'map', 'panel' ]
 }
 </script>
