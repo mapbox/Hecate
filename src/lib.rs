@@ -796,7 +796,7 @@ fn bounds_meta(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<a
 
     auth_rules.allows_bounds_get(&mut auth, &conn)?;
 
-    Ok(Json(bounds::stats_json(conn, bounds)?))
+    Ok(Json(bounds::meta(conn, bounds)?))
 }
 
 #[derive(FromForm, Debug)]
