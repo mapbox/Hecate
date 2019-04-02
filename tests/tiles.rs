@@ -83,7 +83,7 @@ mod test {
             let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
             let res = conn.query("SELECT ref, tile FROM tiles", &[]).unwrap();
 
-            assert_eq!(res.len(), 1);
+            assert_eq!(res.len(), 2);
 
             let tile_ref: String = res.get(0).get(0);
             assert_eq!(tile_ref, String::from("1/0/0"));
