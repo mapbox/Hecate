@@ -494,7 +494,7 @@ have a map containing the auth for each subkey.
 | **Custom Auth JSON**                  | `auth`                    |               | `null`                    | 2     |
 | `GET /api/auth`                       | `auth::get`               | `public`      | All                       |       |
 | **Mapbox Vector Tiles**               | `mvt`                     |               | `null`                    | 2     |
-| `DELETE /api/tiles                    | `mvt::delete`             | `admin`       | All                       |       |
+| `DELETE /api/tiles`                   | `mvt::delete`             | `admin`       | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>`          | `mvt::get`                | `public`      | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt::regen`              | `user`        | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt::meta`               | `public`      | All                       |       |
