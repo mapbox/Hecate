@@ -189,7 +189,7 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<(i
                     Some(geom) => {
                         let geomtiles = match tilecover::tiles(&geom, 14) {
                             Ok(geomtiles) => geomtiles,
-                            Err(err) => {
+                            Err(_err) => {
                                 return Err(HecateError::new(500, String::from("Could not generate tilecover"), None));
                             }
                         };
