@@ -1,5 +1,5 @@
-use stream::PGStream;
-use err::HecateError;
+use crate::stream::PGStream;
+use crate::err::HecateError;
 
 #[derive(PartialEq, Debug)]
 pub enum Action {

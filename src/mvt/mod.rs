@@ -14,7 +14,7 @@ mod builder_test;
 #[cfg(test)]
 mod geom_encoder_test;
 
-use err::HecateError;
+use crate::err::HecateError;
 pub use self::builder::{Tile, Layer, Feature, Value};
 pub use self::encoder::{Decode, Encode};
 pub use self::grid::{Grid};

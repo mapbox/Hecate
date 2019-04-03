@@ -1,6 +1,6 @@
 use std::fmt;
 use std::collections::HashMap;
-use osm::*;
+use crate::osm::*;
 
 pub struct OSMTree {
     pub meta: HashMap<String, String>,
