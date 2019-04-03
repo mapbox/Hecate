@@ -3,7 +3,7 @@ use protobuf::core::Message;
 use protobuf::error::ProtobufError;
 use protobuf::stream::CodedOutputStream;
 use std::io::{BufReader, Read, Write};
-use mvt::proto;
+use crate::mvt::proto;
 
 pub trait Encode {
     fn to_writer(&self, out: &mut Write) -> Result<(), ProtobufError>;

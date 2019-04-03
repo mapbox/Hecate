@@ -1,5 +1,5 @@
-use mvt::screen;
-use mvt::geom_encoder::EncodableGeom;
+use crate::mvt::screen;
+use crate::mvt::geom_encoder::EncodableGeom;
 
 #[test]
 fn test_geom_encoding() {

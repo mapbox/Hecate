@@ -1,5 +1,5 @@
 use std::fmt;
-use osm::*;
+use crate::osm::*;
 
 pub struct Rel {
     pub id: Option<i64>,

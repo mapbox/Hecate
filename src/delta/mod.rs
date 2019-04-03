@@ -1,7 +1,7 @@
 use postgres;
 use geo::prelude::*;
 use std::collections::HashMap;
-use err::HecateError;
+use crate::err::HecateError;
 
 ///Get the history of a particular feature
 pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: &i64) -> Result<serde_json::Value, HecateError> {
@@ -189,7 +189,7 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<(i
                     Some(geom) => {
                         let geomtiles = match tilecover::tiles(&geom, 14) {
                             Ok(geomtiles) => geomtiles,
-                            Err(err) => {
+                            Err(_err) => {
                                 return Err(HecateError::new(500, String::from("Could not generate tilecover"), None));
                             }
                         };

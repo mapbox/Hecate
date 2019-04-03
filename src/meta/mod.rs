@@ -1,4 +1,4 @@
-use err::HecateError;
+use crate::err::HecateError;
 
 pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Vec<String>, HecateError> {
     match conn.query("

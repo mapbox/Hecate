@@ -2,7 +2,7 @@ use rocket::request::{self, FromRequest};
 use rocket::http::Status;
 use rocket::{Request, Outcome};
 
-use err::HecateError;
+use crate::err::HecateError;
 
 fn not_authed() -> HecateError {
     HecateError::new(401, String::from("You must be logged in to access this resource"), None)

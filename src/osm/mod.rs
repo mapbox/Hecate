@@ -3,11 +3,11 @@ mod way;
 mod rel;
 mod tree;
 
-use feature;
-use osm::node::Node;
-use osm::way::Way;
-use osm::rel::Rel;
-use osm::tree::OSMTree;
+use crate::feature;
+use crate::osm::node::Node;
+use crate::osm::way::Way;
+use crate::osm::rel::Rel;
+use crate::osm::tree::OSMTree;
 
 use std::string;
 use std::num;

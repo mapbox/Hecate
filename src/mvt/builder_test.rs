@@ -1,6 +1,6 @@
-use mvt::builder::{Tile, Layer, Feature, Value};
-use mvt::geom::{Geometry, Point};
-use mvt::grid::{Grid, Extent};
+use crate::mvt::builder::{Tile, Layer, Feature, Value};
+use crate::mvt::geom::{Geometry, Point};
+use crate::mvt::grid::{Grid, Extent};
 use postgis::ewkb;
 
 #[test]

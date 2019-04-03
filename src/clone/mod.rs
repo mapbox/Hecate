@@ -1,5 +1,5 @@
-use stream::PGStream;
-use err::HecateError;
+use crate::stream::PGStream;
+use crate::err::HecateError;
 
 pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<PGStream, HecateError> {
     match PGStream::new(conn, String::from("next_clone"), String::from(r#"

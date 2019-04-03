@@ -1,7 +1,7 @@
-use mvt::geom_encoder::{encode_geometry, encode_geometry_type};
-use mvt::geom::Geometry;
-use mvt::grid;
-use mvt::proto;
+use crate::mvt::geom_encoder::{encode_geometry, encode_geometry_type};
+use crate::mvt::geom::Geometry;
+use crate::mvt::grid;
+use crate::mvt::proto;
 use std::borrow::Cow;
 
 #[derive(Debug)]

@@ -1,4 +1,4 @@
-use err::HecateError;
+use crate::err::HecateError;
 
 pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String, email: &String) -> Result<bool, HecateError> {
     match conn.query("
