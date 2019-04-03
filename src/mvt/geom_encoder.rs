@@ -1,10 +1,10 @@
 //! Encode geometries according to MVT spec
 //! https://github.com/mapbox/proto-tile-spec/tree/master/2.1
 
-use mvt::geom;
-use mvt::grid;
-use mvt::screen;
-use mvt::proto;
+use crate::mvt::geom;
+use crate::mvt::grid;
+use crate::mvt::screen;
+use crate::mvt::proto;
 use postgis::ewkb;
 
 /// Command to be executed and the number of times that the command will be executed

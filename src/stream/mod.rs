@@ -1,6 +1,6 @@
 use postgres::types::ToSql;
 use std::io::{Error, ErrorKind};
-use err::HecateError;
+use crate::err::HecateError;
 
 use std::mem;
 

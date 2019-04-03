@@ -1,5 +1,5 @@
 use serde_json::Value;
-use err::HecateError;
+use crate::err::HecateError;
 
 /// Creates a new GL JS Style under a given user account
 ///

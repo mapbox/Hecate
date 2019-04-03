@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.66.0
+
+- :rocket: Update to 2018 Rust Edition
+
 ## v0.65.0
 
 - :tada: Introduce bounds meta API for accessing underlying bounds data

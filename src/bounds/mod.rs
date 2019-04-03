@@ -1,5 +1,5 @@
-use err::HecateError;
-use stream::PGStream;
+use crate::err::HecateError;
+use crate::stream::PGStream;
 
 pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String, feat: &serde_json::Value) -> Result<bool, HecateError> {
     match conn.execute("

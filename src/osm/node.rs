@@ -1,6 +1,6 @@
 use serde_json;
 use std::fmt;
-use osm::*;
+use crate::osm::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node {

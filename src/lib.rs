@@ -1,27 +1,12 @@
-#![feature(proc_macro_hygiene, decl_macro, plugin, custom_derive, custom_attribute)]
+#![feature(proc_macro_hygiene, decl_macro, uniform_paths)]
 
-static HECATEVERSION: &'static str = "0.65.0";
+static HECATEVERSION: &'static str = "0.66.0";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate rocket;
-extern crate geo;
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate tilecover;
-extern crate crossbeam;
-extern crate quick_xml;
-extern crate postgres;
-extern crate postgis;
-extern crate protobuf;
-extern crate rand;
-extern crate valico;
-extern crate rocket_contrib;
-extern crate geojson;
-extern crate env_logger;
-extern crate chrono;
 
 pub mod wfs;
 pub mod err;

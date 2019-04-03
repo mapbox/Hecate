@@ -1,4 +1,4 @@
-use err::HecateError;
+use crate::err::HecateError;
 
 pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<serde_json::Value, HecateError> {
     match conn.query("
