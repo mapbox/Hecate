@@ -101,6 +101,33 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     }
 }
 
+pub fn meta(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: String) -> Result<serde_json::Value, HecateError> {
+    match conn.query("
+        SELECT
+            JSON_Build_Object(
+                'id', bounds.id,
+                'type', 'Feature',
+                'properties', COALESCE(props, '{}'::JSONB),
+                'geometry', ST_AsGeoJSON(bounds.geom)::JSON
+            )::JSON
+            FROM
+                bounds
+            WHERE
+                name = $1
+    ", &[ &name ]) {
+        Ok(rows) => {
+            if rows.len() != 1 {
+                return Err(HecateError::new(404, String::from("bound not found"), None));
+            }
+
+            let bound: serde_json::Value = rows.get(0).get(0);
+
+            Ok(bound)
+        },
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}
+
 pub fn stats_json(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT

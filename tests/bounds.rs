@@ -65,7 +65,7 @@ mod test {
                 .body(r#"{
                     "type": "Feature",
                     "properties": {},
-                    "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ -77.13363647460938, 38.83542884007305 ], [ -76.96403503417969, 38.83542884007305 ], [ -76.96403503417969, 38.974891064341726 ], [ -77.13363647460938, 38.974891064341726 ], [ -77.13363647460938, 38.83542884007305 ] ] ] ] }
+                    "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ -77.13363, 38.83542 ], [ -76.96403, 38.83542 ], [ -76.96403, 38.97489 ], [ -77.13363, 38.97489 ], [ -77.13363, 38.83542 ] ] ] ] }
                 }"#)
                 .basic_auth("ingalls", Some("yeaheh"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -242,12 +242,29 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { //Get Meta Bounds
+            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds/dc/meta").unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 1,
+                "type": "Feature",
+                "properties": { },
+                "geometry": {
+                    "type": "MultiPolygon",
+                    "coordinates": [ [ [ [ -77.13363, 38.83542 ], [ -76.96403, 38.83542 ], [ -76.96403, 38.97489 ], [ -77.13363, 38.97489 ], [ -77.13363, 38.83542 ] ] ] ]
+                }
+            }));
+            assert!(resp.status().is_success());
+        }
+
         { //Get Boundary Stats
             let mut resp = reqwest::get("http://localhost:8000/api/data/bounds/dc/stats").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
-            assert_eq!(json_body["bbox"], json!([-77.1336364746094, 38.835428840073, -76.9640350341797, 38.9748910643417]));
+            assert_eq!(json_body["bbox"], json!([-77.13363, 38.83542, -76.96403, 38.97489]));
             assert_eq!(json_body["total"], json!(1));
         }
 

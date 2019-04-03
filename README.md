@@ -494,7 +494,7 @@ have a map containing the auth for each subkey.
 | **Custom Auth JSON**                  | `auth`                    |               | `null`                    | 2     |
 | `GET /api/auth`                       | `auth::get`               | `public`      | All                       |       |
 | **Mapbox Vector Tiles**               | `mvt`                     |               | `null`                    | 2     |
-| `DELETE /api/tiles                    | `mvt::delete`             | `admin`       | All                       |       |
+| `DELETE /api/tiles`                   | `mvt::delete`             | `admin`       | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>`          | `mvt::get`                | `public`      | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt::regen`              | `user`        | All                       |       |
 | `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt::meta`               | `public`      | All                       |       |
@@ -1225,6 +1225,24 @@ Return statistics about geometries that intersect a given bounds
 
 ```bash
 curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats
+```
+
+---
+
+#### `GET` `/api/data/bounds/<bounds>/meta`
+
+Return GeoJSON feature representing the bound
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<bounds>` | `REQUIRED` One of the boundary files as specified via the `/ap/data/bounds` |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/meta
 ```
 
 </details>
