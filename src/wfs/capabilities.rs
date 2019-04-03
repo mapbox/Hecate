@@ -1,4 +1,4 @@
-use err::HecateError;
+use crate::err::HecateError;
 
 pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, host: &String) -> Result<String, HecateError> {
     //TODO If ANALYZE hasn't been run or there is no geo in the table, this can return null

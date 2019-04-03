@@ -1,4 +1,4 @@
-use err::HecateError;
+use crate::err::HecateError;
 
 pub fn describe_feature_type(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<String, HecateError> {
     match conn.query("

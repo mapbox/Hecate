@@ -1,8 +1,8 @@
-use wfs::Query;
-use wfs::ResultType;
+use crate::wfs::Query;
+use crate::wfs::ResultType;
 
-use stream::PGStream;
-use err::HecateError;
+use crate::stream::PGStream;
+use crate::err::HecateError;
 
 pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &Query) -> Result<PGStream, HecateError> {
 

@@ -6,12 +6,14 @@ authors = ["ingalls <ingalls@protonmail.com>"]
 license = "MIT"
 description = "OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange"
 
+documentation = "https://github.com/mapbox/Hecate/blob/master/README.md"
 homepage = "https://github.com/mapbox/Hecate"
 repository = "https://github.com/mapbox/Hecate"
 
 readme = "README.md"
 
 categories = ["database"]
+keywords = [ "mapserver", "geospatial", "mapbox", "geojson" ]
 
 [dev-dependencies]
 reqwest = "0.9.5"

@@ -1,4 +1,4 @@
-use err::HecateError;
+use crate::err::HecateError;
 
 mod capabilities;
 mod get_feature;
