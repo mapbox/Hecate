@@ -241,15 +241,15 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                         <fes:Conformance>
                             <fes:Constraint name="ImplementsQuery">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsAdHocQuery">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsFunctions">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsResourceId">
                                 <ows:NoValues/>
@@ -257,27 +257,27 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsMinStandardFilter">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsStandardFilter">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsMinSpatialFilter">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsSpatialFilter">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsMinTemporalFilter">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsTemporalFilter">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsVersionNav">
                                 <ows:NoValues/>
@@ -285,7 +285,7 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsSorting">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsExtendedOperators">
                                 <ows:NoValues/>
@@ -293,7 +293,7 @@ pub fn capabilities(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
                             </fes:Constraint>
                             <fes:Constraint name="ImplementsMinimumXPath">
                                 <ows:NoValues/>
-                                <ows:DefaultValue>TRUE</ows:DefaultValue>
+                                <ows:DefaultValue>FALSE</ows:DefaultValue>
                             </fes:Constraint>
                         </fes:Conformance>
                         <fes:Id_Capabilities>
