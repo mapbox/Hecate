@@ -55,14 +55,19 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
         geom_filter = geom_filter
     ).as_str(), &[ ]) {
         Ok(res) => {
-            let gmlenvelope: String = res.get(0).get(0);
+            let gmlenvelope: Option<String> = res.get(0).get(0);
+
+            let gmlenvelope = match gmlenvelope {
+                Some(gmlenvelope) => format!("<wfs:boundedBy>{}</wfs:boundedBy>", gmlenvelope),
+                None => String::from("")
+            };
 
             let pre = Some(format!(r#"
                 <wfs:FeatureCollection xmlns:{typename}="mapbox.com" xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" numberReturned="1">
-                    <wfs:boundedBy>{gmlenvelope}</wfs:boundedBy>
+                {gmlenvelope}
             "#,
-                gmlenvelope = gmlenvelope,
-                typename = query.typenames.as_ref().unwrap()
+                typename = query.typenames.as_ref().unwrap(),
+                gmlenvelope = gmlenvelope
             ).into_bytes());
 
             let post = Some(String::from("</wfs:FeatureCollection>").into_bytes());
