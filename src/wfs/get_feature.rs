@@ -48,13 +48,20 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
         SELECT
             ST_AsGML(3, ST_Extent(d.geom), 5, 32) AS extent
         FROM (
-            SELECT geom
-            FROM geo
+            SELECT
+                geom
+            FROM
+                geo
             WHERE
                 {geom_filter}
+            ORDER BY
+                id
+            LIMIT
+                {limit}
         ) d;
     ",
-        geom_filter = geom_filter
+        geom_filter = geom_filter,
+        limit = limit
     ).as_str(), &[ ]) {
         Ok(res) => {
             let gmlenvelope: Option<String> = res.get(0).get(0);
@@ -100,9 +107,14 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
                         geo
                     WHERE
                         {geom_filter}
+                    ORDER BY
+                        id
+                    LIMIT
+                        {limit}
             "#,
                 geom_filter = geom_filter,
-                typename = query.typenames.as_ref().unwrap()
+                typename = query.typenames.as_ref().unwrap(),
+                limit = limit
             ), &[], pre, post)?)
         },
         Err(err) => Err(HecateError::from_db(err))
