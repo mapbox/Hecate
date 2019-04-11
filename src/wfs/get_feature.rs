@@ -39,8 +39,10 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
         }
     };
 
-    //TODO support custom limits
-    let limit = 1000;
+    let limit = match query.count {
+        Some(count) => count,
+        None => 1000
+    };
 
     match conn.query(format!("
         SELECT
