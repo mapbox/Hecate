@@ -44,6 +44,11 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
         None => 1000
     };
 
+    let offset = match query.startindex {
+        Some(offset) => offset,
+        None => 0
+    };
+
     match conn.query(format!("
         SELECT
             ST_AsGML(3, ST_Extent(d.geom), 5, 32) AS extent
@@ -58,10 +63,13 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
                 id
             LIMIT
                 {limit}
+            OFFSET
+                {offset}
         ) d;
     ",
         geom_filter = geom_filter,
-        limit = limit
+        limit = limit,
+        offset = offset
     ).as_str(), &[ ]) {
         Ok(res) => {
             let gmlenvelope: Option<String> = res.get(0).get(0);
@@ -111,10 +119,13 @@ pub fn get_feature(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectio
                         id
                     LIMIT
                         {limit}
+                    OFFSET
+                        {offset}
             "#,
                 geom_filter = geom_filter,
                 typename = query.typenames.as_ref().unwrap(),
-                limit = limit
+                limit = limit,
+                offset = offset
             ), &[], pre, post)?)
         },
         Err(err) => Err(HecateError::from_db(err))
