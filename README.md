@@ -554,7 +554,7 @@ HTTP Healthcheck URL, currently returns `Hello World!`
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/
+curl -X GET 'http://localhost:8000/'
 ```
 
 ---
@@ -807,7 +807,7 @@ Return a JSON object containing the schema used by the server or return a 404 if
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/schema
+curl -X GET 'http://localhost:8000/api/schema'
 ```
 
 </details>
@@ -827,7 +827,7 @@ of this guide
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/auth
+curl -X GET 'http://localhost:8000/api/auth'
 ```
 
 </details>
@@ -867,7 +867,7 @@ Request a vector tile for a given set of coordinates. A [Mapbox Vector Tile](htt
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/tiles/1/1/1
+curl -X GET 'http://localhost:8000/api/tiles/1/1/1'
 ```
 
 ---
@@ -887,7 +887,7 @@ Return any stored metadata about a given tile.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/tiles/1/1/1/meta
+curl -X GET 'http://localhost:8000/api/tiles/1/1/1/meta'
 ```
 
 ---
@@ -935,7 +935,7 @@ Get a list of users (up to 100) or filter by a given user prefix.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/users
+curl -X GET 'http://localhost:8000/api/users'
 ```
 
 ---
@@ -1068,7 +1068,7 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/clone
+curl -X GET 'http://localhost:8000/api/data/clone'
 ```
 
 </details>
@@ -1109,11 +1109,11 @@ SELECT props FROM geo WHERE id = 1
 *Examples*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20count(*)%20FROM%20geo
+curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20count(*)%20FROM%20geo'
 ```
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20geo%20WHERE%20id%20%3D%201
+curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20geo%20WHERE%20id%20%3D%201'
 ```
 
 </details>
@@ -1141,7 +1141,7 @@ Return an array of possible boundary files with which data can be extracted from
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/bounds
+curl -X GET 'http://localhost:8000/api/data/bounds'
 ```
 
 ---
@@ -1162,7 +1162,7 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc'
 ```
 
 ---
@@ -1224,7 +1224,7 @@ Return statistics about geometries that intersect a given bounds
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats'
 ```
 
 ---
@@ -1242,7 +1242,7 @@ Return GeoJSON feature representing the bound
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/meta
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/meta'
 ```
 
 </details>
@@ -1267,11 +1267,11 @@ Return a single GeoJSON `Feature` given a query parameter
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/feature?key=123
+curl -X GET 'http://localhost:8000/api/data/feature?key=123'
 ```
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/feature?point=1.1324%2C-45.322
+curl -X GET 'http://localhost:8000/api/data/feature?point=1.1324%2C-45.322'
 ```
 
 ---
@@ -1289,7 +1289,7 @@ Return a single GeoJSON `Feature` given its' ID.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/feature/1542
+curl -X GET 'http://localhost:8000/api/data/feature/1542'
 ```
 
 ---
@@ -1307,7 +1307,7 @@ Return an array containing the full feature history for the provided feature id.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/feature/1542/history
+curl -X GET 'http://localhost:8000/api/data/feature/1542/history'
 ```
 
 </details>
@@ -1330,7 +1330,13 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 
 | Option | Notes |
 | :----: | ----- |
-| `bbox` | `REQUIRED` Bounding Box in format `left,bottom,right,top` |
+| `bbox=<minX,minY,maxX,maxY>` | `REQUIRED` Bounding Box in format `left,bottom,right,top` |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/features/?bbox=-122.51791%2C37.60447%2C-122.35499%2C37.83244'
+```
 
 </details>
 
@@ -1437,15 +1443,15 @@ Current    start   end
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/deltas
+curl -X GET 'http://localhost:8000/api/deltas'
 ```
 
 ```bash
-curl -X GET 'http://localhost:8000/api/deltas?offset=3
+curl -X GET 'http://localhost:8000/api/deltas?offset=3'
 ```
 
 ```bash
-curl -X GET 'http://localhost:8000/api/deltas?offset=3&limit=100
+curl -X GET 'http://localhost:8000/api/deltas?offset=3&limit=100'
 ```
 
 ---
@@ -1463,7 +1469,7 @@ Returns all data for a given delta as a JSON Object, including geometric data.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/delta/4
+curl -X GET 'http://localhost:8000/api/delta/4'
 ```
 
 </details>
@@ -1500,7 +1506,7 @@ Return a static XML document describing the capabilities of the API.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/capabilities
+curl -X GET 'http://localhost:8000/api/capabilities'
 ```
 
 ---
@@ -1513,7 +1519,7 @@ this and displays in the interface if there is a new message, to cut down on err
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/0.6/user/details
+curl -X GET 'http://localhost:8000/api/0.6/user/details'
 ```
 
 ---
