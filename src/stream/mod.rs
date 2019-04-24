@@ -10,7 +10,7 @@ pub struct PGStream<PG: 'static> {
     pending: Option<Vec<u8>>,
     trans: postgres::transaction::Transaction<'static>,
     #[allow(dead_code)]
-    conn: Box<&'static PG>
+    conn: Box<PG>
 }
 
 impl<PG: postgres::GenericConnection> std::io::Read for PGStream<PG> {
@@ -79,7 +79,7 @@ impl<PG: postgres::GenericConnection> std::io::Read for PGStream<PG> {
 }
 
 impl<PG: postgres::GenericConnection> PGStream<PG> {
-    pub fn new(conn: &PG, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, HecateError> {
+    pub fn new(conn: PG, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, HecateError> {
         let pg_conn = Box::new(conn);
 
         let trans: postgres::transaction::Transaction = unsafe {

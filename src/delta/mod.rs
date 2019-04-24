@@ -27,9 +27,9 @@ impl Delta {
     ///
     /// Load and return a delta from the database given a connection and delta id
     ///
-    pub fn load(conn: &impl postgres::GenericConnection, delta_id: i64) -> Self {
+    pub fn load(_conn: &impl postgres::GenericConnection, delta_id: i64) -> Self {
         Delta {
-            id: None,
+            id: Some(delta_id),
             uid: 1,
             props: HashMap::new(),
             features: HashMap::new()

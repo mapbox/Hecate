@@ -296,9 +296,7 @@ fn meta_list(mut auth: auth::Auth, conn: State<DbReplica>, auth_rules: State<aut
     let conn = conn.get()?;
     auth_rules.allows_meta_list(&mut auth, &*conn)?;
 
-    meta::list(&conn)?;
-
-    Ok(Json(json!(meta::list(&conn)?)))
+    Ok(Json(json!(meta::list(&*conn)?)))
 }
 
 #[get("/meta/<key>")]
@@ -306,7 +304,7 @@ fn meta_get(mut auth: auth::Auth, conn: State<DbReplica>, auth_rules: State<auth
     let conn = conn.get()?;
     auth_rules.allows_meta_get(&mut auth, &*conn)?;
 
-    Ok(Json(json!(meta::get(&conn, &key)?)))
+    Ok(Json(json!(meta::get(&*conn, &key)?)))
 }
 
 #[delete("/meta/<key>")]
@@ -314,7 +312,7 @@ fn meta_delete(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State
     let conn = conn.get()?;
     auth_rules.allows_meta_set(&mut auth, &*conn)?;
 
-    Ok(Json(json!(meta::delete(&conn, &key)?)))
+    Ok(Json(json!(meta::delete(&*conn, &key)?)))
 }
 
 #[post("/meta/<key>", format="application/json", data="<body>")]
@@ -322,7 +320,7 @@ fn meta_set(mut auth: auth::Auth, conn: State<DbReadWrite>, auth_rules: State<au
     let conn = conn.get()?;
     auth_rules.allows_meta_set(&mut auth, &*conn)?;
 
-    Ok(Json(json!(meta::set(&conn, &key, &body)?)))
+    Ok(Json(json!(meta::set(&*conn, &key, &body)?)))
 }
 
 #[get("/")]
@@ -416,7 +414,7 @@ fn user_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
     let conn = conn.get()?;
     auth_rules.allows_user_create(&mut auth, &*conn)?;
 
-    Ok(Json(json!(user::create(&conn, &user.username, &user.password, &user.email)?)))
+    Ok(Json(json!(user::create(&*conn, &user.username, &user.password, &user.email)?)))
 }
 
 #[get("/users?<filter..>")]
@@ -425,8 +423,8 @@ fn users(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::C
     auth_rules.allows_user_list(&mut auth, &*conn)?;
 
     match &filter.filter {
-        Some(search) => Ok(Json(json!(user::filter(&conn, &search, &filter.limit)?))),
-        None => Ok(Json(json!(user::list(&conn, &filter.limit)?)))
+        Some(search) => Ok(Json(json!(user::filter(&*conn, &search, &filter.limit)?))),
+        None => Ok(Json(json!(user::list(&*conn, &filter.limit)?)))
     }
 }
 
@@ -436,7 +434,7 @@ fn user_info(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<aut
 
     auth_rules.is_admin(&mut auth, &*conn)?;
 
-    Ok(Json(user::info(&conn, &id)?))
+    Ok(Json(user::info(&*conn, &id)?))
 }
 
 #[put("/user/<id>/admin")]
@@ -445,7 +443,7 @@ fn user_set_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: St
 
     auth_rules.is_admin(&mut auth, &*conn)?;
 
-    Ok(Json(json!(user::set_admin(&conn, &id)?)))
+    Ok(Json(json!(user::set_admin(&*conn, &id)?)))
 }
 
 #[delete("/user/<id>/admin")]
@@ -454,7 +452,7 @@ fn user_delete_admin(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules:
 
     auth_rules.is_admin(&mut auth, &*conn)?;
 
-    Ok(Json(json!(user::delete_admin(&conn, &id)?)))
+    Ok(Json(json!(user::delete_admin(&*conn, &id)?)))
 }
 
 #[get("/user/info")]
@@ -464,7 +462,7 @@ fn user_self(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<aut
 
     let uid = auth.uid.unwrap();
 
-    Ok(Json(user::info(&conn, &uid)?))
+    Ok(Json(user::info(&*conn, &uid)?))
 }
 
 #[get("/user/session")]
@@ -475,7 +473,7 @@ fn user_create_session(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rule
 
     let uid = auth.uid.unwrap();
 
-    let token = user::create_token(&conn, &uid)?;
+    let token = user::create_token(&*conn, &uid)?;
 
     cookies.add(Cookie::build("session", token)
         .path("/")
@@ -509,7 +507,7 @@ fn user_delete_session(conn: State<DbReadWrite>, auth: auth::Auth, mut cookies: 
                 None => { return Ok(Json(json!(true))); }
             };
 
-            match user::destroy_token(&conn.get()?, &uid, &token) {
+            match user::destroy_token(&*conn.get()?, &uid, &token) {
                 _ => {
                     Ok(Json(json!(true)))
                 }
@@ -545,7 +543,7 @@ fn style_create(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
         }
     }
 
-    Ok(Json(json!(style::create(&conn, &uid, &body_str)?)))
+    Ok(Json(json!(style::create(&*conn, &uid, &body_str)?)))
 }
 
 #[post("/style/<id>/public")]
@@ -555,7 +553,7 @@ fn style_public(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
     auth_rules.allows_style_set_public(&mut auth, &*conn)?;
     let uid = auth.uid.unwrap();
 
-    Ok(Json(json!(style::access(&conn, &uid, &id, true)?)))
+    Ok(Json(json!(style::access(&*conn, &uid, &id, true)?)))
 }
 
 #[post("/style/<id>/private")]
@@ -565,7 +563,7 @@ fn style_private(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
     auth_rules.allows_style_set_private(&mut auth, &*conn)?;
     let uid = auth.uid.unwrap();
 
-    Ok(Json(json!(style::access(&conn, &uid, &id, false)?)))
+    Ok(Json(json!(style::access(&*conn, &uid, &id, false)?)))
 }
 
 #[patch("/style/<id>", format="application/json", data="<body>")]
@@ -594,7 +592,7 @@ fn style_patch(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
         }
     }
 
-    Ok(Json(json!(style::update(&conn, &uid, &id, &body_str)?)))
+    Ok(Json(json!(style::update(&*conn, &uid, &id, &body_str)?)))
 }
 
 #[delete("/style/<id>")]
@@ -604,7 +602,7 @@ fn style_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Stat
     auth_rules.allows_style_delete(&mut auth, &*conn)?;
     let uid = auth.uid.unwrap();
 
-    Ok(Json(json!(style::delete(&conn, &uid, &id)?)))
+    Ok(Json(json!(style::delete(&*conn, &uid, &id)?)))
 }
 
 
@@ -614,7 +612,7 @@ fn style_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<aut
 
     auth_rules.allows_style_get(&mut auth, &*conn)?;
 
-    Ok(Json(json!(style::get(&conn, &auth.uid, &id)?)))
+    Ok(Json(json!(style::get(&*conn, &auth.uid, &id)?)))
 }
 
 #[get("/styles")]
@@ -623,7 +621,7 @@ fn style_list_public(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: S
 
     auth_rules.allows_style_list(&mut auth, &*conn)?;
 
-    Ok(Json(json!(style::list_public(&conn)?)))
+    Ok(Json(json!(style::list_public(&*conn)?)))
 }
 
 #[get("/styles/<user>")]
@@ -635,13 +633,13 @@ fn style_list_user(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: Sta
     match auth.uid {
         Some(uid) => {
             if uid == user {
-                Ok(Json(json!(style::list_user(&conn, &user)?)))
+                Ok(Json(json!(style::list_user(&*conn, &user)?)))
             } else {
-                Ok(Json(json!(style::list_user_public(&conn, &user)?)))
+                Ok(Json(json!(style::list_user_public(&*conn, &user)?)))
             }
         },
         _ => {
-            Ok(Json(json!(style::list_user_public(&conn, &user)?)))
+            Ok(Json(json!(style::list_user_public(&*conn, &user)?)))
         }
     }
 }
@@ -661,7 +659,7 @@ fn delta_list(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<au
     auth_rules.allows_delta_list(&mut auth, &*conn)?;
 
     if opts.offset.is_none() && opts.limit.is_none() && opts.start.is_none() && opts.end.is_none() {
-        Ok(Json(delta::list_by_offset(&conn, None, None)?))
+        Ok(Json(delta::list_by_offset(&*conn, None, None)?))
     } else if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
         return Err(HecateError::new(400, String::from("Offset cannot be used with start or end"), None));
     } else if opts.start.is_some() || opts.end.is_some() {
@@ -685,9 +683,9 @@ fn delta_list(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<au
             }
         };
 
-        Ok(Json(delta::list_by_date(&conn, start, end, opts.limit)?))
+        Ok(Json(delta::list_by_date(&*conn, start, end, opts.limit)?))
     } else if opts.offset.is_some() || opts.limit.is_some() {
-        Ok(Json(delta::list_by_offset(&conn, opts.offset, opts.limit)?))
+        Ok(Json(delta::list_by_offset(&*conn, opts.offset, opts.limit)?))
     } else {
         return Err(HecateError::new(400, String::from("Invalid Query Params"), None));
     }
@@ -698,7 +696,7 @@ fn delta(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::C
     let conn = conn.get()?;
     auth_rules.allows_delta_get(&mut auth, &*conn)?;
 
-    Ok(Json(delta::get_json(&conn, &id)?))
+    Ok(Json(delta::get_json(&*conn, &id)?))
 }
 
 #[get("/data/bounds?<filter..>")]
@@ -708,8 +706,8 @@ fn bounds(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::
     auth_rules.allows_bounds_list(&mut auth, &*conn)?;
 
     match &filter.filter {
-        Some(search) => Ok(Json(json!(bounds::filter(&conn, &search, &filter.limit)?))),
-        None => Ok(Json(json!(bounds::list(&conn, &filter.limit)?)))
+        Some(search) => Ok(Json(json!(bounds::filter(&*conn, &search, &filter.limit)?))),
+        None => Ok(Json(json!(bounds::list(&*conn, &filter.limit)?)))
     }
 }
 
@@ -754,7 +752,7 @@ fn bounds_set(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<
         }
     };
 
-    Ok(Json(json!(bounds::set(&conn, &bounds, &geom)?)))
+    Ok(Json(json!(bounds::set(&*conn, &bounds, &geom)?)))
 }
 
 #[delete("/data/bounds/<bounds>")]
@@ -763,7 +761,7 @@ fn bounds_delete(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: Sta
 
     auth_rules.allows_bounds_delete(&mut auth, &*conn)?;
 
-    Ok(Json(json!(bounds::delete(&conn, &bounds)?)))
+    Ok(Json(json!(bounds::delete(&*conn, &bounds)?)))
 }
 
 #[get("/data/bounds/<bounds>/stats")]
@@ -772,7 +770,7 @@ fn bounds_stats(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<
 
     auth_rules.allows_stats_bounds(&mut auth, &*conn)?;
 
-    Ok(Json(bounds::stats_json(conn, bounds)?))
+    Ok(Json(bounds::stats_json(&*conn, bounds)?))
 }
 
 #[get("/data/bounds/<bounds>/meta")]
@@ -781,7 +779,7 @@ fn bounds_meta(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<a
 
     auth_rules.allows_bounds_get(&mut auth, &*conn)?;
 
-    Ok(Json(bounds::meta(conn, bounds)?))
+    Ok(Json(bounds::meta(&*conn, bounds)?))
 }
 
 #[derive(FromForm, Debug)]
@@ -794,14 +792,14 @@ struct CloneQuery {
 fn clone_query(sandbox_conn: State<DbSandbox>, conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: Form<CloneQuery>) -> Result<Stream<stream::PGStream<postgres::Connection>>, HecateError> {
     auth_rules.allows_clone_query(&mut auth, &*conn.get()?)?;
 
-    Ok(Stream::from(clone::query(sandbox_conn.get()?, &cquery.query, &cquery.limit)?))
+    Ok(Stream::from(clone::query(*sandbox_conn.get()?, &cquery.query, &cquery.limit)?))
 }
 
 #[get("/data/clone")]
 fn clone_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Stream<stream::PGStream<postgres::Connection>>, HecateError> {
     auth_rules.allows_clone_get(&mut auth, &*conn.get()?)?;
 
-    Ok(Stream::from(clone::get(conn.get()?)?))
+    Ok(Stream::from(clone::get(*conn.get()?)?))
 }
 
 #[get("/data/features?<map..>")]
@@ -810,7 +808,7 @@ fn features_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<
     auth_rules.allows_feature_get(&mut auth, &*conn)?;
 
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
-    Ok(Stream::from(feature::get_bbox_stream(conn, bbox)?))
+    Ok(Stream::from(feature::get_bbox_stream(*conn, bbox)?))
 }
 
 #[get("/schema")]
@@ -840,7 +838,7 @@ fn stats_get(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State<a
 
     auth_rules.allows_stats_get(&mut auth, &*conn)?;
 
-    Ok(Json(stats::get_json(&conn)?))
+    Ok(Json(stats::get_json(&*conn)?))
 }
 
 #[get("/data/stats/regen")]
@@ -849,7 +847,7 @@ fn stats_regen(conn: State<DbReadWrite>, mut auth: auth::Auth, auth_rules: State
 
     auth_rules.allows_stats_get(&mut auth, &*conn)?;
 
-    Ok(Json(json!(stats::regen(&conn)?)))
+    Ok(Json(json!(stats::regen(&*conn)?)))
 }
 
 #[post("/data/features", format="application/json", data="<body>")]
@@ -986,7 +984,7 @@ fn osm_map(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth:
 
     let query: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
 
-    let fc = match feature::get_bbox(&conn, query) {
+    let fc = match feature::get_bbox(&*conn, query) {
         Ok(features) => features,
         Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json().to_string())) }
     };
@@ -1453,7 +1451,7 @@ fn feature_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<a
     let conn = conn.get()?;
     auth_rules.allows_feature_get(&mut auth, &*conn)?;
 
-    match feature::get(&conn, &id) {
+    match feature::get(&*conn, &id) {
         Ok(feature) => {
             let feature = geojson::GeoJson::from(feature).to_string();
 
@@ -1483,9 +1481,9 @@ fn feature_query(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State
     if fquery.key.is_some() && fquery.point.is_some() {
         Err(HecateError::new(400, String::from("key and point params cannot be used together"), None))
     } else if fquery.key.is_some() {
-        Ok(Json(feature::query_by_key(&conn, &fquery.key.as_ref().unwrap())?))
+        Ok(Json(feature::query_by_key(&*conn, &fquery.key.as_ref().unwrap())?))
     } else if fquery.point.is_some() {
-        Ok(Json(feature::query_by_point(&conn, &fquery.point.as_ref().unwrap())?))
+        Ok(Json(feature::query_by_point(&*conn, &fquery.point.as_ref().unwrap())?))
     } else {
         Err(HecateError::new(400, String::from("key or point param must be used"), None))
     }
@@ -1496,5 +1494,5 @@ fn feature_get_history(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules:
     let conn = conn.get()?;
     auth_rules.allows_feature_history(&mut auth, &*conn)?;
 
-    Ok(Json(delta::history(&conn, &id)?))
+    Ok(Json(delta::history(&*conn, &id)?))
 }
