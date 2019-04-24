@@ -12,12 +12,27 @@ pub struct Delta {
 }
 
 impl Delta {
+    ///
+    /// Create a new Delta object given the user id, properties, & features the delta should modify
+    ///
     pub fn new(uid: i64, props: HashMap<String, Option<String>>, features: HashMap<i64, Value>) -> Self {
         Delta {
             id: None,
             uid: uid,
             props: props,
             features: features
+        }
+    }
+
+    ///
+    /// Load and return a delta from the database given a connection and delta id
+    ///
+    pub fn load(conn: &impl postgres::GenericConnection, delta_id: i64) -> Self {
+        Delta {
+            id: None,
+            uid: 1,
+            props: HashMap::new(),
+            features: HashMap::new()
         }
     }
 }
