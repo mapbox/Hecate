@@ -2,6 +2,25 @@ use postgres;
 use geo::prelude::*;
 use std::collections::HashMap;
 use crate::err::HecateError;
+use serde_json::Value;
+
+pub struct Delta {
+    id: Option<i64>,
+    uid: i64,
+    props: HashMap<String, Option<String>>,
+    features: HashMap<i64, Value>
+}
+
+impl Delta {
+    pub fn new(uid: i64, props: HashMap<String, Option<String>>, features: HashMap<i64, Value>) -> Self {
+        Delta {
+            id: None,
+            uid: uid,
+            props: props,
+            features: features
+        }
+    }
+}
 
 ///Get the history of a particular feature
 pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: &i64) -> Result<serde_json::Value, HecateError> {
