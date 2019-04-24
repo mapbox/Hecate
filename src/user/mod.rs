@@ -1,6 +1,6 @@
 use crate::err::HecateError;
 
-pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, username: &String, password: &String, email: &String) -> Result<bool, HecateError> {
+pub fn create(conn: &impl postgres::GenericConnection, username: &String, password: &String, email: &String) -> Result<bool, HecateError> {
     match conn.query("
         INSERT INTO users (username, password, email, meta)
             VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, '{}'::JSONB);
@@ -16,7 +16,7 @@ pub fn create(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: &Option<i16>) -> Result<serde_json::Value, HecateError> {
+pub fn list(conn: &impl postgres::GenericConnection, limit: &Option<i16>) -> Result<serde_json::Value, HecateError> {
     let limit: i16 = match limit {
         None => 100,
         Some(limit) => if *limit > 100 { 100 } else { *limit }
@@ -42,7 +42,7 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     }
 }
 
-pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, filter: &String, limit: &Option<i16>) -> Result<serde_json::Value, HecateError> {
+pub fn filter(conn: &impl postgres::GenericConnection, filter: &String, limit: &Option<i16>) -> Result<serde_json::Value, HecateError> {
     let limit: i16 = match limit {
         None => 100,
         Some(limit) => if *limit > 100 { 100 } else { *limit }
@@ -70,7 +70,7 @@ pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn set_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<bool, HecateError> {
+pub fn set_admin(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<bool, HecateError> {
     match conn.query("
         UPDATE users
             SET
@@ -83,7 +83,7 @@ pub fn set_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnection
     }
 }
 
-pub fn delete_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<bool, HecateError> {
+pub fn delete_admin(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<bool, HecateError> {
     match conn.query("
         UPDATE users
             SET
@@ -95,7 +95,7 @@ pub fn delete_admin(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
         Err(err) => Err(HecateError::from_db(err))
     }
 }
-pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<serde_json::Value, HecateError> {
+pub fn info(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT row_to_json(u)
         FROM (
@@ -114,7 +114,7 @@ pub fn info(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     }
 }
 
-pub fn create_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64) -> Result<String, HecateError> {
+pub fn create_token(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<String, HecateError> {
     match conn.query("
         INSERT INTO users_tokens (name, uid, token, expiry)
             VALUES (
@@ -133,7 +133,7 @@ pub fn create_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
     }
 }
 
-pub fn destroy_token(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, uid: &i64, token: &String) -> Result<bool, HecateError> {
+pub fn destroy_token(conn: &impl postgres::GenericConnection, uid: &i64, token: &String) -> Result<bool, HecateError> {
     match conn.query("
         DELETE FROM users_tokens
             WHERE
