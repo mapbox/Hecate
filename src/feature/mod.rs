@@ -620,7 +620,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
     }
 }
 
-pub fn get_bbox_stream(conn: &impl postgres::GenericConnection, bbox: Vec<f64>) -> Result<PGStream<postgres::GenericConnection>, HecateError> {
+pub fn get_bbox_stream(conn: &impl postgres::GenericConnection, bbox: Vec<f64>) -> Result<PGStream<postgres::Connection>, HecateError> {
     if bbox.len() != 4 {
         return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
     }

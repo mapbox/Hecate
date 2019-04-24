@@ -69,7 +69,7 @@ pub fn list(conn: &impl postgres::GenericConnection, limit: &Option<i16>) -> Res
     }
 }
 
-pub fn get(conn: &impl postgres::GenericConnection, bounds: String) -> Result<PGStream<postgres::GenericConnection>, HecateError> {
+pub fn get(conn: &impl postgres::GenericConnection, bounds: String) -> Result<PGStream<postgres::Connection>, HecateError> {
     match PGStream::new(conn, String::from("next_bounds"), String::from(r#"
         DECLARE next_bounds CURSOR FOR
             SELECT
