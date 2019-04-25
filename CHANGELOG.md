@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.68.0
+
+- :rocket: Use `ST_DWithin` for feature at lng/lat endpoint
+- [UI] Swith to using lng/lat feature API instead of ID lookup
+
 ## v0.67.0
 
 - :rocket: Framework for supporting delta based operations
