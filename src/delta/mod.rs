@@ -2,9 +2,43 @@ use postgres;
 use geo::prelude::*;
 use std::collections::HashMap;
 use crate::err::HecateError;
+use serde_json::Value;
+
+pub struct Delta {
+    id: Option<i64>,
+    uid: i64,
+    props: HashMap<String, Option<String>>,
+    features: HashMap<i64, Value>
+}
+
+impl Delta {
+    ///
+    /// Create a new Delta object given the user id, properties, & features the delta should modify
+    ///
+    pub fn new(uid: i64, props: HashMap<String, Option<String>>, features: HashMap<i64, Value>) -> Self {
+        Delta {
+            id: None,
+            uid: uid,
+            props: props,
+            features: features
+        }
+    }
+
+    ///
+    /// Load and return a delta from the database given a connection and delta id
+    ///
+    pub fn load(_conn: &impl postgres::GenericConnection, delta_id: i64) -> Self {
+        Delta {
+            id: Some(delta_id),
+            uid: 1,
+            props: HashMap::new(),
+            features: HashMap::new()
+        }
+    }
+}
 
 ///Get the history of a particular feature
-pub fn history(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, feat_id: &i64) -> Result<serde_json::Value, HecateError> {
+pub fn history(conn: &impl postgres::GenericConnection, feat_id: &i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT json_agg(row_to_json(t))
         FROM (
@@ -69,7 +103,7 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
     }
 }
 
-pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, start: Option<chrono::NaiveDateTime>, end: Option<chrono::NaiveDateTime>, limit: Option<i64>) -> Result<serde_json::Value, HecateError> {
+pub fn list_by_date(conn: &impl postgres::GenericConnection, start: Option<chrono::NaiveDateTime>, end: Option<chrono::NaiveDateTime>, limit: Option<i64>) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT COALESCE(array_to_json(Array_Agg(djson.delta)), '[]')::JSON
         FROM (
@@ -113,7 +147,7 @@ pub fn list_by_date(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
     }
 }
 
-pub fn list_by_offset(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, offset: Option<i64>, limit: Option<i64>) -> Result<serde_json::Value, HecateError> {
+pub fn list_by_offset(conn: &impl postgres::GenericConnection, offset: Option<i64>, limit: Option<i64>) -> Result<serde_json::Value, HecateError> {
     let offset = match offset {
         None => String::from("Infinity"),
         Some(offset) => offset.to_string()
@@ -210,7 +244,7 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<(i
 
 }
 
-pub fn get_json(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<serde_json::Value, HecateError> {
+pub fn get_json(conn: &impl postgres::GenericConnection, id: &i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT COALESCE(row_to_json(d), 'false'::JSON)
         FROM (

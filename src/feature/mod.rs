@@ -404,7 +404,7 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
-pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<serde_json::value::Value, HecateError> {
+pub fn query_by_key(conn: &impl postgres::GenericConnection, key: &String) -> Result<serde_json::value::Value, HecateError> {
     match conn.query("
         SELECT
             row_to_json(f)::JSON AS feature
@@ -430,7 +430,7 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
     }
 }
 
-pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<serde_json::value::Value, HecateError> {
+pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -> Result<serde_json::value::Value, HecateError> {
     let lnglat = point.split(",").collect::<Vec<&str>>();
 
     if lnglat.len() != 2 {
@@ -479,7 +479,7 @@ pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
     }
 }
 
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, HecateError> {
+pub fn get(conn: &impl postgres::GenericConnection, id: &i64) -> Result<geojson::Feature, HecateError> {
     match conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature
@@ -645,7 +645,7 @@ pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConne
     "#), &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]])?)
 }
 
-pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, HecateError> {
+pub fn get_bbox(conn: &impl postgres::GenericConnection, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, HecateError> {
     if bbox.len() != 4 {
         return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
     }
