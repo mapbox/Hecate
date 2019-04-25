@@ -465,7 +465,9 @@ pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -
                 props AS properties
             FROM geo
             WHERE
-                ST_Intersects(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326))
+                ST_DWithin(ST_SetSRID(ST_MakePoint($1, $2), 4326), geo.geom, 0.00005)
+            ORDER BY
+                ST_Distance(ST_SetSRID(ST_MakePoint($1, $2), 4326), geo.geom) DESC
         ) f
         LIMIT 1
     ", &[&lng, &lat]) {

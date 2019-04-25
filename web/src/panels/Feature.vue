@@ -5,7 +5,12 @@
         <button @click='close()' class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-close'/></button>
     </div>
 
-    <template v-if='loading'>
+    <template v-if='is404'>
+        <div class='flex-child h32 align-center py12'>
+            No Feature Found
+        </div>
+    </template>
+    <template v-else-if='loading'>
         <div class='flex-child loading h60'></div>
     </template>
     <template v-else>
@@ -54,6 +59,7 @@ export default {
     name: 'feature',
     data: function() {
         return {
+            404: false,
             feature: false,
             loading: false
         }
@@ -75,19 +81,41 @@ export default {
         },
         get: function(id) {
             if (!id) return;
+
+            this.is404 = false;
+            this.loading = true;
+
             if (typeof id === 'number' || typeof id === 'string') {
-                this.loading = true;
+                fetch(`${window.location.protocol}//${window.location.host}/api/data/feature/${id}`, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                }).then((response) => {
+                      if (response.status === 404) {
+                          this.is404 = true;
+                          this.feature = false;
+                      } else {
+                          return response.json();
+                      }
+                }).then((body) => {
+                    this.feature = body;
+                });
+            } else if (Array.isArray(id)) {
+                fetch(`${window.location.protocol}//${window.location.host}/api/data/feature?point=${encodeURIComponent(id[0] + ',' + id[1])}`, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                }).then((response) => {
+                      if (response.status === 404) {
+                          this.is404 = true;
+                          this.feature = false;
+                      } else {
+                          return response.json();
+                      }
+                }).then((body) => {
+                    this.feature = body;
+                })
             }
 
-            fetch(`${window.location.protocol}//${window.location.host}/api/data/feature/${id}`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                  return response.json();
-            }).then((body) => {
-                this.feature = body;
-                this.loading = false;
-            });
+            this.loading = false;
         }
     },
     render: h => h(App),
