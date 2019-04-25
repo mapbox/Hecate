@@ -340,11 +340,7 @@ export default {
         this.map.gl.on('click', (e) => {
             if (this.modal === 'delta') return; //Don't currently support showing features within a delta
 
-            let clicked = this.map.gl.queryRenderedFeatures(e.point)[0];
-
-            if (clicked && clicked.properties['hecate:id']) {
-                this.feature = clicked.properties['hecate:id'];
-            }
+            this.feature = [e.lngLat.lng, e.lngLat.lat];
         });
     },
     watch: {
