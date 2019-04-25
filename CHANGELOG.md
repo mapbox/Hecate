@@ -10,6 +10,13 @@
 
 # Version History
 
+## v0.67.0
+
+- :rocket: Framework for supporting delta based operations
+- :rocket: Update formatting for readability in `lib.rs`, moving all fn parameters to their own line
+- :rocket: Update all possible `r2d2` data types to the generic `postgres::GenericConnection`
+- [UI] Update to mapbox-gl-js 0.53
+
 ## v0.66.0
 
 - :rocket: Update to 2018 Rust Edition
@@ -237,7 +244,7 @@
 
 ## v0.36.1
 
-- :rocket: [UI] Add style deletion 
+- :rocket: [UI] Add style deletion
 - :bug: [UI] Ensure feature requests didn't poll infinitely
 
 ## v0.36.0
@@ -465,7 +472,7 @@
 - :pencil2: Huge doc update on endpoints & setting up
 - :rocket: Update a ton of install & Docker instructions
 
-## v0.3.0 
+## v0.3.0
 
 - :tada: Add bounds API
 
