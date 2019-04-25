@@ -712,7 +712,7 @@ fn bounds(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::
 }
 
 #[get("/data/bounds/<bounds>")]
-fn bounds_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Stream<stream::PGStream<postgres::Connection>>, HecateError> {
+fn bounds_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, bounds: String) -> Result<Stream<stream::PGStream>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.allows_bounds_list(&mut auth, &*conn)?;
@@ -789,26 +789,26 @@ struct CloneQuery {
 }
 
 #[get("/data/query?<cquery..>")]
-fn clone_query(sandbox_conn: State<DbSandbox>, conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: Form<CloneQuery>) -> Result<Stream<stream::PGStream<postgres::Connection>>, HecateError> {
+fn clone_query(sandbox_conn: State<DbSandbox>, conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, cquery: Form<CloneQuery>) -> Result<Stream<stream::PGStream>, HecateError> {
     auth_rules.allows_clone_query(&mut auth, &*conn.get()?)?;
 
-    Ok(Stream::from(clone::query(*sandbox_conn.get()?, &cquery.query, &cquery.limit)?))
+    Ok(Stream::from(clone::query(sandbox_conn.get()?, &cquery.query, &cquery.limit)?))
 }
 
 #[get("/data/clone")]
-fn clone_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Stream<stream::PGStream<postgres::Connection>>, HecateError> {
+fn clone_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>) -> Result<Stream<stream::PGStream>, HecateError> {
     auth_rules.allows_clone_get(&mut auth, &*conn.get()?)?;
 
-    Ok(Stream::from(clone::get(*conn.get()?)?))
+    Ok(Stream::from(clone::get(conn.get()?)?))
 }
 
 #[get("/data/features?<map..>")]
-fn features_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<Stream<stream::PGStream<postgres::Connection>>, HecateError> {
+fn features_get(conn: State<DbReplica>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, map: Form<Map>) -> Result<Stream<stream::PGStream>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_feature_get(&mut auth, &*conn)?;
 
     let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
-    Ok(Stream::from(feature::get_bbox_stream(*conn, bbox)?))
+    Ok(Stream::from(feature::get_bbox_stream(conn, bbox)?))
 }
 
 #[get("/schema")]

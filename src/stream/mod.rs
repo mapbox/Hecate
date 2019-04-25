@@ -4,16 +4,16 @@ use crate::err::HecateError;
 
 use std::mem;
 
-pub struct PGStream<PG: 'static> {
+pub struct PGStream {
     eot: bool, //End of Tranmission has been sent
     cursor: String,
     pending: Option<Vec<u8>>,
     trans: postgres::transaction::Transaction<'static>,
     #[allow(dead_code)]
-    conn: Box<PG>
+    conn: Box<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>>
 }
 
-impl<PG: postgres::GenericConnection> std::io::Read for PGStream<PG> {
+impl std::io::Read for PGStream {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         let mut current = 0;
 
@@ -78,8 +78,8 @@ impl<PG: postgres::GenericConnection> std::io::Read for PGStream<PG> {
     }
 }
 
-impl<PG: postgres::GenericConnection> PGStream<PG> {
-    pub fn new(conn: PG, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, HecateError> {
+impl PGStream {
+    pub fn new(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&ToSql]) -> Result<Self, HecateError> {
         let pg_conn = Box::new(conn);
 
         let trans: postgres::transaction::Transaction = unsafe {
@@ -100,3 +100,4 @@ impl<PG: postgres::GenericConnection> PGStream<PG> {
         }
     }
 }
+

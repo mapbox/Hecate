@@ -1,7 +1,7 @@
 use crate::stream::PGStream;
 use crate::err::HecateError;
 
-pub fn get(conn: postgres::Connection) -> Result<PGStream<postgres::Connection>, HecateError> {
+pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<PGStream, HecateError> {
     match PGStream::new(conn, String::from("next_clone"), String::from(r#"
         DECLARE next_clone CURSOR FOR
             SELECT
@@ -23,7 +23,7 @@ pub fn get(conn: postgres::Connection) -> Result<PGStream<postgres::Connection>,
     }
 }
 
-pub fn query(read_conn: postgres::Connection, query: &String, limit: &Option<i64>) -> Result<PGStream<postgres::Connection>, HecateError> {
+pub fn query(read_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, query: &String, limit: &Option<i64>) -> Result<PGStream, HecateError> {
     Ok(PGStream::new(read_conn, String::from("next_clone_query"), format!(r#"
         DECLARE next_clone_query CURSOR FOR
             SELECT
