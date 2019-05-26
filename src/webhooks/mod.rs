@@ -3,6 +3,7 @@ use geo::prelude::*;
 use crate::err::HecateError;
 use serde_json::Value;
 
+#[derive(Serialize, Deserialize)]
 pub struct WebHook {
     id: i64,
     name: String,

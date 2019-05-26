@@ -172,6 +172,7 @@ pub fn start(
             bounds_get,
             bounds_set,
             bounds_delete,
+            webhooks_list,
             clone_get,
             clone_query,
             osm_capabilities,
@@ -915,6 +916,21 @@ fn bounds_delete(
     auth_rules.allows_bounds_delete(&mut auth, &*conn)?;
 
     Ok(Json(json!(bounds::delete(&*conn, &bounds)?)))
+}
+
+#[get("/webhooks")]
+fn webhooks_list(
+    conn: State<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>
+) -> Result<Json<serde_json::Value>, HecateError> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_webhooks_list(&mut auth, &*conn)?;
+
+    let hooks = serde_json::to_value(webhooks::list(&*conn)).unwrap();
+
+    Ok(Json(hooks))
 }
 
 #[get("/data/bounds/<bounds>/stats")]
