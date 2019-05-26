@@ -4,6 +4,14 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS hstore;
 
+DROP TABLE IF EXISTS webhooks;
+CREATE TABLE webhooks (
+    id          BIGSERIAL,
+    name        TEXT,
+    actions     TEXT[],
+    url         TEXT
+);
+
 DROP TABLE IF EXISTS meta;
 CREATE TABLE meta (
     key         TEXT UNIQUE,
