@@ -22,6 +22,7 @@ pub mod osm;
 pub mod user;
 pub mod auth;
 pub mod worker;
+pub mod webhooks;
 
 use auth::ValidAuth;
 use err::HecateError;
