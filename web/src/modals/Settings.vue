@@ -144,9 +144,13 @@
                         <button @click='submode = "server"' class='fl btn btn--stroke round w36 px12 my6'>
                             <svg class='icon'><use href='#icon-sprocket'/></svg>
                         </button>
-    
+
                         <button @click='submode = "users"' class='fl btn btn--stroke round w36 px12 my6'>
                             <svg class='icon'><use href='#icon-user'/></svg>
+                        </button>
+
+                        <button @click='submode = "webhooks"' class='fl btn btn--stroke round w36 px12 my6'>
+                            <svg class='icon'><use href='#icon-link'/></svg>
                         </button>
                     </div>
 
@@ -229,6 +233,29 @@
                                 </template>
                             </div>
                         </template>
+                        <template v-if='submode === "webhooks"'>
+                            <div class='col col--12 txt-m txt-bold'>
+                                Webhook Settings
+                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                            </div>
+
+                            <div class='py6 col col--12 border--gray-light border-b mb12'>
+                                <span class='txt-m'>Webhooks</span>
+                            </div>
+
+                            <div class='col col--12 h240 scroll-auto'>
+                                <template v-for='(hook, hook_idx) of hooks'>
+                                    <div class='col col--12'>
+                                       <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
+                                            <span v-text='hook.name'></span>
+                                            <div v-for='hook_action of hooks.actions' class='col--2'>
+                                                <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round' v-text="hook_action"></span>
+                                            </div>
+                                       </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -244,6 +271,7 @@ export default {
             mode: 'settings',
             submode: 'server',
             tilecache: false, //Store if the cache has been cleared or not
+            hooks: [],
             layers: [],
             users: [],
             userFilter: '',
@@ -268,6 +296,7 @@ export default {
     mounted: function() {
         this.getLayers();
         this.getUsers();
+        this.getHooks();
     },
     watch: {
         userFilter: function() {
@@ -333,6 +362,31 @@ export default {
                 if (!users || !users.length) users = [];
 
                 this.users = users;
+            }).catch((err) => {
+                this.error = err.message;
+            });
+        },
+        getHooks: function() {
+            this.hooks = [{
+                name: 'Delta Message',
+                actions: ['delta'],
+                url: 'localhost:8000'
+            }];
+            return;
+
+            fetch(`${window.location.protocol}//${window.location.host}/api/webhooks`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) {
+                    this.error = response.status + ':' + response.statusText;
+                }
+
+                return response.json();
+            }).then((hooks) => {
+                if (!hooks || !hooks.length) hooks = [];
+
+                this.hooks = hooks;
             }).catch((err) => {
                 this.error = err.message;
             });
