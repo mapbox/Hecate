@@ -175,6 +175,7 @@ pub fn start(
             webhooks_list,
             webhooks_delete,
             webhooks_update,
+            webhooks_create,
             clone_get,
             clone_query,
             osm_capabilities,
@@ -942,12 +943,12 @@ fn webhooks_delete(
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
     id: i64
-) -> Result<Json<serde_json::Value>, HecateError> {
+) -> Result<Json<bool>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.allows_webhooks_delete(&mut auth, &*conn)?;
 
-    Ok(webhooks::delete(&*conn, id)?)
+    Ok(Json(webhooks::delete(&*conn, id)?))
 }
 
 #[post("/webhooks", format="application/json", data="<body>")]
@@ -961,7 +962,36 @@ fn webhooks_create(
 
     auth_rules.allows_webhooks_update(&mut auth, &*conn)?;
 
-    Ok(webhooks::create(&*conn, webhook)?)
+    let body_str: String;
+    {
+        let mut body_stream = body.open();
+        let mut body_vec = Vec::new();
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
+        }
+
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
+    }
+
+    let webhook: serde_json::Value = match serde_json::from_str(&*body_str) {
+        Ok(webhook) => webhook,
+        Err(_) => {
+            return Err(HecateError::new(400, String::from("Invalid webhook JSON"), None));
+        }
+    };
+
+    match serde_json::to_value(webhooks::create(&*conn, webhook)?) {
+        Ok(webhook) => Ok(Json(webhook)),
+        Err(_) => { return Err(HecateError::new(500, String::from("Failed to return webhook ID"), None)); }
+    }
 }
 
 #[post("/webhooks/<id>", format="application/json", data="<body>")]
@@ -976,7 +1006,36 @@ fn webhooks_update(
 
     auth_rules.allows_webhooks_update(&mut auth, &*conn)?;
 
-    Ok(webhooks::update(&*conn, id, webhook)?)
+    let body_str: String;
+    {
+        let mut body_stream = body.open();
+        let mut body_vec = Vec::new();
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
+        }
+
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
+    }
+
+    let webhook: serde_json::Value = match serde_json::from_str(&*body_str) {
+        Ok(webhook) => webhook,
+        Err(_) => {
+            return Err(HecateError::new(400, String::from("Invalid webhook JSON"), None));
+        }
+    };
+
+    match serde_json::to_value(webhooks::update(&*conn, id, webhook)?) {
+        Ok(webhook) => Ok(Json(webhook)),
+        Err(_) => { return Err(HecateError::new(500, String::from("Failed to return webhook ID"), None)); }
+    }
 }
 
 #[get("/data/bounds/<bounds>/stats")]

@@ -1,7 +1,5 @@
 use postgres;
-use geo::prelude::*;
 use crate::err::HecateError;
-use serde_json::Value;
 
 #[derive(Serialize, Deserialize)]
 pub struct WebHook {
@@ -36,7 +34,7 @@ pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<WebHook>, Hec
             let mut hooks: Vec<WebHook> = Vec::with_capacity(results.len());
 
             for result in results.iter() {
-                WebHook::new(result.get(0), result.get(1), result.get(2), result.get(3));
+                hooks.push(WebHook::new(result.get(0), result.get(1), result.get(2), result.get(3)));
             }
 
             Ok(hooks)
@@ -50,32 +48,39 @@ pub fn delete(conn: &impl postgres::GenericConnection, id: i64) -> Result<bool, 
         DELETE FROM webhooks
         WHERE id = $1
     ", &[&id]) {
-        Ok(()) => Ok(true),
+        Ok(_) => Ok(true),
         Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn create(conn: &impl postgres::GenericConnection, name: serde_json::Value) -> Result<bool, HecateError> {
-    let webhook = match serde_json::from_value(name) {
+pub fn create(conn: &impl postgres::GenericConnection, name: serde_json::Value) -> Result<WebHook, HecateError> {
+    let mut webhook: WebHook = match serde_json::from_value(name) {
         Ok(webhook) => webhook,
         Err(err) => { return Err(HecateError::new(400, String::from("Invalid webhook JSON"), Some(err.to_string()))); }
     };
 
-    match conn.execute("
+    match conn.query("
         INSERT INTO webhooks (name, actions, url)
             VALUES (
                 $1,
                 $2,
                 $3
             )
+            Returning id
     ", &[&webhook.name, &webhook.actions, &webhook.url]) {
-        Ok(()) => Ok(true),
+        Ok(results) => {
+            let id = results.get(0).get(0);
+
+            webhook.id = Some(id);
+
+            Ok(webhook)
+        },
         Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn update(conn: &impl postgres::GenericConnection, id, i64, name: serde_json::Value) -> Result<bool, HecateError> {
-    let webhook = match serde_json::from_value(name) {
+pub fn update(conn: &impl postgres::GenericConnection, id: i64, name: serde_json::Value) -> Result<WebHook, HecateError> {
+    let webhook: WebHook = match serde_json::from_value(name) {
         Ok(webhook) => webhook,
         Err(err) => { return Err(HecateError::new(400, String::from("Invalid webhook JSON"), Some(err.to_string()))); }
     };
@@ -89,7 +94,7 @@ pub fn update(conn: &impl postgres::GenericConnection, id, i64, name: serde_json
             )
             WHERE id = $4
     ", &[&webhook.name, &webhook.actions, &webhook.url, &id]) {
-        Ok(()) => Ok(true),
+        Ok(_) => Ok(webhook),
         Err(err) => Err(HecateError::from_db(err))
     }
 }

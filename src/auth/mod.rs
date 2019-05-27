@@ -74,13 +74,17 @@ pub trait ValidAuth {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthWebhooks {
-    pub list: Option<String>
+    pub list: Option<String>,
+    pub delete: Option<String>,
+    pub update: Option<String>
 }
 
 impl AuthWebhooks {
     fn new() -> Self {
         AuthWebhooks {
-            list: Some(String::from("admin"))
+            list: Some(String::from("admin")),
+            delete: Some(String::from("admin")),
+            update: Some(String::from("admin"))
         }
     }
 }
@@ -88,6 +92,8 @@ impl AuthWebhooks {
 impl ValidAuth for AuthWebhooks {
     fn is_valid(&self) -> Result<bool, String> {
         is_auth("webhooks::list", &self.list)?;
+        is_auth("webhooks::list", &self.delete)?;
+        is_auth("webhooks::list", &self.update)?;
 
         Ok(true)
     }
@@ -576,6 +582,20 @@ impl CustomAuth {
         match &self.webhooks {
             None => Err(not_authed()),
             Some(webhooks) => auth_met(&webhooks.list, auth, conn)
+        }
+    }
+
+    pub fn allows_webhooks_delete(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+        match &self.webhooks {
+            None => Err(not_authed()),
+            Some(webhooks) => auth_met(&webhooks.delete, auth, conn)
+        }
+    }
+
+    pub fn allows_webhooks_update(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+        match &self.webhooks {
+            None => Err(not_authed()),
+            Some(webhooks) => auth_met(&webhooks.update, auth, conn)
         }
     }
 
