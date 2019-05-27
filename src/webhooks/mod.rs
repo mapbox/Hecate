@@ -5,7 +5,7 @@ use serde_json::Value;
 
 #[derive(Serialize, Deserialize)]
 pub struct WebHook {
-    id: i64,
+    id: Option<i64>,
     name: String,
     actions: Vec<String>,
     url: String
@@ -14,7 +14,7 @@ pub struct WebHook {
 impl WebHook {
     pub fn new(id: i64, name: String, actions: Vec<String>, url: String) -> Self {
         WebHook {
-            id: id,
+            id: Some(id),
             name: name,
             actions: actions,
             url: url
@@ -41,6 +41,55 @@ pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<WebHook>, Hec
 
             Ok(hooks)
         },
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}
+
+pub fn delete(conn: &impl postgres::GenericConnection, id: i64) -> Result<bool, HecateError> {
+    match conn.execute("
+        DELETE FROM webhooks
+        WHERE id = $1
+    ", &[&id]) {
+        Ok(()) => Ok(true),
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}
+
+pub fn create(conn: &impl postgres::GenericConnection, name: serde_json::Value) -> Result<bool, HecateError> {
+    let webhook = match serde_json::from_value(name) {
+        Ok(webhook) => webhook,
+        Err(err) => { return Err(HecateError::new(400, String::from("Invalid webhook JSON"), Some(err.to_string()))); }
+    };
+
+    match conn.execute("
+        INSERT INTO webhooks (name, actions, url)
+            VALUES (
+                $1,
+                $2,
+                $3
+            )
+    ", &[&webhook.name, &webhook.actions, &webhook.url]) {
+        Ok(()) => Ok(true),
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}
+
+pub fn update(conn: &impl postgres::GenericConnection, id, i64, name: serde_json::Value) -> Result<bool, HecateError> {
+    let webhook = match serde_json::from_value(name) {
+        Ok(webhook) => webhook,
+        Err(err) => { return Err(HecateError::new(400, String::from("Invalid webhook JSON"), Some(err.to_string()))); }
+    };
+
+    match conn.execute("
+         UPDATE webhooks
+            SET
+                name = $1,
+                actions = $2,
+                url = $3
+            )
+            WHERE id = $4
+    ", &[&webhook.name, &webhook.actions, &webhook.url, &id]) {
+        Ok(()) => Ok(true),
         Err(err) => Err(HecateError::from_db(err))
     }
 }

@@ -73,6 +73,27 @@ pub trait ValidAuth {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct AuthWebhooks {
+    pub list: Option<String>
+}
+
+impl AuthWebhooks {
+    fn new() -> Self {
+        AuthWebhooks {
+            list: Some(String::from("admin"))
+        }
+    }
+}
+
+impl ValidAuth for AuthWebhooks {
+    fn is_valid(&self) -> Result<bool, String> {
+        is_auth("webhooks::list", &self.list)?;
+
+        Ok(true)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AuthMeta {
     pub get: Option<String>,
     pub list: Option<String>,
@@ -401,6 +422,7 @@ impl ValidAuth for AuthOSM {
 pub struct CustomAuth {
     pub server: Option<String>,
     pub meta: Option<AuthMeta>,
+    pub webhooks: Option<AuthWebhooks>,
     pub stats: Option<AuthStats>,
     pub mvt: Option<AuthMVT>,
     pub schema: Option<AuthSchema>,
@@ -519,6 +541,7 @@ impl CustomAuth {
     pub fn new() -> Self {
         CustomAuth {
             server: Some(String::from("public")),
+            webhooks: Some(AuthWebhooks::new()),
             meta: Some(AuthMeta::new()),
             stats: Some(AuthStats::new()),
             schema: Some(AuthSchema::new()),
@@ -547,6 +570,13 @@ impl CustomAuth {
 
     pub fn allows_server(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
         auth_met(&self.server, auth, conn)
+    }
+
+    pub fn allows_webhooks_list(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+        match &self.webhooks {
+            None => Err(not_authed()),
+            Some(webhooks) => auth_met(&webhooks.list, auth, conn)
+        }
     }
 
     pub fn allows_meta_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
