@@ -247,10 +247,10 @@
                                 <template v-for='(hook, hook_idx) of hooks'>
                                     <div class='col col--12'>
                                        <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
-                                            <span v-text='hook.name'></span>
-                                            <div v-for='hook_action of hooks.actions' class='col--2'>
-                                                <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round' v-text="hook_action"></span>
-                                            </div>
+                                            <span class="mx6" v-text='hook.name'></span>
+                                            <template v-for='hook_action of hook.actions'>
+                                                <span class='bg-blue-faint color-blue px6 py3 my3 my3 txt-xs txt-bold round' v-text="hook_action"></span>
+                                            </template>
                                        </div>
                                     </div>
                                 </template>
