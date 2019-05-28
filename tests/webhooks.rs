@@ -56,14 +56,6 @@ mod test {
             assert!(resp.status().is_success());
         }
 
-        { // Set ingalls as admin
-            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
-
-            conn.execute("
-                UPDATE users SET access = 'admin' WHERE id = 1;
-            ", &[]).unwrap();
-        }
-
         {
             let client = reqwest::Client::new();
 
@@ -95,7 +87,12 @@ mod test {
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
-            assert_eq!(json_body, json!(true));
+            assert_eq!(json_body, json!({
+                "id": 1,
+                "name": "webhook",
+                "url": "https://example.com",
+                "actions": ["delta"]
+            }));
             assert!(resp.status().is_success());
         }
 
@@ -122,7 +119,33 @@ mod test {
         {
             let client = reqwest::Client::new();
 
-            let mut resp = client.delete("http://localhost:8000/api/webhooks/1")
+            let mut resp = client.post("http://localhost:8000/api/webhooks/1")
+                .body(r#"{
+                    "name": "webhook modify",
+                    "url": "https://example.com/modify",
+                    "actions": ["delta"]
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 1,
+                "name": "webhook modify",
+                "url": "https://example.com/modify",
+                "actions": ["delta"]
+            }));
+            assert!(resp.status().is_success());
+        }
+
+
+        {
+            let client = reqwest::Client::new();
+
+            let resp = client.delete("http://localhost:8000/api/webhooks/1")
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
                 .unwrap();

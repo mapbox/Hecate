@@ -80,10 +80,12 @@ pub fn create(conn: &impl postgres::GenericConnection, name: serde_json::Value) 
 }
 
 pub fn update(conn: &impl postgres::GenericConnection, id: i64, name: serde_json::Value) -> Result<WebHook, HecateError> {
-    let webhook: WebHook = match serde_json::from_value(name) {
+    let mut webhook: WebHook = match serde_json::from_value(name) {
         Ok(webhook) => webhook,
         Err(err) => { return Err(HecateError::new(400, String::from("Invalid webhook JSON"), Some(err.to_string()))); }
     };
+
+    webhook.id = Some(id);
 
     match conn.execute("
          UPDATE webhooks
@@ -91,7 +93,6 @@ pub fn update(conn: &impl postgres::GenericConnection, id: i64, name: serde_json
                 name = $1,
                 actions = $2,
                 url = $3
-            )
             WHERE id = $4
     ", &[&webhook.name, &webhook.actions, &webhook.url, &id]) {
         Ok(_) => Ok(webhook),
