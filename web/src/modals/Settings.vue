@@ -290,6 +290,12 @@ export default {
                 typeError: false,
                 url: '',
                 urlError: false
+            },
+            webhookData: {
+                id: false,
+                name: '',
+                url: '',
+                actions: []
             }
         }
     },
@@ -367,13 +373,6 @@ export default {
             });
         },
         getHooks: function() {
-            this.hooks = [{
-                name: 'Delta Message',
-                actions: ['delta'],
-                url: 'localhost:8000'
-            }];
-            return;
-
             fetch(`${window.location.protocol}//${window.location.host}/api/webhooks`, {
                 method: 'GET',
                 credentials: 'same-origin'
@@ -387,6 +386,27 @@ export default {
                 if (!hooks || !hooks.length) hooks = [];
 
                 this.hooks = hooks;
+            }).catch((err) => {
+                this.error = err.message;
+            });
+        },
+        getHook: function(hook_id) {
+            if (!hook_id) throw new Error('hook_id required');
+
+            fetch(`${window.location.protocol}//${window.location.host}/api/webhooks/${hook_id}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) {
+                    this.error = response.status + ':' + response.statusText;
+                }
+
+                return response.json();
+            }).then((hook) => {
+                this.webhookData.id = hook.id;
+                this.webhookData.name = hook.name;
+                this.webhookData.url = hook.url;
+                this.webhookData.actions = hook.url;
             }).catch((err) => {
                 this.error = err.message;
             });
