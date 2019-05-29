@@ -99,6 +99,30 @@ mod test {
         {
             let client = reqwest::Client::new();
 
+            let mut resp = client.post("http://localhost:8000/api/webhooks")
+                .body(r#"{
+                    "name": "webhook",
+                    "url": "https://example.com",
+                    "actions": ["delta", "fake"]
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "Invalid Action",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+        {
+            let client = reqwest::Client::new();
+
             let mut resp = client.get("http://localhost:8000/api/webhooks")
                 .basic_auth("ingalls", Some("yeaheh"))
                 .send()
