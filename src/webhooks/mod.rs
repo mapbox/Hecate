@@ -1,4 +1,5 @@
 use postgres;
+use reqwest;
 use crate::{
     worker,
     err::HecateError
@@ -143,6 +144,27 @@ pub fn is_valid_action(actions: &Vec<String>) -> bool {
     true
 }
 
-pub fn send(task: &worker::TaskType) {
+pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) {
+    match task {
+        worker::TaskType::Delta(delta) => {
+            for hook in list(conn, Action::Delta) {
 
+            }
+        },
+        worker::TaskType::User(user) => {
+            for hook in list(conn, Action::User) {
+
+            }
+        },
+        worker::TaskType::Style(style) => {
+            for hook in list(conn, Action::Style) {
+
+            }
+        },
+        worker::TaskType::Meta => {
+            for hook in list(conn, Action::Meta) {
+
+            }
+        }
+    }
 }

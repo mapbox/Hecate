@@ -61,7 +61,7 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
             }
         };
 
-        webhooks::send(&task.job);
+        webhooks::send(&conn, &task.job);
 
         match task.job {
             TaskType::Delta(delta_id) => {
