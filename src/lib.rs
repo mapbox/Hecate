@@ -1368,7 +1368,7 @@ fn osm_changeset_create(
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.as_string()));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
@@ -1462,7 +1462,7 @@ fn osm_changeset_modify(
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.as_string()));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 

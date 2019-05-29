@@ -41,7 +41,7 @@ impl Worker {
 
     pub fn queue(&self, task: Task) {
         if self.sender.send(task).is_err() {
-            format!("WARN: Failed to write task to queue");
+            println!("WARN: Failed to write task to queue");
         }
     }
 }
@@ -61,7 +61,10 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
             }
         };
 
-        webhooks::send(&conn, &task.job);
+        match webhooks::send(&conn, &task.job) {
+            Err(err) => println!("HecateError: {:?}", &err.to_string()),
+            _ => ()
+        };
 
         match task.job {
             TaskType::Delta(delta_id) => {
@@ -77,15 +80,7 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
                     }
                 }
             },
-            TaskType::User(i64) => {
-
-            },
-            TaskType::Style(i64) => {
-
-            },
-            TaskType::Meta => {
-
-            }
+            _ => ()
         }
     }
 }

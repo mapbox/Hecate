@@ -144,27 +144,80 @@ pub fn is_valid_action(actions: &Vec<String>) -> bool {
     true
 }
 
-pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) {
+pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) -> Result<(), HecateError> {
     match task {
         worker::TaskType::Delta(delta) => {
-            for hook in list(conn, Action::Delta) {
+            for hook in list(conn, Action::Delta)? {
+                let client = reqwest::Client::new();
 
+                match client.post(hook.url.as_str())
+                    .body(json!({
+                        "id": delta,
+                        "type": "delta"
+                    }).to_string())
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .send()
+                {
+                    Ok(_) => (),
+                    Err(err) => { println!("WARN: Failed to post to webhook {}", hook.url); }
+                };
             }
         },
         worker::TaskType::User(user) => {
-            for hook in list(conn, Action::User) {
+            for hook in list(conn, Action::User)? {
+                let client = reqwest::Client::new();
 
+                match client.post(hook.url.as_str())
+                    .body(json!({
+                        "id": user,
+                        "type": "user"
+                    }).to_string())
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .send()
+                {
+                    Ok(_) => (),
+                    Err(err) => { println!("WARN: Failed to post to webhook {}", hook.url); }
+                };
             }
         },
         worker::TaskType::Style(style) => {
-            for hook in list(conn, Action::Style) {
+            for hook in list(conn, Action::Style)? {
+                let client = reqwest::Client::new();
 
+                match client.post(hook.url.as_str())
+                    .body(json!({
+                        "id": style,
+                        "type": "style"
+                    }).to_string())
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .send()
+                {
+                    Ok(_) => (),
+                    Err(err) => { println!("WARN: Failed to post to webhook {}", hook.url); }
+                };
             }
         },
         worker::TaskType::Meta => {
-            for hook in list(conn, Action::Meta) {
+            for hook in list(conn, Action::Meta)? {
+                let client = reqwest::Client::new();
+
+                match client.post(hook.url.as_str())
+                    .body(json!({
+                        "id": null,
+                        "type": "meta"
+                    }).to_string())
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .send()
+                {
+                    Ok(_) => (),
+                    Err(err) => {
+                        return Err(HecateError::new(500, format!("WARN: Failed to post to webhook {}", hook.url), Some(err.to_string())));
+                    }
+                };
 
             }
         }
     }
+
+    Ok(())
 }
