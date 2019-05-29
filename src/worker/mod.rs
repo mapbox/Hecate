@@ -4,7 +4,10 @@ use std::thread;
 use crate::{delta, mvt};
 
 pub enum TaskType {
-    Delta(i64)
+    Delta(i64),
+    User(i64),
+    Style(i64),
+    Meta
 }
 
 pub struct Task {
@@ -71,6 +74,15 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
                         println!("Daemon: Failed to generate tile: {:?}", tile);
                     }
                 }
+            },
+            TaskType::User(i64) => {
+
+            },
+            TaskType::Style(i64) => {
+
+            },
+            TaskType::Meta => {
+
             }
         }
     }

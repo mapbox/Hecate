@@ -20,8 +20,24 @@ impl WebHook {
     }
 }
 
-pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<WebHook>, HecateError> {
-    match conn.query("
+pub enum Actions {
+    All,
+    User,
+    Delta,
+    Meta,
+    Style
+}
+
+pub fn list(conn: &impl postgres::GenericConnection, action: Actions) -> Result<Vec<WebHook>, HecateError> {
+    let action = match action {
+        Action::All => "",
+        Action::User => "WHERE actions @>ARRAY['user']",
+        Action::Delta => "WHERE actions @>ARRAY['delta']",
+        Action::Meta => "WHERE actions @>ARRAY['meta']",
+        Action::Style => "WHERE actions @>ARRAY['style']"
+    };
+
+    match conn.query(format!("
         SELECT
             id,
             name,
@@ -29,7 +45,8 @@ pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<WebHook>, Hec
             url
         FROM
             webhooks
-    ", &[]) {
+        {action}
+    ", action = &action), &[]) {
         Ok(results) => {
             let mut hooks: Vec<WebHook> = Vec::with_capacity(results.len());
 
@@ -59,6 +76,10 @@ pub fn create(conn: &impl postgres::GenericConnection, name: serde_json::Value) 
         Err(err) => { return Err(HecateError::new(400, String::from("Invalid webhook JSON"), Some(err.to_string()))); }
     };
 
+    if !is_valid_action(&webhook.actions) {
+        return Err(HecateError::new(400, String::from("Invalid Action"), None));
+    }
+
     match conn.query("
         INSERT INTO webhooks (name, actions, url)
             VALUES (
@@ -85,6 +106,10 @@ pub fn update(conn: &impl postgres::GenericConnection, id: i64, name: serde_json
         Err(err) => { return Err(HecateError::new(400, String::from("Invalid webhook JSON"), Some(err.to_string()))); }
     };
 
+    if !is_valid_action(&webhook.actions) {
+        return Err(HecateError::new(400, String::from("Invalid Action"), None));
+    }
+
     webhook.id = Some(id);
 
     match conn.execute("
@@ -98,4 +123,19 @@ pub fn update(conn: &impl postgres::GenericConnection, id: i64, name: serde_json
         Ok(_) => Ok(webhook),
         Err(err) => Err(HecateError::from_db(err))
     }
+}
+
+pub fn is_valid_action(actions: &Vec<String>) -> bool {
+    for action in actions {
+        if
+            action != "delta"
+            || action != "user"
+            || action != "meta"
+            || action != "style"
+        {
+            return false;
+        }
+    }
+
+    true
 }
