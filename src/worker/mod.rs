@@ -1,7 +1,7 @@
 use crossbeam;
 use postgres;
 use std::thread;
-use crate::{delta, mvt};
+use crate::{delta, mvt, webhooks};
 
 pub enum TaskType {
     Delta(i64),
@@ -60,6 +60,8 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
                 continue;
             }
         };
+
+        webhooks::send(&task.job);
 
         match task.job {
             TaskType::Delta(delta_id) => {

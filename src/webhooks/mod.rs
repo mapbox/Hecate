@@ -1,5 +1,8 @@
 use postgres;
-use crate::err::HecateError;
+use crate::{
+    worker,
+    err::HecateError
+};
 
 #[derive(Serialize, Deserialize)]
 pub struct WebHook {
@@ -20,7 +23,7 @@ impl WebHook {
     }
 }
 
-pub enum Actions {
+pub enum Action {
     All,
     User,
     Delta,
@@ -28,7 +31,7 @@ pub enum Actions {
     Style
 }
 
-pub fn list(conn: &impl postgres::GenericConnection, action: Actions) -> Result<Vec<WebHook>, HecateError> {
+pub fn list(conn: &impl postgres::GenericConnection, action: Action) -> Result<Vec<WebHook>, HecateError> {
     let action = match action {
         Action::All => "",
         Action::User => "WHERE actions @>ARRAY['user']",
@@ -46,7 +49,7 @@ pub fn list(conn: &impl postgres::GenericConnection, action: Actions) -> Result<
         FROM
             webhooks
         {action}
-    ", action = &action), &[]) {
+    ", action = &action).as_str(), &[]) {
         Ok(results) => {
             let mut hooks: Vec<WebHook> = Vec::with_capacity(results.len());
 
@@ -138,4 +141,8 @@ pub fn is_valid_action(actions: &Vec<String>) -> bool {
     }
 
     true
+}
+
+pub fn send(task: &worker::TaskType) {
+
 }
