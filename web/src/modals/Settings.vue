@@ -241,23 +241,30 @@
 
                             <div class='py6 col col--12 border--gray-light border-b mb12'>
                                 <span class='txt-m'>Webhooks</span>
-                                <button class='btn round h24 fr'>
+                                <button @click="newHookClick" class='btn round h24 fr'>
                                     <svg class='icon h-full'><use href='#icon-plus'/></svg>
                                 </button>
                             </div>
 
-                            <div class='col col--12 h240 scroll-auto'>
-                                <template v-for='(hook, hook_idx) of hooks'>
-                                    <div class='col col--12'>
-                                       <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
-                                            <span class="mx6" v-text='hook.name'></span>
-                                            <template v-for='hook_action of hook.actions'>
-                                                <span class='bg-blue-faint color-blue px6 py3 my3 my3 txt-xs txt-bold round' v-text="hook_action"></span>
-                                            </template>
-                                       </div>
-                                    </div>
-                                </template>
-                            </div>
+                            <template v-if="hooks.length">
+                                <div class='col col--12 h240 scroll-auto'>
+                                    <template v-for='(hook, hook_idx) of hooks'>
+                                        <div class='col col--12'>
+                                           <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
+                                                <span class="mx6" v-text='hook.name'></span>
+                                                <template v-for='hook_action of hook.actions'>
+                                                    <span class='bg-blue-faint color-blue px6 py3 my3 my3 txt-xs txt-bold round' v-text="hook_action"></span>
+                                                </template>
+                                           </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div class='col col--12 h240 scroll-auto'>
+                                    <div class="align-center">No Webhooks Yet!</div>
+                                </div>
+                            </template>
                         </template>
                     </div>
                 </template>
@@ -326,92 +333,37 @@ export default {
             }
         },
         clearCache: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/tiles`, {
-                method: 'DELETE',
-                credentials: 'same-origin'
-            }).then((response) => {
-                if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
-                    return;
-                }
+            window.hecate.tiles.clear((err) => {
+                if (err) return this.error = err.message;
                 this.tilecache = true;
-            }).catch((err) => {
-                this.error = err.message;
             });
         },
         getLayers: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
-                }
-
-                return response.json();
-            }).then((layers) => {
-                if (!layers || !layers.length) layers = [];
-
+            window.hecate.meta.get('layers', (err, layers) => {
+                if (err) return this.error = err.message;
                 this.layers = layers;
-            }).catch((err) => {
-                this.error = err.message;
             });
         },
         getUsers: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/users?filter=${this.userFilter}`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
-                }
-
-                return response.json();
-            }).then((users) => {
-                if (!users || !users.length) users = [];
-
+            window.hecate.users.list(this.userFilter, (err, users) => {
+                if (err) return this.error = err.message;
                 this.users = users;
-            }).catch((err) => {
-                this.error = err.message;
             });
         },
         getHooks: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/webhooks`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
-                }
-
-                return response.json();
-            }).then((hooks) => {
-                if (!hooks || !hooks.length) hooks = [];
-
+            window.hecate.webhooks.list((err, hooks) => {
+                if (err) return this.error = err.message;
                 this.hooks = hooks;
-            }).catch((err) => {
-                this.error = err.message;
             });
         },
         getHook: function(hook_id) {
-            if (!hook_id) throw new Error('hook_id required');
+            window.hecate.webhooks.get(hook_id, (err, hook) => {
+                if (err) return this.error = err.message;
 
-            fetch(`${window.location.protocol}//${window.location.host}/api/webhooks/${hook_id}`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
-                }
-
-                return response.json();
-            }).then((hook) => {
                 this.webhookData.id = hook.id;
                 this.webhookData.name = hook.name;
                 this.webhookData.url = hook.url;
                 this.webhookData.actions = hook.url;
-            }).catch((err) => {
-                this.error = err.message;
             });
         },
         putLayers: function() {
@@ -515,6 +467,14 @@ export default {
         },
         newLayerClick: function() {
             this.mode = 'addLayer';
+        },
+        newHookClick: function() {
+            this.mode = 'newHook';
+
+            this.webhookData.id = false;
+            this.webhookData.name = '';
+            this.webhookData.url = '';
+            this.webhookData.actions = [];
         },
         helpBaseClick: function() {
             this.mode = 'helpBase';
