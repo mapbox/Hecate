@@ -241,6 +241,9 @@
 
                             <div class='py6 col col--12 border--gray-light border-b mb12'>
                                 <span class='txt-m'>Webhooks</span>
+                                <button class='btn round h24 fr'>
+                                    <svg class='icon h-full'><use href='#icon-plus'/></svg>
+                                </button>
                             </div>
 
                             <div class='col col--12 h240 scroll-auto'>
