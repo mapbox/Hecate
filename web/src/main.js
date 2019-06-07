@@ -40,7 +40,7 @@ window.hecate = {
         }
     },
     users: {
-        list: function(filer, cb) {
+        list: function(filter, cb) {
             fetch(`${window.location.protocol}//${window.location.host}/api/users?filter=${filter}`, {
                 method: 'GET',
                 credentials: 'same-origin'

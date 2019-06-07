@@ -23,18 +23,18 @@
                 <template v-else-if='mode === "addLayer"'>
                     <div class='grid w-full col'>
 
-                        <template v-if='addLayerData.error'>
+                        <template v-if='layerData.error'>
                             <div class='col--12 color-white px12 bg-red round align-center'>
-                                <h3 class='w-full py6 txt-m txt-bold' v-text='addLayerData.error'></h3>
+                                <h3 class='w-full py6 txt-m txt-bold' v-text='layerData.error'></h3>
                             </div>
                         </template>
 
                         <div class='col--12'>
-                            <template v-if='addLayerData.exists === false'>
+                            <template v-if='layerData.id === false'>
                                 <h3 class='w-full py6 txt-m txt-bold'>Add A New Base Layer</h3>
                             </template>
                             <template v-else>
-                                <h3 class='w-full py6 txt-m txt-bold' v-text='"Modify the " + addLayerData.name + " layer"'></h3>
+                                <h3 class='w-full py6 txt-m txt-bold' v-text='"Modify the " + layerData.name + " layer"'></h3>
                             </template>
                         </div>
 
@@ -42,12 +42,12 @@
                             <div class='grid grid--gut12'>
                                 <div class='col col--6'>
                                     <label>Layer Name</label>
-                                    <input v-model='addLayerData.name' class='input' placeholder='Layer Name' v-bind:class="{ 'input--border-red': addLayerData.nameError }"/>
+                                    <input v-model='layerData.name' class='input' placeholder='Layer Name' v-bind:class="{ 'input--border-red': layerData.nameError }"/>
                                 </div>
                                 <div class='col col--6'>
                                     <label >Layer Type</label>
                                     <div class='select-container w-full'>
-                                        <select v-model='addLayerData.type' class='select' v-bind:class="{ 'input--border-red': addLayerData.typeError }">
+                                        <select v-model='layerData.type' class='select' v-bind:class="{ 'input--border-red': layerData.typeError }">
                                             <option>Vector</option>
                                             <option>Raster</option>
                                         </select>
@@ -56,7 +56,7 @@
                                 </div>
                                 <div class='col col--12 py12'>
                                     <label>Mapbox:// Style</label>
-                                    <input v-model='addLayerData.url' class='input w-full' placeholder='mapbox://' v-bind:class="{ 'input--border-red': addLayerData.urlError }" />
+                                    <input v-model='layerData.url' class='input w-full' placeholder='mapbox://' v-bind:class="{ 'input--border-red': layerData.urlError }" />
                                 </div>
                             </div>
                         </div>
@@ -67,11 +67,84 @@
                                     <button @click='close' class='btn btn--red round w-full'>Cancel</button>
                                 </div>
                                 <div class='col col--6'>
-                                    <template v-if='addLayerData.exists === false'>
+                                    <template v-if='layerData.id === false'>
                                         <button @click='addLayer' class='btn round w-full'>Create Layer</button>
                                     </template>
                                     <template v-else>
-                                        <button @click='updateLayer(addLayerData.exists)' class='btn round w-full'>Update Layer</button>
+                                        <button @click='updateLayer(layerData.id)' class='btn round w-full'>Update Layer</button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template v-else-if='mode === "addHook"'>
+                    <div class='grid w-full col'>
+
+                        <template v-if='webhookData.error'>
+                            <div class='col--12 color-white px12 bg-red round align-center'>
+                                <h3 class='w-full py6 txt-m txt-bold' v-text='webhookData.error'></h3>
+                            </div>
+                        </template>
+
+                        <div class='col--12'>
+                            <template v-if='webhookData.id === false'>
+                                <h3 class='w-full py6 txt-m txt-bold'>Add A New Webhook</h3>
+                            </template>
+                            <template v-else>
+                                <h3 class='w-full py6 txt-m txt-bold' v-text='"Modify the " + webhookData.name + " webhook"'></h3>
+                            </template>
+                        </div>
+
+                        <div class='col--12 py12 px12'>
+                            <div class='grid grid--gut12'>
+                                <div class='col col--12 pb12'>
+                                    <label>Webhook Name</label>
+                                    <input v-model='webhookData.name' class='input' placeholder='Webhook Name' v-bind:class="{ 'input--border-red': webhookData.nameError }"/>
+                                </div>
+                                <div class='col col--12 pb12'>
+                                    <label >Webhook Actions</label>
+                                    <div class='col col--6'>
+                                        <label class='w-full checkbox-container'>
+                                            <input type='checkbox' />
+                                            <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
+                                            User
+                                        </label>
+                                        <label class='w-full checkbox-container'>
+                                            <input type='checkbox' />
+                                            <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
+                                            Delta
+                                        </label>
+                                        <label class='w-full checkbox-container'>
+                                            <input type='checkbox' />
+                                            <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
+                                            Meta
+                                        </label>
+                                        <label class='w-full checkbox-container'>
+                                            <input type='checkbox' />
+                                            <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
+                                            Style
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class='col col--12 pb12'>
+                                    <label>Webhook URL</label>
+                                    <input v-model='webhookData.url' class='input w-full' placeholder='https://' v-bind:class="{ 'input--border-red': webhookData.urlError }" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class='col--12 py12'>
+                            <div class='grid grid--gut12'>
+                                <div class='col col--6'>
+                                    <button @click='close' class='btn btn--red round w-full'>Cancel</button>
+                                </div>
+                                <div class='col col--6'>
+                                    <template v-if='webhookData.id === false'>
+                                        <button @click='addHook' class='btn round w-full'>Create Webhook</button>
+                                    </template>
+                                    <template v-else>
+                                        <button @click='updateHook(webhookData.id)' class='btn round w-full'>Update Webhook</button>
                                     </template>
                                 </div>
                             </div>
@@ -241,7 +314,7 @@
 
                             <div class='py6 col col--12 border--gray-light border-b mb12'>
                                 <span class='txt-m'>Webhooks</span>
-                                <button @click="newHookClick" class='btn round h24 fr'>
+                                <button @click="addHookClick" class='btn round h24 fr'>
                                     <svg class='icon h-full'><use href='#icon-plus'/></svg>
                                 </button>
                             </div>
@@ -291,8 +364,8 @@ export default {
                 name: '',
                 type: ''
             },
-            addLayerData: {
-                exists: false,
+            layerData: {
+                id: false,
                 error: '',
                 name: '',
                 nameError: false,
@@ -303,9 +376,17 @@ export default {
             },
             webhookData: {
                 id: false,
+                error: '',
                 name: '',
+                nameError: false,
                 url: '',
-                actions: []
+                urlError: false,
+                actions: {
+                    user: false,
+                    delta: false,
+                    style: false,
+                    meta: false
+                }
             }
         }
     },
@@ -363,7 +444,15 @@ export default {
                 this.webhookData.id = hook.id;
                 this.webhookData.name = hook.name;
                 this.webhookData.url = hook.url;
-                this.webhookData.actions = hook.url;
+
+                // Ensure all checkboxes are false
+                for (let check of Object.keys(this.webhookData.checkbox)) {
+                    this.webhookData.checkbox[check] = false;
+                }
+                //Conditionally apply actions
+                for (let action of this.webhookData.actions) {
+                    this.webhookData.actions[action] = true;
+                }
             });
         },
         putLayers: function() {
@@ -396,32 +485,32 @@ export default {
         validateLayer: function() {
             let error = false;
 
-            if (this.addLayerData.name.length === 0) {
-                this.addLayerData.nameError = true;
+            if (this.layerData.name.length === 0) {
+                this.layerData.nameError = true;
                 error = true;
             } else {
-                this.addLayerData.nameError = false;
+                this.layerData.nameError = false;
             }
 
-            if (['Vector', 'Raster'].indexOf(this.addLayerData.type) === -1) {
-                this.addLayerData.typeError = true;
+            if (['Vector', 'Raster'].indexOf(this.layerData.type) === -1) {
+                this.layerData.typeError = true;
                 error = true;
             } else {
-                this.addLayerData.typeError = false;
+                this.layerData.typeError = false;
             }
 
-            if (!this.addLayerData.url.match(/^mapbox:\/\//)) {
-                this.addLayerData.urlError = true;
+            if (!this.layerData.url.match(/^mapbox:\/\//)) {
+                this.layerData.urlError = true;
                 error = true;
             } else {
-                this.addLayerData.urlError = false;
+                this.layerData.urlError = false;
             }
 
-            if (this.addLayerData.urlError || this.addLayerData.nameError || this.addLayerData.typeError) {
-                this.addLayerData.error = 'All Fields Are Required!';
+            if (this.layerData.urlError || this.layerData.nameError || this.layerData.typeError) {
+                this.layerData.error = 'All Fields Are Required!';
                 return;
             } else {
-                this.addLayerData.error = false;
+                this.layerData.error = false;
             }
 
             return error;
@@ -430,27 +519,27 @@ export default {
             if (isNaN(layer_idx)) return;
             if (this.validateLayer()) return;
 
-            this.layers[layer_idx].name = this.addLayerData.name;
-            this.layers[layer_idx].type = this.addLayerData.type;
-            this.layers[layer_idx].url = this.addLayerData.url;
+            this.layers[layer_idx].name = this.layerData.name;
+            this.layers[layer_idx].type = this.layerData.type;
+            this.layers[layer_idx].url = this.layerData.url;
 
             this.putLayers();
             this.close();
         },
         clearLayer: function() {
-            this.addLayerData.exists = false;
-            this.addLayerData.error = false;
-            this.addLayerData.name = '';
-            this.addLayerData.type = '';
-            this.addLayerData.url = '';
+            this.layerData.id = false;
+            this.layerData.error = false;
+            this.layerData.name = '';
+            this.layerData.type = '';
+            this.layerData.url = '';
         },
         addLayer: function() {
             if (this.validateLayer()) return;
 
             this.layers.push({
-                name: this.addLayerData.name,
-                type: this.addLayerData.type,
-                url: this.addLayerData.url
+                name: this.layerData.name,
+                type: this.layerData.type,
+                url: this.layerData.url
             });
 
             this.putLayers();
@@ -460,21 +549,28 @@ export default {
             if (isNaN(layer_idx)) return;
 
             this.mode = 'addLayer';
-            this.addLayerData.exists = layer_idx;
-            this.addLayerData.name = this.layers[layer_idx].name;
-            this.addLayerData.url = this.layers[layer_idx].url;
-            this.addLayerData.type = this.layers[layer_idx].type;
+            this.layerData.id = layer_idx;
+            this.layerData.name = this.layers[layer_idx].name;
+            this.layerData.url = this.layers[layer_idx].url;
+            this.layerData.type = this.layers[layer_idx].type;
         },
         newLayerClick: function() {
             this.mode = 'addLayer';
         },
-        newHookClick: function() {
-            this.mode = 'newHook';
+        addHookClick: function() {
+            this.mode = 'addHook';
 
             this.webhookData.id = false;
+            this.webhookData.error = '';
             this.webhookData.name = '';
+            this.webhookData.nameError = false;
             this.webhookData.url = '';
+            this.webhookData.urlError = false;
             this.webhookData.actions = [];
+
+            for (let check of Object.keys(this.webhookData.checkbox)) {
+                this.webhookData.checkbox[check] = false;
+            }
         },
         helpBaseClick: function() {
             this.mode = 'helpBase';
