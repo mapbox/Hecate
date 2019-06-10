@@ -106,22 +106,22 @@
                                     <label >Webhook Actions</label>
                                     <div class='col col--6'>
                                         <label class='w-full checkbox-container'>
-                                            <input type='checkbox' />
+                                            <input v-model="webhookData.actions.user" type='checkbox' />
                                             <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
                                             User
                                         </label>
                                         <label class='w-full checkbox-container'>
-                                            <input type='checkbox' />
+                                            <input v-model="webhookData.actions.delta" type='checkbox' />
                                             <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
                                             Delta
                                         </label>
                                         <label class='w-full checkbox-container'>
-                                            <input type='checkbox' />
+                                            <input v-model="webhookData.actions.meta" type='checkbox' />
                                             <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
                                             Meta
                                         </label>
                                         <label class='w-full checkbox-container'>
-                                            <input type='checkbox' />
+                                            <input v-model="webhookData.actions.style" type='checkbox' />
                                             <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
                                             Style
                                         </label>
@@ -323,7 +323,7 @@
                                 <div class='col col--12 h240 scroll-auto'>
                                     <template v-for='(hook, hook_idx) of hooks'>
                                         <div class='col col--12'>
-                                           <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
+                                           <div @click="getHook(hook.id)" class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
                                                 <span class="mx6" v-text='hook.name'></span>
                                                 <template v-for='hook_action of hook.actions'>
                                                     <span class='bg-blue-faint color-blue px6 py3 my3 my3 txt-xs txt-bold round' v-text="hook_action"></span>
@@ -440,7 +440,7 @@ export default {
         getHook: function(hook_id) {
             window.hecate.webhooks.get(hook_id, (err, hook) => {
                 if (err) return this.error = err.message;
-
+                
                 this.webhookData.id = hook.id;
                 this.webhookData.name = hook.name;
                 this.webhookData.url = hook.url;
@@ -608,7 +608,6 @@ export default {
             this.webhookData.nameError = false;
             this.webhookData.url = '';
             this.webhookData.urlError = false;
-            this.webhookData.actions = [];
 
             for (let action of Object.keys(this.webhookData.actions)) {
                 this.webhookData.actions[action] = false;

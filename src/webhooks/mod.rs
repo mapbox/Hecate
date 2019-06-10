@@ -64,6 +64,31 @@ pub fn list(conn: &impl postgres::GenericConnection, action: Action) -> Result<V
     }
 }
 
+pub fn get(conn: &impl postgres::GenericConnection, id: i64) -> Result<WebHook, HecateError> {
+    match conn.query("
+        SELECT
+            id,
+            name,
+            actions,
+            url
+        FROM
+            webhooks
+        WHERE
+            id = $1
+    ", &[&id]) {
+        Ok(results) => {
+            if results.len() == 0 {
+                return Err(HecateError::new(404, String::from("Webhook Not Found"), None));
+            }
+
+            let result = results.get(0);
+
+            Ok(WebHook::new(result.get(0), result.get(1), result.get(2), result.get(3)));
+        },
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}
+
 pub fn delete(conn: &impl postgres::GenericConnection, id: i64) -> Result<bool, HecateError> {
     match conn.execute("
         DELETE FROM webhooks
@@ -137,11 +162,11 @@ pub fn is_valid_action(actions: &Vec<String>) -> bool {
             || action != "meta"
             || action != "style"
         {
-            return false;
+            return true;
         }
     }
 
-    true
+    false
 }
 
 pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) -> Result<(), HecateError> {

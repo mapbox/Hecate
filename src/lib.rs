@@ -172,6 +172,7 @@ pub fn start(
             bounds_get,
             bounds_set,
             bounds_delete,
+            webhooks_get,
             webhooks_list,
             webhooks_delete,
             webhooks_update,
@@ -932,6 +933,23 @@ fn webhooks_list(
     auth_rules.allows_webhooks_list(&mut auth, &*conn)?;
 
     match serde_json::to_value(webhooks::list(&*conn, webhooks::Action::All)?) {
+        Ok(hooks) => Ok(Json(hooks)),
+        Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
+    }
+}
+
+#[get("/webhooks/<id>")]
+fn webhooks_get(
+    conn: State<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>,
+    id: i64
+) -> Result<Json<serde_json::Value>, HecateError> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_webhooks_list(&mut auth, &*conn)?;
+
+    match serde_json::to_value(webhooks::get(&*conn, id)?) {
         Ok(hooks) => Ok(Json(hooks)),
         Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
     }

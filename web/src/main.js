@@ -83,6 +83,21 @@ window.hecate = {
                 return cb(err);
             });
         },
+        delete: function(id, cb) {
+            if (!id) return cb(new Error('Webhook ID required'));
+
+            fetch(`${window.location.protocol}//${window.location.host}/api/webhooks/${id}`, {
+                method: 'DELETE',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                return response.json();
+            }).then((hook) => {
+                return cb(null, hook);
+            }).catch((err) => {
+                return cb(err);
+            });
+        },
         create: function(webhook, cb) {
             if (!webhook) return cb(new Error('Webhook required'));
 
