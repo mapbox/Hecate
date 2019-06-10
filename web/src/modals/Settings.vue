@@ -450,7 +450,7 @@ export default {
                     this.webhookData.checkbox[check] = false;
                 }
                 //Conditionally apply actions
-                for (let action of this.webhookData.actions) {
+                for (let action of Object.keys(this.webhookData.actions)) {
                     this.webhookData.actions[action] = true;
                 }
             });
@@ -481,6 +481,25 @@ export default {
             this.putLayers();
 
             this.close();
+        },
+        validateHook: function() {
+            let error = false;
+
+            if (this.webhookData.name.length === 0) {
+                this.webhookData.nameError = true;
+                error = true;
+            } else {
+                this.webhookData.nameError = false;
+            }
+
+            if (!this.webhookData.url.match(/^http/)) {
+                this.webhookData.urlError = true;
+                error = true;
+            } else {
+                this.webhookData.urlError = false;
+            }
+
+            return error;
         },
         validateLayer: function() {
             let error = false;
@@ -533,6 +552,29 @@ export default {
             this.layerData.type = '';
             this.layerData.url = '';
         },
+        addHook: function() {
+            if (this.validateHook()) return;
+
+            let actions = [];
+            for (let action of Object.keys(this.webhookData.actions)) {
+                if (this.webhookData.actions[action]) {
+                    actions.push(action);
+                }
+            }
+
+            const hook = {
+                name: this.webhookData.name,
+                actions: actions,
+                url: this.webhookData.url
+            };
+
+            window.hecate.webhooks.create(hook, (err) => {
+                if (err) return this.error = err.message;
+
+                this.getHooks();
+                this.close();
+            });
+        },
         addLayer: function() {
             if (this.validateLayer()) return;
 
@@ -568,8 +610,8 @@ export default {
             this.webhookData.urlError = false;
             this.webhookData.actions = [];
 
-            for (let check of Object.keys(this.webhookData.checkbox)) {
-                this.webhookData.checkbox[check] = false;
+            for (let action of Object.keys(this.webhookData.actions)) {
+                this.webhookData.actions[action] = false;
             }
         },
         helpBaseClick: function() {

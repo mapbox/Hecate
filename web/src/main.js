@@ -82,6 +82,45 @@ window.hecate = {
             }).catch((err) => {
                 return cb(err);
             });
+        },
+        create: function(webhook, cb) {
+            if (!webhook) return cb(new Error('Webhook required'));
+
+            fetch(`${window.location.protocol}//${window.location.host}/api/webhooks`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: new Headers({
+                    'Content-Type': 'application/json'
+                }),
+                body: JSON.stringify(webhook)
+            }).then((response) => {
+                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                return response.json();
+            }).then((hook) => {
+                return cb(null, hook);
+            }).catch((err) => {
+                return cb(err);
+            });
+        },
+        update: function(id, webhook, cb) {
+            if (!id) return cb(new Error('Webhook ID required'));
+            if (!webhook) return cb(new Error('Webhook required'));
+
+            fetch(`${window.location.protocol}//${window.location.host}/api/webhooks/${id}`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: new Headers({
+                    'Content-Type': 'application/json'
+                }),
+                body: JSON.stringify(webhook)
+            }).then((response) => {
+                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                return response.json();
+            }).then((hook) => {
+                return cb(null, hook);
+            }).catch((err) => {
+                return cb(err);
+            });
         }
     }
 }
