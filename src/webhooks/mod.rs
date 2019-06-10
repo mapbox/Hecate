@@ -158,15 +158,15 @@ pub fn is_valid_action(actions: &Vec<String>) -> bool {
     for action in actions {
         if
             action != "delta"
-            || action != "user"
-            || action != "meta"
-            || action != "style"
+            && action != "user"
+            && action != "meta"
+            && action != "style"
         {
-            return true;
+            return false;
         }
     }
 
-    false
+    true
 }
 
 pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) -> Result<(), HecateError> {
