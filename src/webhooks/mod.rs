@@ -83,7 +83,7 @@ pub fn get(conn: &impl postgres::GenericConnection, id: i64) -> Result<WebHook, 
 
             let result = results.get(0);
 
-            Ok(WebHook::new(result.get(0), result.get(1), result.get(2), result.get(3)));
+            Ok(WebHook::new(result.get(0), result.get(1), result.get(2), result.get(3)))
         },
         Err(err) => Err(HecateError::from_db(err))
     }

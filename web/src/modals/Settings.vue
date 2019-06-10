@@ -137,7 +137,7 @@
                         <div class='col--12 py12'>
                             <div class='grid grid--gut12'>
                                 <div class='col col--6'>
-                                    <button @click='close' class='btn btn--red round w-full'>Cancel</button>
+                                    <button @click='deleteHook(webhookData.id)' class='btn btn--red round w-full'>Delete</button>
                                 </div>
                                 <div class='col col--6'>
                                     <template v-if='webhookData.id === false'>
@@ -297,7 +297,7 @@
                                     <div class='col col--12'>
                                        <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
                                             <div class='col--2'>
-                                                <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round' v-text="user.id"></span>
+                                                <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 mx3 txt-xs txt-bold round' v-text="user.id"></span>
                                             </div>
                                             <div class='col--8' v-text='user.username'></div>
                                             <div class='col--2' v-text='user.access'></div>
@@ -326,7 +326,7 @@
                                            <div @click="getHook(hook.id)" class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
                                                 <span class="mx6" v-text='hook.name'></span>
                                                 <template v-for='hook_action of hook.actions'>
-                                                    <span class='bg-blue-faint color-blue px6 py3 my3 my3 txt-xs txt-bold round' v-text="hook_action"></span>
+                                                    <span class='bg-blue-faint color-blue px6 py3 my3 mx3 txt-xs txt-bold round' v-text="hook_action"></span>
                                                 </template>
                                            </div>
                                         </div>
@@ -440,19 +440,30 @@ export default {
         getHook: function(hook_id) {
             window.hecate.webhooks.get(hook_id, (err, hook) => {
                 if (err) return this.error = err.message;
-                
+
                 this.webhookData.id = hook.id;
                 this.webhookData.name = hook.name;
                 this.webhookData.url = hook.url;
 
                 // Ensure all checkboxes are false
-                for (let check of Object.keys(this.webhookData.checkbox)) {
-                    this.webhookData.checkbox[check] = false;
+                for (let check of Object.keys(this.webhookData.actions)) {
+                    this.webhookData.actions[check] = false;
                 }
                 //Conditionally apply actions
-                for (let action of Object.keys(this.webhookData.actions)) {
+                for (let action of Object.keys(hook.actions)) {
                     this.webhookData.actions[action] = true;
                 }
+
+                this.mode = 'addHook';
+            });
+        },
+        deleteHook: function(hook_id) {
+            window.hecate.webhooks.delete(hook_id, (err, hook) => {
+                if (err) return this.error = err.message;
+
+                this.mode = 'addHook';
+                this.getHooks();
+                this.close();
             });
         },
         putLayers: function() {
