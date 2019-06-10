@@ -89,7 +89,8 @@
 
                         <div class='col--12'>
                             <template v-if='webhookData.id === false'>
-                                <h3 class='w-full py6 txt-m txt-bold'>Add A New Webhook</h3>
+                                <h3 class='fl py6 txt-m txt-bold'>Add A New Webhook</h3>
+                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </template>
                             <template v-else>
                                 <h3 class='w-full py6 txt-m txt-bold' v-text='"Modify the " + webhookData.name + " webhook"'></h3>
