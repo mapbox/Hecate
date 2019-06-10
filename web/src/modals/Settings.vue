@@ -108,22 +108,22 @@
                                     <div class='col col--6'>
                                         <label class='w-full checkbox-container'>
                                             <input v-model="webhookData.actions.user" type='checkbox' />
-                                            <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
+                                            <div class='checkbox mr6'><svg class='icon'><use href='#icon-check' /></svg></div>
                                             User
                                         </label>
                                         <label class='w-full checkbox-container'>
                                             <input v-model="webhookData.actions.delta" type='checkbox' />
-                                            <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
+                                            <div class='checkbox mr6'><svg class='icon'><use href='#icon-check' /></svg></div>
                                             Delta
                                         </label>
                                         <label class='w-full checkbox-container'>
                                             <input v-model="webhookData.actions.meta" type='checkbox' />
-                                            <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
+                                            <div class='checkbox mr6'><svg class='icon'><use href='#icon-check' /></svg></div>
                                             Meta
                                         </label>
                                         <label class='w-full checkbox-container'>
                                             <input v-model="webhookData.actions.style" type='checkbox' />
-                                            <div class='checkbox mr6'><svg class='icon'><use xlink:href='#icon-check' /></svg></div>
+                                            <div class='checkbox mr6'><svg class='icon'><use href='#icon-check' /></svg></div>
                                             Style
                                         </label>
                                     </div>
