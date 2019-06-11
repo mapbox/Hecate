@@ -93,7 +93,8 @@
                                 <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </template>
                             <template v-else>
-                                <h3 class='w-full py6 txt-m txt-bold' v-text='"Modify the " + webhookData.name + " webhook"'></h3>
+                                <h3 class='fl py6 txt-m txt-bold' v-text='"Modify the " + webhookData.name + " webhook"'></h3>
+                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </template>
                         </div>
 
@@ -142,10 +143,10 @@
                                 </div>
                                 <div class='col col--6'>
                                     <template v-if='webhookData.id === false'>
-                                        <button @click='addHook' class='btn round w-full'>Create Webhook</button>
+                                        <button @click='modifyHook()' class='btn round w-full'>Create Webhook</button>
                                     </template>
                                     <template v-else>
-                                        <button @click='updateHook(webhookData.id)' class='btn round w-full'>Update Webhook</button>
+                                        <button @click='modifyHook(webhookData.id)' class='btn round w-full'>Update Webhook</button>
                                     </template>
                                 </div>
                             </div>
@@ -399,9 +400,6 @@ export default {
     watch: {
         userFilter: function() {
             this.getUsers();
-        },
-        error: function() {
-            this.getLayers();
         }
     },
     methods: {
@@ -451,7 +449,7 @@ export default {
                     this.webhookData.actions[check] = false;
                 }
                 //Conditionally apply actions
-                for (let action of Object.keys(hook.actions)) {
+                for (let action of hook.actions) {
                     this.webhookData.actions[action] = true;
                 }
 
@@ -564,7 +562,7 @@ export default {
             this.layerData.type = '';
             this.layerData.url = '';
         },
-        addHook: function() {
+        modifyHook: function(hook_id) {
             if (this.validateHook()) return;
 
             let actions = [];
@@ -580,12 +578,20 @@ export default {
                 url: this.webhookData.url
             };
 
-            window.hecate.webhooks.create(hook, (err) => {
-                if (err) return this.error = err.message;
+            if (!hook_id) {
+                window.hecate.webhooks.create(hook, (err) => {
+                    if (err) return this.error = err.message;
+                    this.getHooks();
+                    this.close();
+                });
+            } else {
+                window.hecate.webhooks.update(hook_id, hook, (err) => {
+                    if (err) return this.error = err.message;
+                    this.getHooks();
+                    this.close();
+                });
 
-                this.getHooks();
-                this.close();
-            });
+            }
         },
         addLayer: function() {
             if (this.validateLayer()) return;

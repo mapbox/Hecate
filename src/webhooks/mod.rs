@@ -184,7 +184,7 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
                     .send()
                 {
                     Ok(_) => (),
-                    Err(err) => { println!("WARN: Failed to post to webhook {}", hook.url); }
+                    Err(err) => { println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err); }
                 };
             }
         },
@@ -201,7 +201,7 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
                     .send()
                 {
                     Ok(_) => (),
-                    Err(err) => { println!("WARN: Failed to post to webhook {}", hook.url); }
+                    Err(err) => { println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err); }
                 };
             }
         },
@@ -218,7 +218,7 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
                     .send()
                 {
                     Ok(_) => (),
-                    Err(err) => { println!("WARN: Failed to post to webhook {}", hook.url); }
+                    Err(err) => { println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err); }
                 };
             }
         },
@@ -235,9 +235,7 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
                     .send()
                 {
                     Ok(_) => (),
-                    Err(err) => {
-                        return Err(HecateError::new(500, format!("WARN: Failed to post to webhook {}", hook.url), Some(err.to_string())));
-                    }
+                    Err(err) => { println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err); }
                 };
 
             }
