@@ -318,10 +318,13 @@ fn meta_get(
     mut auth: auth::Auth,
     conn: State<DbReplica>,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     key: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_meta_get(&mut auth, &*conn)?;
+
+    worker.queue(worker::Task::new(worker::TaskType::Meta));
 
     Ok(Json(json!(meta::get(&*conn, &key)?)))
 }
@@ -331,10 +334,13 @@ fn meta_delete(
     mut auth: auth::Auth,
     conn: State<DbReadWrite>,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     key: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_meta_set(&mut auth, &*conn)?;
+
+    worker.queue(worker::Task::new(worker::TaskType::Meta));
 
     Ok(Json(json!(meta::delete(&*conn, &key)?)))
 }
@@ -344,11 +350,14 @@ fn meta_set(
     mut auth: auth::Auth,
     conn: State<DbReadWrite>,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     key: String,
     body: Json<serde_json::Value>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_meta_set(&mut auth, &*conn)?;
+
+    worker.queue(worker::Task::new(worker::TaskType::Meta));
 
     Ok(Json(json!(meta::set(&*conn, &key, &body)?)))
 }
@@ -463,12 +472,17 @@ fn user_create(
     conn: State<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     user: Form<User>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_user_create(&mut auth, &*conn)?;
 
-    Ok(Json(json!(user::create(&*conn, &user.username, &user.password, &user.email)?)))
+    user::create(&*conn, &user.username, &user.password, &user.email)?;
+
+    worker.queue(worker::Task::new(worker::TaskType::User(user.username.clone())));
+
+    Ok(Json(json!(true)))
 }
 
 #[get("/users?<filter..>")]
@@ -608,6 +622,7 @@ fn style_create(
     conn: State<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     body: Data
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -634,7 +649,10 @@ fn style_create(
         }
     }
 
-    Ok(Json(json!(style::create(&*conn, &uid, &body_str)?)))
+    let style_id = style::create(&*conn, &uid, &body_str)?;
+    worker.queue(worker::Task::new(worker::TaskType::Style(style_id)));
+
+    Ok(Json(json!(style_id)))
 }
 
 #[post("/style/<id>/public")]
@@ -672,6 +690,7 @@ fn style_patch(
     conn: State<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     id: i64,
     body: Data
 ) -> Result<Json<serde_json::Value>, HecateError> {
@@ -699,6 +718,8 @@ fn style_patch(
         }
     }
 
+    worker.queue(worker::Task::new(worker::TaskType::Style(id)));
+
     Ok(Json(json!(style::update(&*conn, &uid, &id, &body_str)?)))
 }
 
@@ -707,12 +728,15 @@ fn style_delete(
     conn: State<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_delete(&mut auth, &*conn)?;
     let uid = auth.uid.unwrap();
+
+    worker.queue(worker::Task::new(worker::TaskType::Style(id)));
 
     Ok(Json(json!(style::delete(&*conn, &uid, &id)?)))
 }
@@ -1402,6 +1426,7 @@ fn osm_changeset_close(
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
     conn: State<DbReadWrite>,
+    worker: State<worker::Worker>,
     id: i64
 ) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
@@ -1410,6 +1435,8 @@ fn osm_changeset_close(
         Ok(_) => (),
         Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
     };
+
+    worker.queue(worker::Task::new(worker::TaskType::Delta(id)));
 
     Ok(id.to_string())
 }

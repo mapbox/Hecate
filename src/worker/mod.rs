@@ -5,7 +5,7 @@ use crate::{delta, mvt, webhooks};
 
 pub enum TaskType {
     Delta(i64),
-    User(i64),
+    User(String),
     Style(i64),
     Meta
 }
