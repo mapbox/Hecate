@@ -54,10 +54,6 @@ impl HecateError {
         }
     }
 
-    pub fn as_string(&self) -> String {
-        self.safe_error.clone()
-    }
-
     pub fn as_json(self) -> serde_json::Value {
         match self.custom_json {
             Some(custom_json) => custom_json,
@@ -71,6 +67,12 @@ impl HecateError {
                 })
             }
         }
+    }
+}
+
+impl ToString for HecateError {
+    fn to_string(&self) -> String {
+        self.safe_error.clone()
     }
 }
 

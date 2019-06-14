@@ -1,12 +1,17 @@
 use crossbeam;
 use postgres;
 use std::thread;
-use crate::{delta, mvt};
+use crate::{delta, mvt, webhooks};
 
+#[derive(Debug,PartialEq)]
 pub enum TaskType {
-    Delta(i64)
+    Delta(i64),
+    User(String),
+    Style(i64),
+    Meta
 }
 
+#[derive(Debug,PartialEq)]
 pub struct Task {
     job: TaskType
 }
@@ -38,7 +43,7 @@ impl Worker {
 
     pub fn queue(&self, task: Task) {
         if self.sender.send(task).is_err() {
-            format!("WARN: Failed to write task to queue");
+            println!("WARN: Failed to write task to queue");
         }
     }
 }
@@ -58,6 +63,11 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
             }
         };
 
+        match webhooks::send(&conn, &task.job) {
+            Err(err) => println!("HecateError: {:?}", &err.to_string()),
+            _ => ()
+        };
+
         match task.job {
             TaskType::Delta(delta_id) => {
                 let tiles = delta::tiles(&conn, &delta_id).unwrap();
@@ -71,7 +81,8 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
                         println!("Daemon: Failed to generate tile: {:?}", tile);
                     }
                 }
-            }
+            },
+            _ => ()
         }
     }
 }

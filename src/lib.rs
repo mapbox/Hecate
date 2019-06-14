@@ -22,6 +22,7 @@ pub mod osm;
 pub mod user;
 pub mod auth;
 pub mod worker;
+pub mod webhooks;
 
 use auth::ValidAuth;
 use err::HecateError;
@@ -171,6 +172,11 @@ pub fn start(
             bounds_get,
             bounds_set,
             bounds_delete,
+            webhooks_get,
+            webhooks_list,
+            webhooks_delete,
+            webhooks_update,
+            webhooks_create,
             clone_get,
             clone_query,
             osm_capabilities,
@@ -312,10 +318,13 @@ fn meta_get(
     mut auth: auth::Auth,
     conn: State<DbReplica>,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     key: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_meta_get(&mut auth, &*conn)?;
+
+    worker.queue(worker::Task::new(worker::TaskType::Meta));
 
     Ok(Json(json!(meta::get(&*conn, &key)?)))
 }
@@ -325,10 +334,13 @@ fn meta_delete(
     mut auth: auth::Auth,
     conn: State<DbReadWrite>,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     key: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_meta_set(&mut auth, &*conn)?;
+
+    worker.queue(worker::Task::new(worker::TaskType::Meta));
 
     Ok(Json(json!(meta::delete(&*conn, &key)?)))
 }
@@ -338,11 +350,14 @@ fn meta_set(
     mut auth: auth::Auth,
     conn: State<DbReadWrite>,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     key: String,
     body: Json<serde_json::Value>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_meta_set(&mut auth, &*conn)?;
+
+    worker.queue(worker::Task::new(worker::TaskType::Meta));
 
     Ok(Json(json!(meta::set(&*conn, &key, &body)?)))
 }
@@ -457,12 +472,17 @@ fn user_create(
     conn: State<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     user: Form<User>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_user_create(&mut auth, &*conn)?;
 
-    Ok(Json(json!(user::create(&*conn, &user.username, &user.password, &user.email)?)))
+    user::create(&*conn, &user.username, &user.password, &user.email)?;
+
+    worker.queue(worker::Task::new(worker::TaskType::User(user.username.clone())));
+
+    Ok(Json(json!(true)))
 }
 
 #[get("/users?<filter..>")]
@@ -602,6 +622,7 @@ fn style_create(
     conn: State<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     body: Data
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -628,7 +649,10 @@ fn style_create(
         }
     }
 
-    Ok(Json(json!(style::create(&*conn, &uid, &body_str)?)))
+    let style_id = style::create(&*conn, &uid, &body_str)?;
+    worker.queue(worker::Task::new(worker::TaskType::Style(style_id)));
+
+    Ok(Json(json!(style_id)))
 }
 
 #[post("/style/<id>/public")]
@@ -666,6 +690,7 @@ fn style_patch(
     conn: State<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     id: i64,
     body: Data
 ) -> Result<Json<serde_json::Value>, HecateError> {
@@ -693,6 +718,8 @@ fn style_patch(
         }
     }
 
+    worker.queue(worker::Task::new(worker::TaskType::Style(id)));
+
     Ok(Json(json!(style::update(&*conn, &uid, &id, &body_str)?)))
 }
 
@@ -701,12 +728,15 @@ fn style_delete(
     conn: State<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
+    worker: State<worker::Worker>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.allows_style_delete(&mut auth, &*conn)?;
     let uid = auth.uid.unwrap();
+
+    worker.queue(worker::Task::new(worker::TaskType::Style(id)));
 
     Ok(Json(json!(style::delete(&*conn, &uid, &id)?)))
 }
@@ -914,6 +944,140 @@ fn bounds_delete(
     auth_rules.allows_bounds_delete(&mut auth, &*conn)?;
 
     Ok(Json(json!(bounds::delete(&*conn, &bounds)?)))
+}
+
+#[get("/webhooks")]
+fn webhooks_list(
+    conn: State<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>
+) -> Result<Json<serde_json::Value>, HecateError> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_webhooks_list(&mut auth, &*conn)?;
+
+    match serde_json::to_value(webhooks::list(&*conn, webhooks::Action::All)?) {
+        Ok(hooks) => Ok(Json(hooks)),
+        Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
+    }
+}
+
+#[get("/webhooks/<id>")]
+fn webhooks_get(
+    conn: State<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>,
+    id: i64
+) -> Result<Json<serde_json::Value>, HecateError> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_webhooks_list(&mut auth, &*conn)?;
+
+    match serde_json::to_value(webhooks::get(&*conn, id)?) {
+        Ok(hooks) => Ok(Json(hooks)),
+        Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
+    }
+}
+
+#[delete("/webhooks/<id>")]
+fn webhooks_delete(
+    conn: State<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>,
+    id: i64
+) -> Result<Json<bool>, HecateError> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_webhooks_delete(&mut auth, &*conn)?;
+
+    Ok(Json(webhooks::delete(&*conn, id)?))
+}
+
+#[post("/webhooks", format="application/json", data="<body>")]
+fn webhooks_create(
+    conn: State<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>,
+    body: Data
+) -> Result<Json<serde_json::Value>, HecateError> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_webhooks_update(&mut auth, &*conn)?;
+
+    let body_str: String;
+    {
+        let mut body_stream = body.open();
+        let mut body_vec = Vec::new();
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
+        }
+
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
+    }
+
+    let webhook: serde_json::Value = match serde_json::from_str(&*body_str) {
+        Ok(webhook) => webhook,
+        Err(_) => {
+            return Err(HecateError::new(400, String::from("Invalid webhook JSON"), None));
+        }
+    };
+
+    match serde_json::to_value(webhooks::create(&*conn, webhook)?) {
+        Ok(webhook) => Ok(Json(webhook)),
+        Err(_) => { return Err(HecateError::new(500, String::from("Failed to return webhook ID"), None)); }
+    }
+}
+
+#[post("/webhooks/<id>", format="application/json", data="<body>")]
+fn webhooks_update(
+    conn: State<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>,
+    body: Data,
+    id: i64
+) -> Result<Json<serde_json::Value>, HecateError> {
+    let conn = conn.get()?;
+
+    auth_rules.allows_webhooks_update(&mut auth, &*conn)?;
+
+    let body_str: String;
+    {
+        let mut body_stream = body.open();
+        let mut body_vec = Vec::new();
+
+        let mut buffer = [0; 1024];
+        let mut buffer_size: usize = 1;
+
+        while buffer_size > 0 {
+            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
+            body_vec.append(&mut buffer[..buffer_size].to_vec());
+        }
+
+        body_str = match String::from_utf8(body_vec) {
+            Ok(body_str) => body_str,
+            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
+        }
+    }
+
+    let webhook: serde_json::Value = match serde_json::from_str(&*body_str) {
+        Ok(webhook) => webhook,
+        Err(_) => {
+            return Err(HecateError::new(400, String::from("Invalid webhook JSON"), None));
+        }
+    };
+
+    match serde_json::to_value(webhooks::update(&*conn, id, webhook)?) {
+        Ok(webhook) => Ok(Json(webhook)),
+        Err(_) => { return Err(HecateError::new(500, String::from("Failed to return webhook ID"), None)); }
+    }
 }
 
 #[get("/data/bounds/<bounds>/stats")]
@@ -1246,7 +1410,7 @@ fn osm_changeset_create(
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.as_string()));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 
@@ -1262,6 +1426,7 @@ fn osm_changeset_close(
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
     conn: State<DbReadWrite>,
+    worker: State<worker::Worker>,
     id: i64
 ) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
@@ -1340,7 +1505,7 @@ fn osm_changeset_modify(
         Err(err) => {
             trans.set_rollback();
             trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.as_string()));
+            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
         }
     };
 

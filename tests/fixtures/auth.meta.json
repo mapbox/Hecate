@@ -1,5 +1,10 @@
 {
     "server": "user",
+    "webhooks": {
+        "list": "user",
+        "delete": "user",
+        "modify": "user"
+    },
     "meta": {
         "get": "user",
         "list": "user",

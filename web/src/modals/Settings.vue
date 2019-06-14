@@ -23,18 +23,18 @@
                 <template v-else-if='mode === "addLayer"'>
                     <div class='grid w-full col'>
 
-                        <template v-if='addLayerData.error'>
+                        <template v-if='layerData.error'>
                             <div class='col--12 color-white px12 bg-red round align-center'>
-                                <h3 class='w-full py6 txt-m txt-bold' v-text='addLayerData.error'></h3>
+                                <h3 class='w-full py6 txt-m txt-bold' v-text='layerData.error'></h3>
                             </div>
                         </template>
 
                         <div class='col--12'>
-                            <template v-if='addLayerData.exists === false'>
+                            <template v-if='layerData.id === false'>
                                 <h3 class='w-full py6 txt-m txt-bold'>Add A New Base Layer</h3>
                             </template>
                             <template v-else>
-                                <h3 class='w-full py6 txt-m txt-bold' v-text='"Modify the " + addLayerData.name + " layer"'></h3>
+                                <h3 class='w-full py6 txt-m txt-bold' v-text='"Modify the " + layerData.name + " layer"'></h3>
                             </template>
                         </div>
 
@@ -42,12 +42,12 @@
                             <div class='grid grid--gut12'>
                                 <div class='col col--6'>
                                     <label>Layer Name</label>
-                                    <input v-model='addLayerData.name' class='input' placeholder='Layer Name' v-bind:class="{ 'input--border-red': addLayerData.nameError }"/>
+                                    <input v-model='layerData.name' class='input' placeholder='Layer Name' v-bind:class="{ 'input--border-red': layerData.nameError }"/>
                                 </div>
                                 <div class='col col--6'>
                                     <label >Layer Type</label>
                                     <div class='select-container w-full'>
-                                        <select v-model='addLayerData.type' class='select' v-bind:class="{ 'input--border-red': addLayerData.typeError }">
+                                        <select v-model='layerData.type' class='select' v-bind:class="{ 'input--border-red': layerData.typeError }">
                                             <option>Vector</option>
                                             <option>Raster</option>
                                         </select>
@@ -56,7 +56,7 @@
                                 </div>
                                 <div class='col col--12 py12'>
                                     <label>Mapbox:// Style</label>
-                                    <input v-model='addLayerData.url' class='input w-full' placeholder='mapbox://' v-bind:class="{ 'input--border-red': addLayerData.urlError }" />
+                                    <input v-model='layerData.url' class='input w-full' placeholder='mapbox://' v-bind:class="{ 'input--border-red': layerData.urlError }" />
                                 </div>
                             </div>
                         </div>
@@ -67,11 +67,86 @@
                                     <button @click='close' class='btn btn--red round w-full'>Cancel</button>
                                 </div>
                                 <div class='col col--6'>
-                                    <template v-if='addLayerData.exists === false'>
+                                    <template v-if='layerData.id === false'>
                                         <button @click='addLayer' class='btn round w-full'>Create Layer</button>
                                     </template>
                                     <template v-else>
-                                        <button @click='updateLayer(addLayerData.exists)' class='btn round w-full'>Update Layer</button>
+                                        <button @click='updateLayer(layerData.id)' class='btn round w-full'>Update Layer</button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template v-else-if='mode === "addHook"'>
+                    <div class='grid w-full col'>
+
+                        <template v-if='webhookData.error'>
+                            <div class='col--12 color-white px12 bg-red round align-center'>
+                                <h3 class='w-full py6 txt-m txt-bold' v-text='webhookData.error'></h3>
+                            </div>
+                        </template>
+
+                        <div class='col--12'>
+                            <template v-if='webhookData.id === false'>
+                                <h3 class='fl py6 txt-m txt-bold'>Add A New Webhook</h3>
+                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                            </template>
+                            <template v-else>
+                                <h3 class='fl py6 txt-m txt-bold' v-text='"Modify the " + webhookData.name + " webhook"'></h3>
+                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                            </template>
+                        </div>
+
+                        <div class='col--12 py12 px12'>
+                            <div class='grid grid--gut12'>
+                                <div class='col col--12 pb12'>
+                                    <label>Webhook Name</label>
+                                    <input v-model='webhookData.name' class='input' placeholder='Webhook Name' v-bind:class="{ 'input--border-red': webhookData.nameError }"/>
+                                </div>
+                                <div class='col col--12 pb12'>
+                                    <label >Webhook Actions</label>
+                                    <div class='col col--6'>
+                                        <label class='w-full checkbox-container'>
+                                            <input v-model="webhookData.actions.user" type='checkbox' />
+                                            <div class='checkbox mr6'><svg class='icon'><use href='#icon-check' /></svg></div>
+                                            User
+                                        </label>
+                                        <label class='w-full checkbox-container'>
+                                            <input v-model="webhookData.actions.delta" type='checkbox' />
+                                            <div class='checkbox mr6'><svg class='icon'><use href='#icon-check' /></svg></div>
+                                            Delta
+                                        </label>
+                                        <label class='w-full checkbox-container'>
+                                            <input v-model="webhookData.actions.meta" type='checkbox' />
+                                            <div class='checkbox mr6'><svg class='icon'><use href='#icon-check' /></svg></div>
+                                            Meta
+                                        </label>
+                                        <label class='w-full checkbox-container'>
+                                            <input v-model="webhookData.actions.style" type='checkbox' />
+                                            <div class='checkbox mr6'><svg class='icon'><use href='#icon-check' /></svg></div>
+                                            Style
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class='col col--12 pb12'>
+                                    <label>Webhook URL</label>
+                                    <input v-model='webhookData.url' class='input w-full' placeholder='https://' v-bind:class="{ 'input--border-red': webhookData.urlError }" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class='col--12 py12'>
+                            <div class='grid grid--gut12'>
+                                <div class='col col--6'>
+                                    <button @click='deleteHook(webhookData.id)' class='btn btn--red round w-full'>Delete</button>
+                                </div>
+                                <div class='col col--6'>
+                                    <template v-if='webhookData.id === false'>
+                                        <button @click='modifyHook()' class='btn round w-full'>Create Webhook</button>
+                                    </template>
+                                    <template v-else>
+                                        <button @click='modifyHook(webhookData.id)' class='btn round w-full'>Update Webhook</button>
                                     </template>
                                 </div>
                             </div>
@@ -144,9 +219,13 @@
                         <button @click='submode = "server"' class='fl btn btn--stroke round w36 px12 my6'>
                             <svg class='icon'><use href='#icon-sprocket'/></svg>
                         </button>
-    
+
                         <button @click='submode = "users"' class='fl btn btn--stroke round w36 px12 my6'>
                             <svg class='icon'><use href='#icon-user'/></svg>
+                        </button>
+
+                        <button @click='submode = "webhooks"' class='fl btn btn--stroke round w36 px12 my6'>
+                            <svg class='icon'><use href='#icon-link'/></svg>
                         </button>
                     </div>
 
@@ -220,7 +299,7 @@
                                     <div class='col col--12'>
                                        <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
                                             <div class='col--2'>
-                                                <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 my3 txt-xs txt-bold round' v-text="user.id"></span>
+                                                <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 mx3 txt-xs txt-bold round' v-text="user.id"></span>
                                             </div>
                                             <div class='col--8' v-text='user.username'></div>
                                             <div class='col--2' v-text='user.access'></div>
@@ -228,6 +307,39 @@
                                     </div>
                                 </template>
                             </div>
+                        </template>
+                        <template v-if='submode === "webhooks"'>
+                            <div class='col col--12 txt-m txt-bold'>
+                                Webhook Settings
+                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                            </div>
+
+                            <div class='py6 col col--12 border--gray-light border-b mb12'>
+                                <span class='txt-m'>Webhooks</span>
+                                <button @click="addHookClick" class='btn round h24 fr'>
+                                    <svg class='icon h-full'><use href='#icon-plus'/></svg>
+                                </button>
+                            </div>
+
+                            <template v-if="hooks.length">
+                                <div class='col col--12 h240 scroll-auto'>
+                                    <template v-for='(hook, hook_idx) of hooks'>
+                                        <div class='col col--12'>
+                                           <div @click="getHook(hook.id)" class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
+                                                <span class="mx6" v-text='hook.name'></span>
+                                                <template v-for='hook_action of hook.actions'>
+                                                    <span class='bg-blue-faint color-blue px6 py3 my3 mx3 txt-xs txt-bold round' v-text="hook_action"></span>
+                                                </template>
+                                           </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div class='col col--12 h240 scroll-auto'>
+                                    <div class="align-center">No Webhooks Yet!</div>
+                                </div>
+                            </template>
                         </template>
                     </div>
                 </template>
@@ -244,6 +356,7 @@ export default {
             mode: 'settings',
             submode: 'server',
             tilecache: false, //Store if the cache has been cleared or not
+            hooks: [],
             layers: [],
             users: [],
             userFilter: '',
@@ -253,8 +366,8 @@ export default {
                 name: '',
                 type: ''
             },
-            addLayerData: {
-                exists: false,
+            layerData: {
+                id: false,
                 error: '',
                 name: '',
                 nameError: false,
@@ -262,19 +375,31 @@ export default {
                 typeError: false,
                 url: '',
                 urlError: false
+            },
+            webhookData: {
+                id: false,
+                error: '',
+                name: '',
+                nameError: false,
+                url: '',
+                urlError: false,
+                actions: {
+                    user: false,
+                    delta: false,
+                    style: false,
+                    meta: false
+                }
             }
         }
     },
     mounted: function() {
         this.getLayers();
         this.getUsers();
+        this.getHooks();
     },
     watch: {
         userFilter: function() {
             this.getUsers();
-        },
-        error: function() {
-            this.getLayers();
         }
     },
     methods: {
@@ -288,53 +413,56 @@ export default {
             }
         },
         clearCache: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/tiles`, {
-                method: 'DELETE',
-                credentials: 'same-origin'
-            }).then((response) => {
-                if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
-                    return;
-                }
+            window.hecate.tiles.clear((err) => {
+                if (err) return this.error = err.message;
                 this.tilecache = true;
-            }).catch((err) => {
-                this.error = err.message;
             });
         },
         getLayers: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
-                }
-
-                return response.json();
-            }).then((layers) => {
-                if (!layers || !layers.length) layers = [];
-
+            window.hecate.meta.get('layers', (err, layers) => {
+                if (err) return this.error = err.message;
                 this.layers = layers;
-            }).catch((err) => {
-                this.error = err.message;
             });
         },
         getUsers: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/users?filter=${this.userFilter}`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
+            window.hecate.users.list(this.userFilter, (err, users) => {
+                if (err) return this.error = err.message;
+                this.users = users;
+            });
+        },
+        getHooks: function() {
+            window.hecate.webhooks.list((err, hooks) => {
+                if (err) return this.error = err.message;
+                this.hooks = hooks;
+            });
+        },
+        getHook: function(hook_id) {
+            window.hecate.webhooks.get(hook_id, (err, hook) => {
+                if (err) return this.error = err.message;
+
+                this.webhookData.id = hook.id;
+                this.webhookData.name = hook.name;
+                this.webhookData.url = hook.url;
+
+                // Ensure all checkboxes are false
+                for (let check of Object.keys(this.webhookData.actions)) {
+                    this.webhookData.actions[check] = false;
+                }
+                //Conditionally apply actions
+                for (let action of hook.actions) {
+                    this.webhookData.actions[action] = true;
                 }
 
-                return response.json();
-            }).then((users) => {
-                if (!users || !users.length) users = [];
+                this.mode = 'addHook';
+            });
+        },
+        deleteHook: function(hook_id) {
+            window.hecate.webhooks.delete(hook_id, (err, hook) => {
+                if (err) return this.error = err.message;
 
-                this.users = users;
-            }).catch((err) => {
-                this.error = err.message;
+                this.mode = 'addHook';
+                this.getHooks();
+                this.close();
             });
         },
         putLayers: function() {
@@ -364,35 +492,54 @@ export default {
 
             this.close();
         },
+        validateHook: function() {
+            let error = false;
+
+            if (this.webhookData.name.length === 0) {
+                this.webhookData.nameError = true;
+                error = true;
+            } else {
+                this.webhookData.nameError = false;
+            }
+
+            if (!this.webhookData.url.match(/^http/)) {
+                this.webhookData.urlError = true;
+                error = true;
+            } else {
+                this.webhookData.urlError = false;
+            }
+
+            return error;
+        },
         validateLayer: function() {
             let error = false;
 
-            if (this.addLayerData.name.length === 0) {
-                this.addLayerData.nameError = true;
+            if (this.layerData.name.length === 0) {
+                this.layerData.nameError = true;
                 error = true;
             } else {
-                this.addLayerData.nameError = false;
+                this.layerData.nameError = false;
             }
 
-            if (['Vector', 'Raster'].indexOf(this.addLayerData.type) === -1) {
-                this.addLayerData.typeError = true;
+            if (['Vector', 'Raster'].indexOf(this.layerData.type) === -1) {
+                this.layerData.typeError = true;
                 error = true;
             } else {
-                this.addLayerData.typeError = false;
+                this.layerData.typeError = false;
             }
 
-            if (!this.addLayerData.url.match(/^mapbox:\/\//)) {
-                this.addLayerData.urlError = true;
+            if (!this.layerData.url.match(/^mapbox:\/\//)) {
+                this.layerData.urlError = true;
                 error = true;
             } else {
-                this.addLayerData.urlError = false;
+                this.layerData.urlError = false;
             }
 
-            if (this.addLayerData.urlError || this.addLayerData.nameError || this.addLayerData.typeError) {
-                this.addLayerData.error = 'All Fields Are Required!';
+            if (this.layerData.urlError || this.layerData.nameError || this.layerData.typeError) {
+                this.layerData.error = 'All Fields Are Required!';
                 return;
             } else {
-                this.addLayerData.error = false;
+                this.layerData.error = false;
             }
 
             return error;
@@ -401,27 +548,58 @@ export default {
             if (isNaN(layer_idx)) return;
             if (this.validateLayer()) return;
 
-            this.layers[layer_idx].name = this.addLayerData.name;
-            this.layers[layer_idx].type = this.addLayerData.type;
-            this.layers[layer_idx].url = this.addLayerData.url;
+            this.layers[layer_idx].name = this.layerData.name;
+            this.layers[layer_idx].type = this.layerData.type;
+            this.layers[layer_idx].url = this.layerData.url;
 
             this.putLayers();
             this.close();
         },
         clearLayer: function() {
-            this.addLayerData.exists = false;
-            this.addLayerData.error = false;
-            this.addLayerData.name = '';
-            this.addLayerData.type = '';
-            this.addLayerData.url = '';
+            this.layerData.id = false;
+            this.layerData.error = false;
+            this.layerData.name = '';
+            this.layerData.type = '';
+            this.layerData.url = '';
+        },
+        modifyHook: function(hook_id) {
+            if (this.validateHook()) return;
+
+            let actions = [];
+            for (let action of Object.keys(this.webhookData.actions)) {
+                if (this.webhookData.actions[action]) {
+                    actions.push(action);
+                }
+            }
+
+            const hook = {
+                name: this.webhookData.name,
+                actions: actions,
+                url: this.webhookData.url
+            };
+
+            if (!hook_id) {
+                window.hecate.webhooks.create(hook, (err) => {
+                    if (err) return this.error = err.message;
+                    this.getHooks();
+                    this.close();
+                });
+            } else {
+                window.hecate.webhooks.update(hook_id, hook, (err) => {
+                    if (err) return this.error = err.message;
+                    this.getHooks();
+                    this.close();
+                });
+
+            }
         },
         addLayer: function() {
             if (this.validateLayer()) return;
 
             this.layers.push({
-                name: this.addLayerData.name,
-                type: this.addLayerData.type,
-                url: this.addLayerData.url
+                name: this.layerData.name,
+                type: this.layerData.type,
+                url: this.layerData.url
             });
 
             this.putLayers();
@@ -431,13 +609,27 @@ export default {
             if (isNaN(layer_idx)) return;
 
             this.mode = 'addLayer';
-            this.addLayerData.exists = layer_idx;
-            this.addLayerData.name = this.layers[layer_idx].name;
-            this.addLayerData.url = this.layers[layer_idx].url;
-            this.addLayerData.type = this.layers[layer_idx].type;
+            this.layerData.id = layer_idx;
+            this.layerData.name = this.layers[layer_idx].name;
+            this.layerData.url = this.layers[layer_idx].url;
+            this.layerData.type = this.layers[layer_idx].type;
         },
         newLayerClick: function() {
             this.mode = 'addLayer';
+        },
+        addHookClick: function() {
+            this.mode = 'addHook';
+
+            this.webhookData.id = false;
+            this.webhookData.error = '';
+            this.webhookData.name = '';
+            this.webhookData.nameError = false;
+            this.webhookData.url = '';
+            this.webhookData.urlError = false;
+
+            for (let action of Object.keys(this.webhookData.actions)) {
+                this.webhookData.actions[action] = false;
+            }
         },
         helpBaseClick: function() {
             this.mode = 'helpBase';
