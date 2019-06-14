@@ -3,6 +3,7 @@ use postgres;
 use std::thread;
 use crate::{delta, mvt, webhooks};
 
+#[derive(Debug,PartialEq)]
 pub enum TaskType {
     Delta(i64),
     User(String),
@@ -10,6 +11,7 @@ pub enum TaskType {
     Meta
 }
 
+#[derive(Debug,PartialEq)]
 pub struct Task {
     job: TaskType
 }

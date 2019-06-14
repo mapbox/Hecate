@@ -24,6 +24,7 @@ impl WebHook {
     }
 }
 
+#[derive(Debug)]
 pub enum Action {
     All,
     User,
@@ -170,76 +171,56 @@ pub fn is_valid_action(actions: &Vec<String>) -> bool {
 }
 
 pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) -> Result<(), HecateError> {
-    match task {
-        worker::TaskType::Delta(delta) => {
-            for hook in list(conn, Action::Delta)? {
-                let client = reqwest::Client::new();
+    let action = match task {
+        worker::TaskType::Delta(_) => Action::Delta,
+        worker::TaskType::User(_) => Action::User,
+        worker::TaskType::Style(_) => Action::Style,
+        worker::TaskType::Meta => Action::Meta
+    };
 
-                match client.post(hook.url.as_str())
-                    .body(json!({
-                        "id": delta,
-                        "type": "delta"
-                    }).to_string())
-                    .header(reqwest::header::CONTENT_TYPE, "application/json")
-                    .send()
-                {
-                    Ok(_) => (),
-                    Err(err) => { println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err); }
-                };
-            }
-        },
-        worker::TaskType::User(user) => {
-            for hook in list(conn, Action::User)? {
-                let client = reqwest::Client::new();
+    for hook in list(conn, action)? {
+        let client = reqwest::Client::new();
 
-                match client.post(hook.url.as_str())
-                    .body(json!({
-                        "id": user,
-                        "type": "user"
-                    }).to_string())
-                    .header(reqwest::header::CONTENT_TYPE, "application/json")
-                    .send()
-                {
-                    Ok(_) => (),
-                    Err(err) => { println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err); }
-                };
-            }
-        },
-        worker::TaskType::Style(style) => {
-            for hook in list(conn, Action::Style)? {
-                let client = reqwest::Client::new();
-
-                match client.post(hook.url.as_str())
-                    .body(json!({
+        let body = match task {
+            worker::TaskType::Delta(delta) => {
+                json!({
+                    "id": delta,
+                    "type": "delta"
+                }).to_string()
+            },
+            worker::TaskType::User(user) => {
+                json!({
+                    "id": user,
+                    "type": "user"
+                }).to_string()
+            },
+            worker::TaskType::Style(style) => {
+                    json!({
                         "id": style,
                         "type": "style"
-                    }).to_string())
-                    .header(reqwest::header::CONTENT_TYPE, "application/json")
-                    .send()
-                {
-                    Ok(_) => (),
-                    Err(err) => { println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err); }
-                };
+                    }).to_string()
+            },
+            worker::TaskType::Meta => {
+                json!({
+                    "id": null,
+                    "type": "meta"
+                }).to_string()
             }
-        },
-        worker::TaskType::Meta => {
-            for hook in list(conn, Action::Meta)? {
-                let client = reqwest::Client::new();
+        };
 
-                match client.post(hook.url.as_str())
-                    .body(json!({
-                        "id": null,
-                        "type": "meta"
-                    }).to_string())
-                    .header(reqwest::header::CONTENT_TYPE, "application/json")
-                    .send()
-                {
-                    Ok(_) => (),
-                    Err(err) => { println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err); }
-                };
-
+        match client.post(hook.url.as_str())
+            .body(body)
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .send()
+        {
+            Ok(res) => {
+                println!("{:#?}", res);
+                ()
+            },
+            Err(err) => {
+                println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err);
             }
-        }
+        };
     }
 
     Ok(())

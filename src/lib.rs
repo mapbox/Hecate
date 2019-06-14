@@ -1436,8 +1436,6 @@ fn osm_changeset_close(
         Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
     };
 
-    worker.queue(worker::Task::new(worker::TaskType::Delta(id)));
-
     Ok(id.to_string())
 }
 
