@@ -43,6 +43,7 @@
     - [Data Stats](#data-stats)
     - [Admin Interface](#admin-interface)
     - [Schema](#schema)
+    - [Webhooks](#webhooks)
     - [Authentication](#authentication)
     - [Styles](#styles)
     - [Vector Tiles](#vector-tiles)
@@ -917,6 +918,86 @@ curl -X GET \
     -u 'username:password' \
     'http://localhost:8000/api/tiles/1/1/1/regen
 ```
+
+</details>
+
+---
+
+<h3 align='center'>Webhooks</h3>
+
+<details>
+
+#### `GET` `/api/webhooks`
+
+Return a JSON object containing a list of all webhooks maintained by the server
+
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/webhooks'
+```
+
+</details>
+
+---
+
+#### `GET` `/api/webhooks/<id>`
+
+Return a JSON object containing information about a specific webhook
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>` | `REQUIRED` ID of the webhook to retrieve
+
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/webhooks/1'
+```
+---
+
+#### `POST` `/api/webhooks/<id>`
+
+Update a webhook ID with the given webhook data
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>` | `REQUIRED` ID of the webhook to update
+
+
+*Example*
+
+```bash
+curl
+    -X POST 
+    -H "Content-Type: application/json" \
+    -d '{ "name": "webhook name", "url": "https://example.com", "actions": ["meta", "user", "delta", "style"] }' \
+    -u 'username:password' \
+    'http://localhost:8000/api/webhooks'
+```
+
+#### `DELETE` `/api/webhooks/<id>`
+
+Delete a given webhook
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>` | `REQUIRED` ID of the webhook to delete
+
+*Example*
+
+```bash
+curl -X DELETE 'http://localhost:8000/api/webhooks/1'
+```
+---
 
 </details>
 
