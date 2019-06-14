@@ -514,6 +514,11 @@ have a map containing the auth for each subkey.
 | **Deltas**                            | `delta`                   |               | `null`                    | 2     |
 | `GET /api/delta/<id>`                 | `delta::get`              | `public`      | All                       |       |
 | `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
+| **Webhooks**                          | `webhooks`                |               | `null`                    | 2     |
+| `GET /api/webhooks`                   | `webhooks::list`          | `admin`       | All                       |       |
+| `GET /api/webhooks/<id>`              | `webhooks::list`          | `admin`       | All                       |       |
+| `GET /api/webhooks/<id>`              | `webhooks::delete`        | `admin`       | All                       |       |
+| `POST /api/webhooks/<id>`             | `webhooks::update`        | `admin`       | All                       |       |
 | **Data Stats**                        | `stats`                   | `public`      | All                       |       |
 | `GET /api/data/stats`                 | `stats::get`              | `public`      | All                       |       |
 | `GET /api/data/bounds/<id>/stats`     | `stats::bounds`           | `public`      | All                       |       |

@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.69.0
+
+- :rocket: Add preliminary support for webhooks
+
 ## v0.68.0
 
 - :rocket: Use `ST_DWithin` for feature at lng/lat endpoint

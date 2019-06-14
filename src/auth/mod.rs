@@ -92,8 +92,8 @@ impl AuthWebhooks {
 impl ValidAuth for AuthWebhooks {
     fn is_valid(&self) -> Result<bool, String> {
         is_auth("webhooks::list", &self.list)?;
-        is_auth("webhooks::list", &self.delete)?;
-        is_auth("webhooks::list", &self.update)?;
+        is_auth("webhooks::delete", &self.delete)?;
+        is_auth("webhooks::update", &self.update)?;
 
         Ok(true)
     }
