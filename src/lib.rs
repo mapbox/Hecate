@@ -31,7 +31,6 @@ use err::HecateError;
 //Postgres Connection Pooling
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
-use mvt::Encode;
 
 use rand::prelude::*;
 
@@ -388,11 +387,7 @@ fn mvt_get(
 
     let tile = mvt::get(&*conn, z, x, y, false)?;
 
-    let mut c = Cursor::new(Vec::new());
-    match tile.to_writer(&mut c) {
-        Ok(_) => (),
-        Err(err) => { return Err(HecateError::new(500, err.to_string(), None)); }
-    }
+    let c = Cursor::new(tile);
 
     let mut mvt_response = Response::new();
     mvt_response.set_status(HTTPStatus::Ok);
@@ -443,11 +438,7 @@ fn mvt_regen(
 
     let tile = mvt::get(&*conn, z, x, y, true)?;
 
-    let mut c = Cursor::new(Vec::new());
-    match tile.to_writer(&mut c) {
-        Ok(_) => (),
-        Err(err) => { return Err(HecateError::new(500, err.to_string(), None)); }
-    }
+    let c = Cursor::new(tile);
 
     let mut mvt_response = Response::new();
     mvt_response.set_status(HTTPStatus::Ok);
