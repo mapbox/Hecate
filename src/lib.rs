@@ -383,7 +383,7 @@ fn mvt_get(
 
     auth_rules.allows_mvt_get(&mut auth, &*conn)?;
 
-    if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
+    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
     let tile = mvt::get(&*conn, z, x, y, false)?;
 
@@ -406,7 +406,7 @@ fn mvt_meta(
     let conn = conn.get()?;
     auth_rules.allows_mvt_meta(&mut auth, &*conn)?;
 
-    if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
+    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
     Ok(Json(mvt::meta(&*conn, z, x, y)?))
 }
@@ -434,7 +434,7 @@ fn mvt_regen(
     let conn = conn.get()?;
     auth_rules.allows_mvt_regen(&mut auth, &*conn)?;
 
-    if z > 14 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
+    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
     let tile = mvt::get(&*conn, z, x, y, true)?;
 
