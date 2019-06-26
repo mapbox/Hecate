@@ -86,11 +86,11 @@ source ~/.bashrc        # Most Linux Distros, some OSX
 source ~/.bash_profile  # Most OSX, some Linux Distros
 ```
 
-- Install the `nightly-2018-12-01` build of rust, `Rocket`, the web-framework relies on some advanced compiler options not yet included in the default build.
+- Install the `nightly-2019-06-01` build of rust, `Rocket`, the web-framework relies on some advanced compiler options not yet included in the default build.
 
 ```bash
-rustup install nightly-2018-12-01
-rustup default nightly-2018-12-01
+rustup install nightly-2019-06-01
+rustup default nightly-2019-06-01
 ```
 
 - Download and compile the project and all of it's libraries

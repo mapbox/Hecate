@@ -430,7 +430,7 @@ pub fn query_by_key(conn: &impl postgres::GenericConnection, key: &String) -> Re
     }
 }
 
-pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -> Result<serde_json::value::Value, HecateError> {
+pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -> Result<Vec<serde_json::value::Value>, HecateError> {
     let lnglat = point.split(",").collect::<Vec<&str>>();
 
     if lnglat.len() != 2 {
@@ -469,13 +469,20 @@ pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -
             ORDER BY
                 ST_Distance(ST_SetSRID(ST_MakePoint($1, $2), 4326), geo.geom) DESC
         ) f
-        LIMIT 1
     ", &[&lng, &lat]) {
-        Ok(res) => {
-            if res.len() != 1 { return Err(HecateError::new(404, String::from("Feature not found"), None)); }
+        Ok(results) => {
+            if results.len() == 0 {
+                return Err(HecateError::new(404, String::from("Feature not found"), None));
+            }
 
-            let feat: serde_json::value::Value = res.get(0).get(0);
-            Ok(feat)
+            let mut feats: Vec<serde_json::value::Value> = Vec::with_capacity(results.len());
+
+            for result in results.iter() {
+                let feat: serde_json::value::Value = result.get(0);
+                feats.push(feat);
+            }
+
+            Ok(feats)
         },
         Err(err) => Err(HecateError::from_db(err))
     }

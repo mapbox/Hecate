@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro, uniform_paths)]
+#![feature(proc_macro_hygiene, decl_macro)]
 
 pub static VERSION: &'static str = "0.69.0";
 pub static POSTGRES: f64 = 10.0;
@@ -1426,7 +1426,6 @@ fn osm_changeset_close(
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
     conn: State<DbReadWrite>,
-    worker: State<worker::Worker>,
     id: i64
 ) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
@@ -1885,7 +1884,8 @@ fn feature_query(
     } else if fquery.key.is_some() {
         Ok(Json(feature::query_by_key(&*conn, &fquery.key.as_ref().unwrap())?))
     } else if fquery.point.is_some() {
-        Ok(Json(feature::query_by_point(&*conn, &fquery.point.as_ref().unwrap())?))
+        let results = feature::query_by_point(&*conn, &fquery.point.as_ref().unwrap())?;
+        Ok(Json(serde_json::Value::from(results)))
     } else {
         Err(HecateError::new(400, String::from("key or point param must be used"), None))
     }
