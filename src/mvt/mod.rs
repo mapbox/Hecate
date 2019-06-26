@@ -27,30 +27,17 @@ pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u
     let grid = Grid::web_mercator();
     let bbox = grid.tile_extent(*z, *x, *y);
 
-    println!("
-        SELECT
-            ST_AsMVT(q, 'data', 4096, 'geom')
-        FROM (
-            SELECT
-                id,
-                ST_AsMVTGeom(geom, ST_MakeEnvelope({}, {}, {}, {}, 4326), 4096, 256, false) AS geom
-            FROM
-                geo
-        ) q
-    ")
-
-
     match conn.query("
         SELECT
             ST_AsMVT(q, 'data', 4096, 'geom')
         FROM (
             SELECT
                 id,
-                ST_AsMVTGeom(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326), 4096, 256, false) AS geom
+                ST_AsMVTGeom(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326), 4096, 256, false) AS geom
             FROM
                 geo
         ) q
-    ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy]) {
+    ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy, &grid.srid]) {
         Ok(res) => {
             let tile: Vec<u8> = res.get(0).get(0);
             Ok(tile)
