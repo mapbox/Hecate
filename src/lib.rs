@@ -8,6 +8,7 @@ pub static POSTGIS: f64 = 2.4;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate rocket;
 
+pub mod validate;
 pub mod err;
 pub mod meta;
 pub mod stats;
@@ -165,7 +166,7 @@ pub fn start(
             feature_get,
             feature_query,
             feature_get_history,
-            features_get,
+            features_query,
             bounds,
             bounds_stats,
             bounds_meta,
@@ -464,7 +465,8 @@ struct User {
 
 #[derive(FromForm, Debug)]
 struct Map {
-    bbox: String
+    bbox: Option<String>,
+    point: Option<String>
 }
 
 #[get("/user/create?<user..>")]
@@ -1139,7 +1141,7 @@ fn clone_get(
 }
 
 #[get("/data/features?<map..>")]
-fn features_get(
+fn features_query(
     conn: State<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: State<auth::CustomAuth>,
@@ -1148,8 +1150,17 @@ fn features_get(
     let conn = conn.get()?;
     auth_rules.allows_feature_get(&mut auth, &*conn)?;
 
-    let bbox: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
-    Ok(Stream::from(feature::get_bbox_stream(conn, bbox)?))
+    if map.bbox.is_some() && map.point.is_some() {
+        Err(HecateError::new(400, String::from("key and point params cannot be used together"), None))
+    } else if map.bbox.is_some() {
+        let bbox: Vec<f64> = map.bbox.as_ref().unwrap().split(',').map(|s| s.parse().unwrap()).collect();
+        Ok(Stream::from(feature::get_bbox_stream(conn, &bbox)?))
+    } else if map.point.is_some() {
+        Ok(Stream::from(feature::get_point_stream(conn, &map.point.as_ref().unwrap())?))
+    } else {
+        Err(HecateError::new(400, String::from("key or point param must be used"), None))
+    }
+
 }
 
 #[get("/schema")]
@@ -1345,7 +1356,7 @@ fn osm_map(
         Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
     };
 
-    let query: Vec<f64> = map.bbox.split(',').map(|s| s.parse().unwrap()).collect();
+    let query: Vec<f64> = map.bbox.as_ref().unwrap().split(',').map(|s| s.parse().unwrap()).collect();
 
     let fc = match feature::get_bbox(&*conn, query) {
         Ok(features) => features,
@@ -1884,8 +1895,8 @@ fn feature_query(
     } else if fquery.key.is_some() {
         Ok(Json(feature::query_by_key(&*conn, &fquery.key.as_ref().unwrap())?))
     } else if fquery.point.is_some() {
-        let results = feature::query_by_point(&*conn, &fquery.point.as_ref().unwrap())?;
-        Ok(Json(serde_json::Value::from(results)))
+        let mut results = feature::query_by_point(&*conn, &fquery.point.as_ref().unwrap())?;
+        Ok(Json(results.pop().unwrap()))
     } else {
         Err(HecateError::new(400, String::from("key or point param must be used"), None))
     }
