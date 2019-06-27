@@ -194,7 +194,7 @@ pub fn list_by_offset(conn: &impl postgres::GenericConnection, offset: Option<i6
     }
 }
 
-pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<(i32, i32, u8)>, HecateError> {
+pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64, min_zoom: u8, max_zoom: u8) -> Result<Vec<(i32, i32, u8)>, HecateError> {
     match conn.query("
         SELECT
             ST_GeomFromGeoJSON(json_array_elements((features->>'features')::JSON)->>'geometry')
@@ -221,15 +221,17 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64) -> Result<Vec<(i
 
                 match geom {
                     Some(geom) => {
-                        let geomtiles = match tilecover::tiles(&geom, 14) {
-                            Ok(geomtiles) => geomtiles,
-                            Err(_err) => {
-                                return Err(HecateError::new(500, String::from("Could not generate tilecover"), None));
-                            }
-                        };
+                        for zoom in min_zoom..max_zoom+1 {
+                            let geomtiles = match tilecover::tiles(&geom, zoom) {
+                                Ok(gt) => gt,
+                                Err(_err) => {
+                                    return Err(HecateError::new(500, String::from("Could not generate tilecover"), None));
+                                }
+                            };
 
-                        for geomtile in geomtiles {
-                            tiles.insert(geomtile, true);
+                            for geomtile in geomtiles {
+                                tiles.insert(geomtile, true);
+                            }
                         }
                     },
                     None => ()

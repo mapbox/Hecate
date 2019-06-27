@@ -1,25 +1,10 @@
-mod builder;
-mod encoder;
-pub mod geom_encoder;
-pub mod geom;
-pub mod grid;
-pub mod screen;
-
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub mod proto; // protoc --rust_out . proto.proto
-
-#[cfg(test)]
-mod builder_test;
-
-#[cfg(test)]
-mod geom_encoder_test;
+pub mod grid;
 
 use crate::err::HecateError;
-pub use self::builder::{Tile, Layer, Feature, Value};
-pub use self::encoder::{Decode, Encode};
 pub use self::grid::{Grid};
 
-pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<Option<proto::Tile>, HecateError> {
+pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<Option<Vec<u8>>, HecateError> {
     match conn.query("
         SELECT tile
         FROM tiles
@@ -30,8 +15,7 @@ pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<
         Ok(rows) => {
             if rows.len() == 0 { return Ok(None); }
 
-            let bytes: Vec<u8> = rows.get(0).get(0);
-            let tile = proto::Tile::from_bytes(&bytes).unwrap();
+            let tile: Vec<u8> = rows.get(0).get(0);
 
             Ok(Some(tile))
         },
@@ -39,59 +23,36 @@ pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<
     }
 }
 
-pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u32) -> Result<proto::Tile, HecateError> {
+pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u32) -> Result<Vec<u8>, HecateError> {
     let grid = Grid::web_mercator();
     let bbox = grid.tile_extent(*z, *x, *y);
-    let mut tile = Tile::new(&bbox);
 
-    let mut layer = Layer::new("data");
-
-    let mut limit: Option<i64> = None;
-    if *z < 10 { limit = Some(10) }
-    else if *z < 14 { limit = Some(100) }
-
-    let rows = conn.query("
+    match conn.query("
         SELECT
-            id,
-            props,
-            ST_Transform(geom::geometry, 3857)
-        FROM geo
-        WHERE
-            geom && ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326)
-        ORDER BY ST_Area(geom)
-        LIMIT $6
-    ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy, &grid.srid, &limit]).unwrap();
-
-    for row in rows.iter() {
-        let id: i64 = row.get(0);
-        let mut feature = Feature::new(row.get(2));
-        feature.set_id(id as u64);
-
-        feature.add_property("hecate:id", Value::String(id.to_string()));
-
-        let props: serde_json::Value = row.get(1);
-
-        let props = props.as_object().unwrap();
-
-        for (k, v) in props.iter() {
-            feature.add_property(k.to_string(), Value::String(v.to_string()));
-        }
-
-        layer.add_feature(feature);
+            ST_AsMVT(q, 'data', 4096, 'geom')
+        FROM (
+            SELECT
+                id,
+                ST_AsMVTGeom(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326), 4096, 256, false) AS geom
+            FROM
+                geo
+        ) q
+    ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy, &grid.srid]) {
+        Ok(res) => {
+            let tile: Vec<u8> = res.get(0).get(0);
+            Ok(tile)
+        },
+        Err(err) => Err(HecateError::from_db(err))
     }
-
-    tile.add_layer(layer);
-
-    Ok(tile.encode(&grid))
 }
 
 
-pub fn db_cache(conn: &impl postgres::GenericConnection, coord: String, tile: &proto::Tile) -> Result<(), HecateError> {
+pub fn db_cache(conn: &impl postgres::GenericConnection, coord: String, tile: &Vec<u8>) -> Result<(), HecateError> {
     match conn.query("
         INSERT INTO tiles (ref, tile, created)
             VALUES ($1, $2, NOW())
                 ON CONFLICT (ref) DO UPDATE SET tile = $2;
-    ", &[&coord, &tile.to_bytes().unwrap()]) {
+    ", &[&coord, &tile]) {
         Err(err) => Err(HecateError::from_db(err)),
         _ => Ok(())
     }
@@ -131,7 +92,7 @@ pub fn meta(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> R
     }
 }
 
-pub fn get(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32, regen: bool) -> Result<proto::Tile, HecateError> {
+pub fn get(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32, regen: bool) -> Result<Vec<u8>, HecateError> {
     if regen == false {
         match db_get(conn, format!("{}/{}/{}", &z, &x, &y))? {
             Some(tile) => { return Ok(tile); }
