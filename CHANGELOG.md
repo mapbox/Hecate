@@ -10,6 +10,12 @@
 
 # Version History
 
+## v0.70.0
+
+- :rocket: Switch to `ST_AsMVT` instead of server side generation
+- :rocket: Add support for z17-z15 (previously ended at z14) tile generation
+- :rocket: Add ability to query multiple features at a given point
+
 ## v0.69.0
 
 - :rocket: Add preliminary support for webhooks
