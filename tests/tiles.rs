@@ -91,7 +91,7 @@ mod test {
                     ref
             ", &[]).unwrap();
 
-            assert_eq!(res.len(), 2);
+            assert_eq!(res.len(), 5);
 
             let tile_ref: String = res.get(0).get(0);
             assert_eq!(tile_ref, String::from("1/0/0"));
