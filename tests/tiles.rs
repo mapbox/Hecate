@@ -75,7 +75,7 @@ mod test {
             let mut body: Vec<u8> = Vec::new();
             resp.read_to_end(&mut body).unwrap();
 
-            assert_eq!(body.len(), 100);
+            assert_eq!(body.len(), 36);
             assert!(resp.status().is_success());
         }
 
@@ -98,7 +98,7 @@ mod test {
 
             let tile: Vec<u8> = res.get(0).get(1);
 
-            assert_eq!(tile.len(), 65);
+            assert_eq!(tile.len(), 36);
         }
 
         { //Request a tile via API
@@ -108,7 +108,7 @@ mod test {
             let mut body: Vec<u8> = Vec::new();
             resp.read_to_end(&mut body).unwrap();
 
-            assert_eq!(body.len(), 100);
+            assert_eq!(body.len(), 36);
             assert!(resp.status().is_success());
         }
 
@@ -138,7 +138,7 @@ mod test {
             let mut body: Vec<u8> = Vec::new();
             resp.read_to_end(&mut body).unwrap();
 
-            assert_eq!(body.len(), 100);
+            assert_eq!(body.len(), 36);
             assert!(resp.status().is_success());
         }
 
