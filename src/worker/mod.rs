@@ -70,7 +70,7 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
 
         match task.job {
             TaskType::Delta(delta_id) => {
-                let tiles = delta::tiles(&conn, &delta_id).unwrap();
+                let tiles = delta::tiles(&conn, &delta_id, 14, 17).unwrap();
 
                 if tiles.len() == 0 {
                     continue;
