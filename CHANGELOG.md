@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.70.1
+
+- :bug: [UI] Update maxzoom to 17 in main map
+
 ## v0.70.0
 
 - :rocket: Switch to `ST_AsMVT` instead of server side generation
