@@ -147,7 +147,7 @@ export default {
                 default: function() {
                     this.gl.addSource('hecate-data', {
                         type: 'vector',
-                        maxzoom: 14,
+                        maxzoom: 17,
                         tiles: [ `${window.location.protocol}//${window.location.host}/api/tiles/{z}/{x}/{y}` ]
                     });
 
