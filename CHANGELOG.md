@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.70.3
+
+- :rocket: Add feature limits to tiles
+
 ## v0.70.2
 
 - :bug: Limit tile geometry pool with `ST_Intersects`
