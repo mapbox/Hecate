@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.70.2
+
+- :bug: Limit tile geometry pool with `ST_Intersects`
+
 ## v0.70.1
 
 - :bug: [UI] Update maxzoom to 17 in main map
