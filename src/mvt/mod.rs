@@ -27,6 +27,13 @@ pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u
     let grid = Grid::web_mercator();
     let bbox = grid.tile_extent(*z, *x, *y);
 
+    let mut limit: Option<i64> = None;
+    if *z < 10 {
+        limit = Some(10)
+    } else if *z < 14 {
+        limit = Some(100)
+    }
+
     match conn.query("
         SELECT
             ST_AsMVT(q, 'data', 4096, 'geom')
@@ -38,8 +45,9 @@ pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u
                 geo
             WHERE
                 ST_Intersects(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326))
+            LIMIT $6
         ) q
-    ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy, &grid.srid]) {
+    ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy, &grid.srid, &limit]) {
         Ok(res) => {
             let tile: Vec<u8> = res.get(0).get(0);
             Ok(tile)
