@@ -36,6 +36,8 @@ pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u
                 ST_AsMVTGeom(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326), 4096, 256, false) AS geom
             FROM
                 geo
+            WHERE
+                ST_Intersects(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326))
         ) q
     ", &[&bbox.minx, &bbox.miny, &bbox.maxx, &bbox.maxy, &grid.srid]) {
         Ok(res) => {
