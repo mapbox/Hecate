@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.70.4
+
+- :rocket: [UI] Add support for multiple feature selection via click UI
+
 ## v0.70.3
 
 - :rocket: Add feature limits to tiles
