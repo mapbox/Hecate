@@ -61,6 +61,7 @@ export default {
         return {
             404: false,
             feature: false,
+            features: [],
             loading: false
         }
     },
@@ -82,6 +83,9 @@ export default {
         get: function(id) {
             if (!id) return;
 
+            this.feature = false;
+            this.features = [];
+
             this.is404 = false;
             this.loading = true;
 
@@ -100,7 +104,7 @@ export default {
                     this.feature = body;
                 });
             } else if (Array.isArray(id)) {
-                fetch(`${window.location.protocol}//${window.location.host}/api/data/feature?point=${encodeURIComponent(id[0] + ',' + id[1])}`, {
+                fetch(`${window.location.protocol}//${window.location.host}/api/data/features?point=${encodeURIComponent(id[0] + ',' + id[1])}`, {
                     method: 'GET',
                     credentials: 'same-origin'
                 }).then((response) => {
@@ -108,10 +112,20 @@ export default {
                           this.is404 = true;
                           this.feature = false;
                       } else {
-                          return response.json();
+                          return response.text();
                       }
                 }).then((body) => {
-                    this.feature = body;
+                    body = body.split('\n');
+                    body.pop();
+                    body = body.map((b) => {
+                        return JSON.parse(b);
+                    });
+
+                    if (body.length === 1) {
+                        this.feature = body[0];
+                    } else {
+                        this.features = body;
+                    }
                 })
             }
 
