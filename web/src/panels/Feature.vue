@@ -10,10 +10,7 @@
             No Feature Found
         </div>
     </template>
-    <template v-else-if='loading'>
-        <div class='flex-child loading h60'></div>
-    </template>
-    <template v-else>
+    <template v-else-if='feature'>
         <div class="flex-child scroll-auto">
             <table class='table txt-xs'>
                 <thead><tr><th>Key</th><th>Value</th></tr></thead>
@@ -47,6 +44,9 @@
             </table>
         </div>
     </template>
+    <template v-else>
+        <div class='flex-child loading h60'></div>
+    </template>
 
     <foot/>
 </div>
@@ -59,10 +59,9 @@ export default {
     name: 'feature',
     data: function() {
         return {
-            404: false,
+            is404: false,
             feature: false,
-            features: [],
-            loading: false
+            features: []
         }
     },
     components: {
@@ -87,7 +86,6 @@ export default {
             this.features = [];
 
             this.is404 = false;
-            this.loading = true;
 
             if (typeof id === 'number' || typeof id === 'string') {
                 fetch(`${window.location.protocol}//${window.location.host}/api/data/feature/${id}`, {
@@ -110,26 +108,27 @@ export default {
                 }).then((response) => {
                       if (response.status === 404) {
                           this.is404 = true;
-                          this.feature = false;
                       } else {
                           return response.text();
                       }
                 }).then((body) => {
                     body = body.split('\n');
-                    body.pop();
+                    body.pop(); // Remove EOS ctrl char
                     body = body.map((b) => {
                         return JSON.parse(b);
                     });
 
-                    if (body.length === 1) {
+                    if (body.length === 0) {
+                        this.is404 = true;
+                    } else if (body.length === 1) {
                         this.feature = body[0];
                     } else {
                         this.features = body;
                     }
+
+                    console.error('here');
                 })
             }
-
-            this.loading = false;
         }
     },
     render: h => h(App),
