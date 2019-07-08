@@ -44,6 +44,15 @@
             </table>
         </div>
     </template>
+    <template v-else-if='features.length'>
+        <div class="flex-child scroll-auto">
+            <div v-for="(feat, feat_it) in features" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+                <div @click="feature = feat" class="w-full clearfix">
+                    <span class="fl py6 px6"><svg class='icon'><use href='#icon-marker'/></span>
+                    Feature # <span v-text="feat.id"></span>
+            </div>
+        </div>
+    </template>
     <template v-else>
         <div class='flex-child loading h60'></div>
     </template>
@@ -125,8 +134,6 @@ export default {
                     } else {
                         this.features = body;
                     }
-
-                    console.error('here');
                 })
             }
         }

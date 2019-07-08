@@ -28,8 +28,8 @@
                         <span class="fl" v-text="bound_name"></span>
                         <a v-bind:href="`/api/data/bounds/${bound_name}`" target="_blank">
                             <button @click="getBounds" class='btn btn--stroke btn--s my6 mr6 round bg-transparent bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-arrow-down'/></button>
-                        </div>
-                    </a>
+                        </a>
+                    </div>
                 </div>
             </div>
         </template>
