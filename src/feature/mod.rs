@@ -617,7 +617,7 @@ pub fn get_point_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConn
     Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
         DECLARE next_features CURSOR FOR
             SELECT
-                row_to_json(f)::JSON AS feature
+                row_to_json(f)::TEXT AS feature
             FROM (
                 SELECT
                     id AS id,

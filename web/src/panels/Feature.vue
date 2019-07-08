@@ -10,10 +10,7 @@
             No Feature Found
         </div>
     </template>
-    <template v-else-if='loading'>
-        <div class='flex-child loading h60'></div>
-    </template>
-    <template v-else>
+    <template v-else-if='feature'>
         <div class="flex-child scroll-auto">
             <table class='table txt-xs'>
                 <thead><tr><th>Key</th><th>Value</th></tr></thead>
@@ -47,6 +44,18 @@
             </table>
         </div>
     </template>
+    <template v-else-if='features.length'>
+        <div class="flex-child scroll-auto">
+            <div v-for="(feat, feat_it) in features" class="w-full py3 clearfix bg-white bg-darken25-on-hover cursor-pointer">
+                <div @click="feature = feat" class="w-full clearfix">
+                    <span class="fl py6 px6"><svg class='icon'><use href='#icon-marker'/></span>
+                    Feature # <span v-text="feat.id"></span>
+            </div>
+        </div>
+    </template>
+    <template v-else>
+        <div class='flex-child loading h60'></div>
+    </template>
 
     <foot/>
 </div>
@@ -59,9 +68,9 @@ export default {
     name: 'feature',
     data: function() {
         return {
-            404: false,
+            is404: false,
             feature: false,
-            loading: false
+            features: []
         }
     },
     components: {
@@ -82,8 +91,10 @@ export default {
         get: function(id) {
             if (!id) return;
 
+            this.feature = false;
+            this.features = [];
+
             this.is404 = false;
-            this.loading = true;
 
             if (typeof id === 'number' || typeof id === 'string') {
                 fetch(`${window.location.protocol}//${window.location.host}/api/data/feature/${id}`, {
@@ -100,22 +111,31 @@ export default {
                     this.feature = body;
                 });
             } else if (Array.isArray(id)) {
-                fetch(`${window.location.protocol}//${window.location.host}/api/data/feature?point=${encodeURIComponent(id[0] + ',' + id[1])}`, {
+                fetch(`${window.location.protocol}//${window.location.host}/api/data/features?point=${encodeURIComponent(id[0] + ',' + id[1])}`, {
                     method: 'GET',
                     credentials: 'same-origin'
                 }).then((response) => {
                       if (response.status === 404) {
                           this.is404 = true;
-                          this.feature = false;
                       } else {
-                          return response.json();
+                          return response.text();
                       }
                 }).then((body) => {
-                    this.feature = body;
+                    body = body.split('\n');
+                    body.pop(); // Remove EOS ctrl char
+                    body = body.map((b) => {
+                        return JSON.parse(b);
+                    });
+
+                    if (body.length === 0) {
+                        this.is404 = true;
+                    } else if (body.length === 1) {
+                        this.feature = body[0];
+                    } else {
+                        this.features = body;
+                    }
                 })
             }
-
-            this.loading = false;
         }
     },
     render: h => h(App),
