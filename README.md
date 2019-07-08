@@ -51,7 +51,7 @@
     - [Downloading Via Query](#downloading-via-query)
     - [Boundaries](#boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
-    - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
+    - [Downloading Multiple Features](#downloading-multiple-features)
     - [Feature Creation](#feature-creation)
     - [Deltas](#deltas)
     - [OpenStreetMap API](#openstreetmap-api)
@@ -975,7 +975,7 @@ Update a webhook ID with the given webhook data
 
 ```bash
 curl
-    -X POST 
+    -X POST
     -H "Content-Type: application/json" \
     -d '{ "name": "webhook name", "url": "https://example.com", "actions": ["meta", "user", "delta", "style"] }' \
     -u 'username:password' \
@@ -1400,13 +1400,13 @@ curl -X GET 'http://localhost:8000/api/data/feature/1542/history'
 
 ---
 
-<h3 align='center'>Downloading Multiple Features via BBOX</h3>
+<h3 align='center'>Downloading Multiple Features</h3>
 
 <details>
 
 #### `GET` `/api/data/features`
 
-Return streaming Line-Delimited GeoJSON within the provided BBOX
+Return streaming Line-Delimited GeoJSON within the provided BBOX or Point
 
 Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
 (`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
@@ -1416,12 +1416,17 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 
 | Option | Notes |
 | :----: | ----- |
-| `bbox=<minX,minY,maxX,maxY>` | `REQUIRED` Bounding Box in format `left,bottom,right,top` |
+| `bbox=<minX,minY,maxX,maxY>` | `Optional` Bounding Box in format `left,bottom,right,top` |
+| `point=<Lng,Lat>` | `Optional` Point to query for intersections |
 
 *Example*
 
 ```bash
 curl -X GET 'http://localhost:8000/api/data/features/?bbox=-122.51791%2C37.60447%2C-122.35499%2C37.83244'
+```
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/features/?point=-95.2734375%2C36.03133177633187'
 ```
 
 </details>
