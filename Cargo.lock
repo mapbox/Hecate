@@ -589,7 +589,7 @@ dependencies = [
 
 [[package]]
 name = "hecate"
-version = "0.70.3"
+version = "0.70.4"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
