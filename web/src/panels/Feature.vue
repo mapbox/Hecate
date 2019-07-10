@@ -2,7 +2,13 @@
 <div class='flex-parent flex-parent--column viewport-third h-auto-ml bg-white round-ml shadow-darken10' style="pointer-events:auto; max-height: calc(100% - 80px);">
     <div class='flex-child px12 py12'>
         <h3 class='fl py6 txt-m txt-bold'>Feature <span v-text='feature ? feature.id : ""'></span></h3>
-        <button @click='close()' class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-close'/></button>
+
+        <template v-if="features.length && feature">
+            <button @click='feature = false' class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-arrow-left'/></button>
+        </template>
+        <template v-else>
+            <button @click='close' class='btn round bg-gray-light bg-darken25-on-hover color-gray-dark fr'><svg class='icon'><use href='#icon-close'/></button>
+        </template>
     </div>
 
     <template v-if='is404'>
