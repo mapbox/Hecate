@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.70.5
+
+- :rocket: [UI] Show back button when individual feature is selected of multiple potential
+
 ## v0.70.4
 
 - :rocket: [UI] Add support for multiple feature selection via click UI
