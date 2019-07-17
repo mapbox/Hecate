@@ -9,6 +9,36 @@ window.onload = () => {
 }
 
 window.hecate = {
+    auth: {
+        get: function(cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/auth`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                return response.json();
+            }).then((response) => {
+                return cb(response);
+            }).catch((err) => {
+                return cb(err);
+            });
+        }
+    },
+    schema: {
+        get: function(cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/schema`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                return response.json();
+            }).then((response) => {
+                return cb(response);
+            }).catch((err) => {
+                return cb(err);
+            });
+        }
+    },
     tiles: {
         clear: function(cb) {
             fetch(`${window.location.protocol}//${window.location.host}/api/tiles`, {

@@ -288,14 +288,14 @@ export default {
 
         this.getSelf((err, user) => {
             if (err || !user) {
-                this.getSettings();
+                this.getLayers();
                 this.getAuth();
             } else {
                 this.credentials.authed = true;
                 this.credentials.username = user.username;
                 this.credentials.uid = user.id;
 
-                this.getSettings();
+                this.getLayers();
                 this.getAuth();
             }
         });
@@ -357,34 +357,20 @@ export default {
     methods: {
         settings_close: function() {
             this.modal = false;
-            this.getSettings();
+            this.getLayers();
         },
-        getSettings: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                return response.json();
-            }).then((layers) => {
-                if (!layers) return;
+        getLayers: function() {
+            window.hecate.meta.get('layers', (err, layers) => {
+                if (err) console.error(err);
 
+                if (!layers) return;
                 this.map.baselayers = layers;
-            }).catch((err) => {
-                console.error(err);
             });
         },
         getAuth: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/auth`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                return response.json();
-            }).then((auth) => {
-                if (!auth) return;
-
+            window.hecate.auth.get((err, auth) => {
+                if (err) console.error(err);
                 this.auth = auth;
-            }).catch((err) => {
-                console.error(err);
             });
         },
         setBaseLayer(layer_idx) {
