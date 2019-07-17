@@ -264,6 +264,7 @@ export default {
             panel: false, //Store the current panel view (Deltas, Styles, Bounds, etc)
             layers: [], //Store list of GL layer names so they can be easily removed
             feature: false, //Store the id of a clicked feature
+            schema: false, //Store the JSON Schema for features
             user_id: false, //Store the id of a user for viewing more info
             style_id: false, //Store the id of the current style - false for generic style
             modal: false
@@ -377,6 +378,12 @@ export default {
             if (isNaN(layer_idx)) return;
 
             this.map.gl.setStyle(this.map.baselayers[layer_idx].url);
+        },
+        getSchema: function() {
+            window.hecate.schema.get((err, schema) => {
+                if (err) console.error(err);
+                this.schema = schema;
+            });
         },
         getSelf: function(cb) {
             fetch(`${window.location.protocol}//${window.location.host}/api/user/info`, {
