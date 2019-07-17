@@ -34,6 +34,10 @@
                                         <td v-text="element[key]"></td>
                                     </tr>
                                 </template>
+                                <!-- element: Array: (String) -->
+                                <template v-else-if="typeof element === 'string'">
+                                    <td v-text="element"></td>
+                                </template>
                                 <!-- element: Array: (Array, String, Number) -->
                                 <template v-else>
                                     <td v-text="JSON.stringify(element)"></td>
@@ -43,7 +47,10 @@
                             </template>
                         </td>
 
-                        <!-- element: (Object, String, Number) -->
+                        <!-- element: (String) -->
+                        <td v-else-if="typeof feature.properties[prop] === 'string'" v-text="feature.properties[prop]" ></td>
+
+                        <!-- element: (Object, Number) -->
                         <td v-else v-text="JSON.stringify(feature.properties[prop])"></td>
                     </tr>
                 </tbody>
@@ -115,6 +122,8 @@ export default {
                       }
                 }).then((body) => {
                     this.feature = body;
+                }).catch((err) => {
+                    this.$emit('error', err.message);
                 });
             } else if (Array.isArray(id)) {
                 fetch(`${window.location.protocol}//${window.location.host}/api/data/features?point=${encodeURIComponent(id[0] + ',' + id[1])}`, {
@@ -140,11 +149,13 @@ export default {
                     } else {
                         this.features = body;
                     }
-                })
+                }).catch((err) => {
+                    this.$emit('error', err.message);
+                });
             }
         }
     },
     render: h => h(App),
-    props: ['id', 'map']
+    props: ['id', 'map', 'schema']
 }
 </script>

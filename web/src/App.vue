@@ -1,4 +1,5 @@
 <template>
+
     <div class='viewport-full relative scroll-hidden'>
         <!-- Map -->
         <div id="map" class='h-full bg-darken10 viewport-twothirds viewport-full-ml absolute top left right bottom'></div>
@@ -47,16 +48,16 @@
             </div>
 
             <template v-if='panel === "deltas"'>
-                <deltas :map='map' v-on:user='modal = "user"; user_id = $event'/>
+                <deltas :map='map' v-on:error='error = $event' v-on:user='modal = "user"; user_id = $event'/>
             </template>
             <template v-else-if='panel === "bounds"'>
-                <bounds :map='map' :panel='panel'/>
+                <bounds :map='map' v-on:error='error = $event' :panel='panel'/>
             </template>
             <template v-else-if='panel === "styles"'>
-                <styles :credentials='credentials' v-on:style='modal = "style"; style_id = $event'/>
+                <styles :credentials='credentials' v-on:error='error = $event' v-on:style='modal = "style"; style_id = $event'/>
             </template>
             <template v-else-if='feature'>
-                <feature :map='map' :id='feature' v-on:close='feature = false'/>
+                <feature :schema='schema' :map='map' :id='feature' v-on:error='error = $event' v-on:close='feature = false'/>
             </template>
         </div>
 
@@ -72,8 +73,9 @@
             </div>
         </div>
 
-        <!-- Modal Opaque -->
+        <!-- Modal/Error Opaque -->
         <div v-if='modal' class='absolute top left bottom right z2 bg-black opacity75' style="pointer-events: none;"></div>
+        <div v-if='error' class='absolute top left bottom right z4 bg-black opacity75' style="pointer-events: none;"></div>
 
         <!--Modals here-->
         <template v-if='modal === "login"'>
@@ -95,13 +97,17 @@
             <self :auth='auth' v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "settings"'>
-            <settings v-on:close='settings_close' :auth='auth'/>
+            <settings v-on:error='error = $event' v-on:close='settings_close' :auth='auth'/>
         </template>
         <template v-else-if='modal === "query"'>
             <query :auth='auth' v-on:close='modal = false' :credentials='credentials' />
         </template>
         <template v-else-if='modal === "style"'>
             <stylem v-on:close='modal = false' :style_id='style_id' :credentials='credentials' :map='map' />
+        </template>
+
+        <template v-if='error'>
+            <err title='Error' :body='error' v-on:close='error = ""'/>
         </template>
     </div>
 </template>
@@ -112,6 +118,7 @@ import mapboxglgeo from '@mapbox/mapbox-gl-geocoder';
 
 // === Components ===
 import Foot from './components/Foot.vue';
+import Err from './components/Error.vue';
 
 // === Panels ===
 import Deltas from './panels/Deltas.vue';
@@ -133,6 +140,7 @@ export default {
     data: function() {
         return {
             auth: false,
+            error: '',
             credentials: {
                 map: { key: 'pk.eyJ1IjoiaW5nYWxscyIsImEiOiJjam42YjhlMG4wNTdqM2ttbDg4dmh3YThmIn0.uNAoXsEXts4ljqf2rKWLQg' },
                 authed: false,
@@ -271,6 +279,7 @@ export default {
         }
     },
     components: {
+        err: Err,
         self: Self,
         user: User,
         foot: Foot,
@@ -346,7 +355,6 @@ export default {
     },
     watch: {
         panel: function() {
-            console.error(this.panel);
             if (this.panel !=='bounds') {
                 this.map.gl.getSource('hecate-bounds').setData({
                     type: 'Feature',
@@ -356,13 +364,19 @@ export default {
         }
     },
     methods: {
+        handler: function(err) {
+            if (!err) return;
+
+            console.error(err);
+            this.error = err.message;
+        },
         settings_close: function() {
             this.modal = false;
             this.getLayers();
         },
         getLayers: function() {
             window.hecate.meta.get('layers', (err, layers) => {
-                if (err) console.error(err);
+                if (err) return this.handler(err);
 
                 if (!layers) return;
                 this.map.baselayers = layers;
@@ -370,7 +384,7 @@ export default {
         },
         getAuth: function() {
             window.hecate.auth.get((err, auth) => {
-                if (err) console.error(err);
+                if (err) return this.handler(err);
                 this.auth = auth;
             });
         },
@@ -381,7 +395,7 @@ export default {
         },
         getSchema: function() {
             window.hecate.schema.get((err, schema) => {
-                if (err) console.error(err);
+                if (err) return this.handler(err);
                 this.schema = schema;
             });
         },
@@ -399,7 +413,7 @@ export default {
             }).then((user) => {
                 if (cb) return cb(null, user);
             }).catch((err) => {
-                console.error(err);
+                if (err) return this.handler(err);
 
                 if (cb) return cb(err);
             });
@@ -407,7 +421,6 @@ export default {
         logout: function(reload) {
             this.credentials.authed = false;
 
-            console.error('LOGOUT');
             fetch(`${window.location.protocol}//${window.location.host}/api/user/session`, {
                 method: 'DELETE',
                 credentials: 'same-origin'

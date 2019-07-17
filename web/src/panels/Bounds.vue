@@ -82,6 +82,8 @@ export default {
 
                 this.map.gl.getSource('hecate-bounds').setData(body);
                 this.map.gl.fitBounds(bbox(body));
+            }).catch((err) => {
+                this.$emit('error', err.message);
             });
 
         },
@@ -101,6 +103,8 @@ export default {
             }).then((body) => {
                 this.bounds = body;
                 this.loading = false;
+            }).catch((err) => {
+                this.$emit('error', err.message);
             });
         }
     },
