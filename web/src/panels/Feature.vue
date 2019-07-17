@@ -82,48 +82,28 @@ export default {
             this.is404 = false;
 
             if (typeof id === 'number' || typeof id === 'string') {
-                fetch(`${window.location.protocol}//${window.location.host}/api/data/feature/${id}`, {
-                    method: 'GET',
-                    credentials: 'same-origin'
-                }).then((response) => {
-                      if (response.status === 404) {
-                          this.is404 = true;
-                          this.feature = false;
-                      } else {
-                          return response.json();
-                      }
-                }).then((body) => {
-                    this.feature = body;
-                }).catch((err) => {
-                    this.$emit('error', err);
+                window.hecate.feature.get(id, (err, feature) => {
+                    if (err) return this.$emit('error', err);
+                    
+                    if (!feature) {
+                        this.is404 = true;
+                    } else {
+                        this.feature = feature;
+                    }
                 });
             } else if (Array.isArray(id)) {
-                fetch(`${window.location.protocol}//${window.location.host}/api/data/features?point=${encodeURIComponent(id[0] + ',' + id[1])}`, {
-                    method: 'GET',
-                    credentials: 'same-origin'
-                }).then((response) => {
-                      if (response.status === 404) {
-                          this.is404 = true;
-                      } else {
-                          return response.text();
-                      }
-                }).then((body) => {
-                    body = body.split('\n');
-                    body.pop(); // Remove EOS ctrl char
-                    body = body.map((b) => {
-                        return JSON.parse(b);
-                    });
-
-                    if (body.length === 0) {
+                window.hecate.features.point(id, (err, features) => {
+                    if (err) return this.$emit('error', err);
+                    
+                    if (!features) {
                         this.is404 = true;
-                    } else if (body.length === 1) {
-                        this.feature = body[0];
+                    } else if (features.length === 1) {
+                        this.feature = features[0];
                     } else {
-                        this.features = body;
+                        this.features = features;
                     }
-                }).catch((err) => {
-                    this.$emit('error', err);
                 });
+
             }
         }
     },
