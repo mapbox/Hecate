@@ -1,5 +1,4 @@
 use crate::wfs::Query;
-use crate::wfs::ResultType;
 
 use crate::stream::PGStream;
 use crate::err::HecateError;

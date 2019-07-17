@@ -19,7 +19,7 @@ impl PGStream {
         conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>,
         cursor: String,
         query: String,
-        params: &[&ToSql],
+        params: &[&dyn ToSql],
         prestream: Option<Vec<u8>>,
         poststream: Option<Vec<u8>>
     ) -> Result<Self, HecateError> {

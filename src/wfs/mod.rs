@@ -1,5 +1,3 @@
-use crate::err::HecateError;
-
 mod capabilities;
 mod get_feature;
 mod describe_feature_type;

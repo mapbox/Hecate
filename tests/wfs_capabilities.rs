@@ -72,7 +72,6 @@ mod test {
         {
             let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
             assert!(resp.status().is_success());
-            //TODO check body
         }
 
         { //Create MultiPoint
@@ -97,7 +96,6 @@ mod test {
         {
             let resp = reqwest::get("http://localhost:8000/api/data/feature/2").unwrap();
             assert!(resp.status().is_success());
-            //TODO check body
         }
 
         { //Create LineString
@@ -122,7 +120,6 @@ mod test {
         {
             let resp = reqwest::get("http://localhost:8000/api/data/feature/3").unwrap();
             assert!(resp.status().is_success());
-            //TODO check body
         }
 
         { //Create MultiLineString
@@ -147,7 +144,6 @@ mod test {
         {
             let resp = reqwest::get("http://localhost:8000/api/data/feature/4").unwrap();
             assert!(resp.status().is_success());
-            //TODO check body
         }
 
         server.kill().unwrap();
