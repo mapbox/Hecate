@@ -1,4 +1,5 @@
 <template>
+
     <div class='viewport-full relative scroll-hidden'>
         <!-- Map -->
         <div id="map" class='h-full bg-darken10 viewport-twothirds viewport-full-ml absolute top left right bottom'></div>
@@ -47,16 +48,16 @@
             </div>
 
             <template v-if='panel === "deltas"'>
-                <deltas :map='map' v-on:user='modal = "user"; user_id = $event'/>
+                <deltas :map='map' v-on:error='handler($event)' v-on:user='modal = "user"; user_id = $event'/>
             </template>
             <template v-else-if='panel === "bounds"'>
-                <bounds :map='map' :panel='panel'/>
+                <bounds :map='map' v-on:error='handler($event)' :panel='panel'/>
             </template>
             <template v-else-if='panel === "styles"'>
-                <styles :credentials='credentials' v-on:style='modal = "style"; style_id = $event'/>
+                <styles :credentials='credentials' v-on:error='handler($event)' v-on:style='modal = "style"; style_id = $event'/>
             </template>
             <template v-else-if='feature'>
-                <feature :map='map' :id='feature' v-on:close='feature = false'/>
+                <feature :schema='schema' :map='map' :id='feature' v-on:error='handler($event)' v-on:close='feature = false'/>
             </template>
         </div>
 
@@ -72,8 +73,9 @@
             </div>
         </div>
 
-        <!-- Modal Opaque -->
+        <!-- Modal/Error Opaque -->
         <div v-if='modal' class='absolute top left bottom right z2 bg-black opacity75' style="pointer-events: none;"></div>
+        <div v-if='error.title' class='absolute top left bottom right z4 bg-black opacity75' style="pointer-events: none;"></div>
 
         <!--Modals here-->
         <template v-if='modal === "login"'>
@@ -95,13 +97,17 @@
             <self :auth='auth' v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "settings"'>
-            <settings v-on:close='settings_close' :auth='auth'/>
+            <settings v-on:error='handler($event)' v-on:close='settings_close' :auth='auth'/>
         </template>
         <template v-else-if='modal === "query"'>
             <query :auth='auth' v-on:close='modal = false' :credentials='credentials' />
         </template>
         <template v-else-if='modal === "style"'>
             <stylem v-on:close='modal = false' :style_id='style_id' :credentials='credentials' :map='map' />
+        </template>
+
+        <template v-if='error.title'>
+            <err :title='error.title' :body='error.body' v-on:close='error.title = ""'/>
         </template>
     </div>
 </template>
@@ -112,6 +118,7 @@ import mapboxglgeo from '@mapbox/mapbox-gl-geocoder';
 
 // === Components ===
 import Foot from './components/Foot.vue';
+import Err from './components/Error.vue';
 
 // === Panels ===
 import Deltas from './panels/Deltas.vue';
@@ -133,6 +140,10 @@ export default {
     data: function() {
         return {
             auth: false,
+            error: {
+                title: '',
+                body: ''
+            },
             credentials: {
                 map: { key: 'pk.eyJ1IjoiaW5nYWxscyIsImEiOiJjam42YjhlMG4wNTdqM2ttbDg4dmh3YThmIn0.uNAoXsEXts4ljqf2rKWLQg' },
                 authed: false,
@@ -264,12 +275,14 @@ export default {
             panel: false, //Store the current panel view (Deltas, Styles, Bounds, etc)
             layers: [], //Store list of GL layer names so they can be easily removed
             feature: false, //Store the id of a clicked feature
+            schema: false, //Store the JSON Schema for features
             user_id: false, //Store the id of a user for viewing more info
             style_id: false, //Store the id of the current style - false for generic style
             modal: false
         }
     },
     components: {
+        err: Err,
         self: Self,
         user: User,
         foot: Foot,
@@ -286,16 +299,18 @@ export default {
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
 
+        this.getSchema();
+
         this.getSelf((err, user) => {
             if (err || !user) {
-                this.getSettings();
+                this.getLayers();
                 this.getAuth();
             } else {
                 this.credentials.authed = true;
                 this.credentials.username = user.username;
                 this.credentials.uid = user.id;
 
-                this.getSettings();
+                this.getLayers();
                 this.getAuth();
             }
         });
@@ -345,7 +360,6 @@ export default {
     },
     watch: {
         panel: function() {
-            console.error(this.panel);
             if (this.panel !=='bounds') {
                 this.map.gl.getSource('hecate-bounds').setData({
                     type: 'Feature',
@@ -355,42 +369,42 @@ export default {
         }
     },
     methods: {
+        handler: function(err) {
+            if (!err) return;
+
+            console.error('ERROR HANDLER', err);
+            this.error.title = err.title ? err.title : 'Error';
+            this.error.body = err.body ? err.body : err.message;
+        },
         settings_close: function() {
             this.modal = false;
-            this.getSettings();
+            this.getLayers();
         },
-        getSettings: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/meta/layers`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                return response.json();
-            }).then((layers) => {
-                if (!layers) return;
+        getLayers: function() {
+            window.hecate.meta.get('layers', (err, layers) => {
+                if (err) return this.handler(err);
 
+                if (!layers) return;
                 this.map.baselayers = layers;
-            }).catch((err) => {
-                console.error(err);
             });
         },
         getAuth: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/auth`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then((response) => {
-                return response.json();
-            }).then((auth) => {
-                if (!auth) return;
-
+            window.hecate.auth.get((err, auth) => {
+                if (err) return this.handler(err);
                 this.auth = auth;
-            }).catch((err) => {
-                console.error(err);
             });
         },
         setBaseLayer(layer_idx) {
             if (isNaN(layer_idx)) return;
 
             this.map.gl.setStyle(this.map.baselayers[layer_idx].url);
+        },
+        getSchema: function() {
+            window.hecate.schema.get((err, schema) => {
+                if (err) return this.handler(err);
+
+                this.schema = schema;
+            });
         },
         getSelf: function(cb) {
             fetch(`${window.location.protocol}//${window.location.host}/api/user/info`, {
@@ -406,7 +420,7 @@ export default {
             }).then((user) => {
                 if (cb) return cb(null, user);
             }).catch((err) => {
-                console.error(err);
+                if (err) return this.handler(err);
 
                 if (cb) return cb(err);
             });
@@ -414,7 +428,6 @@ export default {
         logout: function(reload) {
             this.credentials.authed = false;
 
-            console.error('LOGOUT');
             fetch(`${window.location.protocol}//${window.location.host}/api/user/session`, {
                 method: 'DELETE',
                 credentials: 'same-origin'

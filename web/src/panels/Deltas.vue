@@ -107,7 +107,7 @@ export default {
 
             if (action === 'right') { //Back in time
                 this.offset = this.offset + 20;
-                
+
                 off = `?offset=${this.offset}`;
             } else if (action === 'home') { //Current time
                 this.offset = false;
@@ -131,7 +131,7 @@ export default {
 
                 if (this.deltas[0]) this.offset = this.deltas[0].id;
             }).catch((err) => {
-                console.error(err);
+                this.$emit('error', err);
             });
         },
         getDelta: function(delta_id) {
@@ -148,6 +148,8 @@ export default {
                     return feat;
                 });
                 this.delta = body;
+            }).catch((err) => {
+                this.$emit('error', err);
             });
         },
         style: function() {

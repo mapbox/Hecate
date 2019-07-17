@@ -2,25 +2,7 @@
     <div class='absolute top left bottom right z3' style="pointer-events: none;">
         <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events: auto;">
             <div class="flex-child px12 py12 w600 h80 bg-white round-ml shadow-darken10">
-                <template v-if='error'>
-                    <div class='grid w-full col'>
-                        <div class='col--12'>
-                            <h3 class='w-full py6 txt-m txt-bold align-center'>ERROR!</h3>
-                        </div>
-
-                        <div class='col--12 py12' v-text='error'></div>
-
-                        <div class='col--12 py12'>
-                            <div class='grid grid--gut12'>
-                                <div class='col col--6'></div>
-                                <div class='col col--6'>
-                                    <button @click='error = false' class='btn round w-full'>Ok</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-                <template v-else-if='mode === "addLayer"'>
+                <template v-if='mode === "addLayer"'>
                     <div class='grid w-full col'>
 
                         <template v-if='layerData.error'>
@@ -349,8 +331,13 @@
 </template>
 
 <script>
+import Err from '../components/Error.vue';
+
 export default {
     name: 'settings',
+    components: {
+        error: Err
+    },
     data: function() {
         return {
             mode: 'settings',
@@ -360,7 +347,6 @@ export default {
             layers: [],
             users: [],
             userFilter: '',
-            error: '',
             delLayerData: {
                 idx: false,
                 name: '',
@@ -414,31 +400,32 @@ export default {
         },
         clearCache: function() {
             window.hecate.tiles.clear((err) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
                 this.tilecache = true;
             });
         },
         getLayers: function() {
             window.hecate.meta.get('layers', (err, layers) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
                 this.layers = layers;
             });
         },
         getUsers: function() {
             window.hecate.users.list(this.userFilter, (err, users) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
+
                 this.users = users;
             });
         },
         getHooks: function() {
             window.hecate.webhooks.list((err, hooks) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
                 this.hooks = hooks;
             });
         },
         getHook: function(hook_id) {
             window.hecate.webhooks.get(hook_id, (err, hook) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
 
                 this.webhookData.id = hook.id;
                 this.webhookData.name = hook.name;
@@ -458,7 +445,7 @@ export default {
         },
         deleteHook: function(hook_id) {
             window.hecate.webhooks.delete(hook_id, (err, hook) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
 
                 this.mode = 'addHook';
                 this.getHooks();
@@ -473,7 +460,9 @@ export default {
                 body: JSON.stringify(this.layers)
             }).then((response) => {
                 if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
+                    return this.$emit('error', {
+                        body: response.statusText
+                    });
                 }
 
                 return response.json();
@@ -481,7 +470,7 @@ export default {
                 if (!layers)
                 this.layers = layers;
             }).catch((err) => {
-                this.error = err.message;
+                this.$emit('error', err);
             });
         },
         deleteLayer: function() {
@@ -580,13 +569,13 @@ export default {
 
             if (!hook_id) {
                 window.hecate.webhooks.create(hook, (err) => {
-                    if (err) return this.error = err.message;
+                    if (err) return this.$emit('error', err);
                     this.getHooks();
                     this.close();
                 });
             } else {
                 window.hecate.webhooks.update(hook_id, hook, (err) => {
-                    if (err) return this.error = err.message;
+                    if (err) return this.$emit('error', err);
                     this.getHooks();
                     this.close();
                 });
