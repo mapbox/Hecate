@@ -136,7 +136,7 @@ fn database_check(conn_str: &String, is_read: bool) {
                     Err(err) => {
                         println!("ERROR: Connection unable obtain postgres version using ({}) {}", conn_type, conn_str);
                         println!("ERROR: {}", err.description());
-                        println!("ERROR: Caused by: {}", err.cause().unwrap());
+                        println!("ERROR: Caused by: {}", err.source().unwrap());
                         std::process::exit(1);
                     }
                 }
@@ -149,7 +149,7 @@ fn database_check(conn_str: &String, is_read: bool) {
                 Err(err) => {
                     println!("ERROR: Connection unable to {} geo table using {}", conn_type, conn_str);
                     println!("ERROR: {}", err.description());
-                    println!("ERROR: Caused by: {}", err.cause().unwrap());
+                    println!("ERROR: Caused by: {}", err.source().unwrap());
                     std::process::exit(1);
                 }
             }
@@ -157,7 +157,7 @@ fn database_check(conn_str: &String, is_read: bool) {
         Err(err) => {
             println!("ERROR: Unable to connect to {}", conn_str);
             println!("ERROR: {}", err.description());
-            println!("ERROR: caused by: {}", err.cause().unwrap());
+            println!("ERROR: caused by: {}", err.source().unwrap());
 
             std::process::exit(1);
         }

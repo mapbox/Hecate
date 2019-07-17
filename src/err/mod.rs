@@ -103,6 +103,12 @@ impl HecateError {
     }
 }
 
+impl ToString for HecateError {
+    fn to_string(&self) -> String {
+        self.safe_error.clone()
+    }
+}
+
 use std::io::Cursor;
 use rocket::request::Request;
 use rocket::response::{self, Response, Responder};

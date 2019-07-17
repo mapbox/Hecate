@@ -111,4 +111,3 @@ impl std::io::Read for PGStream {
         Ok(current)
     }
 }
-

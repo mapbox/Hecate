@@ -1,7 +1,7 @@
 use crate::err::HecateError;
 use crate::stream::PGStream;
 
-pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String, feat: &serde_json::Value) -> Result<bool, HecateError> {
+pub fn set(conn: &impl postgres::GenericConnection, name: &String, feat: &serde_json::Value) -> Result<bool, HecateError> {
     match conn.execute("
         INSERT INTO bounds (name, geom) VALUES ($1 , ST_Multi(ST_SetSRID(ST_GeomFromGeoJSON($2::JSON->>'geometry'), 4326)))
             ON CONFLICT (name) DO
@@ -14,7 +14,7 @@ pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
     }
 }
 
-pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: &String) -> Result<bool, HecateError> {
+pub fn delete(conn: &impl postgres::GenericConnection, name: &String) -> Result<bool, HecateError> {
     match conn.execute("
         DELETE FROM bounds WHERE name = $1
     ", &[ &name ]) {
@@ -23,7 +23,7 @@ pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, prefix: &String, limit: &Option<i16>) -> Result<Vec<String>, HecateError> {
+pub fn filter(conn: &impl postgres::GenericConnection, prefix: &String, limit: &Option<i16>) -> Result<Vec<String>, HecateError> {
     let limit: i16 = match limit {
         None => 100,
         Some(limit) => if *limit > 100 { 100 } else { *limit }
@@ -49,7 +49,7 @@ pub fn filter(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionMan
     }
 }
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, limit: &Option<i16>) -> Result<Vec<String>, HecateError> {
+pub fn list(conn: &impl postgres::GenericConnection, limit: &Option<i16>) -> Result<Vec<String>, HecateError> {
     match conn.query("
         SELECT name
         FROM bounds
@@ -101,7 +101,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     }
 }
 
-pub fn meta(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, name: String) -> Result<serde_json::Value, HecateError> {
+pub fn meta(conn: &impl postgres::GenericConnection, name: String) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT
             JSON_Build_Object(
@@ -128,7 +128,7 @@ pub fn meta(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
     }
 }
 
-pub fn stats_json(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<serde_json::Value, HecateError> {
+pub fn stats_json(conn: &impl postgres::GenericConnection, bounds: String) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT
             row_to_json(t)

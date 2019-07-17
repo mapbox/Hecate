@@ -147,6 +147,11 @@ mod test {
 
             assert_eq!(resp_value, json!({
                 "server": "public",
+                "webhooks": {
+                    "list": "user",
+                    "update": "user",
+                    "delete": "user"
+                },
                 "meta": {
                     "get": "user",
                     "list": "user",

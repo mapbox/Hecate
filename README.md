@@ -43,6 +43,7 @@
     - [Data Stats](#data-stats)
     - [Admin Interface](#admin-interface)
     - [Schema](#schema)
+    - [Webhooks](#webhooks)
     - [Authentication](#authentication)
     - [Styles](#styles)
     - [Vector Tiles](#vector-tiles)
@@ -50,7 +51,7 @@
     - [Downloading Via Query](#downloading-via-query)
     - [Boundaries](#boundaries)
     - [Downloading Individual Features](#downloading-individual-features)
-    - [Downloading Multiple Features via BBOX](#downloading-multiple-features-via-bbox)
+    - [Downloading Multiple Features](#downloading-multiple-features)
     - [Feature Creation](#feature-creation)
     - [Deltas](#deltas)
     - [OpenStreetMap API](#openstreetmap-api)
@@ -85,11 +86,11 @@ source ~/.bashrc        # Most Linux Distros, some OSX
 source ~/.bash_profile  # Most OSX, some Linux Distros
 ```
 
-- Install the `nightly-2018-12-01` build of rust, `Rocket`, the web-framework relies on some advanced compiler options not yet included in the default build.
+- Install the `nightly-2019-06-01` build of rust, `Rocket`, the web-framework relies on some advanced compiler options not yet included in the default build.
 
 ```bash
-rustup install nightly-2018-12-01
-rustup default nightly-2018-12-01
+rustup install nightly-2019-06-01
+rustup default nightly-2019-06-01
 ```
 
 - Download and compile the project and all of it's libraries
@@ -514,6 +515,11 @@ have a map containing the auth for each subkey.
 | **Deltas**                            | `delta`                   |               | `null`                    | 2     |
 | `GET /api/delta/<id>`                 | `delta::get`              | `public`      | All                       |       |
 | `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
+| **Webhooks**                          | `webhooks`                |               | `null`                    | 2     |
+| `GET /api/webhooks`                   | `webhooks::list`          | `admin`       | All                       |       |
+| `GET /api/webhooks/<id>`              | `webhooks::list`          | `admin`       | All                       |       |
+| `GET /api/webhooks/<id>`              | `webhooks::delete`        | `admin`       | All                       |       |
+| `POST /api/webhooks/<id>`             | `webhooks::update`        | `admin`       | All                       |       |
 | **Data Stats**                        | `stats`                   | `public`      | All                       |       |
 | `GET /api/data/stats`                 | `stats::get`              | `public`      | All                       |       |
 | `GET /api/data/bounds/<id>/stats`     | `stats::bounds`           | `public`      | All                       |       |
@@ -554,7 +560,7 @@ HTTP Healthcheck URL, currently returns `Hello World!`
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/
+curl -X GET 'http://localhost:8000/'
 ```
 
 ---
@@ -807,7 +813,7 @@ Return a JSON object containing the schema used by the server or return a 404 if
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/schema
+curl -X GET 'http://localhost:8000/api/schema'
 ```
 
 </details>
@@ -827,7 +833,7 @@ of this guide
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/auth
+curl -X GET 'http://localhost:8000/api/auth'
 ```
 
 </details>
@@ -867,7 +873,7 @@ Request a vector tile for a given set of coordinates. A [Mapbox Vector Tile](htt
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/tiles/1/1/1
+curl -X GET 'http://localhost:8000/api/tiles/1/1/1'
 ```
 
 ---
@@ -887,7 +893,7 @@ Return any stored metadata about a given tile.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/tiles/1/1/1/meta
+curl -X GET 'http://localhost:8000/api/tiles/1/1/1/meta'
 ```
 
 ---
@@ -917,6 +923,86 @@ curl -X GET \
 
 ---
 
+<h3 align='center'>Webhooks</h3>
+
+<details>
+
+#### `GET` `/api/webhooks`
+
+Return a JSON object containing a list of all webhooks maintained by the server
+
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/webhooks'
+```
+
+</details>
+
+---
+
+#### `GET` `/api/webhooks/<id>`
+
+Return a JSON object containing information about a specific webhook
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>` | `REQUIRED` ID of the webhook to retrieve
+
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/webhooks/1'
+```
+---
+
+#### `POST` `/api/webhooks/<id>`
+
+Update a webhook ID with the given webhook data
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>` | `REQUIRED` ID of the webhook to update
+
+
+*Example*
+
+```bash
+curl
+    -X POST
+    -H "Content-Type: application/json" \
+    -d '{ "name": "webhook name", "url": "https://example.com", "actions": ["meta", "user", "delta", "style"] }' \
+    -u 'username:password' \
+    'http://localhost:8000/api/webhooks'
+```
+
+#### `DELETE` `/api/webhooks/<id>`
+
+Delete a given webhook
+
+*Options*
+
+| Option     | Notes |
+| :--------: | ----- |
+| `<id>` | `REQUIRED` ID of the webhook to delete
+
+*Example*
+
+```bash
+curl -X DELETE 'http://localhost:8000/api/webhooks/1'
+```
+---
+
+</details>
+
+---
+
 <h3 align='center'>User Options</h3>
 
 <details>
@@ -935,7 +1021,7 @@ Get a list of users (up to 100) or filter by a given user prefix.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/users
+curl -X GET 'http://localhost:8000/api/users'
 ```
 
 ---
@@ -1068,7 +1154,7 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/clone
+curl -X GET 'http://localhost:8000/api/data/clone'
 ```
 
 </details>
@@ -1109,11 +1195,11 @@ SELECT props FROM geo WHERE id = 1
 *Examples*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20count(*)%20FROM%20geo
+curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20count(*)%20FROM%20geo'
 ```
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20geo%20WHERE%20id%20%3D%201
+curl -X GET 'http://localhost:8000/api/data/query?query=SELECT%20props%20FROM%20geo%20WHERE%20id%20%3D%201'
 ```
 
 </details>
@@ -1141,7 +1227,7 @@ Return an array of possible boundary files with which data can be extracted from
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/bounds
+curl -X GET 'http://localhost:8000/api/data/bounds'
 ```
 
 ---
@@ -1162,7 +1248,7 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/bounds/us_dc
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc'
 ```
 
 ---
@@ -1224,7 +1310,7 @@ Return statistics about geometries that intersect a given bounds
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/stats'
 ```
 
 ---
@@ -1242,7 +1328,7 @@ Return GeoJSON feature representing the bound
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/meta
+curl -X GET 'http://localhost:8000/api/data/bounds/us_dc/meta'
 ```
 
 </details>
@@ -1267,11 +1353,11 @@ Return a single GeoJSON `Feature` given a query parameter
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/feature?key=123
+curl -X GET 'http://localhost:8000/api/data/feature?key=123'
 ```
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/feature?point=1.1324%2C-45.322
+curl -X GET 'http://localhost:8000/api/data/feature?point=1.1324%2C-45.322'
 ```
 
 ---
@@ -1289,7 +1375,7 @@ Return a single GeoJSON `Feature` given its' ID.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/feature/1542
+curl -X GET 'http://localhost:8000/api/data/feature/1542'
 ```
 
 ---
@@ -1307,20 +1393,20 @@ Return an array containing the full feature history for the provided feature id.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/data/feature/1542/history
+curl -X GET 'http://localhost:8000/api/data/feature/1542/history'
 ```
 
 </details>
 
 ---
 
-<h3 align='center'>Downloading Multiple Features via BBOX</h3>
+<h3 align='center'>Downloading Multiple Features</h3>
 
 <details>
 
 #### `GET` `/api/data/features`
 
-Return streaming Line-Delimited GeoJSON within the provided BBOX
+Return streaming Line-Delimited GeoJSON within the provided BBOX or Point
 
 Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
 (`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
@@ -1330,7 +1416,18 @@ Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission
 
 | Option | Notes |
 | :----: | ----- |
-| `bbox` | `REQUIRED` Bounding Box in format `left,bottom,right,top` |
+| `bbox=<minX,minY,maxX,maxY>` | `Optional` Bounding Box in format `left,bottom,right,top` |
+| `point=<Lng,Lat>` | `Optional` Point to query for intersections |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/features/?bbox=-122.51791%2C37.60447%2C-122.35499%2C37.83244'
+```
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/features/?point=-95.2734375%2C36.03133177633187'
+```
 
 </details>
 
@@ -1437,15 +1534,15 @@ Current    start   end
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/deltas
+curl -X GET 'http://localhost:8000/api/deltas'
 ```
 
 ```bash
-curl -X GET 'http://localhost:8000/api/deltas?offset=3
+curl -X GET 'http://localhost:8000/api/deltas?offset=3'
 ```
 
 ```bash
-curl -X GET 'http://localhost:8000/api/deltas?offset=3&limit=100
+curl -X GET 'http://localhost:8000/api/deltas?offset=3&limit=100'
 ```
 
 ---
@@ -1463,7 +1560,7 @@ Returns all data for a given delta as a JSON Object, including geometric data.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/delta/4
+curl -X GET 'http://localhost:8000/api/delta/4'
 ```
 
 </details>
@@ -1500,7 +1597,7 @@ Return a static XML document describing the capabilities of the API.
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/capabilities
+curl -X GET 'http://localhost:8000/api/capabilities'
 ```
 
 ---
@@ -1513,7 +1610,7 @@ this and displays in the interface if there is a new message, to cut down on err
 *Example*
 
 ```bash
-curl -X GET 'http://localhost:8000/api/0.6/user/details
+curl -X GET 'http://localhost:8000/api/0.6/user/details'
 ```
 
 ---

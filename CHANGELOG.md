@@ -10,6 +10,48 @@
 
 # Version History
 
+## v0.70.5
+
+- :rocket: [UI] Show back button when individual feature is selected of multiple potential
+
+## v0.70.4
+
+- :rocket: [UI] Add support for multiple feature selection via click UI
+
+## v0.70.3
+
+- :rocket: Add feature limits to tiles
+
+## v0.70.2
+
+- :bug: Limit tile geometry pool with `ST_Intersects`
+
+## v0.70.1
+
+- :bug: [UI] Update maxzoom to 17 in main map
+
+## v0.70.0
+
+- :rocket: Switch to `ST_AsMVT` instead of server side generation
+- :rocket: Add support for z17-z15 (previously ended at z14) tile generation
+- :rocket: Add ability to query multiple features at a given point
+
+## v0.69.0
+
+- :rocket: Add preliminary support for webhooks
+
+## v0.68.0
+
+- :rocket: Use `ST_DWithin` for feature at lng/lat endpoint
+- [UI] Swith to using lng/lat feature API instead of ID lookup
+
+## v0.67.0
+
+- :rocket: Framework for supporting delta based operations
+- :rocket: Update formatting for readability in `lib.rs`, moving all fn parameters to their own line
+- :rocket: Update all possible `r2d2` data types to the generic `postgres::GenericConnection`
+- [UI] Update to mapbox-gl-js 0.53
+
 ## v0.66.0
 
 - :rocket: Update to 2018 Rust Edition
@@ -237,7 +279,7 @@
 
 ## v0.36.1
 
-- :rocket: [UI] Add style deletion 
+- :rocket: [UI] Add style deletion
 - :bug: [UI] Ensure feature requests didn't poll infinitely
 
 ## v0.36.0
@@ -465,7 +507,7 @@
 - :pencil2: Huge doc update on endpoints & setting up
 - :rocket: Update a ton of install & Docker instructions
 
-## v0.3.0 
+## v0.3.0
 
 - :tada: Add bounds API
 

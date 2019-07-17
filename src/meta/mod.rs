@@ -1,6 +1,6 @@
 use crate::err::HecateError;
 
-pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>) -> Result<Vec<String>, HecateError> {
+pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<String>, HecateError> {
     match conn.query("
         SELECT key FROM meta ORDER BY key
     ", &[ ]) {
@@ -17,7 +17,7 @@ pub fn list(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManag
     }
 }
 
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<serde_json::Value, HecateError> {
+pub fn get(conn: &impl postgres::GenericConnection, key: &String) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT value::JSON FROM meta WHERE key = $1;
     ", &[ &key ]) {
@@ -32,7 +32,7 @@ pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
     }
 }
 
-pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String, value: &serde_json::Value) -> Result<bool, HecateError> {
+pub fn set(conn: &impl postgres::GenericConnection, key: &String, value: &serde_json::Value) -> Result<bool, HecateError> {
     match conn.query("
         INSERT INTO meta (key, value) VALUES ($1, $2)
             ON CONFLICT (key) DO
@@ -45,7 +45,7 @@ pub fn set(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManage
     }
 }
 
-pub fn delete(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<bool, HecateError> {
+pub fn delete(conn: &impl postgres::GenericConnection, key: &String) -> Result<bool, HecateError> {
     match conn.query("
         DELETE FROM meta WHERE key = $1
     ", &[ &key ]) {

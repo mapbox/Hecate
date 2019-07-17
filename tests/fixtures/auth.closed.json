@@ -1,5 +1,10 @@
 {
     "server": "public",
+    "webhooks": {
+        "list": "user",
+        "delete": "user",
+        "update": "user"
+    },
     "meta": {
         "get": "user",
         "list": "user",

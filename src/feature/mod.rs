@@ -1,5 +1,6 @@
 use crate::stream::PGStream;
 use crate::err::HecateError;
+use crate::validate;
 
 #[derive(PartialEq, Debug)]
 pub enum Action {
@@ -404,7 +405,7 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
-pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, key: &String) -> Result<serde_json::value::Value, HecateError> {
+pub fn query_by_key(conn: &impl postgres::GenericConnection, key: &String) -> Result<serde_json::value::Value, HecateError> {
     match conn.query("
         SELECT
             row_to_json(f)::JSON AS feature
@@ -430,27 +431,8 @@ pub fn query_by_key(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnect
     }
 }
 
-pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<serde_json::value::Value, HecateError> {
-    let lnglat = point.split(",").collect::<Vec<&str>>();
-
-    if lnglat.len() != 2 {
-        return Err(HecateError::new(400, String::from("Point must be Lng,Lat"), None));
-    }
-
-    let lng: f64 = match lnglat[0].parse() {
-        Ok(lng) => lng,
-        _ => { return Err(HecateError::new(400, String::from("Longitude coordinate must be numeric"), None)); }
-    };
-    let lat: f64 = match lnglat[1].parse() {
-        Ok(lat) => lat,
-        _ => { return Err(HecateError::new(400, String::from("Latitude coordinate must be numeric"), None)); }
-    };
-
-    if lng < -180.0 || lng > 180.0 {
-        return Err(HecateError::new(400, String::from("Longitude exceeds bounds"), None));
-    } else if lat < -90.0 || lat > 90.0 {
-        return Err(HecateError::new(400, String::from("Latitude exceeds bounds"), None));
-    }
+pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -> Result<Vec<serde_json::value::Value>, HecateError> {
+    let (lng, lat) = validate::point(point)?;
 
     match conn.query("
         SELECT
@@ -465,21 +447,30 @@ pub fn query_by_point(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConne
                 props AS properties
             FROM geo
             WHERE
-                ST_Intersects(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326))
+                ST_DWithin(ST_SetSRID(ST_MakePoint($1, $2), 4326), geo.geom, 0.00005)
+            ORDER BY
+                ST_Distance(ST_SetSRID(ST_MakePoint($1, $2), 4326), geo.geom) DESC
         ) f
-        LIMIT 1
     ", &[&lng, &lat]) {
-        Ok(res) => {
-            if res.len() != 1 { return Err(HecateError::new(404, String::from("Feature not found"), None)); }
+        Ok(results) => {
+            if results.len() == 0 {
+                return Err(HecateError::new(404, String::from("Feature not found"), None));
+            }
 
-            let feat: serde_json::value::Value = res.get(0).get(0);
-            Ok(feat)
+            let mut feats: Vec<serde_json::value::Value> = Vec::with_capacity(results.len());
+
+            for result in results.iter() {
+                let feat: serde_json::value::Value = result.get(0);
+                feats.push(feat);
+            }
+
+            Ok(feats)
         },
         Err(err) => Err(HecateError::from_db(err))
     }
 }
 
-pub fn get(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, id: &i64) -> Result<geojson::Feature, HecateError> {
+pub fn get(conn: &impl postgres::GenericConnection, id: &i64) -> Result<geojson::Feature, HecateError> {
     match conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature
@@ -620,7 +611,31 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
     }
 }
 
-pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<PGStream, HecateError> {
+pub fn get_point_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<PGStream, HecateError> {
+    let (lng, lat) = validate::point(point)?;
+
+    Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
+        DECLARE next_features CURSOR FOR
+            SELECT
+                row_to_json(f)::TEXT AS feature
+            FROM (
+                SELECT
+                    id AS id,
+                    key AS key,
+                    'Feature' AS type,
+                    version AS version,
+                    ST_AsGeoJSON(geom)::JSON AS geometry,
+                    props AS properties
+                FROM geo
+                WHERE
+                    ST_DWithin(ST_SetSRID(ST_MakePoint($1, $2), 4326), geo.geom, 0.00005)
+                ORDER BY
+                    ST_Distance(ST_SetSRID(ST_MakePoint($1, $2), 4326), geo.geom) DESC
+            ) f;
+    "#), &[&lng, &lat])?)
+}
+
+pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: &Vec<f64>) -> Result<PGStream, HecateError> {
     if bbox.len() != 4 {
         return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
     }
@@ -648,7 +663,7 @@ pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConne
     }
 }
 
-pub fn get_bbox(conn: &r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, HecateError> {
+pub fn get_bbox(conn: &impl postgres::GenericConnection, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, HecateError> {
     if bbox.len() != 4 {
         return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
     }
