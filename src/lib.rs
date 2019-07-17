@@ -1922,7 +1922,7 @@ fn wfsall(conn: State<DbReadWrite>, domain: State<String>, mut auth: auth::Auth,
     let conn = conn.get().unwrap();
 
     //TODO THIS NEEDS TO BE WFS SPECFIC
-    auth_rules.allows_feature_history(&mut auth, *&conn).unwrap();
+    auth_rules.allows_feature_history(&mut auth, &*conn).unwrap();
 
     match query.request {
         wfs::RequestType::GetCapabilities => {

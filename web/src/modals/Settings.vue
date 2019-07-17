@@ -312,20 +312,9 @@
                                 </template>
                             </div>
                         </template>
-<<<<<<< HEAD
                         <template v-if='submode === "meta"'>
                             <div class='col col--12 txt-m txt-bold'>
                                 Server Metadata
-=======
-                        <template v-if='submode === "webhooks"'>
-                            <div class='col col--12 txt-m txt-bold'>
-                                Webhook Settings
->>>>>>> 1db9300030da2562e52c051882c3f3ce113fb142
-                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
-                            </div>
-
-                            <div class='py6 col col--12 border--gray-light border-b mb12'>
-<<<<<<< HEAD
                                 <span class='txt-m'>Server Information</span>
                             </div>
 
@@ -350,7 +339,14 @@
                                     <input v-model='metaData.provider.name' class='input' placeholder='Server Name'/>
                                  </div>
                              </div>
-=======
+                         </template>
+                        <template v-if='submode === "webhooks"'>
+                            <div class='col col--12 txt-m txt-bold'>
+                                Webhook Settings
+                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                            </div>
+
+                            <div class='py6 col col--12 border--gray-light border-b mb12'>
                                 <span class='txt-m'>Webhooks</span>
                                 <button @click="addHookClick" class='btn round h24 fr'>
                                     <svg class='icon h-full'><use href='#icon-plus'/></svg>
@@ -376,7 +372,6 @@
                                     <div class="align-center">No Webhooks Yet!</div>
                                 </div>
                             </template>
->>>>>>> 1db9300030da2562e52c051882c3f3ce113fb142
                         </template>
                     </div>
                 </template>

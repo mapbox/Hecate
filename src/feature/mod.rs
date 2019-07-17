@@ -632,7 +632,7 @@ pub fn get_point_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConn
                 ORDER BY
                     ST_Distance(ST_SetSRID(ST_MakePoint($1, $2), 4326), geo.geom) DESC
             ) f;
-    "#), &[&lng, &lat])?)
+    "#), &[&lng, &lat], None, None)?)
 }
 
 pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: &Vec<f64>) -> Result<PGStream, HecateError> {
