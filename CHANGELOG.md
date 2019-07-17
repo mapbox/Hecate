@@ -10,6 +10,15 @@
 
 # Version History
 
+## v0.71.0
+
+- :rocket: [UI] Completely rework UI based error handling into a single error handling component
+- :rocket: [UI] Move more UI API calls into the standard hecate library
+- :rocket: [UI] Add support for loading the server schema at load time
+- :tada: [UI] Add support for displaying schema descriptions in the features panel
+- :tada: [UI] Add support for optionally loading the feature history
+- :tada: [UI] Rough support for feature history UI
+
 ## v0.70.5
 
 - :rocket: [UI] Show back button when individual feature is selected of multiple potential
