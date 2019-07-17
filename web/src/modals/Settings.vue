@@ -413,6 +413,7 @@ export default {
         getUsers: function() {
             window.hecate.users.list(this.userFilter, (err, users) => {
                 if (err) return this.$emit('error', err);
+
                 this.users = users;
             });
         },
