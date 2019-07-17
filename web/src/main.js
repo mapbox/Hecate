@@ -18,7 +18,7 @@ window.hecate = {
                 if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
                 return response.json();
             }).then((response) => {
-                return cb(response);
+                return cb(null, response);
             }).catch((err) => {
                 return cb(err);
             });
@@ -33,7 +33,7 @@ window.hecate = {
                 if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
                 return response.json();
             }).then((response) => {
-                return cb(response);
+                return cb(null, response);
             }).catch((err) => {
                 return cb(err);
             });
@@ -63,7 +63,7 @@ window.hecate = {
                 if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
                 return response.json();
             }).then((response) => {
-                return cb(response);
+                return cb(null, response);
             }).catch((err) => {
                 return cb(err);
             });

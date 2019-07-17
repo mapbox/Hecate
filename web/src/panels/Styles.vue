@@ -67,7 +67,7 @@ export default {
             }).then((body) => {
                 this.styles = body;
             }).catch((err) => {
-                this.$emit('error', err.message);
+                this.$emit('error', err);
             });
 
             if (this.credentials.authed) {
@@ -82,7 +82,7 @@ export default {
                         return true;
                     });
                 }).catch((err) => {
-                    this.$emit('error', err.message);
+                    this.$emit('error', err);
                 });
             } else {
                 this.pstyles = [];

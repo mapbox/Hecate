@@ -48,16 +48,16 @@
             </div>
 
             <template v-if='panel === "deltas"'>
-                <deltas :map='map' v-on:error='error = $event' v-on:user='modal = "user"; user_id = $event'/>
+                <deltas :map='map' v-on:error='handler($event)' v-on:user='modal = "user"; user_id = $event'/>
             </template>
             <template v-else-if='panel === "bounds"'>
-                <bounds :map='map' v-on:error='error = $event' :panel='panel'/>
+                <bounds :map='map' v-on:error='handler($event)' :panel='panel'/>
             </template>
             <template v-else-if='panel === "styles"'>
-                <styles :credentials='credentials' v-on:error='error = $event' v-on:style='modal = "style"; style_id = $event'/>
+                <styles :credentials='credentials' v-on:error='handler($event)' v-on:style='modal = "style"; style_id = $event'/>
             </template>
             <template v-else-if='feature'>
-                <feature :schema='schema' :map='map' :id='feature' v-on:error='error = $event' v-on:close='feature = false'/>
+                <feature :schema='schema' :map='map' :id='feature' v-on:error='handler($event)' v-on:close='feature = false'/>
             </template>
         </div>
 
@@ -75,7 +75,7 @@
 
         <!-- Modal/Error Opaque -->
         <div v-if='modal' class='absolute top left bottom right z2 bg-black opacity75' style="pointer-events: none;"></div>
-        <div v-if='error' class='absolute top left bottom right z4 bg-black opacity75' style="pointer-events: none;"></div>
+        <div v-if='error.title' class='absolute top left bottom right z4 bg-black opacity75' style="pointer-events: none;"></div>
 
         <!--Modals here-->
         <template v-if='modal === "login"'>
@@ -97,7 +97,7 @@
             <self :auth='auth' v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "settings"'>
-            <settings v-on:error='error = $event' v-on:close='settings_close' :auth='auth'/>
+            <settings v-on:error='handler($event)' v-on:close='settings_close' :auth='auth'/>
         </template>
         <template v-else-if='modal === "query"'>
             <query :auth='auth' v-on:close='modal = false' :credentials='credentials' />
@@ -106,8 +106,8 @@
             <stylem v-on:close='modal = false' :style_id='style_id' :credentials='credentials' :map='map' />
         </template>
 
-        <template v-if='error'>
-            <err title='Error' :body='error' v-on:close='error = ""'/>
+        <template v-if='error.title'>
+            <err :title='error.title' :body='error.body' v-on:close='error.title = ""'/>
         </template>
     </div>
 </template>
@@ -140,7 +140,10 @@ export default {
     data: function() {
         return {
             auth: false,
-            error: '',
+            error: {
+                title: '',
+                body: ''
+            },
             credentials: {
                 map: { key: 'pk.eyJ1IjoiaW5nYWxscyIsImEiOiJjam42YjhlMG4wNTdqM2ttbDg4dmh3YThmIn0.uNAoXsEXts4ljqf2rKWLQg' },
                 authed: false,
@@ -296,6 +299,8 @@ export default {
     mounted: function(e) {
         mapboxgl.accessToken = this.credentials.map.key;
 
+        this.getSchema();
+
         this.getSelf((err, user) => {
             if (err || !user) {
                 this.getLayers();
@@ -367,8 +372,9 @@ export default {
         handler: function(err) {
             if (!err) return;
 
-            console.error(err);
-            this.error = err.message;
+            console.error('ERROR HANDLER', err);
+            this.error.title = err.title ? err.title : 'Error';
+            this.error.body = err.body ? err.body : err.message;
         },
         settings_close: function() {
             this.modal = false;
@@ -396,6 +402,7 @@ export default {
         getSchema: function() {
             window.hecate.schema.get((err, schema) => {
                 if (err) return this.handler(err);
+
                 this.schema = schema;
             });
         },

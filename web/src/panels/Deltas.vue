@@ -131,7 +131,7 @@ export default {
 
                 if (this.deltas[0]) this.offset = this.deltas[0].id;
             }).catch((err) => {
-                this.$emit('error', err.message);
+                this.$emit('error', err);
             });
         },
         getDelta: function(delta_id) {
@@ -149,7 +149,7 @@ export default {
                 });
                 this.delta = body;
             }).catch((err) => {
-                this.$emit('error', err.message);
+                this.$emit('error', err);
             });
         },
         style: function() {

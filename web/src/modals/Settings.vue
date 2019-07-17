@@ -400,31 +400,31 @@ export default {
         },
         clearCache: function() {
             window.hecate.tiles.clear((err) => {
-                if (err) return this.$emit('error', err.message);
+                if (err) return this.$emit('error', err);
                 this.tilecache = true;
             });
         },
         getLayers: function() {
             window.hecate.meta.get('layers', (err, layers) => {
-                if (err) return this.$emit('error', err.message);
+                if (err) return this.$emit('error', err);
                 this.layers = layers;
             });
         },
         getUsers: function() {
             window.hecate.users.list(this.userFilter, (err, users) => {
-                if (err) return this.$emit('error', err.message);
+                if (err) return this.$emit('error', err);
                 this.users = users;
             });
         },
         getHooks: function() {
             window.hecate.webhooks.list((err, hooks) => {
-                if (err) return this.$emit('error', err.message);
+                if (err) return this.$emit('error', err);
                 this.hooks = hooks;
             });
         },
         getHook: function(hook_id) {
             window.hecate.webhooks.get(hook_id, (err, hook) => {
-                if (err) return this.$emit('error', err.message);
+                if (err) return this.$emit('error', err);
 
                 this.webhookData.id = hook.id;
                 this.webhookData.name = hook.name;
@@ -444,7 +444,7 @@ export default {
         },
         deleteHook: function(hook_id) {
             window.hecate.webhooks.delete(hook_id, (err, hook) => {
-                if (err) return this.$emit('error', err.message);
+                if (err) return this.$emit('error', err);
 
                 this.mode = 'addHook';
                 this.getHooks();
@@ -459,7 +459,9 @@ export default {
                 body: JSON.stringify(this.layers)
             }).then((response) => {
                 if (response.status !== 200) {
-                    return this.$emit('error', response.statusText);
+                    return this.$emit('error', {
+                        body: response.statusText
+                    });
                 }
 
                 return response.json();
@@ -467,7 +469,7 @@ export default {
                 if (!layers)
                 this.layers = layers;
             }).catch((err) => {
-                this.$emit('error', err.message);
+                this.$emit('error', err);
             });
         },
         deleteLayer: function() {
@@ -566,13 +568,13 @@ export default {
 
             if (!hook_id) {
                 window.hecate.webhooks.create(hook, (err) => {
-                    if (err) return this.$emit('error', err.message);
+                    if (err) return this.$emit('error', err);
                     this.getHooks();
                     this.close();
                 });
             } else {
                 window.hecate.webhooks.update(hook_id, hook, (err) => {
-                    if (err) return this.$emit('error', err.message);
+                    if (err) return this.$emit('error', err);
                     this.getHooks();
                     this.close();
                 });
