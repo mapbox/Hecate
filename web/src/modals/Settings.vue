@@ -398,7 +398,6 @@ export default {
                 name: '',
                 type: ''
             },
-<<<<<<< HEAD
             metaData: {
                 error: '',
                 server: {
@@ -409,12 +408,8 @@ export default {
 
                 }
             },
-            addLayerData: {
-                exists: false,
-=======
             layerData: {
                 id: false,
->>>>>>> 1db9300030da2562e52c051882c3f3ce113fb142
                 error: '',
                 name: '',
                 nameError: false,
@@ -442,14 +437,11 @@ export default {
     mounted: function() {
         this.getLayers();
         this.getUsers();
-<<<<<<< HEAD
 
         this.getMeta('server-name', (meta) => this.metaData.server.name = meta );
         this.getMeta('server-abstract', (meta) => this.metaData.server.abstract = meta );
         this.getMeta('provider-name', (meta) => this.metaData.server.provider = meta );
-=======
         this.getHooks();
->>>>>>> 1db9300030da2562e52c051882c3f3ce113fb142
     },
     watch: {
         userFilter: function() {

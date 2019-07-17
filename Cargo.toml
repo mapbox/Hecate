@@ -17,18 +17,18 @@ keywords = [ "mapserver", "geospatial", "mapbox", "geojson" ]
 
 
 [dependencies]
-reqwest = "0.9.5"
+reqwest = "0.9.18"
 tilecover = "1.1.1"
 crossbeam = "0.7"
 valico = "3.0"
-rand = "0.6"
+rand = "0.7"
 postgis = "0.6.0"
 protobuf = "1.5"
 base64 = "0.10"
-rocket = "0.4.1"
-rocket_contrib="0.4.1"
+rocket = "0.4.2"
+rocket_contrib="0.4.2"
 geojson = "0.16.0"
-quick-xml = "0.14.0"
+quick-xml = "0.15.0"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
