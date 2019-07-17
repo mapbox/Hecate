@@ -47,7 +47,23 @@ window.hecate = {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
-                if (respone.status === 404) return cb(null, false);
+                if (response.status === 404) return cb(null, false);
+                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                return response.json();
+            }).then((response) => {
+                return cb(null, response);
+            }).catch((err) => {
+                return cb(err);
+            });
+        },
+        history: function(id, cb) {
+            if (!id) return cb(new Error('feature id required'));
+
+            fetch(`${window.location.protocol}//${window.location.host}/api/data/feature/${id}/history`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status === 404) return cb(null, false);
                 if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
                 return response.json();
             }).then((response) => {

@@ -18,7 +18,18 @@
     </template>
     <template v-else-if='feature'>
         <div class="flex-child scroll-auto">
-            <key :feature='feature' :schema="schema" v-on:error="description($event)"/>
+            <template v-if='Array.isArray(feature)'>
+                <template v-for="historic_feature in feature">
+                    <key class='my12' :feature='historic_feature.feat' :schema="schema" v-on:error="description($event)"/>
+                </template>
+            </template>
+            <template v-else>
+                <key :feature='feature' :schema="schema" v-on:error="description($event)"/>
+
+                <div class="w-full align-center my12">
+                    <button @click='history' class='btn btn--s round bg-gray-light bg-darken25-on-hover color-gray-dark'>Load History</button>
+                </div>
+            </template>
         </div>
     </template>
     <template v-else-if='features.length'>
@@ -71,6 +82,17 @@ export default {
             this.$emit('error', {
                 title: 'Property Details',
                 body: text
+            });
+        },
+        history: function() {
+            window.hecate.feature.history(this.feature.id, (err, history) => {
+                if (err) return this.$emit('error', err);
+                history = history.map((feat, ele) => {
+                    feat.feat.version = ele + 1;
+                    return feat;
+                });
+                history.reverse();
+                this.feature = history;
             });
         },
         get: function(id) {
