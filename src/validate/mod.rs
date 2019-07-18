@@ -47,3 +47,43 @@ pub fn bbox(bbox: &Vec<f64>) -> Result<(), HecateError> {
     Ok(())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]   
+    fn valid_point() {
+        assert_eq!(point(&String::from("-34.696,70.56")).ok(),Some((-34.696,70.56)), "ok - point coordinates is valid.");
+    }
+
+    #[test]
+    fn invalid_point_longitude() {
+        match point(&String::from("lng,70.56")){
+            Ok(_) => (),
+            Err(err) =>  assert_eq!(err.as_json(),json!({
+                "code": 400,
+                "reason": "Longitude coordinate must be numeric",
+                "status": "Bad Request"
+            }), "not ok - the longitude is invalid."),
+        }
+    }
+
+    #[test]   
+    fn valid_bbox() {
+        assert_eq!(bbox(&[-107.578125,-30.600094,56.162109,46.377254].to_vec()).ok(),Some(()), "ok - point coordinates is valid.");
+    }
+
+    #[test]
+    fn invalid_bbox_minX() {
+        match bbox(&[-181.0,-30.600094,56.162109,46.377254].to_vec()){
+            Ok(_) => (),
+            Err(err) =>  assert_eq!(err.as_json(),json!({
+                "code": 400,
+                "reason": "BBOX minX value must be a number between -180 and 180",
+                "status": "Bad Request"
+            }), "not ok - the minX value is invalid."),
+        }
+    }
+}
+
+
