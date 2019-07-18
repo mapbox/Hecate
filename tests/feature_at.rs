@@ -208,7 +208,7 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
-        { // Check bbox - minX in bbox out of range
+        { // Check bbox - minY in bbox out of range
             let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-100.600094,56.162109,46.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -220,7 +220,7 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
-        { // Check bbox - minX in bbox out of range
+        { // Check bbox - maxX in bbox out of range
             let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-30.600094,190.162109,46.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -232,7 +232,7 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
-        { // Check bbox - minX in bbox out of range
+        { // Check bbox - maxY in bbox out of range
             let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-30.600094,56.162109,100.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -244,7 +244,7 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
-        { // Check bbox - minX in bbox out of range
+        { // Check bbox - minX > maxX 
             let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=107.578125,-30.600094,56.162109,46.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -256,7 +256,7 @@ mod test {
             assert!(resp.status().is_client_error());
         }
 
-        { // Check bbox - minX in bbox out of range
+        { // Check bbox - minY > maxY
             let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,30.600094,56.162109,-46.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
