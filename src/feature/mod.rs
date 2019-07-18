@@ -612,7 +612,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
 }
 
 pub fn get_point_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<PGStream, HecateError> {
-    let (lng, lat) = validate::point(point)?;
+    validate::point(point)?;
 
     Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
         DECLARE next_features CURSOR FOR
@@ -636,9 +636,7 @@ pub fn get_point_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConn
 }
 
 pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: &Vec<f64>) -> Result<PGStream, HecateError> {
-    if bbox.len() != 4 {
-        return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
-    }
+    validate::bbox(bbox)?;
 
     Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
         DECLARE next_features CURSOR FOR
@@ -661,9 +659,7 @@ pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConne
 }
 
 pub fn get_bbox(conn: &impl postgres::GenericConnection, bbox: Vec<f64>) -> Result<geojson::FeatureCollection, HecateError> {
-    if bbox.len() != 4 {
-        return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
-    }
+    let (lng, lat) = validate::bbox(bbox)?;
 
     match conn.query("
         SELECT

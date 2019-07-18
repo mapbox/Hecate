@@ -24,3 +24,26 @@ pub fn point(point: &String) -> Result<(f64, f64), HecateError> {
 
     Ok((lng, lat))
 }
+
+pub fn bbox(bbox: &Vec<f64>) -> Result<Vec<f64>, HecateError> {
+    if bbox.len() != 4 {
+        return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
+    }
+
+    if bbox[0].is_nan() || bbox[0] < -180.0 || bbox[0] > 180.0 {
+        return Err(HecateError::new(400, String::from("BBOX minX value must be a number between -180 and 180", None));
+    } else if bbox[1].is_nan() || bbox[1] < -90.0 || bbox[1] > 90.0 {
+        return Err(HecateError::new(400, String::from("BBOX minY value must be a number between -90 and 90", None));
+    } else if bbox[2].is_nan() || bbox[2] < -180.0 || bbox[2] > 180.0 {
+        return Err(HecateError::new(400, String::from("BBOX maxX value must be a number between -180 and 180", None));
+    } else if bbox[3].is_nan() || bbox[3] < -90.0 || bbox[3] > 90.0 {
+        return Err(HecateError::new(400, String::from("BBOX maxY value must be a number between -90 and 90", None));
+    } else if bbox[0] > bbox[2] {
+        return Err(HecateError::new(400, String::from("BBOX minX value cannot be greater than maxX value", None));
+    } else if bbox[1] > bbox[3] {
+        return Err(HecateError::new(400, String::from("BBOX minY value cannot be greater than maxY value", None));
+    }
+
+    Ok(bbox)
+}
+
