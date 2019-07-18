@@ -25,7 +25,7 @@ pub fn point(point: &String) -> Result<(f64, f64), HecateError> {
     Ok((lng, lat))
 }
 
-pub fn bbox(bbox: &Vec<f64>) -> Result<Vec<f64>, HecateError> {
+pub fn bbox(bbox: &Vec<f64>) -> Result<(), HecateError> {
     if bbox.len() != 4 {
         return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
     }
@@ -44,6 +44,6 @@ pub fn bbox(bbox: &Vec<f64>) -> Result<Vec<f64>, HecateError> {
         return Err(HecateError::new(400, String::from("BBOX minY value cannot be greater than maxY value"), None));
     }
 
-    Ok(bbox.to_vec())
+    Ok(())
 }
 
