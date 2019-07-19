@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.71.1
+
+- :rocket: Add validation for bbox.
+
 ## v0.71.0
 
 - :rocket: [UI] Completely rework UI based error handling into a single error handling component
