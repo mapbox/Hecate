@@ -196,6 +196,79 @@ mod test {
             assert!(resp.status().is_success());
         }
 
+        { // Check bbox - minX in bbox out of range
+            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-181.0,-30.600094,56.162109,46.377254").unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "BBOX minX value must be a number between -180 and 180",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+        { // Check bbox - minY in bbox out of range
+            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-100.600094,56.162109,46.377254").unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "BBOX minY value must be a number between -90 and 90",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+        { // Check bbox - maxX in bbox out of range
+            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-30.600094,190.162109,46.377254").unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "BBOX maxX value must be a number between -180 and 180",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+        { // Check bbox - maxY in bbox out of range
+            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-30.600094,56.162109,100.377254").unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "BBOX maxY value must be a number between -90 and 90",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+        { // Check bbox - minX > maxX 
+            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=107.578125,-30.600094,56.162109,46.377254").unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "BBOX minX value cannot be greater than maxX value",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+        { // Check bbox - minY > maxY
+            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,30.600094,56.162109,-46.377254").unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "BBOX minY value cannot be greater than maxY value",
+                "status": "Bad Request"
+            }));
+            assert!(resp.status().is_client_error());
+        }
+
+
         server.kill().unwrap();
     }
 }
