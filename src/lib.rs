@@ -6,10 +6,14 @@ pub static POSTGIS: f64 = 2.4;
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-#[macro_use] extern crate rocket;
+#[macro_use] extern crate diesel;
 
-pub mod validate;
+mod models;
+mod schema;
+/*
+pub mod auth;
 pub mod err;
+pub mod validate;
 pub mod meta;
 pub mod stats;
 pub mod delta;
@@ -21,30 +25,26 @@ pub mod stream;
 pub mod style;
 pub mod osm;
 pub mod user;
-pub mod auth;
 pub mod worker;
 pub mod webhooks;
 
 use auth::ValidAuth;
 use err::HecateError;
+*/
 
 //Postgres Connection Pooling
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
+
+use actix_web::{web, App, HttpRequest, HttpServer, Responder, middleware};
+use actix_files::NamedFile;
 
 use rand::prelude::*;
 
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
-use rocket::http::Status as HTTPStatus;
-use rocket::config::{Config, Environment, LoggingLevel, Limits};
-use rocket::http::{Cookie, Cookies};
-use rocket::{State, Data};
-use rocket::response::{Response, status, Stream, NamedFile};
-use rocket::request::Form;
 use geojson::GeoJson;
-use rocket_contrib::json::Json;
 
 pub struct Database {
     main: String,
@@ -66,11 +66,11 @@ pub fn start(
     database: Database,
     port: Option<u16>,
     workers: Option<u16>,
-    schema: Option<serde_json::value::Value>,
-    auth: Option<auth::CustomAuth>
+    schema: Option<serde_json::value::Value>
 ) {
     env_logger::init();
 
+    /*
     let auth_rules: auth::CustomAuth = match auth {
         None => auth::CustomAuth::new(),
         Some(auth) => {
@@ -85,47 +85,34 @@ pub fn start(
             auth
         }
     };
+    */
 
     let db_replica: DbReplica = DbReplica::new(Some(database.replica.iter().map(|db| init_pool(&db)).collect()));
     let db_sandbox: DbSandbox = DbSandbox::new(Some(database.sandbox.iter().map(|db| init_pool(&db)).collect()));
 
-    let limits = Limits::new()
-        .limit("json", 20971520)
-        .limit("forms", 131072);
+    //let worker = worker::Worker::new(database.main.clone());
 
-    let mut config = Config::build(Environment::Production)
-        .address("0.0.0.0")
-        .log_level(LoggingLevel::Debug)
-        .port(port.unwrap_or(8000))
-        .limits(limits)
-        .workers(workers.unwrap_or(12))
+    HttpServer::new(move || {
+        App::new()
+            .wrap(middleware::Logger::default())
+            //.data(auth_rules)
+            //.data(worker)
+            .data(schema.clone())
+            .route("/", web::get().to(index))
+            .service(actix_files::Files::new("/admin", "./web/dist/"))
+    })
+        .workers(workers.unwrap_or(12) as usize)
+        .bind(format!("0.0.0.0:{}", port.unwrap_or(8000)).as_str())
+        .unwrap()
+        .run()
         .unwrap();
 
-    match std::env::var("HECATE_SECRET") {
-        Ok(secret) => match config.set_secret_key(secret) {
-            Err(_) => {
-                println!("ERROR: Invalid Base64 Encoded 256 Bit Secret Key");
-                std::process::exit(1);
-            },
-            _ => println!("Using HECATE_SECRET")
-        }
-        _ => ()
-    };
-
-    let worker = worker::Worker::new(database.main.clone());
-
+    /*
     rocket::custom(config)
         .manage(DbReadWrite::new(init_pool(&database.main)))
         .manage(db_replica)
         .manage(db_sandbox)
-        .manage(schema)
-        .manage(auth_rules)
-        .manage(worker)
-        .mount("/", routes![
-            index
-        ])
         .mount("/admin", routes![
-            staticsrv,
             staticsrvredirect
         ])
         .mount("/api", routes![
@@ -192,6 +179,7 @@ pub fn start(
            not_authorized,
            not_found,
         ]).launch();
+            */
 }
 
 
@@ -216,6 +204,7 @@ impl DbReplica {
         DbReplica(database)
     }
 
+    /*
     fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, HecateError> {
         match self.0 {
             None => Err(HecateError::new(503, String::from("No Database Replica Connection"), None)),
@@ -230,6 +219,7 @@ impl DbReplica {
             }
         }
     }
+    */
 }
 
 pub struct DbSandbox(pub Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>);
@@ -238,6 +228,7 @@ impl DbSandbox {
         DbSandbox(database)
     }
 
+    /*
     fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, HecateError> {
         match self.0 {
             None => Err(HecateError::new(503, String::from("No Database Sandbox Connection"), None)),
@@ -252,6 +243,7 @@ impl DbSandbox {
             }
         }
     }
+    */
 }
 
 pub struct DbReadWrite(pub r2d2::Pool<r2d2_postgres::PostgresConnectionManager>); //Read & Write DB Connection
@@ -260,13 +252,17 @@ impl DbReadWrite {
         DbReadWrite(database)
     }
 
+    /*
     fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, HecateError> {
         match self.0.get() {
             Ok(conn) => Ok(conn),
             Err(_) => Err(HecateError::new(503, String::from("Could not connect to database"), None))
         }
     }
+    */
 }
+
+/*
 
 #[derive(FromForm, Debug)]
 struct Filter {
@@ -285,9 +281,11 @@ fn not_found() -> HecateError {
 }
 
 
-#[get("/")]
+*/
+
 fn index() -> &'static str { "Hello World!" }
 
+/*
 #[get("/")]
 fn server(
     mut auth: auth::Auth,
@@ -1905,3 +1903,4 @@ fn feature_get_history(
 
     Ok(Json(delta::history(&*conn, &id)?))
 }
+*/

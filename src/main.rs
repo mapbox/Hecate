@@ -6,7 +6,7 @@ extern crate postgres;
 use std::path::Path;
 use std::fs::File;
 use std::io::Read;
-use hecate::auth::CustomAuth;
+//use hecate::auth::CustomAuth;
 use std::error::Error;
 use clap::App;
 
@@ -44,6 +44,7 @@ fn main() {
         None => None
     };
 
+    /*
     let auth: Option<CustomAuth> = match matched.value_of("auth") {
         Some(auth_path) => {
             let mut auth_file = match File::open(&Path::new(auth_path)) {
@@ -59,6 +60,7 @@ fn main() {
         },
         None => None
     };
+    */
 
     let port: Option<u16> = match matched.value_of("port") {
         Some(port) => match port.parse() {
@@ -90,8 +92,7 @@ fn main() {
         hecate::Database::new(database, database_replica, database_sandbox),
         port,
         workers,
-        schema,
-        auth
+        schema
     );
 }
 
