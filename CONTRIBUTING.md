@@ -26,7 +26,7 @@
 ./release
 ```
 
-- Run the `release script` and send the current version increased according to the change you are releasing.
+- Run the release script with the first argument being the new version you intend to release
 
 ```
 ./release 0.71.1
