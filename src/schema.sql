@@ -7,30 +7,30 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 DROP TABLE IF EXISTS webhooks;
 CREATE TABLE webhooks (
     id          BIGSERIAL PRIMARY KEY,
-    name        TEXT,
+    name        TEXT NOT NULL,
     actions     TEXT[],
-    url         TEXT
+    url         TEXT NOT NULL
 );
 
 DROP TABLE IF EXISTS meta;
 CREATE TABLE meta (
     key         TEXT PRIMARY KEY,
-    value       JSONB
+    value       JSONB NOT NULL
 );
 
 DROP TABLE IF EXISTS tiles;
 CREATE TABLE tiles (
-    created     TIMESTAMP,
+    created     TIMESTAMP NOT NULL,
     ref         TEXT PRIMARY KEY,
-    tile        BYTEA
+    tile        BYTEA NOT NULL
 );
 
 DROP TABLE IF EXISTS bounds;
 CREATE TABLE bounds (
-    id          BIGSERIAL,
-    geom        GEOMETRY(MULTIPOLYGON, 4326),
-    name        TEXT PRIMARY KEY,
-    props       JSONB
+    id          BIGSERIAL PRIMARY KEY,
+    geom        GEOMETRY(MULTIPOLYGON, 4326) NOT NULL,
+    name        TEXT NOT NULL,
+    props       JSONB NOT NULL
 );
 CREATE INDEX bounds_gist ON bounds USING GIST(geom);
 CREATE INDEX bounds_idx ON bounds(name);
@@ -39,9 +39,9 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id          BIGSERIAL PRIMARY KEY,
     access      TEXT,
-    username    TEXT UNIQUE,
-    password    TEXT,
-    email       TEXT UNIQUE,
+    username    TEXT UNIQUE NOT NULL,
+    password    TEXT NOT NULL,
+    email       TEXT UNIQUE NOT NULL,
     meta        JSONB
 );
 
@@ -59,9 +59,9 @@ DROP INDEX IF EXISTS geo_idx;
 CREATE TABLE geo (
     id          BIGSERIAL PRIMARY KEY,
     key         TEXT UNIQUE,
-    version     BIGINT,
-    geom        GEOMETRY(GEOMETRY, 4326),
-    props       JSONB,
+    version     BIGINT NOT NULL,
+    geom        GEOMETRY(GEOMETRY, 4326) NOT NULL,
+    props       JSONB NOT NULL,
     deltas      BIGINT[]
 );
 CREATE INDEX geo_gist ON geo USING GIST(geom);
@@ -70,10 +70,10 @@ CREATE INDEX geo_idx ON geo(id);
 DROP TABLE IF EXISTS styles;
 CREATE TABLE styles (
     id          BIGSERIAL PRIMARY KEY,
-    name        TEXT,
-    style       JSONB,
-    uid         BIGINT,
-    public      BOOLEAN
+    name        TEXT NOT NULL,
+    style       JSONB NOT NULL,
+    uid         BIGINT NOT NULL,
+    public      BOOLEAN NOT NULL
 );
 
 DROP TABLE IF EXISTS deltas;
