@@ -1,5 +1,7 @@
 table! {
     use diesel_geography::sql_types::*;
+    use diesel::pg::types::sql_types::*;
+    use diesel::sql_types::*;
 
     bounds (id) {
         id -> Int8,
@@ -11,6 +13,8 @@ table! {
 
 table! {
     use diesel_geography::sql_types::*;
+    use diesel::pg::types::sql_types::*;
+    use diesel::sql_types::*;
 
     deltas (id) {
         id -> Int8,
@@ -25,6 +29,8 @@ table! {
 
 table! {
     use diesel_geography::sql_types::*;
+    use diesel::pg::types::sql_types::*;
+    use diesel::sql_types::*;
 
     geo (id) {
         id -> Int8,
@@ -38,6 +44,8 @@ table! {
 
 table! {
     use diesel_geography::sql_types::*;
+    use diesel::pg::types::sql_types::*;
+    use diesel::sql_types::*;
 
     meta (key) {
         key -> Text,
@@ -47,6 +55,8 @@ table! {
 
 table! {
     use diesel_geography::sql_types::*;
+    use diesel::pg::types::sql_types::*;
+    use diesel::sql_types::*;
 
     spatial_ref_sys (srid) {
         srid -> Int4,
@@ -59,6 +69,8 @@ table! {
 
 table! {
     use diesel_geography::sql_types::*;
+    use diesel::pg::types::sql_types::*;
+    use diesel::sql_types::*;
 
     styles (id) {
         id -> Int8,
@@ -71,6 +83,8 @@ table! {
 
 table! {
     use diesel_geography::sql_types::*;
+    use diesel::pg::types::sql_types::*;
+    use diesel::sql_types::*;
 
     tiles (ref_) {
         created -> Timestamp,
@@ -82,6 +96,8 @@ table! {
 
 table! {
     use diesel_geography::sql_types::*;
+    use diesel::pg::types::sql_types::*;
+    use diesel::sql_types::*;
 
     users (id) {
         id -> Int8,
@@ -95,6 +111,8 @@ table! {
 
 table! {
     use diesel_geography::sql_types::*;
+    use diesel::pg::types::sql_types::*;
+    use diesel::sql_types::*;
 
     users_tokens (token) {
         name -> Nullable<Text>,
@@ -106,6 +124,8 @@ table! {
 
 table! {
     use diesel_geography::sql_types::*;
+    use diesel::pg::types::sql_types::*;
+    use diesel::sql_types::*;
 
     webhooks (id) {
         id -> Int8,
