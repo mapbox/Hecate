@@ -35,6 +35,7 @@ use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 
 use actix_web::{web, App, HttpResponse, HttpRequest, HttpServer, Responder, middleware};
+use actix_web::web::{get};
 use actix_files::NamedFile;
 
 use rand::prelude::*;
@@ -88,7 +89,9 @@ pub fn start(
             .route("/", web::get().to(index))
             .service(actix_files::Files::new("/admin", "./web/dist/"))
             .service(web::scope("api")
-                    .service(meta_list)
+                    .service(web::resource("meta")
+                         .route(web::get().to(meta_list))
+                    )
                     /*
                     .service(web::resource("meta/{key}")
                         .route(web::post().to(meta_set))
@@ -218,19 +221,18 @@ fn server(
 
 */
 
-#[get("/meta")]
 fn meta_list(
     conn: web::Data<DbReplica>,
     //mut auth: auth::Auth,
     //auth_rules: State<auth::CustomAuth>
-) -> actix_web::Result<impl Responder, impl Responder> {
+) -> actix_web::Result<impl Responder> {
     let conn = conn.get()?;
 
     // auth_rules.allows_meta_list(&mut auth, &*conn)?;
 
-    let list = serde_json::to_value(meta::list(&*conn).unwrap()).unwrap();
+    let list = serde_json::to_value(meta::list(&*conn)?).unwrap();
 
-    Json(list)
+    Ok(Json(list))
 }
 
 /*

@@ -54,9 +54,9 @@ impl HecateError {
         }
     }
 
-    pub fn as_json(self) -> serde_json::Value {
+    pub fn as_json(&self) -> serde_json::Value {
         match self.custom_json {
-            Some(custom_json) => custom_json,
+            Some(ref custom_json) => custom_json.clone(),
             None => {
                 let status = actix_web::http::StatusCode::from_u16(self.code).unwrap();
 
@@ -90,8 +90,23 @@ impl actix_web::Responder for HecateError {
     }
 }
 
-impl ToString for HecateError {
-    fn to_string(&self) -> String {
-        self.safe_error.clone()
+impl actix_http::ResponseError for HecateError {
+    fn error_response(&self) -> actix_http::Response {
+        println!("HecateError: {:?} {} {}", &self.code, &self.safe_error, &self.full_error);
+
+        let code = self.code;
+
+        let body = serde_json::to_string(&self.clone().as_json()).unwrap();
+
+        actix_http::Response::build(actix_web::http::StatusCode::from_u16(code).unwrap())
+           .content_type("application/json")
+           .body(body)
+        
+    }
+}
+
+impl std::fmt::Display for HecateError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.safe_error, f)
     }
 }
