@@ -1,5 +1,3 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-
 pub static VERSION: &'static str = "0.71.1";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
@@ -10,11 +8,12 @@ pub static POSTGIS: f64 = 2.4;
 
 mod models;
 mod schema;
-//pub mod auth;
 pub mod err;
-/*
 pub mod validate;
 pub mod meta;
+
+/*
+pub mod auth;
 pub mod stats;
 pub mod delta;
 pub mod mvt;
@@ -100,6 +99,18 @@ pub fn start(
             .data(schema.clone())
             .route("/", web::get().to(index))
             .service(actix_files::Files::new("/admin", "./web/dist/"))
+            /*
+            .service(web::scope("api")
+                    .service(web::resource("meta")
+                        .route(web::get().to(meta_list))
+                    )
+                    .service(web::resource("meta/{key}")
+                        .route(web::post().to(meta_set))
+                        .route(web::delete().to(meta_delete))
+                        .route(web::get().to(meta_get))
+                    )
+            )
+            */
     })
         .workers(workers.unwrap_or(12) as usize)
         .bind(format!("0.0.0.0:{}", port.unwrap_or(8000)).as_str())

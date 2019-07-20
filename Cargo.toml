@@ -38,7 +38,7 @@ json-patch = { git = "https://github.com/ingalls/json-patch", branch = "uniform_
 
 [dependencies.diesel]
 version = "1.4.2"
-features = ["postgres"]
+features = ["postgres", "serde_json"]
 
 [dependencies.geo]
 version = "0.12"

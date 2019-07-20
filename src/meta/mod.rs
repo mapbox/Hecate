@@ -1,21 +1,29 @@
 use crate::err::HecateError;
+use crate::models::Meta;
+use crate::schema::meta::dsl::*;
+use diesel::Connection;
+use diesel::prelude::*;
 
-pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<String>, HecateError> {
-    match conn.query("
-        SELECT key FROM meta ORDER BY key
-    ", &[ ]) {
-        Ok(rows) => {
-            let mut names = Vec::<String>::new();
+impl Meta {
+    pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<String>, HecateError> {
+        let connection = diesel::pg::PgConnection::establish(&"postgres://postgres@localhost/hecate").unwrap();
 
-            for row in rows.iter() {
-                names.push(row.get(0));
-            }
+        match meta.load::<Meta>(&connection) {
+            Some(metas) => {
+                let mut keys = Vec::<String>::new();
 
-            Ok(names)
-        },
-        Err(err) => Err(HecateError::from_db(err))
+                for meta in metas {
+                    keys.push(meta.key);
+                }
+
+                Ok(keys)
+            },
+            Err(err) => HecateError::from_db(err)
+        }
     }
 }
+
+/*
 
 pub fn get(conn: &impl postgres::GenericConnection, key: &String) -> Result<serde_json::Value, HecateError> {
     match conn.query("
@@ -53,3 +61,4 @@ pub fn delete(conn: &impl postgres::GenericConnection, key: &String) -> Result<b
         Err(err) => Err(HecateError::from_db(err))
     }
 }
+*/
