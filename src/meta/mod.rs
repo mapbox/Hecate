@@ -1,64 +1,72 @@
 use crate::err::HecateError;
-use crate::models::Meta;
-use crate::schema::meta::dsl::*;
-use diesel::Connection;
-use diesel::prelude::*;
+use serde_json::Value;
+
+pub struct Meta {
+    key: String,
+    value: Value
+}
 
 impl Meta {
-    pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<String>, HecateError> {
-        let connection = diesel::pg::PgConnection::establish(&"postgres://postgres@localhost/hecate").unwrap();
+    pub fn new(key: String, value: Value) -> Self {
+        Meta {
+            key: key,
+            value: value
+        }
+    }
 
-        match meta.load::<Meta>(&connection) {
-            Some(metas) => {
-                let mut keys = Vec::<String>::new();
+    pub fn get(conn: &impl postgres::GenericConnection, key: impl ToString) -> Result<Self, HecateError> {
+        let key = key.to_string();
 
-                for meta in metas {
-                    keys.push(meta.key);
+        match conn.query("
+            SELECT value::JSON FROM meta WHERE key = $1;
+        ", &[&key]) {
+            Ok(rows) => {
+                if rows.len() == 0 {
+                    Ok(Meta::new(key, json!(null)))
+                } else {
+                    Ok(Meta::new(key, rows.get(0).get(0)))
                 }
-
-                Ok(keys)
             },
-            Err(err) => HecateError::from_db(err)
+            Err(err) => Err(HecateError::from_db(err))
+        }
+    }
+
+    pub fn set(&self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+        match conn.query("
+            INSERT INTO meta (key, value) VALUES ($1, $2)
+                ON CONFLICT (key) DO
+                    UPDATE
+                        SET value = $2
+                        WHERE meta.key = $1
+        ", &[ &self.key, &self.value ]) {
+            Ok(_) => Ok(true),
+            Err(err) => Err(HecateError::from_db(err))
+        }
+    }
+
+    pub fn delete(&self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+        match conn.query("
+            DELETE FROM meta WHERE key = $1
+        ", &[ &self.key ]) {
+            Ok(_) => Ok(true),
+            Err(err) => Err(HecateError::from_db(err))
         }
     }
 }
 
-/*
-
-pub fn get(conn: &impl postgres::GenericConnection, key: &String) -> Result<serde_json::Value, HecateError> {
+pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<String>, HecateError> {
     match conn.query("
-        SELECT value::JSON FROM meta WHERE key = $1;
-    ", &[ &key ]) {
+        SELECT key FROM meta ORDER BY key
+    ", &[]) {
         Ok(rows) => {
-            if rows.len() == 0 {
-                Ok(json!(null))
-            } else {
-                Ok(rows.get(0).get(0))
+            let mut names = Vec::<String>::new();
+
+            for row in rows.iter() {
+                names.push(row.get(0));
             }
+
+            Ok(names)
         },
         Err(err) => Err(HecateError::from_db(err))
     }
 }
-
-pub fn set(conn: &impl postgres::GenericConnection, key: &String, value: &serde_json::Value) -> Result<bool, HecateError> {
-    match conn.query("
-        INSERT INTO meta (key, value) VALUES ($1, $2)
-            ON CONFLICT (key) DO
-                UPDATE
-                    SET value = $2
-                    WHERE meta.key = $1
-    ", &[ &key, &value ]) {
-        Ok(_) => Ok(true),
-        Err(err) => Err(HecateError::from_db(err))
-    }
-}
-
-pub fn delete(conn: &impl postgres::GenericConnection, key: &String) -> Result<bool, HecateError> {
-    match conn.query("
-        DELETE FROM meta WHERE key = $1
-    ", &[ &key ]) {
-        Ok(_) => Ok(true),
-        Err(err) => Err(HecateError::from_db(err))
-    }
-}
-*/

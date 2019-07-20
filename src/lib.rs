@@ -4,10 +4,7 @@ pub static POSTGIS: f64 = 2.4;
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-#[macro_use] extern crate diesel;
 
-mod models;
-mod schema;
 pub mod err;
 pub mod validate;
 pub mod meta;
