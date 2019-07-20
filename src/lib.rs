@@ -8,6 +8,7 @@ pub static POSTGIS: f64 = 2.4;
 pub mod err;
 pub mod validate;
 pub mod meta;
+pub mod db;
 
 /*
 pub mod auth;
@@ -36,27 +37,12 @@ use actix_web::{web, App, HttpRequest, HttpServer, Responder, middleware};
 use actix_files::NamedFile;
 
 use rand::prelude::*;
+use db::*;
 
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use geojson::GeoJson;
-
-pub struct Database {
-    main: String,
-    replica: Vec<String>,
-    sandbox: Vec<String>
-}
-
-impl Database {
-    pub fn new(main: String, replica: Vec<String>, sandbox: Vec<String>) -> Self {
-        Database {
-            main: main,
-            replica: replica,
-            sandbox: sandbox
-        }
-    }
-}
 
 pub fn start(
     database: Database,
@@ -83,8 +69,8 @@ pub fn start(
     };
     */
 
-    let db_replica: DbReplica = DbReplica::new(Some(database.replica.iter().map(|db| init_pool(&db)).collect()));
-    let db_sandbox: DbSandbox = DbSandbox::new(Some(database.sandbox.iter().map(|db| init_pool(&db)).collect()));
+    let db_replica: DbReplica = DbReplica::new(Some(database.replica.iter().map(|db| db::init_pool(&db)).collect()));
+    let db_sandbox: DbSandbox = DbSandbox::new(Some(database.sandbox.iter().map(|db| db::init_pool(&db)).collect()));
 
     //let worker = worker::Worker::new(database.main.clone());
 
@@ -93,6 +79,8 @@ pub fn start(
             .wrap(middleware::Logger::default())
             //.data(auth_rules)
             //.data(worker)
+            .data(db_replica.clone())
+            .data(db_sandbox.clone())
             .data(schema.clone())
             .route("/", web::get().to(index))
             .service(actix_files::Files::new("/admin", "./web/dist/"))
@@ -188,86 +176,6 @@ pub fn start(
            not_found,
         ]).launch();
             */
-}
-
-
-pub type PostgresPool = Pool<PostgresConnectionManager>;
-pub type PostgresPooledConnection = PooledConnection<PostgresConnectionManager>;
-
-fn init_pool(database: &str) -> r2d2::Pool<r2d2_postgres::PostgresConnectionManager> {
-    //Create Postgres Connection Pool
-    let manager = ::r2d2_postgres::PostgresConnectionManager::new(format!("postgres://{}", database), TlsMode::None).unwrap();
-    match r2d2::Pool::builder().max_size(15).build(manager) {
-        Ok(pool) => pool,
-        Err(_) => {
-            println!("ERROR: Failed to connect to database");
-            std::process::exit(1);
-        }
-    }
-}
-
-pub struct DbReplica(pub Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>);
-impl DbReplica {
-    fn new(database: Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>) -> Self {
-        DbReplica(database)
-    }
-
-    /*
-    fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, HecateError> {
-        match self.0 {
-            None => Err(HecateError::new(503, String::from("No Database Replica Connection"), None)),
-            Some(ref db_replica) => {
-                let mut rng = thread_rng();
-                let db_replica_it = rng.gen_range(0, db_replica.len());
-
-                match db_replica.get(db_replica_it).unwrap().get() {
-                    Ok(conn) => Ok(conn),
-                    Err(_) => Err(HecateError::new(503, String::from("Could not connect to database"), None))
-                }
-            }
-        }
-    }
-    */
-}
-
-pub struct DbSandbox(pub Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>);
-impl DbSandbox {
-    fn new(database: Option<Vec<r2d2::Pool<r2d2_postgres::PostgresConnectionManager>>>) -> Self {
-        DbSandbox(database)
-    }
-
-    /*
-    fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, HecateError> {
-        match self.0 {
-            None => Err(HecateError::new(503, String::from("No Database Sandbox Connection"), None)),
-            Some(ref db_sandbox) => {
-                let mut rng = thread_rng();
-                let db_sandbox_it = rng.gen_range(0, db_sandbox.len());
-
-                match db_sandbox.get(db_sandbox_it).unwrap().get() {
-                    Ok(conn) => Ok(conn),
-                    Err(_) => Err(HecateError::new(503, String::from("Could not connect to database"), None))
-                }
-            }
-        }
-    }
-    */
-}
-
-pub struct DbReadWrite(pub r2d2::Pool<r2d2_postgres::PostgresConnectionManager>); //Read & Write DB Connection
-impl DbReadWrite {
-    fn new(database: r2d2::Pool<r2d2_postgres::PostgresConnectionManager>) -> Self {
-        DbReadWrite(database)
-    }
-
-    /*
-    fn get(&self) -> Result<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, HecateError> {
-        match self.0.get() {
-            Ok(conn) => Ok(conn),
-            Err(_) => Err(HecateError::new(503, String::from("Could not connect to database"), None))
-        }
-    }
-    */
 }
 
 /*

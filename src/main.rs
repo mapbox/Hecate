@@ -89,7 +89,7 @@ fn main() {
     }
 
     hecate::start(
-        hecate::Database::new(database, database_replica, database_sandbox),
+        hecate::db::Database::new(database, database_replica, database_sandbox),
         port,
         workers,
         schema
