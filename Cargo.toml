@@ -13,7 +13,6 @@ readme = "README.md"
 
 categories = ["database"]
 
-
 [dependencies]
 reqwest = "0.9.5"
 tilecover = "1.1.1"
@@ -33,17 +32,11 @@ serde_json = "1.0"
 r2d2 = "0.8.5"
 r2d2_postgres = "0.14.0"
 env_logger = "0.6"
-diesel-geography = "0.2.0"
 json-patch = { git = "https://github.com/ingalls/json-patch", branch = "uniform_paths" }
-
-[dependencies.diesel]
-version = "1.4.2"
-features = ["postgres", "serde_json"]
 
 [dependencies.geo]
 version = "0.12"
 features = ["postgis-integration"]
-
 
 [dependencies.chrono]
 version = "0.4"
