@@ -58,40 +58,31 @@ impl HecateError {
         match self.custom_json {
             Some(custom_json) => custom_json,
             None => {
-                let status = rocket::http::Status::from_code(self.code).unwrap();
+                let status = actix_web::http::StatusCode::from_u16(self.code).unwrap();
 
                 json!({
                     "code": self.code,
-                    "status": status.reason,
+                    "status": status.canonical_reason(),
                     "reason": self.safe_error
                 })
             }
         }
+    }
+
+    pub fn resp(self) -> actix_web::HttpResponse {
+        println!("HecateError: {:?} {} {}", &self.code, &self.safe_error, &self.full_error);
+
+        let resp = actix_web::HttpResponse::from(actix_web::HttpResponse::build(actix_web::http::StatusCode::from_u16(self.code).unwrap())
+            .set_header("application", "json")
+            .json(self.as_json())
+        );
+
+        resp
     }
 }
 
 impl ToString for HecateError {
     fn to_string(&self) -> String {
         self.safe_error.clone()
-    }
-}
-
-use std::io::Cursor;
-use rocket::request::Request;
-use rocket::response::{self, Response, Responder};
-use rocket::http::ContentType;
-
-impl <'r> Responder<'r> for HecateError {
-    fn respond_to(self, _: &Request) -> response::Result<'r> {
-        let status = rocket::http::Status::from_code(self.code).unwrap();
-        let body = self.as_json().to_string();
-
-        println!("HecateError: {:?}", &body);
-
-        Ok(Response::build()
-            .status(status)
-            .sized_body(Cursor::new(body))
-            .header(ContentType::new("application", "json"))
-            .finalize())
     }
 }

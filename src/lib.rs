@@ -10,9 +10,9 @@ pub static POSTGIS: f64 = 2.4;
 
 mod models;
 mod schema;
-/*
-pub mod auth;
+//pub mod auth;
 pub mod err;
+/*
 pub mod validate;
 pub mod meta;
 pub mod stats;

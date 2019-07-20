@@ -1,7 +1,3 @@
-use rocket::request::{self, FromRequest};
-use rocket::http::Status;
-use rocket::{Request, Outcome};
-
 use crate::err::HecateError;
 
 fn not_authed() -> HecateError {

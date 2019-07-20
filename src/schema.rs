@@ -5,7 +5,7 @@ table! {
 
     bounds (id) {
         id -> Int8,
-        geom -> Geometry,
+        geom -> Geography,
         name -> Text,
         props -> Jsonb,
     }
@@ -36,7 +36,7 @@ table! {
         id -> Int8,
         key -> Nullable<Text>,
         version -> Int8,
-        geom -> Geometry,
+        geom -> Geography,
         props -> Jsonb,
         deltas -> Nullable<Array<Int8>>,
     }
