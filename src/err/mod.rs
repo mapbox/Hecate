@@ -68,16 +68,25 @@ impl HecateError {
             }
         }
     }
+}
 
-    pub fn resp(self) -> actix_web::HttpResponse {
+impl actix_web::Responder for HecateError {
+    type Error = actix_web::Error;
+    type Future = Result<actix_http::Response, actix_web::Error>;
+
+    fn respond_to(self, req: &actix_web::HttpRequest) -> Self::Future {
         println!("HecateError: {:?} {} {}", &self.code, &self.safe_error, &self.full_error);
 
-        let resp = actix_web::HttpResponse::from(actix_web::HttpResponse::build(actix_web::http::StatusCode::from_u16(self.code).unwrap())
-            .set_header("application", "json")
-            .json(self.as_json())
-        );
+        let code = self.code;
 
-        resp
+        let body = match serde_json::to_string(&self.as_json()) {
+            Ok(body) => body,
+            Err(e) => return Err(e.into()),
+        };
+
+        Ok(actix_http::Response::build(actix_web::http::StatusCode::from_u16(code).unwrap())
+           .content_type("application/json")
+           .body(body))
     }
 }
 

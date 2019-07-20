@@ -4,6 +4,7 @@ pub static POSTGIS: f64 = 2.4;
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
+extern crate actix_http;
 
 pub mod err;
 pub mod validate;
@@ -26,14 +27,14 @@ pub mod worker;
 pub mod webhooks;
 
 use auth::ValidAuth;
-use err::HecateError;
 */
+use err::HecateError;
 
 //Postgres Connection Pooling
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 
-use actix_web::{web, App, HttpRequest, HttpServer, Responder, middleware};
+use actix_web::{web, App, HttpResponse, HttpRequest, HttpServer, Responder, middleware};
 use actix_files::NamedFile;
 
 use rand::prelude::*;
@@ -43,6 +44,7 @@ use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use geojson::GeoJson;
+use actix_web::web::Json;
 
 pub fn start(
     database: Database,
@@ -77,6 +79,7 @@ pub fn start(
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
+            .wrap(middleware::Compress::default())
             //.data(auth_rules)
             //.data(worker)
             .data(db_replica.clone())
@@ -84,18 +87,16 @@ pub fn start(
             .data(schema.clone())
             .route("/", web::get().to(index))
             .service(actix_files::Files::new("/admin", "./web/dist/"))
-            /*
             .service(web::scope("api")
-                    .service(web::resource("meta")
-                        .route(web::get().to(meta_list))
-                    )
+                    .service(meta_list)
+                    /*
                     .service(web::resource("meta/{key}")
                         .route(web::post().to(meta_set))
                         .route(web::delete().to(meta_delete))
                         .route(web::get().to(meta_get))
                     )
+                    */
             )
-            */
     })
         .workers(workers.unwrap_or(12) as usize)
         .bind(format!("0.0.0.0:{}", port.unwrap_or(8000)).as_str())
@@ -215,17 +216,24 @@ fn server(
     })))
 }
 
+*/
+
 #[get("/meta")]
 fn meta_list(
-    mut auth: auth::Auth,
-    conn: State<DbReplica>,
-    auth_rules: State<auth::CustomAuth>
-) -> Result<Json<serde_json::Value>, HecateError> {
+    conn: web::Data<DbReplica>,
+    //mut auth: auth::Auth,
+    //auth_rules: State<auth::CustomAuth>
+) -> actix_web::Result<impl Responder, impl Responder> {
     let conn = conn.get()?;
-    auth_rules.allows_meta_list(&mut auth, &*conn)?;
 
-    Ok(Json(json!(meta::list(&*conn)?)))
+    // auth_rules.allows_meta_list(&mut auth, &*conn)?;
+
+    let list = serde_json::to_value(meta::list(&*conn).unwrap()).unwrap();
+
+    Json(list)
 }
+
+/*
 
 #[get("/meta/<key>")]
 fn meta_get(
