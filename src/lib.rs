@@ -101,11 +101,18 @@ pub fn start(
                     .service(web::resource("schema")
                         .route(web::get().to(schema_get))
                     )
-                    .service(web::resource("data/stats")
-                        .route(web::get().to(stats_get))
-                    )
-                    .service(web::resource("data/stats/regen")
-                        .route(web::get().to(stats_regen))
+                    .service(web::scope("data")
+                        .service(web::resource("stats")
+                            .route(web::get().to(stats_get))
+                        )
+                        .service(web::resource("stats/regen")
+                            .route(web::get().to(stats_regen))
+                        )
+                        /*
+                        .service(web::resource("clone")
+                            .route(web::get().to(clone_get))
+                        )
+                        */
                     )
             )
     })
@@ -205,7 +212,7 @@ fn index() -> &'static str { "Hello World!" }
 fn server(
     conn: web::Data<DbReplica>,
     //mut auth: auth::Auth,
-    //auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     //auth_rules.allows_server(&mut auth, &*conn.get()?)?;
 
@@ -217,11 +224,11 @@ fn server(
 fn meta_list(
     conn: web::Data<DbReplica>,
     //mut auth: auth::Auth,
-    //auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> actix_web::Result<impl Responder> {
     let conn = conn.get()?;
 
-    // auth_rules.allows_meta_list(&mut auth, &*conn)?;
+    //auth_rules.allows_meta_list(&mut auth, &*conn)?;
 
     let list = serde_json::to_value(meta::list(&*conn)?).unwrap();
 
@@ -232,14 +239,14 @@ fn meta_list(
 fn meta_get(
     conn: web::Data<DbReplica>,
     //mut auth: auth::Auth,
-    //auth_rules: web::Data<auth::CustomAuth>,
-    //worker: web::Data<worker::Worker>,
+    auth_rules: web::Data<auth::AuthContainer>,
+    worker: web::Data<worker::Worker>,
     key: String
 ) -> actix_web::Result<Json<serde_json::Value>> {
     let conn = conn.get()?;
 
     //auth_rules.allows_meta_get(&mut auth, &*conn)?;
-    //worker.queue(worker::Task::new(worker::TaskType::Meta));
+    worker.queue(worker::Task::new(worker::TaskType::Meta));
 
     Ok(Json(json!(meta::Meta::get(&*conn, &key)?)))
 }
@@ -248,15 +255,15 @@ fn meta_get(
 fn meta_delete(
     conn: web::Data<DbReadWrite>,
     //mut auth: auth::Auth,
-    //auth_rules: web::Data<auth::CustomAuth>,
-    //worker: web::Data<worker::Worker>,
+    auth_rules: web::Data<auth::AuthContainer>,
+    worker: web::Data<worker::Worker>,
     key: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     //auth_rules.allows_meta_set(&mut auth, &*conn)?;
 
-    //worker.queue(worker::Task::new(worker::TaskType::Meta));
+    worker.queue(worker::Task::new(worker::TaskType::Meta));
 
     Ok(Json(json!(meta::delete(&*conn, &key)?)))
 }
@@ -264,15 +271,15 @@ fn meta_delete(
 fn meta_set(
     conn: web::Data<DbReadWrite>,
     //mut auth: auth::Auth,
-    //auth_rules: web::Data<auth::CustomAuth>,
-    //worker: web::Data<worker::Worker>,
+    auth_rules: web::Data<auth::AuthContainer>,
+    worker: web::Data<worker::Worker>,
     key: String,
     meta: Json<meta::Meta>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     //auth_rules.allows_meta_set(&mut auth, &*conn)?;
 
-    //worker.queue(worker::Task::new(worker::TaskType::Meta));
+    worker.queue(worker::Task::new(worker::TaskType::Meta));
 
     Ok(Json(json!(meta.set(&*conn)?)))
 }
@@ -288,7 +295,7 @@ fn staticsrvredirect() -> rocket::response::Redirect {
 fn mvt_get(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     z: u8, x: u32, y: u32
 ) -> Result<Response<'static>, HecateError> {
     let conn = conn.get()?;
@@ -312,7 +319,7 @@ fn mvt_get(
 fn mvt_meta(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     z: u8, x: u32, y: u32
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -328,7 +335,7 @@ fn mvt_meta(
 fn mvt_wipe(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_mvt_delete(&mut auth, &*conn)?;
@@ -340,7 +347,7 @@ fn mvt_wipe(
 fn mvt_regen(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     z: u8, x: u32, y: u32
 ) -> Result<Response<'static>, HecateError> {
     let conn = conn.get()?;
@@ -376,7 +383,7 @@ struct Map {
 fn user_create(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     user: Form<User>
 ) -> Result<Json<serde_json::Value>, HecateError> {
@@ -393,7 +400,7 @@ fn user_create(
 #[get("/users?<filter..>")]
 fn users(conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     filter: Form<Filter>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -409,7 +416,7 @@ fn users(conn: web::Data<DbReplica>,
 fn user_info(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -423,7 +430,7 @@ fn user_info(
 fn user_set_admin(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -437,7 +444,7 @@ fn user_set_admin(
 fn user_delete_admin(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -451,7 +458,7 @@ fn user_delete_admin(
 fn user_self(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_user_info(&mut auth, &*conn)?;
@@ -465,7 +472,7 @@ fn user_self(
 fn user_create_session(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     mut cookies: Cookies
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -526,7 +533,7 @@ fn user_delete_session(
 fn style_create(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     body: Data
 ) -> Result<Json<serde_json::Value>, HecateError> {
@@ -564,7 +571,7 @@ fn style_create(
 fn style_public(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -579,7 +586,7 @@ fn style_public(
 fn style_private(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -594,7 +601,7 @@ fn style_private(
 fn style_patch(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     id: i64,
     body: Data
@@ -632,7 +639,7 @@ fn style_patch(
 fn style_delete(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
@@ -651,7 +658,7 @@ fn style_delete(
 fn style_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -665,7 +672,7 @@ fn style_get(
 fn style_list_public(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -678,7 +685,7 @@ fn style_list_public(
 fn style_list_user(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     user: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -711,7 +718,7 @@ struct DeltaList {
 fn delta_list(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     opts: Form<DeltaList>
 ) ->  Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -755,7 +762,7 @@ fn delta_list(
 fn delta(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) ->  Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -769,7 +776,7 @@ fn bounds(
     conn: web::Data<DbReplica>,
     mut auth:
     auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     filter: Form<Filter>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -786,7 +793,7 @@ fn bounds(
 fn bounds_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     bounds: String
 ) -> Result<Stream<stream::PGStream>, HecateError> {
     let conn = conn.get()?;
@@ -800,7 +807,7 @@ fn bounds_get(
 fn bounds_set(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     bounds: String,
     body: Data
 ) -> Result<Json<serde_json::Value>, HecateError> {
@@ -841,7 +848,7 @@ fn bounds_set(
 fn bounds_delete(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     bounds: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -855,7 +862,7 @@ fn bounds_delete(
 fn webhooks_list(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -871,7 +878,7 @@ fn webhooks_list(
 fn webhooks_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -888,7 +895,7 @@ fn webhooks_get(
 fn webhooks_delete(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<bool>, HecateError> {
     let conn = conn.get()?;
@@ -902,7 +909,7 @@ fn webhooks_delete(
 fn webhooks_create(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     body: Data
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -945,7 +952,7 @@ fn webhooks_create(
 fn webhooks_update(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     body: Data,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
@@ -989,7 +996,7 @@ fn webhooks_update(
 fn bounds_stats(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     bounds: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -1003,7 +1010,7 @@ fn bounds_stats(
 fn bounds_meta(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     bounds: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -1024,7 +1031,7 @@ fn clone_query(
     sandbox_conn: web::Data<DbSandbox>,
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     cquery: Form<CloneQuery>
 ) -> Result<Stream<stream::PGStream>, HecateError> {
     auth_rules.allows_clone_query(&mut auth, &*conn.get()?)?;
@@ -1032,22 +1039,21 @@ fn clone_query(
     Ok(Stream::from(clone::query(sandbox_conn.get()?, &cquery.query, &cquery.limit)?))
 }
 
-#[get("/data/clone")]
 fn clone_get(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>
-) -> Result<Stream<stream::PGStream>, HecateError> {
-    auth_rules.allows_clone_get(&mut auth, &*conn.get()?)?;
+    //mut auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>
+) -> Result<stream::PGStream, HecateError> {
+    //auth_rules.allows_clone_get(&mut auth, &*conn.get()?)?;
 
-    Ok(Stream::from(clone::get(conn.get()?)?))
+    Ok(clone::get(conn.get()?)?)
 }
 
 #[get("/data/features?<map..>")]
 fn features_query(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     map: Form<Map>
 ) -> Result<Stream<stream::PGStream>, HecateError> {
     let conn = conn.get()?;
@@ -1070,7 +1076,7 @@ fn features_query(
 fn schema_get(
     conn: web::Data<DbReplica>,
     //mut auth: auth::Auth,
-    //auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     schema: web::Data<Option<serde_json::value::Value>>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -1089,7 +1095,7 @@ fn schema_get(
 fn auth_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -1103,7 +1109,7 @@ fn auth_get(
 fn stats_get(
     conn: web::Data<DbReadWrite>,
     //mut auth: auth::Auth,
-    //auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -1115,7 +1121,7 @@ fn stats_get(
 fn stats_regen(
     conn: web::Data<DbReadWrite>,
     //mut auth: auth::Auth,
-    //auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -1128,7 +1134,7 @@ fn stats_regen(
 #[post("/data/features", format="application/json", data="<body>")]
 fn features_action(
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
     worker: web::Data<worker::Worker>,
     schema: web::Data<Option<serde_json::value::Value>>,
@@ -1252,7 +1258,7 @@ fn features_action(
 fn osm_map(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     map: Form<Map>
 ) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
@@ -1280,7 +1286,7 @@ fn osm_map(
 #[put("/0.6/changeset/create", data="<body>")]
 fn osm_changeset_create(
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
     body: Data
 ) -> Result<String, status::Custom<String>> {
@@ -1341,7 +1347,7 @@ fn osm_changeset_create(
 #[put("/0.6/changeset/<id>/close")]
 fn osm_changeset_close(
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
     id: i64
 ) -> Result<String, status::Custom<String>> {
@@ -1358,7 +1364,7 @@ fn osm_changeset_close(
 #[put("/0.6/changeset/<delta_id>", data="<body>")]
 fn osm_changeset_modify(
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
     delta_id: i64,
     body: Data
@@ -1435,7 +1441,7 @@ fn osm_changeset_modify(
 #[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
 fn osm_changeset_upload(
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
     schema: web::Data<Option<serde_json::value::Value>>,
     worker: web::Data<worker::Worker>,
@@ -1561,7 +1567,7 @@ fn osm_changeset_upload(
 fn osm_capabilities(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
@@ -1588,7 +1594,7 @@ fn osm_capabilities(
 fn osm_06capabilities(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
@@ -1615,7 +1621,7 @@ fn osm_06capabilities(
 fn osm_user(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
@@ -1641,7 +1647,7 @@ fn osm_user(
 #[post("/data/feature", format="application/json", data="<body>")]
 fn feature_action(
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
     schema: web::Data<Option<serde_json::value::Value>>,
     worker: web::Data<worker::Worker>,
@@ -1758,7 +1764,7 @@ fn feature_action(
 fn feature_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Response<'static>, HecateError> {
     let conn = conn.get()?;
@@ -1790,7 +1796,7 @@ struct FeatureQuery {
 fn feature_query(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     fquery: Form<FeatureQuery>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -1812,7 +1818,7 @@ fn feature_query(
 fn feature_get_history(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
