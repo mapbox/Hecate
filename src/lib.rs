@@ -36,9 +36,12 @@ use actix_files::NamedFile;
 use rand::prelude::*;
 use db::*;
 
-use std::io::{Cursor, Read};
-use std::path::{Path, PathBuf};
-use std::collections::HashMap;
+use std::{
+    io::{Cursor, Read},
+    path::{Path, PathBuf},
+    collections::HashMap
+};
+
 use geojson::GeoJson;
 use actix_web::web::Json;
 
@@ -84,36 +87,37 @@ pub fn start(
             .data(db_sandbox.clone())
             .data(db_main.clone())
             .data(schema.clone())
+            //TODO HANDLE GENERIC 404/401
             .route("/", web::get().to(index))
             .service(actix_files::Files::new("/admin", "./web/dist/"))
             .service(web::scope("api")
-                    .service(web::resource("/")
-                        .route(web::get().to(server))
+                .service(web::resource("/")
+                    .route(web::get().to(server))
+                )
+                .service(web::resource("meta")
+                     .route(web::get().to(meta_list))
+                )
+                .service(web::resource("meta/{key}")
+                    .route(web::post().to(meta_set))
+                    .route(web::delete().to(meta_delete))
+                    .route(web::get().to(meta_get))
+                )
+                .service(web::resource("schema")
+                    .route(web::get().to(schema_get))
+                )
+                .service(web::scope("data")
+                    .service(web::resource("stats")
+                        .route(web::get().to(stats_get))
                     )
-                    .service(web::resource("meta")
-                         .route(web::get().to(meta_list))
+                    .service(web::resource("stats/regen")
+                        .route(web::get().to(stats_regen))
                     )
-                    .service(web::resource("meta/{key}")
-                        .route(web::post().to(meta_set))
-                        .route(web::delete().to(meta_delete))
-                        .route(web::get().to(meta_get))
+                    /*
+                    .service(web::resource("clone")
+                        .route(web::get().to(clone_get))
                     )
-                    .service(web::resource("schema")
-                        .route(web::get().to(schema_get))
-                    )
-                    .service(web::scope("data")
-                        .service(web::resource("stats")
-                            .route(web::get().to(stats_get))
-                        )
-                        .service(web::resource("stats/regen")
-                            .route(web::get().to(stats_regen))
-                        )
-                        /*
-                        .service(web::resource("clone")
-                            .route(web::get().to(clone_get))
-                        )
-                        */
-                    )
+                    */
+                )
             )
     })
         .workers(workers.unwrap_or(12) as usize)
@@ -123,89 +127,114 @@ pub fn start(
         .unwrap();
 
     /*
-    rocket::custom(config)
-        .mount("/admin", routes![
-            staticsrvredirect
-        ])
-        .mount("/api", routes![
-            auth_get,
-            mvt_get,
-            mvt_meta,
-            mvt_wipe,
-            mvt_regen,
-            users,
-            user_self,
-            user_info,
-            user_create,
-            user_set_admin,
-            user_delete_admin,
-            user_create_session,
-            user_delete_session,
-            style_create,
-            style_patch,
-            style_public,
-            style_private,
-            style_delete,
-            style_get,
-            style_list_public,
-            style_list_user,
-            delta,
-            delta_list,
-            feature_action,
-            features_action,
-            feature_get,
-            feature_query,
-            feature_get_history,
-            features_query,
-            bounds,
-            bounds_stats,
-            bounds_meta,
-            bounds_get,
-            bounds_set,
-            bounds_delete,
-            webhooks_get,
-            webhooks_list,
-            webhooks_delete,
-            webhooks_update,
-            webhooks_create,
-            clone_get,
-            clone_query,
-            osm_capabilities,
-            osm_06capabilities,
-            osm_user,
-            osm_map,
-            osm_changeset_create,
-            osm_changeset_modify,
-            osm_changeset_upload,
-            osm_changeset_close
-        ])
-        .register(catchers![
-           not_authorized,
-           not_found,
-        ]).launch();
+    .mount("/admin", routes![
+        staticsrvredirect
+    ])
+    .mount("/api", routes![
+        auth_get,
+        mvt_get,
+        mvt_meta,
+        mvt_wipe,
+        mvt_regen,
+        users,
+        user_self,
+        user_info,
+        user_create,
+        user_set_admin,
+        user_delete_admin,
+        user_create_session,
+        user_delete_session,
+        style_create,
+        style_patch,
+        style_public,
+        style_private,
+        style_delete,
+        style_get,
+        style_list_public,
+        style_list_user,
+        delta,
+        delta_list,
+        feature_action,
+        features_action,
+        feature_get,
+        feature_query,
+        feature_get_history,
+        features_query,
+        bounds,
+        bounds_stats,
+        bounds_meta,
+        bounds_get,
+        bounds_set,
+        bounds_delete,
+        webhooks_get,
+        webhooks_list,
+        webhooks_delete,
+        webhooks_update,
+        webhooks_create,
+        clone_get,
+        clone_query,
+        osm_capabilities,
+        osm_06capabilities,
+        osm_user,
+        osm_map,
+        osm_changeset_create,
+        osm_changeset_modify,
+        osm_changeset_upload,
+        osm_changeset_close
+    ])
+    .register(catchers![
+       not_authorized,
+       not_found,
+    ]).launch();
             */
 }
 
-/*
-
-#[derive(FromForm, Debug)]
+#[derive(Deserialize, Debug)]
 struct Filter {
     filter: Option<String>,
     limit: Option<i16>
 }
 
-#[catch(401)]
+#[derive(Deserialize, Debug)]
+struct User {
+    username: String,
+    password: String,
+    email: String
+}
+
+#[derive(Deserialize, Debug)]
+struct Map {
+    bbox: Option<String>,
+    point: Option<String>
+}
+
+#[derive(Deserialize, Debug)]
+struct DeltaList {
+    offset: Option<i64>,
+    limit: Option<i64>,
+    start: Option<String>,
+    end: Option<String>
+}
+
+#[derive(Deserialize, Debug)]
+struct CloneQuery {
+    query: String,
+    limit: Option<i64>
+}
+
+#[derive(Deserialize, Debug)]
+struct FeatureQuery {
+    key: Option<String>,
+    point: Option<String>
+}
+
 fn not_authorized() -> HecateError {
     HecateError::new(401, String::from("You must be logged in to access this resource"), None)
 }
 
-#[catch(404)]
 fn not_found() -> HecateError {
     HecateError::new(404, String::from("Resource Not Found"), None)
 }
-
-
-*/
 
 fn index() -> &'static str { "Hello World!" }
 
@@ -366,26 +395,13 @@ fn mvt_regen(
     Ok(mvt_response)
 }
 
-#[derive(FromForm, Debug)]
-struct User {
-    username: String,
-    password: String,
-    email: String
-}
-
-#[derive(FromForm, Debug)]
-struct Map {
-    bbox: Option<String>,
-    point: Option<String>
-}
-
 #[get("/user/create?<user..>")]
 fn user_create(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
-    user: Form<User>
+    user: Json<User>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_user_create(&mut auth, &*conn)?;
@@ -401,7 +417,7 @@ fn user_create(
 fn users(conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    filter: Form<Filter>
+    filter: Json<Filter>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_user_list(&mut auth, &*conn)?;
@@ -706,20 +722,12 @@ fn style_list_user(
     }
 }
 
-#[derive(FromForm, Debug)]
-struct DeltaList {
-    offset: Option<i64>,
-    limit: Option<i64>,
-    start: Option<String>,
-    end: Option<String>
-}
-
 #[get("/deltas?<opts..>")]
 fn delta_list(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    opts: Form<DeltaList>
+    opts: Json<DeltaList>
 ) ->  Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -777,7 +785,7 @@ fn bounds(
     mut auth:
     auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    filter: Form<Filter>
+    filter: Json<Filter>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -1020,11 +1028,6 @@ fn bounds_meta(
     Ok(Json(bounds::meta(&*conn, bounds)?))
 }
 
-#[derive(FromForm, Debug)]
-struct CloneQuery {
-    query: String,
-    limit: Option<i64>
-}
 
 #[get("/data/query?<cquery..>")]
 fn clone_query(
@@ -1032,7 +1035,7 @@ fn clone_query(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    cquery: Form<CloneQuery>
+    cquery: Json<CloneQuery>
 ) -> Result<Stream<stream::PGStream>, HecateError> {
     auth_rules.allows_clone_query(&mut auth, &*conn.get()?)?;
 
@@ -1054,7 +1057,7 @@ fn features_query(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    map: Form<Map>
+    map: Json<Map>
 ) -> Result<Stream<stream::PGStream>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_feature_get(&mut auth, &*conn)?;
@@ -1259,7 +1262,7 @@ fn osm_map(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    map: Form<Map>
+    map: Json<Map>
 ) -> Result<String, status::Custom<String>> {
     let conn = conn.get().unwrap();
 
@@ -1786,18 +1789,13 @@ fn feature_get(
     }
 }
 
-#[derive(FromForm, Debug)]
-struct FeatureQuery {
-    key: Option<String>,
-    point: Option<String>
-}
 
 #[get("/data/feature?<fquery..>")]
 fn feature_query(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    fquery: Form<FeatureQuery>
+    fquery: Json<FeatureQuery>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.allows_feature_get(&mut auth, &*conn)?;

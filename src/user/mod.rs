@@ -1,16 +1,50 @@
 use crate::err::HecateError;
 
-pub fn create(conn: &impl postgres::GenericConnection, username: &String, password: &String, email: &String) -> Result<bool, HecateError> {
-    match conn.query("
-        INSERT INTO users (username, password, email, meta)
-            VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, '{}'::JSONB);
-    ", &[ &username, &password, &email ]) {
-        Ok(_) => Ok(true),
-        Err(err) => {
-            if err.as_db().is_some() && err.as_db().unwrap().code.code() == "23505" {
-                Err(HecateError::new(400, String::from("User/Email Exists"), None))
-            } else {
-                Err(HecateError::from_db(err))
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
+pub struct User {
+    pub id: Option<i64>,
+    pub username: String,
+    password: Option<String>,
+    pub email: String,
+    pub meta: serde_json::Value,
+    pub access: Option<String>
+}
+
+impl User {
+    pub fn new(username: String, password: Option<String>, email: String, meta: serde_json::Value) -> Self {
+        User {
+            id: None,
+            username: username,
+            password: password,
+            email: email,
+            meta: meta,
+            access: None
+        }
+    }
+
+    pub fn password(&mut self, password: String) {
+        self.password = Some(password);
+    }
+
+    pub fn admin(&mut self, admin: bool) {
+        match admin {
+            true => self.access = Some(String::from("admin")),
+            false => self.access = None
+        };
+    }
+
+    pub fn set(self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+        match conn.query("
+            INSERT INTO users (username, password, email, meta)
+                VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, $4);
+        ", &[ &self.username, &self.password, &self.email, &self.meta ]) {
+            Ok(_) => Ok(true),
+            Err(err) => {
+                if err.as_db().is_some() && err.as_db().unwrap().code.code() == "23505" {
+                    Err(HecateError::new(400, String::from("User/Email Exists"), None))
+                } else {
+                    Err(HecateError::from_db(err))
+                }
             }
         }
     }
@@ -23,7 +57,7 @@ pub fn list(conn: &impl postgres::GenericConnection, limit: &Option<i16>) -> Res
     };
 
     match conn.query("
-        SELECT 
+        SELECT
             COALESCE(json_agg(row_to_json(row)), '[]'::JSON)
         FROM (
             SELECT
@@ -49,7 +83,7 @@ pub fn filter(conn: &impl postgres::GenericConnection, filter: &String, limit: &
     };
 
     match conn.query("
-        SELECT 
+        SELECT
             COALESCE(json_agg(row_to_json(row)), '[]'::JSON)
         FROM (
             SELECT
@@ -70,31 +104,6 @@ pub fn filter(conn: &impl postgres::GenericConnection, filter: &String, limit: &
     }
 }
 
-pub fn set_admin(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<bool, HecateError> {
-    match conn.query("
-        UPDATE users
-            SET
-                access = 'admin'
-            WHERE
-                id = $1
-    ", &[ &uid ]) {
-        Ok(_) => Ok(true),
-        Err(err) => Err(HecateError::from_db(err))
-    }
-}
-
-pub fn delete_admin(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<bool, HecateError> {
-    match conn.query("
-        UPDATE users
-            SET
-                access = NULL
-            WHERE
-                id = $1
-    ", &[ &uid ]) {
-        Ok(_) => Ok(true),
-        Err(err) => Err(HecateError::from_db(err))
-    }
-}
 pub fn info(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT row_to_json(u)
