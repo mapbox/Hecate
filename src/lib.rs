@@ -71,14 +71,14 @@ pub fn start(
     let db_sandbox = DbSandbox::new(Some(database.sandbox.iter().map(|db| db::init_pool(&db)).collect()));
     let db_main = DbReadWrite::new(init_pool(&database.main));
 
-    //let worker = worker::Worker::new(database.main.clone());
+    let worker = worker::Worker::new(database.main.clone());
 
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             //.data(auth_rules)
-            //.data(worker)
+            .data(worker.clone())
             .data(db_replica.clone())
             .data(db_sandbox.clone())
             .data(db_main.clone())
@@ -96,6 +96,9 @@ pub fn start(
                         .route(web::post().to(meta_set))
                         .route(web::delete().to(meta_delete))
                         .route(web::get().to(meta_get))
+                    )
+                    .service(web::resource("schema")
+                        .route(web::get().to(schema_get))
                     )
                     .service(web::resource("data/stats")
                         .route(web::get().to(stats_get))
@@ -117,7 +120,6 @@ pub fn start(
             staticsrvredirect
         ])
         .mount("/api", routes![
-            schema_get,
             auth_get,
             mvt_get,
             mvt_meta,
@@ -1062,23 +1064,25 @@ fn features_query(
     }
 
 }
+*/
 
-#[get("/schema")]
 fn schema_get(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
-    auth_rules: web::Data<auth::CustomAuth>,
+    //mut auth: auth::Auth,
+    //auth_rules: web::Data<auth::CustomAuth>,
     schema: web::Data<Option<serde_json::value::Value>>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
-    auth_rules.allows_schema_get(&mut auth, &*conn)?;
+    //auth_rules.allows_schema_get(&mut auth, &*conn)?;
 
-    match schema.inner() {
-        Some(ref s) => Ok(Json(json!(s))),
+    match schema.get_ref() {
+        Some(s) => Ok(Json(json!(s))),
         None => Err(HecateError::new(404, String::from("No schema Validation Enforced"), None))
     }
 }
+
+/*
 
 #[get("/auth")]
 fn auth_get(

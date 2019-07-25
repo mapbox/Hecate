@@ -24,6 +24,7 @@ impl Task {
     }
 }
 
+#[derive(Clone)]
 pub struct Worker {
     sender: crossbeam::Sender<Task>
 }
