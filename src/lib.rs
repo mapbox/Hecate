@@ -67,8 +67,9 @@ pub fn start(
         }
     };
 
-    let db_replica: DbReplica = DbReplica::new(Some(database.replica.iter().map(|db| db::init_pool(&db)).collect()));
-    let db_sandbox: DbSandbox = DbSandbox::new(Some(database.sandbox.iter().map(|db| db::init_pool(&db)).collect()));
+    let db_replica = DbReplica::new(Some(database.replica.iter().map(|db| db::init_pool(&db)).collect()));
+    let db_sandbox = DbSandbox::new(Some(database.sandbox.iter().map(|db| db::init_pool(&db)).collect()));
+    let db_main = DbReadWrite::new(init_pool(&database.main));
 
     //let worker = worker::Worker::new(database.main.clone());
 
@@ -80,10 +81,14 @@ pub fn start(
             //.data(worker)
             .data(db_replica.clone())
             .data(db_sandbox.clone())
+            .data(db_main.clone())
             .data(schema.clone())
             .route("/", web::get().to(index))
             .service(actix_files::Files::new("/admin", "./web/dist/"))
             .service(web::scope("api")
+                    .service(web::resource("/")
+                        .route(web::get().to(server))
+                    )
                     .service(web::resource("meta")
                          .route(web::get().to(meta_list))
                     )
@@ -108,14 +113,10 @@ pub fn start(
 
     /*
     rocket::custom(config)
-        .manage(DbReadWrite::new(init_pool(&database.main)))
-        .manage(db_replica)
-        .manage(db_sandbox)
         .mount("/admin", routes![
             staticsrvredirect
         ])
         .mount("/api", routes![
-            server,
             schema_get,
             auth_get,
             mvt_get,
@@ -198,21 +199,17 @@ fn not_found() -> HecateError {
 
 fn index() -> &'static str { "Hello World!" }
 
-/*
-#[get("/")]
 fn server(
-    mut auth: auth::Auth,
     conn: web::Data<DbReplica>,
-    auth_rules: web::Data<auth::CustomAuth>
+    //mut auth: auth::Auth,
+    //auth_rules: web::Data<auth::CustomAuth>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.allows_server(&mut auth, &*conn.get()?)?;
+    //auth_rules.allows_server(&mut auth, &*conn.get()?)?;
 
     Ok(Json(json!({
         "version": VERSION
     })))
 }
-
-*/
 
 fn meta_list(
     conn: web::Data<DbReplica>,

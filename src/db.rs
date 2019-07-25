@@ -5,6 +5,7 @@ use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 
 use rand::prelude::*;
 
+#[derive(PartialEq, Clone, Debug)]
 pub struct Database {
     pub main: String,
     pub replica: Vec<String>,
@@ -82,6 +83,7 @@ impl DbSandbox {
     }
 }
 
+#[derive(Clone)]
 pub struct DbReadWrite(pub r2d2::Pool<r2d2_postgres::PostgresConnectionManager>); //Read & Write DB Connection
 impl DbReadWrite {
     pub fn new(database: r2d2::Pool<r2d2_postgres::PostgresConnectionManager>) -> Self {
