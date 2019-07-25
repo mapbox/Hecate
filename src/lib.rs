@@ -11,23 +11,20 @@ pub mod validate;
 pub mod meta;
 pub mod stats;
 pub mod db;
-
-/*
-pub mod auth;
+pub mod stream;
+pub mod bounds;
 pub mod delta;
 pub mod mvt;
 pub mod feature;
-pub mod bounds;
 pub mod clone;
-pub mod stream;
 pub mod style;
-pub mod osm;
-pub mod user;
 pub mod worker;
 pub mod webhooks;
+pub mod osm;
+pub mod user;
+pub mod auth;
 
 use auth::ValidAuth;
-*/
 use err::HecateError;
 
 //Postgres Connection Pooling
@@ -35,7 +32,6 @@ use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 
 use actix_web::{web, App, HttpResponse, HttpRequest, HttpServer, Responder, middleware};
-use actix_web::web::{get};
 use actix_files::NamedFile;
 
 use rand::prelude::*;
@@ -51,11 +47,11 @@ pub fn start(
     database: Database,
     port: Option<u16>,
     workers: Option<u16>,
-    schema: Option<serde_json::value::Value>
+    schema: Option<serde_json::value::Value>,
+    auth: Option<auth::CustomAuth>
 ) {
     env_logger::init();
 
-    /*
     let auth_rules: auth::CustomAuth = match auth {
         None => auth::CustomAuth::new(),
         Some(auth) => {
@@ -70,7 +66,6 @@ pub fn start(
             auth
         }
     };
-    */
 
     let db_replica: DbReplica = DbReplica::new(Some(database.replica.iter().map(|db| db::init_pool(&db)).collect()));
     let db_sandbox: DbSandbox = DbSandbox::new(Some(database.sandbox.iter().map(|db| db::init_pool(&db)).collect()));

@@ -955,6 +955,7 @@ impl Auth {
     }
 }
 
+/*
 impl<'a, 'r> FromRequest<'a, 'r> for Auth {
     type Error = ();
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Auth, ()> {
@@ -1001,3 +1002,4 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
         }
     }
 }
+*/
