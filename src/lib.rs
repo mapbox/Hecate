@@ -4,7 +4,6 @@ pub static POSTGIS: f64 = 2.4;
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate actix_http;
 
 pub mod err;
 pub mod validate;
@@ -67,6 +66,8 @@ pub fn start(
         }
     };
 
+    let auth_rules = auth::AuthContainer(auth_rules);
+
     let db_replica = DbReplica::new(Some(database.replica.iter().map(|db| db::init_pool(&db)).collect()));
     let db_sandbox = DbSandbox::new(Some(database.sandbox.iter().map(|db| db::init_pool(&db)).collect()));
     let db_main = DbReadWrite::new(init_pool(&database.main));
@@ -77,7 +78,7 @@ pub fn start(
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            //.data(auth_rules)
+            .data(auth_rules.clone())
             .data(worker.clone())
             .data(db_replica.clone())
             .data(db_sandbox.clone())

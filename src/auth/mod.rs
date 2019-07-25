@@ -4,6 +4,9 @@ fn not_authed() -> HecateError {
     HecateError::new(401, String::from("You must be logged in to access this resource"), None)
 }
 
+#[derive(Clone)]
+pub struct AuthContainer(pub CustomAuth);
+
 ///
 /// Allows a category to be null, public, admin, or user
 ///
@@ -68,7 +71,7 @@ pub trait ValidAuth {
     fn is_valid(&self) -> Result<bool, String>;
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthWebhooks {
     pub list: Option<String>,
     pub delete: Option<String>,
@@ -95,7 +98,7 @@ impl ValidAuth for AuthWebhooks {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthMeta {
     pub get: Option<String>,
     pub list: Option<String>,
@@ -122,7 +125,7 @@ impl ValidAuth for AuthMeta {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthClone {
     pub get: Option<String>,
     pub query: Option<String>
@@ -146,7 +149,7 @@ impl ValidAuth for AuthClone {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthSchema {
     pub get: Option<String>
 }
@@ -167,7 +170,7 @@ impl ValidAuth for AuthSchema {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthStats {
     pub get: Option<String>,
     pub bounds: Option<String>
@@ -191,7 +194,7 @@ impl ValidAuth for AuthStats {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthAuth {
     pub get: Option<String>
 }
@@ -212,7 +215,7 @@ impl ValidAuth for AuthAuth {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthMVT {
     pub get: Option<String>,
     pub delete: Option<String>,
@@ -242,7 +245,7 @@ impl ValidAuth for AuthMVT {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthUser {
     pub info: Option<String>,
     pub list: Option<String>,
@@ -273,7 +276,7 @@ impl ValidAuth for AuthUser {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthStyle {
     pub create: Option<String>,
     pub patch: Option<String>,
@@ -312,7 +315,7 @@ impl ValidAuth for AuthStyle {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthDelta {
     pub get: Option<String>,
     pub list: Option<String>,
@@ -336,7 +339,7 @@ impl ValidAuth for AuthDelta {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthFeature {
     pub force: Option<String>,
     pub create: Option<String>,
@@ -366,7 +369,7 @@ impl ValidAuth for AuthFeature {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthBounds {
     pub list: Option<String>,
     pub create: Option<String>,
@@ -396,7 +399,7 @@ impl ValidAuth for AuthBounds {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthOSM {
     pub get: Option<String>,
     pub create: Option<String>
@@ -420,7 +423,7 @@ impl ValidAuth for AuthOSM {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct CustomAuth {
     pub server: Option<String>,
     pub meta: Option<AuthMeta>,
@@ -848,7 +851,7 @@ impl CustomAuth {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Auth {
     pub uid: Option<i64>,
     pub access: Option<String>,
