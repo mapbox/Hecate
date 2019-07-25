@@ -1,6 +1,7 @@
 use crate::err::HecateError;
 use serde_json::Value;
 
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct Meta {
     key: String,
     value: Value
@@ -44,14 +45,6 @@ impl Meta {
         }
     }
 
-    pub fn delete(&self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
-        match conn.query("
-            DELETE FROM meta WHERE key = $1
-        ", &[ &self.key ]) {
-            Ok(_) => Ok(true),
-            Err(err) => Err(HecateError::from_db(err))
-        }
-    }
 }
 
 pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<String>, HecateError> {
@@ -67,6 +60,15 @@ pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<String>, Heca
 
             Ok(names)
         },
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}
+
+pub fn delete(conn: &impl postgres::GenericConnection, key: &String) -> Result<bool, HecateError> {
+    match conn.query("
+        DELETE FROM meta WHERE key = $1
+    ", &[ &key ]) {
+        Ok(_) => Ok(true),
         Err(err) => Err(HecateError::from_db(err))
     }
 }
