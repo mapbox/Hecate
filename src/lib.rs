@@ -98,6 +98,17 @@ pub fn start(
                 .service(web::resource("schema")
                     .route(web::get().to(schema_get))
                 )
+                .service(web::scope("webhooks")
+                    .service(web::resource("")
+                        .route(web::get().to(webhooks_list))
+                        .route(web::post().to(webhooks_create))
+                    )
+                    .service(web::resource("{id}")
+                        .route(web::get().to(webhooks_get))
+                        .route(web::delete().to(webhooks_delete))
+                        .route(web::post().to(webhooks_update))
+                    )
+                )
                 .service(web::scope("tiles")
                     .service(web::resource("")
                         .route(web::delete().to(mvt_wipe))
@@ -175,11 +186,6 @@ pub fn start(
         bounds_get,
         bounds_set,
         bounds_delete,
-        webhooks_get,
-        webhooks_list,
-        webhooks_delete,
-        webhooks_update,
-        webhooks_create,
         clone_get,
         clone_query,
         osm_capabilities,
@@ -948,16 +954,16 @@ fn bounds_delete(
 
     Ok(Json(json!(bounds::delete(&*conn, &bounds)?)))
 }
+*/
 
-#[get("/webhooks")]
 fn webhooks_list(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
-    auth_rules.allows_webhooks_list(&mut auth, &*conn)?;
+    //auth_rules.allows_webhooks_list(&mut auth, &*conn)?;
 
     match serde_json::to_value(webhooks::list(&*conn, webhooks::Action::All)?) {
         Ok(hooks) => Ok(Json(hooks)),
@@ -965,16 +971,15 @@ fn webhooks_list(
     }
 }
 
-#[get("/webhooks/<id>")]
 fn webhooks_get(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
-    auth_rules.allows_webhooks_list(&mut auth, &*conn)?;
+    //auth_rules.allows_webhooks_list(&mut auth, &*conn)?;
 
     match serde_json::to_value(webhooks::get(&*conn, id)?) {
         Ok(hooks) => Ok(Json(hooks)),
@@ -982,10 +987,9 @@ fn webhooks_get(
     }
 }
 
-#[delete("/webhooks/<id>")]
 fn webhooks_delete(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: i64
 ) -> Result<Json<bool>, HecateError> {
@@ -996,16 +1000,15 @@ fn webhooks_delete(
     Ok(Json(webhooks::delete(&*conn, id)?))
 }
 
-#[post("/webhooks", format="application/json", data="<body>")]
 fn webhooks_create(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     body: Data
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
-    auth_rules.allows_webhooks_update(&mut auth, &*conn)?;
+    //auth_rules.allows_webhooks_update(&mut auth, &*conn)?;
 
     let body_str: String;
     {
@@ -1039,17 +1042,16 @@ fn webhooks_create(
     }
 }
 
-#[post("/webhooks/<id>", format="application/json", data="<body>")]
 fn webhooks_update(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     body: Data,
     id: i64
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
-    auth_rules.allows_webhooks_update(&mut auth, &*conn)?;
+    //auth_rules.allows_webhooks_update(&mut auth, &*conn)?;
 
     let body_str: String;
     {
@@ -1083,6 +1085,7 @@ fn webhooks_update(
     }
 }
 
+/*
 #[get("/data/bounds/<bounds>/stats")]
 fn bounds_stats(
     conn: web::Data<DbReplica>,
