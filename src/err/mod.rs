@@ -9,28 +9,28 @@ pub struct HecateError {
 impl HecateError {
     pub fn new(code: u16, safe_error: String, full_error: Option<String>) -> Self {
         let full_error = match full_error {
-            Some(err) => err,
-            None => safe_error.clone()
+            Some(err) => err.to_string(),
+            None => safe_error.to_string()
         };
 
         HecateError {
             code: code,
             custom_json: None,
-            safe_error: safe_error,
+            safe_error: safe_error.to_string(),
             full_error: full_error
         }
     }
 
     pub fn from_json(code: u16, json: serde_json::Value, safe_error: String, full_error: Option<String>) -> Self {
         let full_error = match full_error {
-            Some(err) => err,
-            None => safe_error.clone()
+            Some(err) => err.to_string(),
+            None => safe_error.to_string()
         };
 
         HecateError {
             code: code,
             custom_json: Some(json),
-            safe_error: safe_error,
+            safe_error: safe_error.to_string(),
             full_error: full_error
         }
     }
@@ -101,7 +101,7 @@ impl actix_http::ResponseError for HecateError {
         actix_http::Response::build(actix_web::http::StatusCode::from_u16(code).unwrap())
            .content_type("application/json")
            .body(body)
-        
+
     }
 }
 

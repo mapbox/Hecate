@@ -23,27 +23,20 @@ pub mod osm;
 pub mod user;
 pub mod auth;
 
-use auth::ValidAuth;
-use err::HecateError;
 
-//Postgres Connection Pooling
-use r2d2::{Pool, PooledConnection};
-use r2d2_postgres::{PostgresConnectionManager, TlsMode};
-
-use actix_web::{web, App, HttpResponse, HttpRequest, HttpServer, Responder, middleware};
-use actix_files::NamedFile;
-
+use actix_web::{web, web::Json, App, HttpServer, Responder, middleware};
 use rand::prelude::*;
-use db::*;
-
+use geojson::GeoJson;
+use crate::{
+    auth::ValidAuth,
+    err::HecateError,
+    db::*
+};
 use std::{
     io::{Cursor, Read},
     path::{Path, PathBuf},
     collections::HashMap
 };
-
-use geojson::GeoJson;
-use actix_web::web::Json;
 
 pub fn start(
     database: Database,
@@ -105,6 +98,15 @@ pub fn start(
                 .service(web::resource("schema")
                     .route(web::get().to(schema_get))
                 )
+                .service(web::scope("user")
+                    .service(web::resource("{uid}")
+                        .route(web::get().to(user_info))
+                    )
+                    .service(web::resource("{uid}/admin")
+                        .route(web::put().to(user_set_admin))
+                        .route(web::delete().to(user_delete_admin))
+                    )
+                )
                 .service(web::scope("data")
                     .service(web::resource("stats")
                         .route(web::get().to(stats_get))
@@ -138,10 +140,7 @@ pub fn start(
         mvt_regen,
         users,
         user_self,
-        user_info,
         user_create,
-        user_set_admin,
-        user_delete_admin,
         user_create_session,
         user_delete_session,
         style_create,
@@ -427,48 +426,89 @@ fn users(conn: web::Data<DbReplica>,
         None => Ok(Json(json!(user::list(&*conn, &filter.limit)?)))
     }
 }
+*/
 
-#[get("/user/<id>")]
 fn user_info(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    id: i64
+    uid: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
-    auth_rules.is_admin(&mut auth, &*conn)?;
+    //auth_rules.is_admin(&mut auth, &*conn)?;
 
-    Ok(Json(user::info(&*conn, &id)?))
+    let uid: i64 = match uid.parse() {
+        Ok(uid) => uid,
+        Err(err) => {
+            return Err(HecateError::new(400, String::from("User ID must be an integer"), Some(err.to_string())));
+        }
+    };
+
+    let user = user::User::get(&*conn, &uid)?.to_value();
+
+    Ok(Json(user))
 }
 
-#[put("/user/<id>/admin")]
 fn user_set_admin(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    id: i64
+    uid: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
-    auth_rules.is_admin(&mut auth, &*conn)?;
+    //auth_rules.is_admin(&mut auth, &*conn)?;
 
-    Ok(Json(json!(user::set_admin(&*conn, &id)?)))
+    let uid: i64 = match uid.parse() {
+        Ok(uid) => uid,
+        Err(err) => {
+            return Err(HecateError::new(400, String::from("User ID must be an integer"), Some(err.to_string())));
+        }
+    };
+
+    let mut user = user::User::get(&*conn, &uid)?;
+
+    if user.is_admin() {
+        return Err(HecateError::new(400, format!("{} is already an admin", user.username), None));
+    }
+
+    user.admin(true);
+    user.set(&*conn)?;
+
+    Ok(Json(json!(true)))
 }
 
-#[delete("/user/<id>/admin")]
 fn user_delete_admin(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    id: i64
+    uid: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
-    auth_rules.is_admin(&mut auth, &*conn)?;
+    //auth_rules.is_admin(&mut auth, &*conn)?;
 
-    Ok(Json(json!(user::delete_admin(&*conn, &id)?)))
+    let uid: i64 = match uid.parse() {
+        Ok(uid) => uid,
+        Err(err) => {
+            return Err(HecateError::new(400, String::from("User ID must be an integer"), Some(err.to_string())));
+        }
+    };
+
+    let mut user = user::User::get(&*conn, &uid)?;
+
+    if !user.is_admin() {
+        return Err(HecateError::new(400, format!("{} is not an admin", user.username), None));
+    }
+
+    user.admin(false);
+    user.set(&*conn)?;
+
+    Ok(Json(json!(true)))
 }
+
+/*
 
 #[get("/user/info")]
 fn user_self(
