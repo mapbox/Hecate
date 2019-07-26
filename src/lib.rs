@@ -24,7 +24,7 @@ pub mod user;
 pub mod auth;
 
 
-use actix_web::{web, web::Json, App, HttpServer, Responder, middleware};
+use actix_web::{web, web::Json, App, HttpResponse, HttpServer, Responder, middleware};
 use rand::prelude::*;
 use geojson::GeoJson;
 use crate::{
@@ -99,14 +99,18 @@ pub fn start(
                     .route(web::get().to(schema_get))
                 )
                 .service(web::scope("tiles")
-                     /*
+                    .service(web::resource("")
+                        .route(web::delete().to(mvt_wipe))
+                    )
                     .service(web::resource("{z}/{x}/{y}")
                         .route(web::get().to(mvt_get))
                     )
                     .service(web::resource("{z}/{x}/{y}/meta")
-                        .route(web::get().to(mvt_meta)
+                        .route(web::get().to(mvt_meta))
                     )
-                    */
+                    .service(web::resource("{z}/{x}/{y}/regen")
+                        .route(web::get().to(mvt_regen))
+                    )
                 )
                 .service(web::scope("user")
                     .service(web::resource("{uid}")
@@ -144,8 +148,6 @@ pub fn start(
     ])
     .mount("/api", routes![
         auth_get,
-        mvt_wipe,
-        mvt_regen,
         users,
         user_self,
         user_create,
@@ -327,12 +329,14 @@ fn staticsrvredirect() -> rocket::response::Redirect {
     rocket::response::Redirect::to("/admin/index.html")
 }
 
+*/
+
 fn mvt_get(
     conn: web::Data<DbReadWrite>,
     //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     z: String, x: String, y: String
-) -> Result<Response<'static>, HecateError> {
+) -> Result<HttpResponse, HecateError> {
     let conn = conn.get()?;
 
     let z: u8 = match z.parse() {
@@ -354,23 +358,59 @@ fn mvt_get(
 
     let tile = mvt::get(&*conn, z, x, y, false)?;
 
-    let c = Cursor::new(tile);
-
-    let mut mvt_response = Response::new();
-    mvt_response.set_status(HTTPStatus::Ok);
-    mvt_response.set_sized_body(c);
-    mvt_response.set_raw_header("Content-Type", "application/x-protobuf");
-    Ok(mvt_response)
+    Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
+        .content_type("application/x-protobuf")
+        .content_length(tile.len() as u64)
+        .body(tile))
 }
+
 
 fn mvt_meta(
     conn: web::Data<DbReplica>,
     //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    z: u8, x: u32, y: u32
+    z: String, x: String, y: String
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     //auth_rules.allows_mvt_meta(&mut auth, &*conn)?;
+
+    let z: u8 = match z.parse() {
+        Ok(z) => z,
+        Err(err) => { return Err(HecateError::new(400, String::from("z coordinate must be integer"), Some(err.to_string()))); }
+    };
+    let x: u32 = match x.parse() {
+        Ok(x) => x,
+        Err(err) => { return Err(HecateError::new(400, String::from("x coordinate must be integer"), Some(err.to_string()))); }
+    };
+    let y: u32 = match y.parse() {
+        Ok(y) => y,
+        Err(err) => { return Err(HecateError::new(400, String::from("y coordinate must be integer"), Some(err.to_string()))); }
+    };
+
+    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
+
+    Ok(Json(mvt::meta(&*conn, z, x, y)?))
+}
+
+fn mvt_wipe(
+    conn: web::Data<DbReadWrite>,
+    //mut auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>
+) -> Result<Json<serde_json::Value>, HecateError> {
+    let conn = conn.get()?;
+    //auth_rules.allows_mvt_delete(&mut auth, &*conn)?;
+
+    Ok(Json(mvt::wipe(&*conn)?))
+}
+
+fn mvt_regen(
+    conn: web::Data<DbReadWrite>,
+    //mut auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>,
+    z: String, x: String, y: String
+) -> Result<HttpResponse, HecateError> {
+    let conn = conn.get()?;
+    //auth_rules.allows_mvt_regen(&mut auth, &*conn)?;
 
     let z: u8 = match z.parse() {
         Ok(z) => z,
@@ -387,44 +427,15 @@ fn mvt_meta(
 
     if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    Ok(Json(mvt::meta(&*conn, z, x, y)?))
-}
-
-
-#[delete("/tiles")]
-fn mvt_wipe(
-    conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
-    auth_rules: web::Data<auth::AuthContainer>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    let conn = conn.get()?;
-    auth_rules.allows_mvt_delete(&mut auth, &*conn)?;
-
-    Ok(Json(mvt::wipe(&*conn)?))
-}
-
-#[get("/tiles/<z>/<x>/<y>/regen")]
-fn mvt_regen(
-    conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
-    auth_rules: web::Data<auth::AuthContainer>,
-    z: u8, x: u32, y: u32
-) -> Result<Response<'static>, HecateError> {
-    let conn = conn.get()?;
-    auth_rules.allows_mvt_regen(&mut auth, &*conn)?;
-
-    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
-
     let tile = mvt::get(&*conn, z, x, y, true)?;
 
-    let c = Cursor::new(tile);
-
-    let mut mvt_response = Response::new();
-    mvt_response.set_status(HTTPStatus::Ok);
-    mvt_response.set_sized_body(c);
-    mvt_response.set_raw_header("Content-Type", "application/x-protobuf");
-    Ok(mvt_response)
+    Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
+        .content_type("application/x-protobuf")
+        .content_length(tile.len() as u64)
+        .body(tile))
 }
+
+/*
 
 #[get("/user/create?<user..>")]
 fn user_create(
