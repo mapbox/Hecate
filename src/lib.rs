@@ -98,6 +98,16 @@ pub fn start(
                 .service(web::resource("schema")
                     .route(web::get().to(schema_get))
                 )
+                .service(web::scope("tiles")
+                     /*
+                    .service(web::resource("{z}/{x}/{y}")
+                        .route(web::get().to(mvt_get))
+                    )
+                    .service(web::resource("{z}/{x}/{y}/meta")
+                        .route(web::get().to(mvt_meta)
+                    )
+                    */
+                )
                 .service(web::scope("user")
                     .service(web::resource("{uid}")
                         .route(web::get().to(user_info))
@@ -134,8 +144,6 @@ pub fn start(
     ])
     .mount("/api", routes![
         auth_get,
-        mvt_get,
-        mvt_meta,
         mvt_wipe,
         mvt_regen,
         users,
@@ -319,16 +327,28 @@ fn staticsrvredirect() -> rocket::response::Redirect {
     rocket::response::Redirect::to("/admin/index.html")
 }
 
-#[get("/tiles/<z>/<x>/<y>")]
 fn mvt_get(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    z: u8, x: u32, y: u32
+    z: String, x: String, y: String
 ) -> Result<Response<'static>, HecateError> {
     let conn = conn.get()?;
 
-    auth_rules.allows_mvt_get(&mut auth, &*conn)?;
+    let z: u8 = match z.parse() {
+        Ok(z) => z,
+        Err(err) => { return Err(HecateError::new(400, String::from("z coordinate must be integer"), None)); }
+    };
+    let x: u32 = match x.parse() {
+        Ok(x) => x,
+        Err(err) => { return Err(HecateError::new(400, String::from("x coordinate must be integer"), None)); }
+    };
+    let y: u32 = match y.parse() {
+        Ok(y) => y,
+        Err(err) => { return Err(HecateError::new(400, String::from("y coordinate must be integer"), None)); }
+    };
+
+    //auth_rules.allows_mvt_get(&mut auth, &*conn)?;
 
     if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
@@ -343,15 +363,27 @@ fn mvt_get(
     Ok(mvt_response)
 }
 
-#[get("/tiles/<z>/<x>/<y>/meta")]
 fn mvt_meta(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     z: u8, x: u32, y: u32
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
-    auth_rules.allows_mvt_meta(&mut auth, &*conn)?;
+    //auth_rules.allows_mvt_meta(&mut auth, &*conn)?;
+
+    let z: u8 = match z.parse() {
+        Ok(z) => z,
+        Err(err) => { return Err(HecateError::new(400, String::from("z coordinate must be integer"), None)); }
+    };
+    let x: u32 = match x.parse() {
+        Ok(x) => x,
+        Err(err) => { return Err(HecateError::new(400, String::from("x coordinate must be integer"), None)); }
+    };
+    let y: u32 = match y.parse() {
+        Ok(y) => y,
+        Err(err) => { return Err(HecateError::new(400, String::from("y coordinate must be integer"), None)); }
+    };
 
     if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
