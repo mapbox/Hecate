@@ -152,6 +152,14 @@ pub fn start(
                         .route(web::delete().to(user_delete_admin))
                     )
                 )
+                .service(web::scope("bounds")
+                    .service(web::resource("{bound}/stats")
+                        .route(web::get().to(bounds_stats))
+                    )
+                    .service(web::resource("{bound}/meta")
+                        .route(web::get().to(bounds_meta))
+                    )
+                )
                 .service(web::scope("data")
                     .service(web::resource("stats")
                         .route(web::get().to(stats_get))
@@ -192,8 +200,6 @@ pub fn start(
         feature_get_history,
         features_query,
         bounds,
-        bounds_stats,
-        bounds_meta,
         bounds_get,
         bounds_set,
         bounds_delete,
@@ -544,7 +550,7 @@ fn user_create_session(
         .finish();
 
     let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK).json(json!(true));
-    resp.add_cookie(&cookie);
+    resp.add_cookie(&cookie).unwrap();
 
     Ok(resp)
 }
@@ -999,8 +1005,6 @@ fn webhooks_update(
     }
 }
 
-/*
-#[get("/data/bounds/<bounds>/stats")]
 fn bounds_stats(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
@@ -1014,7 +1018,6 @@ fn bounds_stats(
     Ok(Json(bounds::stats_json(&*conn, bounds)?))
 }
 
-#[get("/data/bounds/<bounds>/meta")]
 fn bounds_meta(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
@@ -1028,6 +1031,7 @@ fn bounds_meta(
     Ok(Json(bounds::meta(&*conn, bounds)?))
 }
 
+/*
 
 #[get("/data/query?<cquery..>")]
 fn clone_query(
