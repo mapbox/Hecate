@@ -964,7 +964,7 @@ impl actix_web::FromRequest for Auth {
     type Future = Result<Self, Self::Error>;
     type Config = ();
 
-    fn from_request(req: &actix_web::HttpRequest, payload: &mut actix_web::dev::Payload) -> Self::Future {
+    fn from_request(req: &actix_web::HttpRequest, _payload: &mut actix_web::dev::Payload) -> Self::Future {
         let mut auth = Auth::new();
 
         match req.cookie("session") {

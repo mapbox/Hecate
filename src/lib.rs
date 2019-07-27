@@ -2,6 +2,12 @@ pub static VERSION: &'static str = "0.71.1";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
 
+///
+/// The Maximum number of bytes allowed in
+/// a request body
+///
+pub static MAX_BODY: u64 = 20971520;
+
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 
@@ -25,6 +31,7 @@ pub mod auth;
 
 use actix_http::httpmessage::HttpMessage;
 use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, Responder, middleware};
+use futures::{Future, Stream, future::Either};
 use rand::prelude::*;
 use geojson::GeoJson;
 use crate::{
@@ -105,6 +112,12 @@ pub fn start(
                 .service(web::resource("schema")
                     .route(web::get().to(schema_get))
                 )
+                .service(web::resource("deltas")
+                    .route(web::get().to(delta_list))
+                )
+                .service(web::resource("delta/{id}")
+                    .route(web::get().to(delta))
+                )
                 .service(web::scope("webhooks")
                     .service(web::resource("")
                         .route(web::get().to(webhooks_list))
@@ -153,11 +166,21 @@ pub fn start(
                     )
                 )
                 .service(web::scope("bounds")
+                    .service(web::resource("")
+                        .route(web::get().to(bounds))
+                    )
                     .service(web::resource("{bound}/stats")
                         .route(web::get().to(bounds_stats))
                     )
                     .service(web::resource("{bound}/meta")
                         .route(web::get().to(bounds_meta))
+                    )
+                    .service(web::resource("{bound}")
+                         /*
+                        .route(web::get().to(bounds_get))
+                        */
+                        .route(web::post().to_async(bounds_set))
+                        .route(web::delete().to(bounds_delete))
                     )
                 )
                 .service(web::scope("data")
@@ -191,18 +214,12 @@ pub fn start(
         style_get,
         style_list_public,
         style_list_user,
-        delta,
-        delta_list,
         feature_action,
         features_action,
         feature_get,
         feature_query,
         feature_get_history,
         features_query,
-        bounds,
-        bounds_get,
-        bounds_set,
-        bounds_delete,
         clone_get,
         clone_query,
         osm_capabilities,
@@ -271,7 +288,12 @@ fn server(
     auth_rules.0.allows_server(&mut auth, &*conn.get()?)?;
 
     Ok(Json(json!({
-        "version": VERSION
+        "version": VERSION,
+        "constraints": {
+            "request": {
+                "max_size": MAX_BODY
+            }
+        }
     })))
 }
 
@@ -532,8 +554,7 @@ fn user_self(
 fn user_create_session(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::AuthContainer>,
-    req: HttpRequest
+    auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<HttpResponse, HecateError> {
     let conn = conn.get()?;
 
@@ -759,7 +780,8 @@ fn style_list_user(
     }
 }
 
-#[get("/deltas?<opts..>")]
+*/
+
 fn delta_list(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
@@ -803,20 +825,18 @@ fn delta_list(
     }
 }
 
-#[get("/delta/<id>")]
 fn delta(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    id: i64
+    id: web::Path<i64>
 ) ->  Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.0.allows_delta_get(&mut auth, &*conn)?;
 
-    Ok(Json(delta::get_json(&*conn, &id)?))
+    Ok(Json(delta::get_json(&*conn, &id.into_inner())?))
 }
 
-#[get("/data/bounds?<filter..>")]
 fn bounds(
     conn: web::Data<DbReplica>,
     mut auth:
@@ -834,75 +854,69 @@ fn bounds(
     }
 }
 
-#[get("/data/bounds/<bounds>")]
+/*
 fn bounds_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    bounds: String
+    bounds: web::Path<String>
 ) -> Result<Stream<stream::PGStream>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_bounds_list(&mut auth, &*conn)?;
 
-    Ok(Stream::from(bounds::get(conn, bounds)?))
+    Ok(Stream::from(bounds::get(conn, bounds.into_inner())?))
 }
+*/
 
-#[post("/data/bounds/<bounds>", format="application/json", data="<body>")]
 fn bounds_set(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    bounds: String,
-    body: Data
-) -> Result<Json<serde_json::Value>, HecateError> {
-    let conn = conn.get()?;
-
-    auth_rules.0.allows_bounds_create(&mut auth, &*conn)?;
-
-    let body_str: String;
-    {
-        let mut body_stream = body.open();
-        let mut body_vec = Vec::new();
-
-        let mut buffer = [0; 1024];
-        let mut buffer_size: usize = 1;
-
-        while buffer_size > 0 {
-            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
-            body_vec.append(&mut buffer[..buffer_size].to_vec());
-        }
-
-        body_str = match String::from_utf8(body_vec) {
-            Ok(body_str) => body_str,
-            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
-        }
-    }
-
-    let geom: serde_json::Value = match serde_json::from_str(&*body_str) {
-        Ok(geom) => geom,
-        Err(_) => {
-            return Err(HecateError::new(400, String::from("Invalid Feature GeoJSON"), None));
-        }
+    bounds: web::Path<String>,
+    body: web::Payload
+) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
+    let conn = match conn.get() {
+        Ok(conn) => conn,
+        Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    Ok(Json(json!(bounds::set(&*conn, &bounds, &geom)?)))
+    match auth_rules.0.allows_bounds_create(&mut auth, &*conn) {
+        Err(err) => { return Either::A(futures::future::err(err)); },
+        _ => ()
+    };
+
+    Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
+        body.extend_from_slice(&chunk);
+        Ok::<_, HecateError>(body)
+    }).and_then(move |body| {
+        let body = match String::from_utf8(body.to_vec()) {
+            Ok(body) => body,
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
+        };
+        let geom: serde_json::Value = match serde_json::from_str(&*body) {
+            Ok(geom) => geom,
+            Err(_) => {
+                return Err(HecateError::new(400, String::from("Invalid Feature GeoJSON"), None));
+            }
+        };
+
+        Ok(Json(json!(bounds::set(&*conn, &bounds, &geom)?)))
+    }))
 }
 
-#[delete("/data/bounds/<bounds>")]
 fn bounds_delete(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    bounds: String
+    bounds: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_bounds_delete(&mut auth, &*conn)?;
 
-    Ok(Json(json!(bounds::delete(&*conn, &bounds)?)))
+    Ok(Json(json!(bounds::delete(&*conn, &bounds.into_inner())?)))
 }
-*/
 
 fn webhooks_list(
     conn: web::Data<DbReplica>,

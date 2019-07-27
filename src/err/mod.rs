@@ -124,3 +124,9 @@ impl std::fmt::Display for HecateError {
         std::fmt::Display::fmt(&self.safe_error, f)
     }
 }
+
+impl std::convert::From<actix_http::error::PayloadError> for HecateError {
+    fn from(payload: actix_http::error::PayloadError) -> Self {
+        HecateError::generic(500)
+    }
+}
