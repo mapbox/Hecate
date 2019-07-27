@@ -72,6 +72,7 @@ pub fn start(
 
     HttpServer::new(move || {
         App::new()
+            .wrap(middleware::NormalizePath)
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .data(auth_rules.clone())
@@ -82,10 +83,16 @@ pub fn start(
             .data(schema.clone())
             //TODO HANDLE GENERIC 404/401
             .route("/", web::get().to(index))
-            .service(actix_files::Files::new("/admin", "./web/dist/"))
+            .service(
+                actix_files::Files::new("/admin", "./web/dist/")
+                    .index_file("index.html")
+            )
             .service(web::scope("api")
                 .service(web::resource("/")
                     .route(web::get().to(server))
+                )
+                .service(web::resource("auth")
+                     .route(web::get().to(auth_get))
                 )
                 .service(web::resource("meta")
                      .route(web::get().to(meta_list))
@@ -160,11 +167,7 @@ pub fn start(
         .unwrap();
 
     /*
-    .mount("/admin", routes![
-        staticsrvredirect
-    ])
     .mount("/api", routes![
-        auth_get,
         user_self,
         user_create_session,
         user_delete_session,
@@ -325,35 +328,18 @@ fn meta_set(
     Ok(Json(json!(meta.set(&*conn)?)))
 }
 
-/*
-
-#[get("/")]
-fn staticsrvredirect() -> rocket::response::Redirect {
-    rocket::response::Redirect::to("/admin/index.html")
-}
-
-*/
 
 fn mvt_get(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    z: String, x: String, y: String
+    path: web::Path<(u8, u32, u32)>
 ) -> Result<HttpResponse, HecateError> {
     let conn = conn.get()?;
 
-    let z: u8 = match z.parse() {
-        Ok(z) => z,
-        Err(err) => { return Err(HecateError::new(400, String::from("z coordinate must be integer"), None)); }
-    };
-    let x: u32 = match x.parse() {
-        Ok(x) => x,
-        Err(err) => { return Err(HecateError::new(400, String::from("x coordinate must be integer"), None)); }
-    };
-    let y: u32 = match y.parse() {
-        Ok(y) => y,
-        Err(err) => { return Err(HecateError::new(400, String::from("y coordinate must be integer"), None)); }
-    };
+    let z = path.0;
+    let x = path.1;
+    let y = path.2;
 
     auth_rules.0.allows_mvt_get(&mut auth, &*conn)?;
 
@@ -372,23 +358,14 @@ fn mvt_meta(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    z: String, x: String, y: String
+    path: web::Path<(u8, u32, u32)>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.0.allows_mvt_meta(&mut auth, &*conn)?;
 
-    let z: u8 = match z.parse() {
-        Ok(z) => z,
-        Err(err) => { return Err(HecateError::new(400, String::from("z coordinate must be integer"), Some(err.to_string()))); }
-    };
-    let x: u32 = match x.parse() {
-        Ok(x) => x,
-        Err(err) => { return Err(HecateError::new(400, String::from("x coordinate must be integer"), Some(err.to_string()))); }
-    };
-    let y: u32 = match y.parse() {
-        Ok(y) => y,
-        Err(err) => { return Err(HecateError::new(400, String::from("y coordinate must be integer"), Some(err.to_string()))); }
-    };
+    let z = path.0;
+    let x = path.1;
+    let y = path.2;
 
     if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
@@ -410,23 +387,14 @@ fn mvt_regen(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    z: String, x: String, y: String
+    path: web::Path<(u8, u32, u32)>
 ) -> Result<HttpResponse, HecateError> {
     let conn = conn.get()?;
     auth_rules.0.allows_mvt_regen(&mut auth, &*conn)?;
 
-    let z: u8 = match z.parse() {
-        Ok(z) => z,
-        Err(err) => { return Err(HecateError::new(400, String::from("z coordinate must be integer"), None)); }
-    };
-    let x: u32 = match x.parse() {
-        Ok(x) => x,
-        Err(err) => { return Err(HecateError::new(400, String::from("x coordinate must be integer"), None)); }
-    };
-    let y: u32 = match y.parse() {
-        Ok(y) => y,
-        Err(err) => { return Err(HecateError::new(400, String::from("y coordinate must be integer"), None)); }
-    };
+    let z = path.0;
+    let x = path.1;
+    let y = path.2;
 
     if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
@@ -478,18 +446,11 @@ fn user_info(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    uid: String
+    uid: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.is_admin(&mut auth, &*conn)?;
-
-    let uid: i64 = match uid.parse() {
-        Ok(uid) => uid,
-        Err(err) => {
-            return Err(HecateError::new(400, String::from("User ID must be an integer"), Some(err.to_string())));
-        }
-    };
 
     let user = user::User::get(&*conn, &uid)?.to_value();
 
@@ -500,18 +461,11 @@ fn user_set_admin(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    uid: String
+    uid: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.is_admin(&mut auth, &*conn)?;
-
-    let uid: i64 = match uid.parse() {
-        Ok(uid) => uid,
-        Err(err) => {
-            return Err(HecateError::new(400, String::from("User ID must be an integer"), Some(err.to_string())));
-        }
-    };
 
     let mut user = user::User::get(&*conn, &uid)?;
 
@@ -529,18 +483,11 @@ fn user_delete_admin(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    uid: String
+    uid: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.is_admin(&mut auth, &*conn)?;
-
-    let uid: i64 = match uid.parse() {
-        Ok(uid) => uid,
-        Err(err) => {
-            return Err(HecateError::new(400, String::from("User ID must be an integer"), Some(err.to_string())));
-        }
-    };
 
     let mut user = user::User::get(&*conn, &uid)?;
 
@@ -1146,9 +1093,6 @@ fn schema_get(
     }
 }
 
-/*
-
-#[get("/auth")]
 fn auth_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
@@ -1158,10 +1102,8 @@ fn auth_get(
 
     auth_rules.0.allows_auth_get(&mut auth, &*conn)?;
 
-    Ok(Json(auth_rules.to_json()))
+    Ok(Json(auth_rules.0.to_json()))
 }
-
-*/
 
 fn stats_get(
     conn: web::Data<DbReadWrite>,
