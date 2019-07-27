@@ -295,14 +295,14 @@ fn meta_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
-    key: String
+    key: web::Path<String>
 ) -> actix_web::Result<Json<serde_json::Value>> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_meta_get(&mut auth, &*conn)?;
     worker.queue(worker::Task::new(worker::TaskType::Meta));
 
-    Ok(Json(json!(meta::Meta::get(&*conn, &key)?)))
+    Ok(Json(json!(meta::Meta::get(&*conn, &key.into_inner())?)))
 }
 
 
@@ -311,7 +311,7 @@ fn meta_delete(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
-    key: String
+    key: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -319,7 +319,7 @@ fn meta_delete(
 
     worker.queue(worker::Task::new(worker::TaskType::Meta));
 
-    Ok(Json(json!(meta::delete(&*conn, &key)?)))
+    Ok(Json(json!(meta::delete(&*conn, &key.into_inner())?)))
 }
 
 fn meta_set(
@@ -327,7 +327,6 @@ fn meta_set(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
-    key: String,
     meta: Json<meta::Meta>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
@@ -924,20 +923,13 @@ fn webhooks_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    id: String
+    id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_webhooks_list(&mut auth, &*conn)?;
 
-    let id: i64 = match id.parse() {
-        Ok(id) => id,
-        Err(err) => {
-            return Err(HecateError::new(400, String::from("Webhook ID must be an integer"), Some(err.to_string())));
-        }
-    };
-
-    match serde_json::to_value(webhooks::get(&*conn, id)?) {
+    match serde_json::to_value(webhooks::get(&*conn, id.into_inner())?) {
         Ok(hooks) => Ok(Json(hooks)),
         Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
     }
@@ -947,20 +939,13 @@ fn webhooks_delete(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    id: String
+    id: web::Path<i64>
 ) -> Result<Json<bool>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_webhooks_delete(&mut auth, &*conn)?;
 
-    let id: i64 = match id.parse() {
-        Ok(id) => id,
-        Err(err) => {
-            return Err(HecateError::new(400, String::from("Webhook ID must be an integer"), Some(err.to_string())));
-        }
-    };
-
-    Ok(Json(webhooks::delete(&*conn, id)?))
+    Ok(Json(webhooks::delete(&*conn, id.into_inner())?))
 }
 
 fn webhooks_create(
@@ -984,20 +969,13 @@ fn webhooks_update(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     mut webhook: Json<webhooks::WebHook>,
-    id: String
+    id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_webhooks_update(&mut auth, &*conn)?;
 
-    let id: i64 = match id.parse() {
-        Ok(id) => id,
-        Err(err) => {
-            return Err(HecateError::new(400, String::from("Webhook ID must be an integer"), Some(err.to_string())));
-        }
-    };
-
-    webhook.id = Some(id);
+    webhook.id = Some(id.into_inner());
 
     match serde_json::to_value(webhooks::update(&*conn, webhook.into_inner())?) {
         Ok(webhook) => Ok(Json(webhook)),
@@ -1009,26 +987,26 @@ fn bounds_stats(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    bounds: String
+    bound: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_stats_bounds(&mut auth, &*conn)?;
 
-    Ok(Json(bounds::stats_json(&*conn, bounds)?))
+    Ok(Json(bounds::stats_json(&*conn, bound.into_inner())?))
 }
 
 fn bounds_meta(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    bounds: String
+    bound: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_bounds_get(&mut auth, &*conn)?;
 
-    Ok(Json(bounds::meta(&*conn, bounds)?))
+    Ok(Json(bounds::meta(&*conn, bound.into_inner())?))
 }
 
 /*
