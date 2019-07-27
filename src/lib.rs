@@ -184,6 +184,18 @@ pub fn start(
                     )
                 )
                 .service(web::scope("data")
+                    .service(web::resource("feature")
+                        .route(web::post().to_async(feature_action))
+                    )
+                    .service(web::resource("feature/{id}")
+                        .route(web::post().to_async(feature_get))
+                    )
+                    .service(web::resource("feature/{id}/history")
+                        .route(web::post().to_async(feature_get_history))
+                    )
+                    .service(web::resource("feature")
+                        .route(web::post().to_async(features_action))
+                    )
                     .service(web::resource("stats")
                         .route(web::get().to(stats_get))
                     )
@@ -214,11 +226,7 @@ pub fn start(
         style_get,
         style_list_public,
         style_list_user,
-        feature_action,
-        features_action,
-        feature_get,
         feature_query,
-        feature_get_history,
         features_query,
         clone_get,
         clone_query,
@@ -1124,129 +1132,127 @@ fn stats_regen(
     Ok(Json(json!(stats::regen(&*conn)?)))
 }
 
-/*
-#[post("/data/features", format="application/json", data="<body>")]
 fn features_action(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
     worker: web::Data<worker::Worker>,
     schema: web::Data<Option<serde_json::value::Value>>,
-    body: Data
-) -> Result<Json<serde_json::Value>, HecateError> {
-    let conn = conn.get()?;
+    body: web::Payload
+) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
+    let conn = match conn.get() {
+        Ok(conn) => conn,
+        Err(err) => { return Either::A(futures::future::err(err)); }
+    };
 
-    auth_rules.0.allows_feature_create(&mut auth, &*conn)?;
+    match auth_rules.0.allows_feature_create(&mut auth, &*conn) {
+        Err(err) => { return Either::A(futures::future::err(err)); },
+        _ => ()
+    };
 
     let uid = auth.uid.unwrap();
 
-    let body_str: String;
-    {
-        let mut body_stream = body.open();
-        let mut body_vec = Vec::new();
+    Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
+        body.extend_from_slice(&chunk);
+        Ok::<_, HecateError>(body)
+    }).and_then(move |body| {
+        let body = match String::from_utf8(body.to_vec()) {
+            Ok(body) => body,
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
+        };
 
-        let mut buffer = [0; 1024];
-        let mut buffer_size: usize = 1;
 
-        while buffer_size > 0 {
-            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
-            body_vec.append(&mut buffer[..buffer_size].to_vec());
-        }
-
-        body_str = match String::from_utf8(body_vec) {
-            Ok(body_str) => body_str,
-            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
-        }
-    }
-
-    let mut fc = match body_str.parse::<GeoJson>() {
-        Err(_) => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON Feature"), None)); },
-        Ok(geo) => match geo {
-            GeoJson::FeatureCollection(fc) => fc,
-            _ => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON FeatureCollection"), None)); }
-        }
-    };
-
-    let delta_message = match fc.foreign_members {
-        None => { return Err(HecateError::new(400, String::from("FeatureCollection Must have message property for delta"), None)); }
-        Some(ref members) => match members.get("message") {
-            Some(message) => match message.as_str() {
-                Some(message) => String::from(message),
-                None => { return Err(HecateError::new(400, String::from("FeatureCollection Must have message property for delta"), None)); }
-            },
-            None => { return Err(HecateError::new(400, String::from("FeatureCollection Must have message property for delta"), None)); }
-        }
-    };
-
-    let trans = match conn.transaction() {
-        Ok(trans) => trans,
-        Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
-    };
-
-    let mut map: HashMap<String, Option<String>> = HashMap::new();
-    map.insert(String::from("message"), Some(delta_message));
-
-    let delta_id = match delta::open(&trans, &map, &uid) {
-        Ok(id) => id,
-        Err(err) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            return Err(err);
-        }
-    };
-
-    for feat in &mut fc.features {
-        match feature::is_force(&feat) {
-            Err(err) => {
-                return Err(err);
-            },
-            Ok(force) => {
-                if force {
-                    auth_rules.0.allows_feature_force(&mut auth, &*conn)?;
-                }
+        let mut fc = match body.parse::<GeoJson>() {
+            Err(_) => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON Feature"), None)); },
+            Ok(geo) => match geo {
+                GeoJson::FeatureCollection(fc) => fc,
+                _ => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON FeatureCollection"), None)); }
             }
         };
 
-        match feature::action(&trans, &schema.inner(), &feat, &None) {
+        let delta_message = match fc.foreign_members {
+            None => { return Err(HecateError::new(400, String::from("FeatureCollection Must have message property for delta"), None)); }
+            Some(ref members) => match members.get("message") {
+                Some(message) => match message.as_str() {
+                    Some(message) => String::from(message),
+                    None => { return Err(HecateError::new(400, String::from("FeatureCollection Must have message property for delta"), None)); }
+                },
+                None => { return Err(HecateError::new(400, String::from("FeatureCollection Must have message property for delta"), None)); }
+            }
+        };
+
+        let trans = match conn.transaction() {
+            Ok(trans) => trans,
+            Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
+        };
+
+        let mut map: HashMap<String, Option<String>> = HashMap::new();
+        map.insert(String::from("message"), Some(delta_message));
+
+        let delta_id = match delta::open(&trans, &map, &uid) {
+            Ok(id) => id,
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Err(err);
+            }
+        };
+
+        for feat in &mut fc.features {
+            match feature::is_force(&feat) {
+                Err(err) => {
+                    return Err(err);
+                },
+                Ok(force) => {
+                    if force {
+                        auth_rules.0.allows_feature_force(&mut auth, &*conn)?;
+                    }
+                }
+            };
+
+            match feature::action(&trans, &schema, &feat, &None) {
+                Err(err) => {
+                    trans.set_rollback();
+                    trans.finish().unwrap();
+                    return Err(err);
+                },
+                Ok(res) => {
+                    if res.new.is_some() {
+                        feat.id = Some(geojson::feature::Id::Number(serde_json::Number::from(res.new.unwrap())))
+                    }
+                }
+            };
+        }
+
+        match delta::modify(&delta_id, &trans, &fc, &uid) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
                 return Err(err);
             },
-            Ok(res) => {
-                if res.new.is_some() {
-                    feat.id = Some(geojson::feature::Id::Number(serde_json::Number::from(res.new.unwrap())))
-                }
-            }
+            _ => ()
         };
-    }
 
-    match delta::modify(&delta_id, &trans, &fc, &uid) {
-        Err(err) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            return Err(err);
-        },
-        _ => ()
-    };
+        match delta::finalize(&delta_id, &trans) {
+            Ok(_) => {
+                if trans.commit().is_err() {
+                    return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
+                }
 
-    match delta::finalize(&delta_id, &trans) {
-        Ok(_) => {
-            if trans.commit().is_err() {
-                return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
+                worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
+
+                Ok(Json(json!(true)))
+            },
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                Err(err)
             }
-
-            worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
-
-            Ok(Json(json!(true)))
-        },
-        Err(err) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            Err(err)
         }
-    }
+    }))
 }
+
+/*
 
 #[get("/0.6/map?<map..>")]
 fn osm_map(
@@ -1503,7 +1509,7 @@ fn osm_changeset_upload(
             _ => ()
         }
 
-        let feat_res = match feature::action(&trans, &schema.inner(), &feat, &Some(delta_id)) {
+        let feat_res = match feature::action(&trans, &schema, &feat, &Some(delta_id)) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
@@ -1637,149 +1643,158 @@ fn osm_user(
         </osm>
     "))
 }
+*/
 
-#[post("/data/feature", format="application/json", data="<body>")]
 fn feature_action(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
     schema: web::Data<Option<serde_json::value::Value>>,
     worker: web::Data<worker::Worker>,
-    body: Data
-) -> Result<Json<serde_json::Value>, HecateError> {
-    let conn = conn.get()?;
+    body: web::Payload
+) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
+    let conn = match conn.get() {
+        Ok(conn) => conn,
+        Err(err) => { return Either::A(futures::future::err(err)); }
+    };
 
-    auth_rules.0.allows_feature_create(&mut auth, &*conn)?;
+    match auth_rules.0.allows_feature_create(&mut auth, &*conn) {
+        Err(err) => { return Either::A(futures::future::err(err)); },
+        _ => ()
+    };
 
     let uid = auth.uid.unwrap();
 
-    let body_str: String;
-    {
-        let mut body_stream = body.open();
-        let mut body_vec = Vec::new();
+    Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
+        body.extend_from_slice(&chunk);
+        Ok::<_, HecateError>(body)
+    }).and_then(move |body| {
+        let body = match String::from_utf8(body.to_vec()) {
+            Ok(body) => body,
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
+        };
 
-        let mut buffer = [0; 1024];
-        let mut buffer_size: usize = 1;
+        let mut feat = match body.parse::<GeoJson>() {
+            Err(_) => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON Feature"), None)); }
+            Ok(geo) => match geo {
+                GeoJson::Feature(feat) => feat,
+                _ => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON Feature"), None)); }
+            }
+        };
 
-        while buffer_size > 0 {
-            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
-            body_vec.append(&mut buffer[..buffer_size].to_vec());
-        }
+        if feature::is_force(&feat)? {
+            auth_rules.0.allows_feature_force(&mut auth, &*conn)?;
+        };
 
-        body_str = String::from_utf8(body_vec).unwrap();
-    }
-
-    let mut feat = match body_str.parse::<GeoJson>() {
-        Err(_) => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON Feature"), None)); }
-        Ok(geo) => match geo {
-            GeoJson::Feature(feat) => feat,
-            _ => { return Err(HecateError::new(400, String::from("Body must be valid GeoJSON Feature"), None)); }
-        }
-    };
-
-    if feature::is_force(&feat)? {
-        auth_rules.0.allows_feature_force(&mut auth, &*conn)?;
-    };
-
-    let delta_message = match feat.foreign_members {
-        None => { return Err(HecateError::new(400, String::from("Feature Must have message property for delta"), None)); }
-        Some(ref members) => match members.get("message") {
-            Some(message) => match message.as_str() {
-                Some(message) => String::from(message),
-                None => { return Err(HecateError::new(400, String::from("Feature Must have message property for delta"), None)); }
-            },
+        let delta_message = match feat.foreign_members {
             None => { return Err(HecateError::new(400, String::from("Feature Must have message property for delta"), None)); }
-        }
-    };
-
-    let trans = match conn.transaction() {
-        Ok(trans) => trans,
-        Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
-    };
-
-    let mut map: HashMap<String, Option<String>> = HashMap::new();
-    map.insert(String::from("message"), Some(delta_message));
-    let delta_id = match delta::open(&trans, &map, &uid) {
-        Ok(id) => id,
-        Err(err) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            return Err(err);
-        }
-    };
-
-    match feature::action(&trans, schema.inner(), &feat, &None) {
-        Ok(res) => {
-            if res.new.is_some() {
-                feat.id = Some(geojson::feature::Id::Number(serde_json::Number::from(res.new.unwrap())));
+            Some(ref members) => match members.get("message") {
+                Some(message) => match message.as_str() {
+                    Some(message) => String::from(message),
+                    None => { return Err(HecateError::new(400, String::from("Feature Must have message property for delta"), None)); }
+                },
+                None => { return Err(HecateError::new(400, String::from("Feature Must have message property for delta"), None)); }
             }
-        },
-        Err(err) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            return Err(err);
-        }
-    }
+        };
 
-    let fc = geojson::FeatureCollection {
-        bbox: None,
-        features: vec![ feat ],
-        foreign_members: None,
-    };
+        let trans = match conn.transaction() {
+            Ok(trans) => trans,
+            Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
+        };
 
-    match delta::modify(&delta_id, &trans, &fc, &uid) {
-        Err(err) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            return Err(err);
-        },
-        _ => ()
-    }
-
-    match delta::finalize(&delta_id, &trans) {
-        Ok(_) => {
-            if trans.commit().is_err() {
-                return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
+        let mut map: HashMap<String, Option<String>> = HashMap::new();
+        map.insert(String::from("message"), Some(delta_message));
+        let delta_id = match delta::open(&trans, &map, &uid) {
+            Ok(id) => id,
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Err(err);
             }
+        };
 
-            worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
-
-            Ok(Json(json!(true)))
-        },
-        Err(err) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            Err(err)
+        match feature::action(&trans, &schema, &feat, &None) {
+            Ok(res) => {
+                if res.new.is_some() {
+                    feat.id = Some(geojson::feature::Id::Number(serde_json::Number::from(res.new.unwrap())));
+                }
+            },
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Err(err);
+            }
         }
-    }
+
+        let fc = geojson::FeatureCollection {
+            bbox: None,
+            features: vec![ feat ],
+            foreign_members: None,
+        };
+
+        match delta::modify(&delta_id, &trans, &fc, &uid) {
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Err(err);
+            },
+            _ => ()
+        }
+
+        match delta::finalize(&delta_id, &trans) {
+            Ok(_) => {
+                if trans.commit().is_err() {
+                    return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
+                }
+
+                worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
+
+                Ok(Json(json!(true)))
+            },
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                Err(err)
+            }
+        }
+    }))
 }
 
-#[get("/data/feature/<id>")]
 fn feature_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    id: i64
-) -> Result<Response<'static>, HecateError> {
+    id: web::Path<i64>
+) -> Result<HttpResponse, HecateError> {
     let conn = conn.get()?;
     auth_rules.0.allows_feature_get(&mut auth, &*conn)?;
 
-    match feature::get(&*conn, &id) {
+    match feature::get(&*conn, &id.into_inner()) {
         Ok(feature) => {
             let feature = geojson::GeoJson::from(feature).to_string();
 
-            let mut response = Response::new();
-
-            response.set_status(HTTPStatus::Ok);
-            response.set_sized_body(Cursor::new(feature));
-            response.set_raw_header("Content-Type", "application/json");
-
-            Ok(response)
+            Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
+                .content_type("application/json")
+                .content_length(feature.len() as u64)
+                .body(feature))
         },
         Err(err) => Err(err)
     }
 }
 
+fn feature_get_history(
+    conn: web::Data<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>,
+    id: web::Path<i64>
+) -> Result<Json<serde_json::Value>, HecateError> {
+    let conn = conn.get()?;
+    auth_rules.0.allows_feature_history(&mut auth, &*conn)?;
+
+    Ok(Json(delta::history(&*conn, &id.into_inner())?))
+}
+
+/*
 
 #[get("/data/feature?<fquery..>")]
 fn feature_query(
@@ -1803,16 +1818,4 @@ fn feature_query(
     }
 }
 
-#[get("/data/feature/<id>/history")]
-fn feature_get_history(
-    conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
-    auth_rules: web::Data<auth::AuthContainer>,
-    id: i64
-) -> Result<Json<serde_json::Value>, HecateError> {
-    let conn = conn.get()?;
-    auth_rules.0.allows_feature_history(&mut auth, &*conn)?;
-
-    Ok(Json(delta::history(&*conn, &id)?))
-}
 */
