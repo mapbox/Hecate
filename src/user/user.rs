@@ -6,12 +6,12 @@ pub struct User {
     pub username: String,
     password: Option<String>,
     pub email: String,
-    pub meta: serde_json::Value,
+    pub meta: Option<serde_json::Value>,
     pub access: Option<String>
 }
 
 impl User {
-    pub fn new(username: String, password: Option<String>, email: String, meta: serde_json::Value) -> Self {
+    pub fn new(username: String, password: Option<String>, email: String, meta: Option<serde_json::Value>) -> Self {
         User {
             id: None,
             username: username,
@@ -51,7 +51,7 @@ impl User {
         };
     }
 
-    pub fn set(self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn set(&self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
         if self.id.is_some() {
             match conn.query("
                 UPDATE users

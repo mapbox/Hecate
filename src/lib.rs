@@ -123,7 +123,13 @@ pub fn start(
                         .route(web::get().to(mvt_regen))
                     )
                 )
+                .service(web::resource("users")
+                    .route(web::get().to(users))
+                )
                 .service(web::scope("user")
+                    .service(web::resource("create")
+                        .route(web::get().to(user_create))
+                    )
                     .service(web::resource("{uid}")
                         .route(web::get().to(user_info))
                     )
@@ -159,9 +165,7 @@ pub fn start(
     ])
     .mount("/api", routes![
         auth_get,
-        users,
         user_self,
-        user_create,
         user_create_session,
         user_delete_session,
         style_create,
@@ -208,13 +212,6 @@ pub fn start(
 struct Filter {
     filter: Option<String>,
     limit: Option<i16>
-}
-
-#[derive(Deserialize, Debug)]
-struct User {
-    username: String,
-    password: String,
-    email: String
 }
 
 #[derive(Deserialize, Debug)]
@@ -441,41 +438,41 @@ fn mvt_regen(
         .body(tile))
 }
 
-/*
-
-#[get("/user/create?<user..>")]
 fn user_create(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
-    user: Json<User>
+    user: web::Form<user::User>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
-    auth_rules.allows_user_create(&mut auth, &*conn)?;
+    //auth_rules.allows_user_create(&mut auth, &*conn)?;
 
-    user::create(&*conn, &user.username, &user.password, &user.email)?;
+    user.set(&*conn)?;
 
     worker.queue(worker::Task::new(worker::TaskType::User(user.username.clone())));
 
     Ok(Json(json!(true)))
 }
 
-#[get("/users?<filter..>")]
-fn users(conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+fn users(
+    conn: web::Data<DbReplica>,
+    //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    filter: Json<Filter>
+    filter: Json<Option<Filter>>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
-    auth_rules.allows_user_list(&mut auth, &*conn)?;
 
-    match &filter.filter {
-        Some(search) => Ok(Json(json!(user::filter(&*conn, &search, &filter.limit)?))),
-        None => Ok(Json(json!(user::list(&*conn, &filter.limit)?)))
+    //auth_rules.allows_user_list(&mut auth, &*conn)?;
+
+    match filter.into_inner() {
+        None => Ok(Json(user::user::list(&*conn, &None)?)),
+        Some(filter) => match &filter.filter {
+            Some(search) => Ok(Json(json!(user::user::filter(&*conn, &search, &filter.limit)?))),
+            None => Ok(Json(user::user::list(&*conn, &None)?))
+        }
     }
 }
-*/
 
 fn user_info(
     conn: web::Data<DbReplica>,
@@ -1018,7 +1015,7 @@ fn webhooks_create(
     conn: web::Data<DbReplica>,
     //mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    mut webhook: Json<webhooks::WebHook>
+    webhook: Json<webhooks::WebHook>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
