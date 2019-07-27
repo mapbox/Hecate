@@ -958,10 +958,12 @@ impl Auth {
     }
 }
 
-/*
-impl<'a, 'r> FromRequest<'a, 'r> for Auth {
-    type Error = ();
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Auth, ()> {
+impl actix_web::FromRequest for Auth {
+    type Error = actix_web::Error;
+    type Future = Result<Self, Self::Error>;
+    type Config = ();
+
+    fn from_request(req: &HttpRequest, payload: &mut actix_web::dev::Payload) -> Self::Future {
         let mut auth = Auth::new();
 
         match request.cookies().get("session") {
@@ -1005,4 +1007,3 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
         }
     }
 }
-*/

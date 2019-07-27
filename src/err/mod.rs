@@ -72,7 +72,7 @@ impl HecateError {
 
 impl actix_web::Responder for HecateError {
     type Error = actix_web::Error;
-    type Future = Result<actix_http::Response, actix_web::Error>;
+    type Future = Result<actix_http::Response, Self::Error>;
 
     fn respond_to(self, req: &actix_web::HttpRequest) -> Self::Future {
         println!("HecateError: {:?} {} {}", &self.code, &self.safe_error, &self.full_error);
