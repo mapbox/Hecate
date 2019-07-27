@@ -23,8 +23,8 @@ pub mod osm;
 pub mod user;
 pub mod auth;
 
-
-use actix_web::{web, web::Json, App, HttpResponse, HttpServer, Responder, middleware};
+use actix_http::httpmessage::HttpMessage;
+use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, Responder, middleware};
 use rand::prelude::*;
 use geojson::GeoJson;
 use crate::{
@@ -137,6 +137,13 @@ pub fn start(
                     .service(web::resource("create")
                         .route(web::get().to(user_create))
                     )
+                    .service(web::resource("info")
+                        .route(web::get().to(user_self))
+                    )
+                    .service(web::resource("session")
+                        .route(web::get().to(user_create_session))
+                        .route(web::delete().to(user_delete_session))
+                    )
                     .service(web::resource("{uid}")
                         .route(web::get().to(user_info))
                     )
@@ -168,9 +175,6 @@ pub fn start(
 
     /*
     .mount("/api", routes![
-        user_self,
-        user_create_session,
-        user_delete_session,
         style_create,
         style_patch,
         style_public,
@@ -501,9 +505,6 @@ fn user_delete_admin(
     Ok(Json(json!(true)))
 }
 
-/*
-
-#[get("/user/info")]
 fn user_self(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
@@ -512,71 +513,69 @@ fn user_self(
     let conn = conn.get()?;
     auth_rules.0.allows_user_info(&mut auth, &*conn)?;
 
-    let uid = auth.uid.unwrap();
+    let uid = match auth.uid {
+        Some(uid) => uid,
+        None => { return Err(HecateError::generic(401)); }
+    };
 
-    Ok(Json(user::info(&*conn, &uid)?))
+    let user = user::User::get(&*conn, &uid)?.to_value();
+
+    Ok(Json(user))
+
 }
 
-#[get("/user/session")]
 fn user_create_session(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    mut cookies: Cookies
-) -> Result<Json<serde_json::Value>, HecateError> {
+    req: HttpRequest
+) -> Result<HttpResponse, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_user_create_session(&mut auth, &*conn)?;
 
     let uid = auth.uid.unwrap();
 
-    let token = user::create_token(&*conn, &uid)?;
+    let token = user::Token::create(&*conn, "Session Token", &uid)?;
 
-    cookies.add(Cookie::build("session", token)
+    let cookie = actix_http::http::Cookie::build("session", token.token)
         .path("/")
         .http_only(true)
-        .finish()
-    );
+        .finish();
 
-    Ok(Json(json!(uid)))
+    let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK).json(json!(true));
+    resp.add_cookie(&cookie);
+
+    Ok(resp)
 }
 
-#[delete("/user/session")]
 fn user_delete_session(
     conn: web::Data<DbReadWrite>,
     auth: auth::Auth,
-    mut cookies: Cookies
-) -> Result<Json<serde_json::Value>, HecateError> {
+    req: HttpRequest
+) -> Result<HttpResponse, HecateError> {
     // there is no auth check here for deleting tokens, the web interface should
     // always be able to de-authenticate to prevent errors
 
-    let token = match cookies.get("session") {
+    let token = match req.cookie("session") {
         Some(session) => Some(String::from(session.value())),
         None => None
     };
 
-    cookies.remove(Cookie::build("session", String::from(""))
-        .path("/")
-        .http_only(true)
-        .finish()
-    );
+    let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK).json(json!(true));
+    resp.del_cookie("session");
 
     match token {
-        Some(token) => {
-            let uid = match auth.uid {
-                Some(uid) => uid,
-                None => { return Ok(Json(json!(true))); }
-            };
-
-            match user::destroy_token(&*conn.get()?, &uid, &token) {
-                _ => {
-                    Ok(Json(json!(true)))
-                }
-            }
+        Some(token) => match auth.uid {
+            Some(uid) => match user::token::destroy(&*conn.get()?, &uid, &token) {
+                _ => Ok(resp)
+            },
+            None => Ok(resp)
         },
-        None => Ok(Json(json!(true)))
+        None => Ok(resp)
     }
 }
+/*
 
 #[post("/style", format="application/json", data="<body>")]
 fn style_create(

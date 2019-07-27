@@ -21,6 +21,20 @@ impl HecateError {
         }
     }
 
+    pub fn generic(code: u16) -> Self {
+        let status = actix_web::http::StatusCode::from_u16(code).unwrap();
+
+        let reason = status.canonical_reason().unwrap_or("Generic Error").to_string();
+
+        HecateError {
+            code: code,
+            custom_json: None,
+            safe_error: reason.clone(),
+            full_error: reason
+        }
+
+    }
+
     pub fn from_json(code: u16, json: serde_json::Value, safe_error: String, full_error: Option<String>) -> Self {
         let full_error = match full_error {
             Some(err) => err.to_string(),

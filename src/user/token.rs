@@ -18,7 +18,7 @@ impl Token {
         }
     }
 
-    pub fn create(conn: impl postgres::GenericConnection, name: String, uid: i64) -> Result<Self, HecateError> {
+    pub fn create(conn: &impl postgres::GenericConnection, name: impl ToString, uid: &i64) -> Result<Self, HecateError> {
         match conn.query("
             INSERT INTO users_tokens (name, uid, token, expiry)
                 VALUES (
@@ -28,7 +28,7 @@ impl Token {
                     now() + INTERVAL '4 hours'
                 )
                 RETURNING token;
-        ", &[ &name, &uid ]) {
+        ", &[ &name.to_string(), &uid ]) {
             Ok(res) => {
                 let name: String = res.get(0).get(0);
                 let uid: i64 = res.get(0).get(1);
@@ -42,7 +42,7 @@ impl Token {
 
     }
 
-    pub fn get(conn: impl postgres::GenericConnection, uid: &i64, token: &String) -> Result<Self, HecateError> {
+    pub fn get(conn: &impl postgres::GenericConnection, uid: &i64, token: &String) -> Result<Self, HecateError> {
         match conn.query("
             SELECT row_to_json(t)
             FROM (
