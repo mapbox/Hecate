@@ -1,4 +1,5 @@
 use crate::err::HecateError;
+use actix_http::httpmessage::HttpMessage;
 
 fn not_authed() -> HecateError {
     HecateError::new(401, String::from("You must be logged in to access this resource"), None)
@@ -959,51 +960,59 @@ impl Auth {
 }
 
 impl actix_web::FromRequest for Auth {
-    type Error = actix_web::Error;
+    type Error = HecateError;
     type Future = Result<Self, Self::Error>;
     type Config = ();
 
-    fn from_request(req: &HttpRequest, payload: &mut actix_web::dev::Payload) -> Self::Future {
+    fn from_request(req: &actix_web::HttpRequest, payload: &mut actix_web::dev::Payload) -> Self::Future {
         let mut auth = Auth::new();
 
-        match request.cookies().get("session") {
+        match req.cookie("session") {
             Some(token) => {
                 auth.token = Some(String::from(token.value()));
 
-                return Outcome::Success(auth);
+                return Ok(auth);
             },
             None => ()
         };
 
-        let keys: Vec<_> = request.headers().get("Authorization").collect();
 
-        //Auth Failed - None object returned
-        if keys.len() != 1 || keys[0].len() < 7 {
-            return Outcome::Success(auth);
-        }
+        match req.headers().get("Authorization") {
+            Some(key) => {
+                if key.len() < 7 {
+                    return Ok(auth);
+                }
 
-        let mut authtype = String::from(keys[0]);
-        let auth_str = authtype.split_off(6);
+                let mut authtype = match key.to_str() {
+                    Ok(key) => key.to_string(),
+                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                };
+                let auth_str = authtype.split_off(6);
 
-        if authtype != "Basic " {
-            return Outcome::Success(auth);
-        }
+                if authtype != "Basic " {
+                    return Ok(auth);
+                }
 
-        match base64::decode(&auth_str) {
-            Ok(decoded) => match String::from_utf8(decoded) {
-                Ok(decoded_str) => {
+                match base64::decode(&auth_str) {
+                    Ok(decoded) => match String::from_utf8(decoded) {
+                        Ok(decoded_str) => {
 
-                    let split = decoded_str.split(":").collect::<Vec<&str>>();
+                            let split = decoded_str.split(":").collect::<Vec<&str>>();
 
-                    if split.len() != 2 { return Outcome::Failure((Status::Unauthorized, ())); }
+                            if split.len() != 2 { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
 
-                    auth.basic = Some((String::from(split[0]), String::from(split[1])));
+                            auth.basic = Some((String::from(split[0]), String::from(split[1])));
 
-                    Outcome::Success(auth)
-                },
-                Err(_) => Outcome::Failure((Status::Unauthorized, ()))
+                            return Ok(auth);
+                        },
+                        Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                    },
+                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                }
             },
-            Err(_) => Outcome::Failure((Status::Unauthorized, ()))
-        }
+            None => ()
+        };
+
+        Ok(auth)
     }
 }
