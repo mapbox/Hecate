@@ -64,8 +64,8 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert!(resp.status().is_success());
             assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
         }
 
         { //Request a tile via API

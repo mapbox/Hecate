@@ -211,7 +211,7 @@ pub fn start(
                 )
                 .service(web::scope("data")
                     .service(web::resource("feature")
-                        .route(web::post().to(feature_query))
+                        .route(web::get().to(feature_query))
                         .route(web::post().to_async(feature_action))
                     )
                     .service(web::resource("feature/{id}")
@@ -470,7 +470,7 @@ fn user_create(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
-    user: web::Form<user::User>
+    user: web::Query<user::User>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.0.allows_user_create(&mut auth, &*conn)?;

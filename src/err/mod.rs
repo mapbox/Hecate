@@ -127,6 +127,6 @@ impl std::fmt::Display for HecateError {
 
 impl std::convert::From<actix_http::error::PayloadError> for HecateError {
     fn from(payload: actix_http::error::PayloadError) -> Self {
-        HecateError::generic(500)
+        HecateError::new(500, String::from("Internal Server Error"), Some(payload.to_string()))
     }
 }
