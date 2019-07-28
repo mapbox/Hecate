@@ -232,11 +232,12 @@ pub fn start(
                     .service(web::resource("stats/regen")
                         .route(web::get().to(stats_regen))
                     )
-                    /*
+                    .service(web::resource("query")
+                        .route(web::get().to(clone_query))
+                    )
                     .service(web::resource("clone")
                         .route(web::get().to(clone_get))
                     )
-                    */
                 )
             )
     })
@@ -256,8 +257,6 @@ pub fn start(
         style_get,
         style_list_public,
         style_list_user,
-        clone_get,
-        clone_query,
     ])
     .register(catchers![
        not_authorized,
@@ -486,7 +485,7 @@ fn users(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    filter: Json<Option<Filter>>
+    filter: web::Query<Option<Filter>>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -814,7 +813,7 @@ fn delta_list(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    opts: Json<DeltaList>
+    opts: web::Query<DeltaList>
 ) ->  Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -870,7 +869,7 @@ fn bounds(
     mut auth:
     auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    filter: Json<Filter>
+    filter: web::Query<Filter>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
@@ -1051,30 +1050,30 @@ fn bounds_meta(
     Ok(Json(bounds::meta(&*conn, bound.into_inner())?))
 }
 
-/*
 
-#[get("/data/query?<cquery..>")]
 fn clone_query(
     sandbox_conn: web::Data<DbSandbox>,
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    cquery: Json<CloneQuery>
-) -> Result<Stream<stream::PGStream>, HecateError> {
+    cquery: web::Query<CloneQuery>
+) -> Result<impl std::io::Read, HecateError> {
     auth_rules.0.allows_clone_query(&mut auth, &*conn.get()?)?;
 
-    Ok(Stream::from(clone::query(sandbox_conn.get()?, &cquery.query, &cquery.limit)?))
+    Ok(clone::query(sandbox_conn.get()?, &cquery.query, &cquery.limit)?)
 }
 
 fn clone_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<stream::PGStream, HecateError> {
+) -> Result<impl std::io::Read, HecateError> {
     auth_rules.0.allows_clone_get(&mut auth, &*conn.get()?)?;
 
     Ok(clone::get(conn.get()?)?)
 }
+
+/*
 
 #[get("/data/features?<map..>")]
 fn features_query(
@@ -1276,7 +1275,7 @@ fn osm_map(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    map: Json<Map>
+    map: web::Query<Map>
 ) -> Result<String, HecateError> {
     let conn = conn.get()?;
     auth_rules.0.allows_osm_get(&mut auth, &*conn)?;
@@ -1762,7 +1761,7 @@ fn feature_query(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    fquery: Json<FeatureQuery>
+    fquery: web::Query<FeatureQuery>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.0.allows_feature_get(&mut auth, &*conn)?;
