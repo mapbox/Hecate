@@ -111,6 +111,18 @@ pub fn start(
                     .service(web::resource("map")
                         .route(web::get().to(osm_map))
                     )
+                    .service(web::resource("changeset/create")
+                        .route(web::put().to_async(osm_changeset_create))
+                    )
+                    .service(web::resource("changeset/{delta_id}")
+                        .route(web::put().to_async(osm_changeset_modify))
+                    )
+                    .service(web::resource("changeset/{delta_id}/close")
+                        .route(web::put().to(osm_changeset_close))
+                    )
+                    .service(web::resource("changeset/{delta_id}/upload")
+                        .route(web::post().to_async(osm_changeset_upload))
+                    )
                 )
                 .service(web::resource("auth")
                      .route(web::get().to(auth_get))
@@ -246,10 +258,6 @@ pub fn start(
         style_list_user,
         clone_get,
         clone_query,
-        osm_changeset_create,
-        osm_changeset_modify,
-        osm_changeset_upload,
-        osm_changeset_close
     ])
     .register(catchers![
        not_authorized,
@@ -1288,289 +1296,275 @@ fn osm_map(
     Ok(xml_str)
 }
 
-/*
-
-#[put("/0.6/changeset/create", data="<body>")]
 fn osm_changeset_create(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
-    body: Data
-) -> Result<String, status::Custom<String>> {
-    let conn = conn.get().unwrap();
-
-    match auth_rules.0.allows_osm_get(&mut auth, &*conn) {
-        Ok(_) => (),
-        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    body: web::Payload
+) -> impl Future<Item = String, Error = HecateError> {
+    let conn = match conn.get() {
+        Ok(conn) => conn,
+        Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    let body_str: String;
-    {
-        let mut body_stream = body.open();
-        let mut body_vec = Vec::new();
-
-        let mut buffer = [0; 1024];
-        let mut buffer_size: usize = 1;
-
-        while buffer_size > 0 {
-            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
-            body_vec.append(&mut buffer[..buffer_size].to_vec());
-        }
-
-        body_str = match String::from_utf8(body_vec) {
-            Ok(body_str) => body_str,
-            Err(_) => { return Err(status::Custom(HTTPStatus::BadRequest, String::from("Invalid JSON - Non-UTF8"))); }
-        }
-    }
+    match auth_rules.0.allows_osm_create(&mut auth, &*conn) {
+        Err(err) => { return Either::A(futures::future::err(err)); },
+        _ => ()
+    };
 
     let uid = auth.uid.unwrap();
 
-    let map = match osm::to_delta(&body_str) {
-        Ok(map) => map,
-        Err(err) => { return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string())); }
-    };
+    Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
+        body.extend_from_slice(&chunk);
+        Ok::<_, HecateError>(body)
+    }).and_then(move |body| {
+        let body = match String::from_utf8(body.to_vec()) {
+            Ok(body) => body,
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
+        };
 
-    let trans = match conn.transaction() {
-        Ok(trans) => trans,
-        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to open transaction"))); }
-    };
+        let map = match osm::to_delta(&body) {
+            Ok(map) => map,
+            Err(err) => { return Err(HecateError::new(500, err.to_string(), None)); }
+        };
 
-    let delta_id = match delta::open(&trans, &map, &uid) {
-        Ok(id) => id,
-        Err(err) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+        let trans = match conn.transaction() {
+            Ok(trans) => trans,
+            Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
+        };
+
+        let delta_id = match delta::open(&trans, &map, &uid) {
+            Ok(id) => id,
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Err(HecateError::new(500, err.to_string(), None));
+            }
+        };
+
+        if trans.commit().is_err() {
+            return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
         }
-    };
 
-    if trans.commit().is_err() {
-        return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to commit transaction")));
-    }
-
-    Ok(delta_id.to_string())
+        Ok(delta_id.to_string())
+    }))
 }
 
-#[put("/0.6/changeset/<id>/close")]
 fn osm_changeset_close(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
-    id: i64
-) -> Result<String, status::Custom<String>> {
-    let conn = conn.get().unwrap();
+    delta_id: web::Path<i64>
+) -> Result<String, HecateError> {
+    let conn = conn.get()?;
+    auth_rules.0.allows_osm_create(&mut auth, &*conn)?;
 
-    match auth_rules.0.allows_osm_get(&mut auth, &*conn) {
-        Ok(_) => (),
-        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
-    };
-
-    Ok(id.to_string())
+    Ok(delta_id.into_inner().to_string())
 }
 
-#[put("/0.6/changeset/<delta_id>", data="<body>")]
 fn osm_changeset_modify(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
-    delta_id: i64,
-    body: Data
-) -> Result<Response<'static>, status::Custom<String>> {
-    let conn = conn.get().unwrap();
-
-    match auth_rules.0.allows_osm_get(&mut auth, &*conn) {
-        Ok(_) => (),
-        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    delta_id: web::Path<i64>,
+    body: web::Payload
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    let conn = match conn.get() {
+        Ok(conn) => conn,
+        Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    let body_str: String;
-    {
-        let mut body_stream = body.open();
-        let mut body_vec = Vec::new();
-
-        let mut buffer = [0; 1024];
-        let mut buffer_size: usize = 1;
-
-        while buffer_size > 0 {
-            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
-            body_vec.append(&mut buffer[..buffer_size].to_vec());
-        }
-
-        body_str = String::from_utf8(body_vec).unwrap();
-    }
+    match auth_rules.0.allows_osm_create(&mut auth, &*conn) {
+        Err(err) => { return Either::A(futures::future::err(err)); },
+        _ => ()
+    };
 
     let uid = auth.uid.unwrap();
 
-    let trans = match conn.transaction() {
-        Ok(trans) => trans,
-        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to open transaction"))); }
-    };
+    Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
+        body.extend_from_slice(&chunk);
+        Ok::<_, HecateError>(body)
+    }).and_then(move |body| {
+        let body = match String::from_utf8(body.to_vec()) {
+            Ok(body) => body,
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
+        };
 
-    match delta::is_open(&delta_id, &trans) {
-        Ok(true) => (),
-        _ => {
-            trans.set_rollback();
-            trans.finish().unwrap();
+        let trans = match conn.transaction() {
+            Ok(trans) => trans,
+            Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
+        };
 
-            let mut conflict_response = Response::new();
-            conflict_response.set_status(HTTPStatus::Conflict);
-            conflict_response.set_sized_body(Cursor::new(format!("The changeset {} was closed at previously", &delta_id)));
-            conflict_response.set_raw_header("Error", format!("The changeset {} was closed at previously", &delta_id));
-            return Ok(conflict_response);
+        let delta_id = delta_id.into_inner();
+
+        match delta::is_open(&delta_id, &trans) {
+            Ok(true) => (),
+            _ => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+
+
+                let conflict = format!("The changeset {} was closed at previously", &delta_id);
+                return Ok(HttpResponse::build(actix_web::http::StatusCode::CONFLICT)
+                    .set_header("Error", conflict.clone())
+                    .content_length(conflict.len() as u64)
+                    .body(conflict));
+            }
         }
-    }
 
-    let map = match osm::to_delta(&body_str) {
-        Ok(map) => map,
-        Err(err) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
+        let map = match osm::to_delta(&body) {
+            Ok(map) => map,
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Err(HecateError::new(500, err.to_string(), None));
+            }
+        };
+
+        let delta_id = match delta::modify_props(&delta_id, &trans, &map, &uid) {
+            Ok(id) => id,
+            Err(err) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Err(HecateError::new(500, err.to_string(), None));
+            }
+        };
+
+        if trans.commit().is_err() {
+            return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
         }
-    };
 
-    let delta_id = match delta::modify_props(&delta_id, &trans, &map, &uid) {
-        Ok(id) => id,
-        Err(err) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, err.to_string()));
-        }
-    };
-
-    if trans.commit().is_err() {
-        return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to commit transaction")));
-    }
-
-    Err(status::Custom(HTTPStatus::Ok, delta_id.to_string()))
+        let delta_id = delta_id.to_string();
+        Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
+            .content_length(delta_id.len() as u64)
+            .body(delta_id))
+    }))
 }
 
-#[post("/0.6/changeset/<delta_id>/upload", data="<body>")]
 fn osm_changeset_upload(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     conn: web::Data<DbReadWrite>,
     schema: web::Data<Option<serde_json::value::Value>>,
     worker: web::Data<worker::Worker>,
-    delta_id: i64,
-    body: Data
-) -> Result<Response<'static>, status::Custom<String>> {
-    let conn = conn.get().unwrap();
-
-    match auth_rules.0.allows_osm_get(&mut auth, &*conn) {
-        Ok(_) => (),
-        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
+    delta_id: web::Path<i64>,
+    body: web::Payload
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    let conn = match conn.get() {
+        Ok(conn) => conn,
+        Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    let body_str: String;
-    {
-        let mut body_stream = body.open();
-        let mut body_vec = Vec::new();
-
-        let mut buffer = [0; 1024];
-        let mut buffer_size: usize = 1;
-
-        while buffer_size > 0 {
-            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
-            body_vec.append(&mut buffer[..buffer_size].to_vec());
-        }
-
-        body_str = String::from_utf8(body_vec).unwrap();
-    }
+    match auth_rules.0.allows_osm_create(&mut auth, &*conn) {
+        Err(err) => { return Either::A(futures::future::err(err)); },
+        _ => ()
+    };
 
     let uid = auth.uid.unwrap();
 
-    let trans = match conn.transaction() {
-        Ok(trans) => trans,
-        Err(_) => { return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to open transaction"))); }
-    };
-
-    match delta::is_open(&delta_id, &trans) {
-        Ok(true) => (),
-        _ => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-
-            let mut conflict_response = Response::new();
-            conflict_response.set_status(HTTPStatus::Conflict);
-            conflict_response.set_sized_body(Cursor::new(format!("The changeset {} was closed at previously", &delta_id)));
-            conflict_response.set_raw_header("Error", format!("The changeset {} was closed at previously", &delta_id));
-            return Ok(conflict_response);
-        }
-    }
-
-    let (mut fc, tree) = match osm::to_features(&body_str) {
-        Ok(fctree) => fctree,
-        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())); }
-    };
-
-    let mut ids: HashMap<i64, feature::Response> = HashMap::new();
-
-    for feat in &mut fc.features {
-        match feature::get_action(&feat) {
-            Ok(action) => {
-                if action == feature::Action::Create {
-                    feature::del_version(feat);
-                }
-            },
-            _ => ()
-        }
-
-        let feat_res = match feature::action(&trans, &schema, &feat, &Some(delta_id)) {
-            Err(err) => {
-                trans.set_rollback();
-                trans.finish().unwrap();
-                return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json().to_string()));
-            },
-            Ok(feat_res) => {
-                if feat_res.old.unwrap_or(0) < 0 {
-                    feat.id = Some(geojson::feature::Id::Number(serde_json::Number::from(feat_res.new.unwrap())));
-                }
-
-                feat_res
-            }
+    Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
+        body.extend_from_slice(&chunk);
+        Ok::<_, HecateError>(body)
+    }).and_then(move |body| {
+        let body = match String::from_utf8(body.to_vec()) {
+            Ok(body) => body,
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
         };
 
-        ids.insert(feat_res.old.unwrap(), feat_res);
-    }
+        let trans = match conn.transaction() {
+            Ok(trans) => trans,
+            Err(_) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), None)); }
+        };
 
-    let diffres = match osm::to_diffresult(ids, tree) {
-        Err(_) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not format diffResult XML")));
-        },
-        Ok(diffres) => diffres
-    };
+        let delta_id = delta_id.into_inner();
+        match delta::is_open(&delta_id, &trans) {
+            Ok(true) => (),
+            _ => {
+                trans.set_rollback();
+                trans.finish().unwrap();
 
-    match delta::modify(&delta_id, &trans, &fc, &uid) {
-        Ok (_) => (),
-        Err(_) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not create delta")));
+                let conflict = format!("The changeset {} was closed at previously", &delta_id);
+                return Ok(HttpResponse::build(actix_web::http::StatusCode::CONFLICT)
+                    .set_header("Error", conflict.clone())
+                    .content_length(conflict.len() as u64)
+                    .body(conflict));
+            }
         }
-    }
 
-    match delta::finalize(&delta_id, &trans) {
-        Ok (_) => {
-            if trans.commit().is_err() {
-                return Err(status::Custom(HTTPStatus::InternalServerError, String::from("Failed to commit transaction")));
+        let (mut fc, tree) = match osm::to_features(&body) {
+            Ok(fctree) => fctree,
+            Err(err) => { return Err(HecateError::new(417, err.to_string(), None)); }
+        };
+
+        let mut ids: HashMap<i64, feature::Response> = HashMap::new();
+
+        for feat in &mut fc.features {
+            match feature::get_action(&feat) {
+                Ok(action) => {
+                    if action == feature::Action::Create {
+                        feature::del_version(feat);
+                    }
+                },
+                _ => ()
             }
 
-            worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
+            let feat_res = match feature::action(&trans, &schema, &feat, &Some(delta_id)) {
+                Err(err) => {
+                    trans.set_rollback();
+                    trans.finish().unwrap();
+                    return Err(HecateError::new(417, err.to_string(), None));
+                },
+                Ok(feat_res) => {
+                    if feat_res.old.unwrap_or(0) < 0 {
+                        feat.id = Some(geojson::feature::Id::Number(serde_json::Number::from(feat_res.new.unwrap())));
+                    }
 
-            Err(status::Custom(HTTPStatus::Ok, diffres))
-        },
-        Err(_) => {
-            trans.set_rollback();
-            trans.finish().unwrap();
-            Err(status::Custom(HTTPStatus::InternalServerError, String::from("Could not close delta")))
+                    feat_res
+                }
+            };
+
+            ids.insert(feat_res.old.unwrap(), feat_res);
         }
-    }
+
+        let diffres = match osm::to_diffresult(ids, tree) {
+            Err(_) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Err(HecateError::new(500, String::from("Could not format diffResult XML"), None));
+            },
+            Ok(diffres) => diffres
+        };
+
+        match delta::modify(&delta_id, &trans, &fc, &uid) {
+            Ok (_) => (),
+            Err(_) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                return Err(HecateError::new(500, String::from("Could not create delta"), None));
+            }
+        }
+
+        match delta::finalize(&delta_id, &trans) {
+            Ok (_) => {
+                if trans.commit().is_err() {
+                    return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
+                }
+
+                worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
+
+                return Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
+                    .content_length(diffres.len() as u64)
+                    .body(diffres));
+            },
+            Err(_) => {
+                trans.set_rollback();
+                trans.finish().unwrap();
+                Err(HecateError::new(500, String::from("Could not close delta"), None))
+            }
+        }
+    }))
 }
 
-*/
 fn osm_capabilities(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
