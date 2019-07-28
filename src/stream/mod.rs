@@ -1,6 +1,8 @@
 use postgres::types::ToSql;
 use std::io::{Error, ErrorKind};
 use crate::err::HecateError;
+use bytes::Bytes;
+use futures::Async;
 
 use std::mem;
 
@@ -11,6 +13,39 @@ pub struct PGStream {
     trans: postgres::transaction::Transaction<'static>,
     #[allow(dead_code)]
     conn: Box<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>>
+}
+
+impl futures::stream::Stream for PGStream {
+    type Item = Bytes;
+    type Error = HecateError;
+
+    fn poll(&mut self) -> Result<futures::Async<Option<Self::Item>>, Self::Error> {
+        let rows = match self.trans.query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[]) {
+            Ok(rows) => rows,
+            Err(err) => { return Err(HecateError::new(500, err.to_string(), None)); }
+        };
+
+        if rows.len() == 0 {
+            if self.eot {
+                // The Stream is complete
+                return Ok(Async::Ready(None));
+            } else {
+                self.eot = true;
+                // Write EOD Character to Stream
+                return Ok(Async::Ready(Some(Bytes::from(String::from("0x04")))));
+            }
+        }
+
+        let mut feats = String::new();
+
+        for row_it in 0..rows.len() {
+            let feat: String = rows.get(row_it).get(0);
+            feats.push_str(&*feat);
+            feats.push('\n');
+        }
+
+        Ok(Async::Ready(Some(Bytes::from(feats))))
+    }
 }
 
 impl std::io::Read for PGStream {

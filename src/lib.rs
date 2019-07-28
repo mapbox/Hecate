@@ -1057,20 +1057,22 @@ fn clone_query(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     cquery: web::Query<CloneQuery>
-) -> Result<impl std::io::Read, HecateError> {
+) -> Result<HttpResponse, HecateError> {
     auth_rules.0.allows_clone_query(&mut auth, &*conn.get()?)?;
 
-    Ok(clone::query(sandbox_conn.get()?, &cquery.query, &cquery.limit)?)
+    let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
+    Ok(resp.streaming(clone::query(sandbox_conn.get()?, &cquery.query, &cquery.limit)?))
 }
 
 fn clone_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<impl std::io::Read, HecateError> {
+) -> Result<HttpResponse, HecateError> {
     auth_rules.0.allows_clone_get(&mut auth, &*conn.get()?)?;
 
-    Ok(clone::get(conn.get()?)?)
+    let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
+    Ok(resp.streaming(clone::get(conn.get()?)?))
 }
 
 /*
