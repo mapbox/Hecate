@@ -132,6 +132,20 @@ pub fn start(
                     .route(web::delete().to(meta_delete))
                     .route(web::get().to(meta_get))
                 )
+                .service(web::scope("style")
+                    .service(web::resource("{style_id}")
+                        .route(web::delete().to(style_delete))
+                        .route(web::get().to(style_get))
+                        .route(web::post().to_async(style_create))
+                        .route(web::patch().to_async(style_patch))
+                    )
+                    .service(web::resource("{style_id}/public")
+                        .route(web::get().to(style_public))
+                    )
+                    .service(web::resource("{style_id}/private")
+                        .route(web::get().to(style_private))
+                    )
+                 )
                 .service(web::scope("styles")
                     .service(web::resource("")
                         .route(web::get().to(style_list_public))
@@ -140,7 +154,6 @@ pub fn start(
                         .route(web::get().to(style_list_user))
                     )
                  )
-
                 .service(web::resource("schema")
                     .route(web::get().to(schema_get))
                 )
@@ -250,17 +263,6 @@ pub fn start(
         .unwrap()
         .run()
         .unwrap();
-
-    /*
-    .mount("/api", routes![
-        style_create,
-        style_patch,
-        style_public,
-        style_private,
-        style_delete,
-        style_get,
-    ])
-    */
 }
 
 #[derive(Deserialize, Debug)]
@@ -622,148 +624,144 @@ fn user_delete_session(
         None => Ok(resp)
     }
 }
-/*
 
-#[post("/style", format="application/json", data="<body>")]
 fn style_create(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
-    body: Data
-) -> Result<Json<serde_json::Value>, HecateError> {
-    let conn = conn.get()?;
+    body: web::Payload
+) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
+    let conn = match conn.get() {
+        Ok(conn) => conn,
+        Err(err) => { return Either::A(futures::future::err(err)); }
+    };
 
-    auth_rules.0.allows_style_create(&mut auth, &*conn)?;
+    match auth_rules.0.allows_style_create(&mut auth, &*conn) {
+        Err(err) => { return Either::A(futures::future::err(err)); },
+        _ => ()
+    };
+
     let uid = auth.uid.unwrap();
 
-    let body_str: String;
-    {
-        let mut body_stream = body.open();
-        let mut body_vec = Vec::new();
+    Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
+        body.extend_from_slice(&chunk);
+        Ok::<_, HecateError>(body)
+    }).and_then(move |body| {
+        let body = match String::from_utf8(body.to_vec()) {
+            Ok(body) => body,
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
+        };
 
-        let mut buffer = [0; 1024];
-        let mut buffer_size: usize = 1;
+        let style_id = style::create(&*conn, &uid, &body)?;
+        worker.queue(worker::Task::new(worker::TaskType::Style(style_id)));
 
-        while buffer_size > 0 {
-            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
-            body_vec.append(&mut buffer[..buffer_size].to_vec());
-        }
-
-        body_str = match String::from_utf8(body_vec) {
-            Ok(body_str) => body_str,
-            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
-        }
-    }
-
-    let style_id = style::create(&*conn, &uid, &body_str)?;
-    worker.queue(worker::Task::new(worker::TaskType::Style(style_id)));
-
-    Ok(Json(json!(style_id)))
+        Ok(Json(json!(style_id)))
+    }))
 }
 
-#[post("/style/<id>/public")]
 fn style_public(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    id: i64
+    style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_style_set_public(&mut auth, &*conn)?;
     let uid = auth.uid.unwrap();
 
-    Ok(Json(json!(style::access(&*conn, &uid, &id, true)?)))
+    let style_id = style_id.into_inner();
+
+    Ok(Json(json!(style::access(&*conn, &uid, &style_id, true)?)))
 }
 
-#[post("/style/<id>/private")]
 fn style_private(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    id: i64
+    style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_style_set_private(&mut auth, &*conn)?;
     let uid = auth.uid.unwrap();
 
-    Ok(Json(json!(style::access(&*conn, &uid, &id, false)?)))
+    let style_id = style_id.into_inner();
+
+    Ok(Json(json!(style::access(&*conn, &uid, &style_id, false)?)))
 }
 
-#[patch("/style/<id>", format="application/json", data="<body>")]
 fn style_patch(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
-    id: i64,
-    body: Data
-) -> Result<Json<serde_json::Value>, HecateError> {
-    let conn = conn.get()?;
+    style_id: web::Path<i64>,
+    body: web::Payload
+) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
+    let conn = match conn.get() {
+        Ok(conn) => conn,
+        Err(err) => { return Either::A(futures::future::err(err)); }
+    };
 
-    auth_rules.0.allows_style_patch(&mut auth, &*conn)?;
+    let style_id = style_id.into_inner();
+
+    match auth_rules.0.allows_style_patch(&mut auth, &*conn) {
+        Err(err) => { return Either::A(futures::future::err(err)); },
+        _ => ()
+    };
+
     let uid = auth.uid.unwrap();
 
-    let body_str: String;
-    {
-        let mut body_stream = body.open();
-        let mut body_vec = Vec::new();
+    Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
+        body.extend_from_slice(&chunk);
+        Ok::<_, HecateError>(body)
+    }).and_then(move |body| {
+        let body = match String::from_utf8(body.to_vec()) {
+            Ok(body) => body,
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
+        };
 
-        let mut buffer = [0; 1024];
-        let mut buffer_size: usize = 1;
+        worker.queue(worker::Task::new(worker::TaskType::Style(style_id)));
 
-        while buffer_size > 0 {
-            buffer_size = body_stream.read(&mut buffer[..]).unwrap_or(0);
-            body_vec.append(&mut buffer[..buffer_size].to_vec());
-        }
-
-        body_str = match String::from_utf8(body_vec) {
-            Ok(body_str) => body_str,
-            Err(_) => { return Err(HecateError::new(400, String::from("Invalid JSON - Non-UTF8"), None)); }
-        }
-    }
-
-    worker.queue(worker::Task::new(worker::TaskType::Style(id)));
-
-    Ok(Json(json!(style::update(&*conn, &uid, &id, &body_str)?)))
+        Ok(Json(json!(style::update(&*conn, &uid, &style_id, &body)?)))
+    }))
 }
 
-#[delete("/style/<id>")]
 fn style_delete(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
-    id: i64
+    style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_style_delete(&mut auth, &*conn)?;
     let uid = auth.uid.unwrap();
 
-    worker.queue(worker::Task::new(worker::TaskType::Style(id)));
+    let style_id = style_id.into_inner();
+    worker.queue(worker::Task::new(worker::TaskType::Style(style_id)));
 
-    Ok(Json(json!(style::delete(&*conn, &uid, &id)?)))
+    Ok(Json(json!(style::delete(&*conn, &uid, &style_id)?)))
 }
 
 
-#[get("/style/<id>")]
 fn style_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    id: i64
+    style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_style_get(&mut auth, &*conn)?;
 
-    Ok(Json(json!(style::get(&*conn, &auth.uid, &id)?)))
-}
+    let style_id = style_id.into_inner();
 
-*/
+    Ok(Json(json!(style::get(&*conn, &auth.uid, &style_id)?)))
+}
 
 fn style_list_public(
     conn: web::Data<DbReplica>,
