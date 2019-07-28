@@ -95,8 +95,22 @@ pub fn start(
                     .index_file("index.html")
             )
             .service(web::scope("api")
-                .service(web::resource("/")
+                .service(web::resource("")
                     .route(web::get().to(server))
+                )
+                .service(web::resource("capabilities")
+                    .route(web::get().to(osm_capabilities))
+                )
+                .service(web::scope("0.6")
+                    .service(web::resource("capabilities")
+                        .route(web::get().to(osm_capabilities))
+                    )
+                    .service(web::resource("user/details")
+                        .route(web::get().to(osm_user))
+                    )
+                    .service(web::resource("map")
+                        .route(web::get().to(osm_map))
+                    )
                 )
                 .service(web::resource("auth")
                      .route(web::get().to(auth_get))
@@ -185,6 +199,7 @@ pub fn start(
                 )
                 .service(web::scope("data")
                     .service(web::resource("feature")
+                        .route(web::post().to(feature_query))
                         .route(web::post().to_async(feature_action))
                     )
                     .service(web::resource("feature/{id}")
@@ -193,8 +208,11 @@ pub fn start(
                     .service(web::resource("feature/{id}/history")
                         .route(web::post().to_async(feature_get_history))
                     )
-                    .service(web::resource("feature")
+                    .service(web::resource("features")
                         .route(web::post().to_async(features_action))
+                        /*
+                        .route(web::get().to(features_query))
+                        */
                     )
                     .service(web::resource("stats")
                         .route(web::get().to(stats_get))
@@ -226,14 +244,8 @@ pub fn start(
         style_get,
         style_list_public,
         style_list_user,
-        feature_query,
-        features_query,
         clone_get,
         clone_query,
-        osm_capabilities,
-        osm_06capabilities,
-        osm_user,
-        osm_map,
         osm_changeset_create,
         osm_changeset_modify,
         osm_changeset_upload,
@@ -1252,36 +1264,31 @@ fn features_action(
     }))
 }
 
-/*
-
-#[get("/0.6/map?<map..>")]
 fn osm_map(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     map: Json<Map>
-) -> Result<String, status::Custom<String>> {
-    let conn = conn.get().unwrap();
-
-    match auth_rules.0.allows_osm_get(&mut auth, &*conn) {
-        Ok(_) => (),
-        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
-    };
+) -> Result<String, HecateError> {
+    let conn = conn.get()?;
+    auth_rules.0.allows_osm_get(&mut auth, &*conn)?;
 
     let query: Vec<f64> = map.bbox.as_ref().unwrap().split(',').map(|s| s.parse().unwrap()).collect();
 
     let fc = match feature::get_bbox(&*conn, query) {
         Ok(features) => features,
-        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.as_json().to_string())) }
+        Err(err) => { return Err(HecateError::new(417, String::from("Expectation Failed"), Some(err.to_string()))); }
     };
 
     let xml_str = match osm::from_features(&fc) {
         Ok(xml_str) => xml_str,
-        Err(err) => { return Err(status::Custom(HTTPStatus::ExpectationFailed, err.to_string())) }
+        Err(err) => { return Err(HecateError::new(417, String::from("Expectation Failed"), Some(err.to_string()))); }
     };
 
     Ok(xml_str)
 }
+
+/*
 
 #[put("/0.6/changeset/create", data="<body>")]
 fn osm_changeset_create(
@@ -1563,18 +1570,14 @@ fn osm_changeset_upload(
     }
 }
 
-#[get("/capabilities")]
+*/
 fn osm_capabilities(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<String, status::Custom<String>> {
-    let conn = conn.get().unwrap();
-
-    match auth_rules.0.allows_osm_get(&mut auth, &*conn) {
-        Ok(_) => (),
-        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
-    };
+) -> Result<String, HecateError> {
+    let conn = conn.get()?;
+    auth_rules.0.allows_osm_get(&mut auth, &*conn)?;
 
     Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
@@ -1590,45 +1593,13 @@ fn osm_capabilities(
     "))
 }
 
-#[get("/0.6/capabilities")]
-fn osm_06capabilities(
-    conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
-    auth_rules: web::Data<auth::AuthContainer>
-) -> Result<String, status::Custom<String>> {
-    let conn = conn.get().unwrap();
-
-    match auth_rules.0.allows_osm_get(&mut auth, &*conn) {
-        Ok(_) => (),
-        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
-    };
-
-    Ok(String::from("
-        <osm version=\"0.6\" generator=\"Hecate Server\">
-            <api>
-                <version minimum=\"0.6\" maximum=\"0.6\"/>
-                <area maximum=\"0.25\"/>
-                <waynodes maximum=\"2000\"/>
-                <changesets maximum_elements=\"10000\"/>
-                <timeout seconds=\"300\"/>
-                <status database=\"online\" api=\"online\"/>
-            </api>
-        </osm>
-    "))
-}
-
-#[get("/0.6/user/details")]
 fn osm_user(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<String, status::Custom<String>> {
-    let conn = conn.get().unwrap();
-
-    match auth_rules.0.allows_osm_get(&mut auth, &*conn) {
-        Ok(_) => (),
-        Err(_) => { return Err(status::Custom(HTTPStatus::Unauthorized, String::from("Not Authorized"))); }
-    };
+) -> Result<String, HecateError> {
+    let conn = conn.get()?;
+    auth_rules.0.allows_osm_get(&mut auth, &*conn)?;
 
     Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
@@ -1643,7 +1614,6 @@ fn osm_user(
         </osm>
     "))
 }
-*/
 
 fn feature_action(
     mut auth: auth::Auth,
@@ -1794,9 +1764,6 @@ fn feature_get_history(
     Ok(Json(delta::history(&*conn, &id.into_inner())?))
 }
 
-/*
-
-#[get("/data/feature?<fquery..>")]
 fn feature_query(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
@@ -1817,5 +1784,3 @@ fn feature_query(
         Err(HecateError::new(400, String::from("key or point param must be used"), None))
     }
 }
-
-*/
