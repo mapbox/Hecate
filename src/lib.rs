@@ -32,7 +32,6 @@ pub mod auth;
 use actix_http::httpmessage::HttpMessage;
 use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, Responder, middleware};
 use futures::{Future, Stream, future::Either};
-use rand::prelude::*;
 use geojson::GeoJson;
 use crate::{
     auth::ValidAuth,
@@ -40,8 +39,6 @@ use crate::{
     db::*
 };
 use std::{
-    io::{Cursor, Read},
-    path::{Path, PathBuf},
     collections::HashMap
 };
 
@@ -88,7 +85,7 @@ pub fn start(
             .data(db_sandbox.clone())
             .data(db_main.clone())
             .data(schema.clone())
-            //TODO HANDLE GENERIC 404/401
+            //TODO HANDLE GENERIC 404
             .route("/", web::get().to(index))
             .service(
                 actix_files::Files::new("/admin", "./web/dist/")
@@ -135,6 +132,15 @@ pub fn start(
                     .route(web::delete().to(meta_delete))
                     .route(web::get().to(meta_get))
                 )
+                .service(web::scope("styles")
+                    .service(web::resource("")
+                        .route(web::get().to(style_list_public))
+                    )
+                    .service(web::resource("{user_id}")
+                        .route(web::get().to(style_list_user))
+                    )
+                 )
+
                 .service(web::resource("schema")
                     .route(web::get().to(schema_get))
                 )
@@ -202,9 +208,7 @@ pub fn start(
                         .route(web::get().to(bounds_meta))
                     )
                     .service(web::resource("{bound}")
-                         /*
                         .route(web::get().to(bounds_get))
-                        */
                         .route(web::post().to_async(bounds_set))
                         .route(web::delete().to(bounds_delete))
                     )
@@ -255,14 +259,8 @@ pub fn start(
         style_private,
         style_delete,
         style_get,
-        style_list_public,
-        style_list_user,
     ])
-    .register(catchers![
-       not_authorized,
-       not_found,
-    ]).launch();
-            */
+    */
 }
 
 #[derive(Deserialize, Debug)]
@@ -295,10 +293,6 @@ struct CloneQuery {
 struct FeatureQuery {
     key: Option<String>,
     point: Option<String>
-}
-
-fn not_authorized() -> HecateError {
-    HecateError::new(401, String::from("You must be logged in to access this resource"), None)
 }
 
 fn not_found() -> HecateError {
@@ -769,7 +763,8 @@ fn style_get(
     Ok(Json(json!(style::get(&*conn, &auth.uid, &id)?)))
 }
 
-#[get("/styles")]
+*/
+
 fn style_list_public(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
@@ -782,32 +777,31 @@ fn style_list_public(
     Ok(Json(json!(style::list_public(&*conn)?)))
 }
 
-#[get("/styles/<user>")]
 fn style_list_user(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    user: i64
+    user_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_style_list(&mut auth, &*conn)?;
 
+    let user_id = user_id.into_inner();
+
     match auth.uid {
         Some(uid) => {
-            if uid == user {
-                Ok(Json(json!(style::list_user(&*conn, &user)?)))
+            if uid == user_id {
+                Ok(Json(json!(style::list_user(&*conn, &user_id)?)))
             } else {
-                Ok(Json(json!(style::list_user_public(&*conn, &user)?)))
+                Ok(Json(json!(style::list_user_public(&*conn, &user_id)?)))
             }
         },
         _ => {
-            Ok(Json(json!(style::list_user_public(&*conn, &user)?)))
+            Ok(Json(json!(style::list_user_public(&*conn, &user_id)?)))
         }
     }
 }
-
-*/
 
 fn delta_list(
     conn: web::Data<DbReplica>,
@@ -881,20 +875,19 @@ fn bounds(
     }
 }
 
-/*
 fn bounds_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     bounds: web::Path<String>
-) -> Result<Stream<stream::PGStream>, HecateError> {
+) -> Result<HttpResponse, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_bounds_list(&mut auth, &*conn)?;
 
-    Ok(Stream::from(bounds::get(conn, bounds.into_inner())?))
+    let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
+    Ok(resp.streaming(bounds::get(conn, bounds.into_inner())?))
 }
-*/
 
 fn bounds_set(
     conn: web::Data<DbReadWrite>,
