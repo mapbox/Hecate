@@ -93,14 +93,8 @@ impl actix_web::Responder for HecateError {
 
         let code = self.code;
 
-        let body = match serde_json::to_string(&self.as_json()) {
-            Ok(body) => body,
-            Err(e) => return Err(e.into()),
-        };
-
         Ok(actix_http::Response::build(actix_web::http::StatusCode::from_u16(code).unwrap())
-           .content_type("application/json")
-           .body(body))
+           .json(self.as_json()))
     }
 }
 
@@ -113,8 +107,7 @@ impl actix_http::ResponseError for HecateError {
         let body = serde_json::to_string(&self.clone().as_json()).unwrap();
 
         actix_http::Response::build(actix_web::http::StatusCode::from_u16(code).unwrap())
-           .content_type("application/json")
-           .body(body)
+           .json(self.as_json())
 
     }
 }
