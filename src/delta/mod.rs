@@ -5,10 +5,10 @@ use crate::err::HecateError;
 use serde_json::Value;
 
 pub struct Delta {
-    id: Option<i64>,
-    uid: i64,
-    props: HashMap<String, Option<String>>,
-    features: HashMap<i64, Value>
+    pub id: Option<i64>,
+    pub uid: i64,
+    pub props: HashMap<String, Option<String>>,
+    pub features: HashMap<i64, Value>
 }
 
 impl Delta {

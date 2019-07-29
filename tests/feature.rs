@@ -292,7 +292,7 @@ mod test {
         {
             let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
             assert!(resp.status().is_success());
-            //TODO check body
+            // TODO Check body
         }
 
         { //Create MultiPoint

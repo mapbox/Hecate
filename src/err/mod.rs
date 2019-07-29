@@ -104,8 +104,6 @@ impl actix_http::ResponseError for HecateError {
 
         let code = self.code;
 
-        let body = serde_json::to_string(&self.clone().as_json()).unwrap();
-
         actix_http::Response::build(actix_web::http::StatusCode::from_u16(code).unwrap())
            .json(self.as_json())
 
@@ -114,7 +112,7 @@ impl actix_http::ResponseError for HecateError {
 
 impl std::fmt::Display for HecateError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        std::fmt::Display::fmt(&self.safe_error, f)
+        std::fmt::Display::fmt(&self.as_json(), f)
     }
 }
 

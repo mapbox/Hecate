@@ -232,16 +232,14 @@ pub fn start(
                         .route(web::post().to_async(feature_action))
                     )
                     .service(web::resource("feature/{id}")
-                        .route(web::post().to_async(feature_get))
+                        .route(web::get().to_async(feature_get))
                     )
                     .service(web::resource("feature/{id}/history")
                         .route(web::post().to_async(feature_get_history))
                     )
                     .service(web::resource("features")
                         .route(web::post().to_async(features_action))
-                        /*
                         .route(web::get().to(features_query))
-                        */
                     )
                     .service(web::resource("stats")
                         .route(web::get().to(stats_get))
@@ -1066,15 +1064,12 @@ fn clone_get(
     Ok(resp.streaming(clone::get(conn.get()?)?))
 }
 
-/*
-
-#[get("/data/features?<map..>")]
 fn features_query(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    map: Json<Map>
-) -> Result<Stream<stream::PGStream>, HecateError> {
+    map: web::Query<Map>
+) -> Result<HttpResponse, HecateError> {
     let conn = conn.get()?;
     auth_rules.0.allows_feature_get(&mut auth, &*conn)?;
 
@@ -1082,15 +1077,17 @@ fn features_query(
         Err(HecateError::new(400, String::from("key and point params cannot be used together"), None))
     } else if map.bbox.is_some() {
         let bbox: Vec<f64> = map.bbox.as_ref().unwrap().split(',').map(|s| s.parse().unwrap()).collect();
-        Ok(Stream::from(feature::get_bbox_stream(conn, &bbox)?))
+
+        let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
+        Ok(resp.streaming(feature::get_bbox_stream(conn, &bbox)?))
     } else if map.point.is_some() {
-        Ok(Stream::from(feature::get_point_stream(conn, &map.point.as_ref().unwrap())?))
+        let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
+        Ok(resp.streaming(feature::get_point_stream(conn, &map.point.as_ref().unwrap())?))
     } else {
         Err(HecateError::new(400, String::from("key or point param must be used"), None))
     }
 
 }
-*/
 
 fn schema_get(
     conn: web::Data<DbReplica>,
