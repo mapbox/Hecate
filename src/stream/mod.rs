@@ -6,6 +6,8 @@ use futures::Async;
 
 use std::mem;
 
+static EOT: u8 = 0x04;
+
 pub struct PGStream {
     eot: bool, //End of Tranmission has been sent
     cursor: String,
@@ -32,7 +34,10 @@ impl futures::stream::Stream for PGStream {
             } else {
                 self.eot = true;
                 // Write EOD Character to Stream
-                return Ok(Async::Ready(Some(Bytes::from(String::from("0x04")))));
+                let mut bytes = Bytes::new();
+                bytes.extend_from_slice(&[EOT]);
+
+                return Ok(Async::Ready(Some(bytes)));
             }
         }
 
