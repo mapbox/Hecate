@@ -27,9 +27,9 @@ CREATE TABLE tiles (
 
 DROP TABLE IF EXISTS bounds;
 CREATE TABLE bounds (
-    id          BIGSERIAL PRIMARY KEY,
+    id          BIGSERIAL,
     geom        GEOMETRY(MULTIPOLYGON, 4326) NOT NULL,
-    name        TEXT NOT NULL,
+    name        TEXT PRIMARY KEY,
     props       JSONB NOT NULL
 );
 CREATE INDEX bounds_gist ON bounds USING GIST(geom);
