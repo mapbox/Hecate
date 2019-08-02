@@ -82,6 +82,14 @@ impl HecateError {
             }
         }
     }
+
+    pub fn as_log(&self) -> String {
+        if self.full_error == self.safe_error {
+            format!("HecateError: ({:?}): {}", &self.code, &self.safe_error)
+        } else {
+            format!("HecateError: ({:?}): {}: {}", &self.code, &self.safe_error, &self.full_error)
+        }
+    }
 }
 
 impl actix_web::Responder for HecateError {
@@ -89,7 +97,7 @@ impl actix_web::Responder for HecateError {
     type Future = Result<actix_http::Response, Self::Error>;
 
     fn respond_to(self, _req: &actix_web::HttpRequest) -> Self::Future {
-        println!("HecateError: {:?} {} {}", &self.code, &self.safe_error, &self.full_error);
+        println!("{}", self.as_log());
 
         let code = self.code;
 
@@ -100,7 +108,7 @@ impl actix_web::Responder for HecateError {
 
 impl actix_http::ResponseError for HecateError {
     fn error_response(&self) -> actix_http::Response {
-        println!("HecateError: {:?} {} {}", &self.code, &self.safe_error, &self.full_error);
+        println!("{}", self.as_log());
 
         let code = self.code;
 
