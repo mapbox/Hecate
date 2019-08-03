@@ -23,7 +23,7 @@ impl Meta {
         ", &[&key]) {
             Ok(rows) => {
                 if rows.len() == 0 {
-                    Ok(Meta::new(key, json!(null)))
+                    Ok(Meta::new(key, json!(false)))
                 } else {
                     Ok(Meta::new(key, rows.get(0).get(0)))
                 }

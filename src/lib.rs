@@ -345,7 +345,7 @@ fn meta_get(
     auth_rules.0.allows_meta_get(&mut auth, &*conn)?;
     worker.queue(worker::Task::new(worker::TaskType::Meta));
 
-    Ok(Json(json!(meta::Meta::get(&*conn, &key.into_inner())?)))
+    Ok(Json(meta::Meta::get(&*conn, &key.into_inner())?.value))
 }
 
 
@@ -370,12 +370,15 @@ fn meta_set(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
-    meta: Json<meta::Meta>
+    value: Json<serde_json::Value>,
+    key: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
     auth_rules.0.allows_meta_set(&mut auth, &*conn)?;
 
     worker.queue(worker::Task::new(worker::TaskType::Meta));
+
+    let meta = meta::Meta::new(key.into_inner(), value.into_inner());
 
     Ok(Json(json!(meta.set(&*conn)?)))
 }
