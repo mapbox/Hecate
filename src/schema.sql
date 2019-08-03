@@ -57,7 +57,7 @@ DROP TABLE IF EXISTS geo;
 DROP INDEX IF EXISTS geo_gist;
 DROP INDEX IF EXISTS geo_idx;
 CREATE TABLE geo (
-    id          BIGSERIAL PRIMARY KEY,
+    id          BIGSERIAL UNIQUE,
     key         TEXT UNIQUE,
     version     BIGINT NOT NULL,
     geom        GEOMETRY(GEOMETRY, 4326) NOT NULL,

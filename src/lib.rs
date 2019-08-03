@@ -219,7 +219,7 @@ pub fn start(
                         .route(web::get().to_async(feature_get))
                     )
                     .service(web::resource("feature/{id}/history")
-                        .route(web::post().to_async(feature_get_history))
+                        .route(web::get().to(feature_get_history))
                     )
                     .service(web::resource("features")
                         .route(web::post().to_async(features_action))
