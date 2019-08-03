@@ -1,9 +1,9 @@
 #[derive(PartialEq, Debug)]
 pub struct HecateError {
-    code: u16,
-    custom_json: Option<serde_json::Value>,
-    safe_error: String,
-    full_error: String
+    pub code: u16,
+    pub custom_json: Option<serde_json::Value>,
+    pub safe_error: String,
+    pub full_error: String
 }
 
 impl HecateError {
