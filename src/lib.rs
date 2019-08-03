@@ -1275,10 +1275,7 @@ fn osm_map(
 
     let query: Vec<f64> = map.bbox.as_ref().unwrap().split(',').map(|s| s.parse().unwrap()).collect();
 
-    let fc = match feature::get_bbox(&*conn, query) {
-        Ok(features) => features,
-        Err(err) => { return Err(HecateError::new(417, String::from("Expectation Failed"), Some(err.to_string()))); }
-    };
+    let fc = feature::get_bbox(&*conn, query)?;
 
     let xml_str = match osm::from_features(&fc) {
         Ok(xml_str) => xml_str,
@@ -1330,7 +1327,7 @@ fn osm_changeset_create(
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
-                return Err(HecateError::new(500, err.to_string(), None));
+                return Err(err);
             }
         };
 
@@ -1418,7 +1415,7 @@ fn osm_changeset_modify(
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
-                return Err(HecateError::new(500, err.to_string(), None));
+                return Err(err);
             }
         };
 
@@ -1504,7 +1501,7 @@ fn osm_changeset_upload(
                 Err(err) => {
                     trans.set_rollback();
                     trans.finish().unwrap();
-                    return Err(HecateError::new(417, err.to_string(), None));
+                    return Err(err);
                 },
                 Ok(feat_res) => {
                     if feat_res.old.unwrap_or(0) < 0 {

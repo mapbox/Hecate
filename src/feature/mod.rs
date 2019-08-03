@@ -20,9 +20,9 @@ pub struct Response {
 pub fn import_error(feat: &geojson::Feature, error: &str, full: Option<String>) -> HecateError {
     HecateError::new(400, String::from("Import Error"), full)
         .set_json(json!({
-            "id": &feat.id,
+            "id": feat.id,
             "message": error,
-            "feature": &feat
+            "feature": feat
         }))
 }
 
@@ -245,9 +245,7 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
     };
 
     let valid = match schema {
-        &Some(ref schema) => {
-            schema.validate(&json!(props)).is_valid()
-        },
+        &Some(ref schema) => schema.validate(&json!(props)).is_valid(),
         &None => true
     };
 
@@ -338,9 +336,7 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
     };
 
     let valid = match schema {
-        &Some(ref schema) => {
-            schema.validate(&json!(props)).is_valid()
-        },
+        &Some(ref schema) => schema.validate(&json!(props)).is_valid(),
         &None => true
     };
 
@@ -512,9 +508,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
     };
 
     let valid = match schema {
-        &Some(ref schema) => {
-            schema.validate(&json!(props)).is_valid()
-        },
+        &Some(ref schema) => schema.validate(&json!(props)).is_valid(),
         &None => true
     };
 

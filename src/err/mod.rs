@@ -9,14 +9,14 @@ pub struct HecateError {
 impl HecateError {
     pub fn new(code: u16, safe_error: String, full_error: Option<String>) -> Self {
         let full_error = match full_error {
-            Some(err) => err.to_string(),
+            Some(err) => err,
             None => safe_error.to_string()
         };
 
         HecateError {
             code: code,
             custom_json: None,
-            safe_error: safe_error.to_string(),
+            safe_error: safe_error,
             full_error: full_error
         }
     }
@@ -84,27 +84,11 @@ impl HecateError {
     }
 }
 
-impl actix_web::Responder for HecateError {
-    type Error = actix_web::Error;
-    type Future = Result<actix_http::Response, Self::Error>;
-
-    fn respond_to(self, _req: &actix_web::HttpRequest) -> Self::Future {
-        println!("{}", self.as_log());
-
-        let code = self.code;
-
-        Ok(actix_http::Response::build(actix_web::http::StatusCode::from_u16(code).unwrap())
-           .json(self.as_json()))
-    }
-}
-
 impl actix_http::ResponseError for HecateError {
     fn error_response(&self) -> actix_http::Response {
         println!("{}", self.as_log());
 
-        let code = self.code;
-
-        actix_http::Response::build(actix_web::http::StatusCode::from_u16(code).unwrap())
+        actix_http::Response::build(actix_web::http::StatusCode::from_u16(self.code).unwrap())
            .json(self.as_json())
 
     }
