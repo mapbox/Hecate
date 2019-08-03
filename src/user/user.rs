@@ -59,8 +59,10 @@ impl User {
                         username = $1,
                         email = $2,
                         meta = $3,
-                        access = $4,
-            ", &[ &self.username, &self.email, &self.meta, &self.access ]) {
+                        access = $4
+                    WHERE
+                        id = $5
+            ", &[ &self.username, &self.email, &self.meta, &self.access, &self.id ]) {
                 Ok(_) => Ok(true),
                 Err(err) => Err(HecateError::from_db(err))
             }
