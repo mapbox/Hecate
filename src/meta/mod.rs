@@ -3,8 +3,8 @@ use serde_json::Value;
 
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct Meta {
-    key: String,
-    value: Value
+    pub key: String,
+    pub value: Value
 }
 
 impl Meta {
