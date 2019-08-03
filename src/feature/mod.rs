@@ -18,11 +18,12 @@ pub struct Response {
 }
 
 pub fn import_error(feat: &geojson::Feature, error: &str, full: Option<String>) -> HecateError {
-    HecateError::from_json(400, json!({
-        "id": &feat.id,
-        "message": error,
-        "feature": &feat
-    }), String::from("Import Error"), full)
+    HecateError::new(400, String::from("Import Error"), full)
+        .set_json(json!({
+            "id": &feat.id,
+            "message": error,
+            "feature": &feat
+        }))
 }
 
 ///
