@@ -68,10 +68,15 @@ impl User {
             }
 
         } else {
+            let password = match self.password {
+                Some(ref password) => password,
+                None => { return Err(HecateError::new(400, String::from("Password must be present to create new user"), None)); }
+            };
+
             match conn.query("
                 INSERT INTO users (username, password, email, meta, access)
                     VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, $4, $5);
-            ", &[ &self.username, &self.password, &self.email, &self.meta, &self.access ]) {
+            ", &[ &self.username, &password, &self.email, &self.meta, &self.access ]) {
                 Ok(_) => Ok(true),
                 Err(err) => {
                     if err.as_db().is_some() && err.as_db().unwrap().code.code() == "23505" {
