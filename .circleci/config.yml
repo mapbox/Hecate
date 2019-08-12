@@ -7,7 +7,7 @@ jobs:
             - checkout
             - run:
                 name: "Build Docker Image"
-                command: "docker build -t ingalls/hecate:$CIRCLE_BRANCH ."
+                command: "docker build -t ingalls/hecate:ci ."
             - run: 
                 name: "Tests"
-                command: "docker run --name hecate ingalls/hecate:$CIRCLE_BRANCH"
+                command: "docker run --name hecate ingalls/hecate:ci"

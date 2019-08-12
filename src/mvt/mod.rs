@@ -1,8 +1,5 @@
-#[cfg_attr(rustfmt, rustfmt_skip)]
-pub mod grid;
-
 use crate::err::HecateError;
-pub use self::grid::{Grid};
+use tile_grid::Grid;
 
 pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<Option<Vec<u8>>, HecateError> {
     match conn.query("
@@ -25,7 +22,7 @@ pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<
 
 pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u32) -> Result<Vec<u8>, HecateError> {
     let grid = Grid::web_mercator();
-    let bbox = grid.tile_extent(*z, *x, *y);
+    let bbox = grid.tile_extent(*x, *y, *z);
 
     let mut limit: Option<i64> = None;
     if *z < 10 {
