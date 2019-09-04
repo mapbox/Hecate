@@ -484,18 +484,17 @@ fn users(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    filter: web::Query<Option<Filter>>
+    filter: web::Query<Filter>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     let conn = conn.get()?;
 
     auth_rules.0.allows_user_list(&mut auth, &*conn)?;
 
-    match filter.into_inner() {
-        None => Ok(Json(user::user::list(&*conn, &None)?)),
-        Some(filter) => match &filter.filter {
-            Some(search) => Ok(Json(json!(user::user::filter(&*conn, &search, &filter.limit)?))),
-            None => Ok(Json(user::user::list(&*conn, &None)?))
-        }
+    let filter = filter.into_inner();
+
+    match &filter.filter {
+        Some(search) => Ok(Json(json!(user::user::filter(&*conn, &search, &filter.limit)?))),
+        None => Ok(Json(user::user::list(&*conn, &filter.limit)?))
     }
 }
 
@@ -870,7 +869,8 @@ fn bounds(
 
     auth_rules.0.allows_bounds_list(&mut auth, &*conn)?;
 
-    match &filter.filter {
+    let filter = filter.into_inner();
+    match filter.filter {
         Some(search) => Ok(Json(json!(bounds::filter(&*conn, &search, &filter.limit)?))),
         None => Ok(Json(json!(bounds::list(&*conn, &filter.limit)?)))
     }

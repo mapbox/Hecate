@@ -22,12 +22,16 @@ impl Token {
         match conn.query("
             INSERT INTO users_tokens (name, uid, token, expiry)
                 VALUES (
-                    $1
+                    $1,
                     $2,
                     md5(random()::TEXT),
                     now() + INTERVAL '4 hours'
                 )
-                RETURNING token;
+                RETURNING
+                    name,
+                    uid,
+                    token,
+                    expiry::TEXT
         ", &[ &name.to_string(), &uid ]) {
             Ok(res) => {
                 let name: String = res.get(0).get(0);

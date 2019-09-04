@@ -97,7 +97,7 @@ impl User {
                     id,
                     username,
                     email,
-                    meta,
+                    COALESCE(meta, '{}'::JSONB) AS meta,
                     access
                 FROM
                     users
@@ -108,7 +108,9 @@ impl User {
                 let res: serde_json::Value = res.get(0).get(0);
 
                 let user: User = match serde_json::from_value(res) {
-                    Ok(user) => user,
+                    Ok(user) => {
+                        user
+                    },
                     Err(err) => {
                         return Err(HecateError::new(500, String::from("Failed to deserialize user"), Some(err.to_string())));
                     }

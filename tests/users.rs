@@ -158,7 +158,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_success());
-            assert_eq!(resp.text().unwrap(), "1");
+            assert_eq!(resp.text().unwrap(), "true");
             //TODO test for cookie existence - reqwest is currently working on adding better cookie
             //support
         }
@@ -171,7 +171,7 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_success());
-            assert_eq!(resp.text().unwrap(), "1");
+            assert_eq!(resp.text().unwrap(), "true");
             //TODO test for cookie existence - reqwest is currently working on adding better cookie
             //support
         }
@@ -317,6 +317,7 @@ mod test {
 
             assert_eq!(json_body, json!({
                 "id": 1,
+                "access": null,
                 "username": "ingalls",
                 "email": "ingalls@protonmail.com",
                 "meta": {}
@@ -380,6 +381,7 @@ mod test {
 
             assert_eq!(json_body, json!({
                 "id": 6,
+                "access": null,
                 "username": "future_admin",
                 "email": "fake@example.com",
                 "meta": {}
