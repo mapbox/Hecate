@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.72.0
+
+- :rocket: Switch backend from `rocket` to `actix`
+
 ## v0.71.1
 
 - :rocket: Add validation for bbox.
