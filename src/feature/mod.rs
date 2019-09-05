@@ -17,12 +17,13 @@ pub struct Response {
     pub version: Option<i64>
 }
 
-pub fn import_error(feat: &geojson::Feature, error: &str) -> HecateError {
-    HecateError::from_json(400, json!({
-        "id": &feat.id,
-        "message": error,
-        "feature": &feat
-    }), String::from("Import Error"), None)
+pub fn import_error(feat: &geojson::Feature, error: &str, full: Option<String>) -> HecateError {
+    HecateError::new(400, String::from("Import Error"), full)
+        .set_json(json!({
+            "id": feat.id,
+            "message": error,
+            "feature": feat
+        }))
 }
 
 ///
@@ -37,12 +38,12 @@ pub fn is_force(feat: &geojson::Feature) -> Result<bool, HecateError> {
                 match force.as_bool() {
                     Some(true) => {
                         if get_action(&feat)? != Action::Create {
-                            return Err(import_error(&feat, "force can only be used on create"));
+                            return Err(import_error(&feat, "force can only be used on create", None));
                         }
 
                         match get_key(&feat)? {
                             None => {
-                                Err(import_error(&feat, "force can only be used with a key value"))
+                                Err(import_error(&feat, "force can only be used with a key value", None))
                             },
                             Some(_) => {
                                 Ok(true)
@@ -50,7 +51,7 @@ pub fn is_force(feat: &geojson::Feature) -> Result<bool, HecateError> {
                         }
                     },
                     Some(false) => Ok(false),
-                    None => Err(import_error(&feat, "force must be a boolean"))
+                    None => Err(import_error(&feat, "force must be a boolean", None))
                 }
             },
             None => Ok(false)
@@ -69,41 +70,41 @@ pub fn del_version(feat: &mut geojson::Feature) {
 
 pub fn get_version(feat: &geojson::Feature) -> Result<i64, HecateError> {
     match feat.foreign_members {
-        None => { return Err(import_error(&feat, "Version Required")); },
+        None => { return Err(import_error(&feat, "Version Required", None)); },
         Some(ref members) => match members.get("version") {
             Some(version) => {
                 match version.as_i64() {
                     Some(version) => Ok(version),
-                    None => { return Err(import_error(&feat, "Version Required")); },
+                    None => { return Err(import_error(&feat, "Version Required", None)); },
                 }
             },
-            None => { return Err(import_error(&feat, "Version Required")); },
+            None => { return Err(import_error(&feat, "Version Required", None)); },
         }
     }
 }
 
 pub fn get_geom_str(feat: &geojson::Feature) -> Result<String, HecateError> {
     let geom = match feat.geometry {
-        None => { return Err(import_error(&feat, "Geometry Required")); },
+        None => { return Err(import_error(&feat, "Geometry Required", None)); },
         Some(ref geom) => geom
     };
 
     fn is_valid_coord(feat: &geojson::Feature, pt: &geojson::PointType) -> Result<bool, HecateError> {
         if pt.len() > 3 {
-            return Err(import_error(&feat, "Coordinate Array has > 3 coords"));
+            return Err(import_error(&feat, "Coordinate Array has > 3 coords", None));
         }
 
         let lon = pt[0];
         let lat = pt[1];
 
         if lon < -180.0 {
-            return Err(import_error(&feat, "longitude < -180"));
+            return Err(import_error(&feat, "longitude < -180", None));
         } else if lon > 180.0 {
-            return Err(import_error(&feat, "longitude > 180"));
+            return Err(import_error(&feat, "longitude > 180", None));
         } else if lat < -90.0 {
-            return Err(import_error(&feat, "latitude < -90"));
+            return Err(import_error(&feat, "latitude < -90", None));
         } else if lat > 90.0 {
-            return Err(import_error(&feat, "latitude > 90"));
+            return Err(import_error(&feat, "latitude > 90", None));
         } else {
             Ok(true)
         }
@@ -152,29 +153,29 @@ pub fn get_geom_str(feat: &geojson::Feature) -> Result<String, HecateError> {
 
     match serde_json::to_string(&geom) {
         Ok(geom) => Ok(geom),
-        Err(_) => Err(import_error(&feat, "Failed to stringify geometry"))
+        Err(err) => Err(import_error(&feat, "Failed to stringify geometry", Some(err.to_string())))
     }
 }
 
 pub fn get_id(feat: &geojson::Feature) -> Result<i64, HecateError> {
     match feat.id {
-        None => { return Err(import_error(&feat, "ID Required")); },
+        None => { return Err(import_error(&feat, "ID Required", None)); },
         Some(ref id) => match id {
             geojson::feature::Id::Number(id) => {
                 if id.is_i64() {
                     Ok(id.as_i64().unwrap())
                 } else {
-                    return Err(import_error(&feat, "Integer ID Required"));
+                    return Err(import_error(&feat, "Integer ID Required", None));
                 }
             },
-            _ => { return Err(import_error(&feat, "Integer ID Required")); },
+            _ => { return Err(import_error(&feat, "Integer ID Required", None)); },
         }
     }
 }
 
 pub fn get_action(feat: &geojson::Feature) -> Result<Action, HecateError> {
     match feat.foreign_members {
-        None => { return Err(import_error(&feat, "Action Required")); },
+        None => { return Err(import_error(&feat, "Action Required", None)); },
         Some(ref members) => match members.get("action") {
             Some(action) => {
                 match action.as_str() {
@@ -182,11 +183,10 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, HecateError> {
                     Some("modify") => Ok(Action::Modify),
                     Some("delete") => Ok(Action::Delete),
                     Some("restore") => Ok(Action::Restore),
-                    Some(_) => { return Err(import_error(&feat, "Action Required")); },
-                    None => { return Err(import_error(&feat, "Action Required")); }
+                    _ => { return Err(import_error(&feat, "Action Required", None)); },
                 }
             },
-            None => { return Err(import_error(&feat, "Action Required")); },
+            None => { return Err(import_error(&feat, "Action Required", None)); },
         }
     }
 }
@@ -202,7 +202,7 @@ pub fn get_key(feat: &geojson::Feature) -> Result<Option<String>, HecateError> {
 
                     match key.as_str() {
                         Some(ref key) => Ok(Some(String::from(*key))),
-                        None => Err(import_error(&feat, "key must be a string value"))
+                        None => Err(import_error(&feat, "key must be a string value", None))
                     }
                 }
             }
@@ -236,28 +236,26 @@ pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<s
 
 pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, HecateError> {
     if get_version(&feat).is_ok() {
-        return Err(import_error(&feat, "Cannot have Version"));
+        return Err(import_error(&feat, "Cannot have Version", None));
     }
 
     let props = match feat.properties {
-        None => { return Err(import_error(&feat, "Properties Required")); },
+        None => { return Err(import_error(&feat, "Properties Required", None)); },
         Some(ref props) => props
     };
 
     let valid = match schema {
-        &Some(ref schema) => {
-            schema.validate(&json!(props)).is_valid()
-        },
+        &Some(ref schema) => schema.validate(&json!(props)).is_valid(),
         &None => true
     };
 
-    if !valid { return Err(import_error(&feat, "Failed to Match Schema")) };
+    if !valid { return Err(import_error(&feat, "Failed to Match Schema", None)) };
 
     let geom_str = get_geom_str(&feat)?;
 
     let props_str = match serde_json::to_string(&props) {
         Ok(props) => props,
-        Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
+        Err(err) => { return Err(import_error(&feat, "Failed to stringify properties", Some(err.to_string()))) }
     };
 
     let key = get_key(&feat)?;
@@ -293,9 +291,9 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
             Err(err) => {
                 match err.as_db() {
                     Some(e) => {
-                        Err(import_error(&feat, e.message.as_str()))
+                        Err(import_error(&feat, e.message.as_str(), None))
                     },
-                    _ => Err(import_error(&feat, "Generic Error"))
+                    _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
                 }
             }
         }
@@ -319,12 +317,12 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
                 match err.as_db() {
                     Some(e) => {
                         if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
-                            Err(import_error(&feat, "Duplicate Key Value"))
+                            Err(import_error(&feat, "Duplicate Key Value", None))
                         } else {
-                            Err(import_error(&feat, e.message.as_str()))
+                            Err(import_error(&feat, e.message.as_str(), None))
                         }
                     },
-                    _ => Err(import_error(&feat, "Generic Error"))
+                    _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
                 }
             }
         }
@@ -333,18 +331,16 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
 
 pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, HecateError> {
     let props = match feat.properties {
-        None => { return Err(import_error(&feat, "Properties Required")); },
+        None => { return Err(import_error(&feat, "Properties Required", None)); },
         Some(ref props) => props
     };
 
     let valid = match schema {
-        &Some(ref schema) => {
-            schema.validate(&json!(props)).is_valid()
-        },
+        &Some(ref schema) => schema.validate(&json!(props)).is_valid(),
         &None => true
     };
 
-    if !valid { return Err(import_error(&feat, "Failed to Match Schema")) };
+    if !valid { return Err(import_error(&feat, "Failed to Match Schema", None)) };
 
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
@@ -354,7 +350,7 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
 
     let props_str = match serde_json::to_string(&props) {
         Ok(props) => props,
-        Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
+        Err(err) => { return Err(import_error(&feat, "Failed to stringify properties", Some(err.to_string()))) }
     };
 
     match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4, $6);", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
@@ -367,14 +363,14 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
             match err.as_db() {
                 Some(e) => {
                     if e.message == "MODIFY: ID or VERSION Mismatch" {
-                        Err(import_error(&feat, "Modify Version Mismatch"))
+                        Err(import_error(&feat, "Modify Version Mismatch", None))
                     } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
-                        Err(import_error(&feat, "Duplicate Key Value"))
+                        Err(import_error(&feat, "Duplicate Key Value", None))
                     } else {
-                        Err(import_error(&feat, e.message.as_str()))
+                        Err(import_error(&feat, e.message.as_str(), None))
                     }
                 },
-                _ => Err(import_error(&feat, "Generic Error"))
+                _ => Err(import_error(&feat, "Generic Error", None))
             }
         }
     }
@@ -394,12 +390,12 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
             match err.as_db() {
                 Some(e) => {
                     if e.message == "DELETE: ID or VERSION Mismatch" {
-                        Err(import_error(&feat, "Delete Version Mismatch"))
+                        Err(import_error(&feat, "Delete Version Mismatch", None))
                     } else {
-                        Err(import_error(&feat, e.message.as_str()))
+                        Err(import_error(&feat, e.message.as_str(), None))
                     }
                 },
-                _ => Err(import_error(&feat, "Generic Error"))
+                _ => Err(import_error(&feat, "Generic Error", None))
             }
         }
     }
@@ -507,18 +503,16 @@ pub fn get(conn: &impl postgres::GenericConnection, id: &i64) -> Result<geojson:
 
 pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valico::json_schema::schema::ScopedSchema>, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, HecateError> {
     let props = match feat.properties {
-        None => { return Err(import_error(&feat, "Properties Required")); },
+        None => { return Err(import_error(&feat, "Properties Required", None)); },
         Some(ref props) => props
     };
 
     let valid = match schema {
-        &Some(ref schema) => {
-            schema.validate(&json!(props)).is_valid()
-        },
+        &Some(ref schema) => schema.validate(&json!(props)).is_valid(),
         &None => true
     };
 
-    if !valid { return Err(import_error(&feat, "Failed to Match Schema")) };
+    if !valid { return Err(import_error(&feat, "Failed to Match Schema", None)) };
 
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
@@ -528,7 +522,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
 
     let props_str = match serde_json::to_string(&props) {
         Ok(props) => props,
-        Err(_) => { return Err(import_error(&feat, "Failed to stringify properties")) }
+        Err(_) => { return Err(import_error(&feat, "Failed to stringify properties", None)) }
     };
 
     //Get the previous version of a given feature
@@ -553,7 +547,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
         Ok(history) => {
 
             if history.len() != 1 {
-                return Err(import_error(&feat, "Feature Not Found"));
+                return Err(import_error(&feat, "Feature Not Found", None));
             }
 
             //Version will be None if the feature was created but has never been modified since the
@@ -561,11 +555,11 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
             let prev_version: Option<i64> = history.get(0).get(1);
             match prev_version {
                 None => {
-                    return Err(import_error(&feat, "Feature Not In Deleted State"));
+                    return Err(import_error(&feat, "Feature Not In Deleted State", None));
                 },
                 Some(prev_version) => {
                     if prev_version != version {
-                        return Err(import_error(&feat, "Restore Version Mismatch"));
+                        return Err(import_error(&feat, "Restore Version Mismatch", None));
                     }
                 }
             };
@@ -593,20 +587,20 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                     match err.as_db() {
                         Some(e) => {
                             if e.message == "duplicate key value violates unique constraint \"geo_id_key\"" {
-                                Err(import_error(&feat, "Feature Not In Deleted State"))
+                                Err(import_error(&feat, "Feature Not In Deleted State", None))
                             } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
-                                Err(import_error(&feat, "Duplicate Key Value"))
+                                Err(import_error(&feat, "Duplicate Key Value", None))
                             } else {
-                                Err(import_error(&feat, "Generic Error"))
+                                Err(import_error(&feat, "Generic Error", Some(err.to_string())))
                             }
                         }
-                        _ => Err(import_error(&feat, "Generic Error"))
+                        _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
                     }
                 }
             }
         },
-        Err(_) => {
-            Err(import_error(&feat, "Error Fetching History"))
+        Err(err) => {
+            Err(import_error(&feat, "Error Fetching History", Some(err.to_string())))
         }
     }
 }

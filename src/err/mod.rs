@@ -1,16 +1,16 @@
 #[derive(PartialEq, Debug)]
 pub struct HecateError {
-    code: u16,
-    custom_json: Option<serde_json::Value>,
-    safe_error: String,
-    full_error: String
+    pub code: u16,
+    pub custom_json: Option<serde_json::Value>,
+    pub safe_error: String,
+    pub full_error: String
 }
 
 impl HecateError {
     pub fn new(code: u16, safe_error: String, full_error: Option<String>) -> Self {
         let full_error = match full_error {
             Some(err) => err,
-            None => safe_error.clone()
+            None => safe_error.to_string()
         };
 
         HecateError {
@@ -21,18 +21,23 @@ impl HecateError {
         }
     }
 
-    pub fn from_json(code: u16, json: serde_json::Value, safe_error: String, full_error: Option<String>) -> Self {
-        let full_error = match full_error {
-            Some(err) => err,
-            None => safe_error.clone()
-        };
+    pub fn set_json(mut self, json: serde_json::Value) -> Self {
+        self.custom_json = Some(json);
+        self
+    }
+
+    pub fn generic(code: u16) -> Self {
+        let status = actix_web::http::StatusCode::from_u16(code).unwrap();
+
+        let reason = status.canonical_reason().unwrap_or("Generic Error").to_string();
 
         HecateError {
             code: code,
-            custom_json: Some(json),
-            safe_error: safe_error,
-            full_error: full_error
+            custom_json: None,
+            safe_error: reason.clone(),
+            full_error: reason
         }
+
     }
 
     pub fn from_db(error: postgres::error::Error) -> Self {
@@ -54,44 +59,48 @@ impl HecateError {
         }
     }
 
-    pub fn as_json(self) -> serde_json::Value {
+    pub fn as_json(&self) -> serde_json::Value {
         match self.custom_json {
-            Some(custom_json) => custom_json,
+            Some(ref custom_json) => custom_json.clone(),
             None => {
-                let status = rocket::http::Status::from_code(self.code).unwrap();
+                let status = actix_web::http::StatusCode::from_u16(self.code).unwrap();
 
                 json!({
                     "code": self.code,
-                    "status": status.reason,
+                    "status": status.canonical_reason(),
                     "reason": self.safe_error
                 })
             }
         }
     }
-}
 
-impl ToString for HecateError {
-    fn to_string(&self) -> String {
-        self.safe_error.clone()
+    pub fn as_log(&self) -> String {
+        if self.full_error == self.safe_error {
+            format!("HecateError: ({:?}): {}", &self.code, &self.safe_error)
+        } else {
+            format!("HecateError: ({:?}): {}: {}", &self.code, &self.safe_error, &self.full_error)
+        }
     }
 }
 
-use std::io::Cursor;
-use rocket::request::Request;
-use rocket::response::{self, Response, Responder};
-use rocket::http::ContentType;
+impl actix_http::ResponseError for HecateError {
+    fn error_response(&self) -> actix_http::Response {
+        println!("{}", self.as_log());
 
-impl <'r> Responder<'r> for HecateError {
-    fn respond_to(self, _: &Request) -> response::Result<'r> {
-        let status = rocket::http::Status::from_code(self.code).unwrap();
-        let body = self.as_json().to_string();
+        actix_http::Response::build(actix_web::http::StatusCode::from_u16(self.code).unwrap())
+           .json(self.as_json())
 
-        println!("HecateError: {:?}", &body);
+    }
+}
 
-        Ok(Response::build()
-            .status(status)
-            .sized_body(Cursor::new(body))
-            .header(ContentType::new("application", "json"))
-            .finalize())
+impl std::fmt::Display for HecateError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.as_json(), f)
+    }
+}
+
+impl std::convert::From<actix_http::error::PayloadError> for HecateError {
+    fn from(payload: actix_http::error::PayloadError) -> Self {
+        HecateError::new(500, String::from("Internal Server Error"), Some(payload.to_string()))
     }
 }

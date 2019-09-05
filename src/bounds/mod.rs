@@ -3,7 +3,12 @@ use crate::stream::PGStream;
 
 pub fn set(conn: &impl postgres::GenericConnection, name: &String, feat: &serde_json::Value) -> Result<bool, HecateError> {
     match conn.execute("
-        INSERT INTO bounds (name, geom) VALUES ($1 , ST_Multi(ST_SetSRID(ST_GeomFromGeoJSON($2::JSON->>'geometry'), 4326)))
+        INSERT INTO bounds (name, geom, props)
+            VALUES (
+                $1,
+                ST_Multi(ST_SetSRID(ST_GeomFromGeoJSON($2::JSON->>'geometry'), 4326)),
+                COALESCE(($2::JSON->>'properties')::JSON, '{}'::JSON)::JSONB
+            )
             ON CONFLICT (name) DO
                 UPDATE
                     SET geom = ST_Multi(ST_SetSRID(ST_GeomFromGeoJSON($2::JSON->>'geometry'), 4326))

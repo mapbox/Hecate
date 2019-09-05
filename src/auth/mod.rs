@@ -1,12 +1,12 @@
-use rocket::request::{self, FromRequest};
-use rocket::http::Status;
-use rocket::{Request, Outcome};
-
 use crate::err::HecateError;
+use actix_http::httpmessage::HttpMessage;
 
 fn not_authed() -> HecateError {
     HecateError::new(401, String::from("You must be logged in to access this resource"), None)
 }
+
+#[derive(Clone)]
+pub struct AuthContainer(pub CustomAuth);
 
 ///
 /// Allows a category to be null, public, admin, or user
@@ -72,7 +72,7 @@ pub trait ValidAuth {
     fn is_valid(&self) -> Result<bool, String>;
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthWebhooks {
     pub list: Option<String>,
     pub delete: Option<String>,
@@ -99,7 +99,7 @@ impl ValidAuth for AuthWebhooks {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthMeta {
     pub get: Option<String>,
     pub list: Option<String>,
@@ -126,7 +126,7 @@ impl ValidAuth for AuthMeta {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthClone {
     pub get: Option<String>,
     pub query: Option<String>
@@ -150,7 +150,7 @@ impl ValidAuth for AuthClone {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthSchema {
     pub get: Option<String>
 }
@@ -171,7 +171,7 @@ impl ValidAuth for AuthSchema {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthStats {
     pub get: Option<String>,
     pub bounds: Option<String>
@@ -195,7 +195,7 @@ impl ValidAuth for AuthStats {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthAuth {
     pub get: Option<String>
 }
@@ -216,7 +216,7 @@ impl ValidAuth for AuthAuth {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthMVT {
     pub get: Option<String>,
     pub delete: Option<String>,
@@ -246,7 +246,7 @@ impl ValidAuth for AuthMVT {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthUser {
     pub info: Option<String>,
     pub list: Option<String>,
@@ -277,7 +277,7 @@ impl ValidAuth for AuthUser {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthStyle {
     pub create: Option<String>,
     pub patch: Option<String>,
@@ -316,7 +316,7 @@ impl ValidAuth for AuthStyle {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthDelta {
     pub get: Option<String>,
     pub list: Option<String>,
@@ -340,7 +340,7 @@ impl ValidAuth for AuthDelta {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthFeature {
     pub force: Option<String>,
     pub create: Option<String>,
@@ -370,7 +370,7 @@ impl ValidAuth for AuthFeature {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthBounds {
     pub list: Option<String>,
     pub create: Option<String>,
@@ -400,7 +400,7 @@ impl ValidAuth for AuthBounds {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthOSM {
     pub get: Option<String>,
     pub create: Option<String>
@@ -424,7 +424,7 @@ impl ValidAuth for AuthOSM {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct CustomAuth {
     pub server: Option<String>,
     pub meta: Option<AuthMeta>,
@@ -852,7 +852,7 @@ impl CustomAuth {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Auth {
     pub uid: Option<i64>,
     pub access: Option<String>,
@@ -959,49 +959,60 @@ impl Auth {
     }
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for Auth {
-    type Error = ();
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Auth, ()> {
+impl actix_web::FromRequest for Auth {
+    type Error = HecateError;
+    type Future = Result<Self, Self::Error>;
+    type Config = ();
+
+    fn from_request(req: &actix_web::HttpRequest, _payload: &mut actix_web::dev::Payload) -> Self::Future {
         let mut auth = Auth::new();
 
-        match request.cookies().get("session") {
+        match req.cookie("session") {
             Some(token) => {
                 auth.token = Some(String::from(token.value()));
 
-                return Outcome::Success(auth);
+                return Ok(auth);
             },
             None => ()
         };
 
-        let keys: Vec<_> = request.headers().get("Authorization").collect();
 
-        //Auth Failed - None object returned
-        if keys.len() != 1 || keys[0].len() < 7 {
-            return Outcome::Success(auth);
-        }
+        match req.headers().get("Authorization") {
+            Some(key) => {
+                if key.len() < 7 {
+                    return Ok(auth);
+                }
 
-        let mut authtype = String::from(keys[0]);
-        let auth_str = authtype.split_off(6);
+                let mut authtype = match key.to_str() {
+                    Ok(key) => key.to_string(),
+                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                };
+                let auth_str = authtype.split_off(6);
 
-        if authtype != "Basic " {
-            return Outcome::Success(auth);
-        }
+                if authtype != "Basic " {
+                    return Ok(auth);
+                }
 
-        match base64::decode(&auth_str) {
-            Ok(decoded) => match String::from_utf8(decoded) {
-                Ok(decoded_str) => {
+                match base64::decode(&auth_str) {
+                    Ok(decoded) => match String::from_utf8(decoded) {
+                        Ok(decoded_str) => {
 
-                    let split = decoded_str.split(":").collect::<Vec<&str>>();
+                            let split = decoded_str.split(":").collect::<Vec<&str>>();
 
-                    if split.len() != 2 { return Outcome::Failure((Status::Unauthorized, ())); }
+                            if split.len() != 2 { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
 
-                    auth.basic = Some((String::from(split[0]), String::from(split[1])));
+                            auth.basic = Some((String::from(split[0]), String::from(split[1])));
 
-                    Outcome::Success(auth)
-                },
-                Err(_) => Outcome::Failure((Status::Unauthorized, ()))
+                            return Ok(auth);
+                        },
+                        Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                    },
+                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                }
             },
-            Err(_) => Outcome::Failure((Status::Unauthorized, ()))
-        }
+            None => ()
+        };
+
+        Ok(auth)
     }
 }

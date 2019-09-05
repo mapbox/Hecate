@@ -81,7 +81,7 @@ mod test {
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
-            assert_eq!(json_body, json!(null));
+            assert_eq!(json_body, json!(false));
 
             assert!(resp.status().is_success());
         }
