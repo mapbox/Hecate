@@ -26,7 +26,6 @@ impl HecateError {
         self
     }
 
-
     pub fn generic(code: u16) -> Self {
         let status = actix_web::http::StatusCode::from_u16(code).unwrap();
 
