@@ -49,8 +49,6 @@ pub fn start(
     schema: Option<serde_json::value::Value>,
     auth: Option<auth::CustomAuth>
 ) {
-    env_logger::init();
-
     let auth_rules: auth::CustomAuth = match auth {
         None => auth::CustomAuth::new(),
         Some(auth) => {
@@ -73,6 +71,9 @@ pub fn start(
     let db_main = DbReadWrite::new(init_pool(&database.main));
 
     let worker = worker::Worker::new(database.main.clone());
+
+    std::env::set_var("RUST_LOG", "actix_web=info");
+    env_logger::init();
 
     HttpServer::new(move || {
         App::new()
