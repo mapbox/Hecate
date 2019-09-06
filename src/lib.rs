@@ -314,10 +314,6 @@ struct FeatureQuery {
     point: Option<String>
 }
 
-fn not_found() -> HecateError {
-    HecateError::new(404, String::from("Resource Not Found"), None)
-}
-
 fn index() -> &'static str { "Hello World!" }
 
 fn server(

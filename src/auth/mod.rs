@@ -33,7 +33,7 @@ impl Auth {
         }
     }
 
-    pub fn as_header(self, req: &mut actix_web::dev::ServiceRequest) {
+    pub fn as_headers(self, req: &mut actix_web::dev::ServiceRequest) {
         let headers = req.headers_mut();
 
         match self.uid {

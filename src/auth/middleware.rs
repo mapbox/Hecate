@@ -3,7 +3,7 @@ use actix_web::{dev::ServiceRequest, dev::ServiceResponse, Error};
 use futures::future::{ok, FutureResult};
 use futures::{Future, Poll};
 use crate::db::DbReplica;
-use super::Auth;
+use super::{Auth, AuthDefault};
 
 #[derive(Clone)]
 pub struct EnforceAuth {
@@ -55,17 +55,20 @@ where
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
     type Error = Error;
-    type Future = Box<dyn Future<Item = Self::Response, Error = Self::Error>>;
+    type Future = S::Future;
 
     fn poll_ready(&mut self) -> Poll<(), Self::Error> {
         self.service.poll_ready()
     }
 
     fn call(&mut self, mut req: ServiceRequest) -> Self::Future {
-        Auth::from_request(&req);
+        let auth = Auth::from_request(&req).unwrap_or(Auth::new());
 
-        Box::new(self.service.call(req).map(move |res| {
-            res
-        }))
+        if self.auth == AuthDefault::Public {
+            auth.as_headers(&mut req);
+            return self.service.call(req);
+        }
+
+        self.service.call(req)
     }
 }
