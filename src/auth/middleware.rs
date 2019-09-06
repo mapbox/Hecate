@@ -62,12 +62,14 @@ where
     }
 
     fn call(&mut self, mut req: ServiceRequest) -> Self::Future {
-        let auth = Auth::from_request(&req).unwrap_or(Auth::new());
+        let mut auth = Auth::from_request(&req).unwrap_or(Auth::new());
 
         if self.auth == AuthDefault::Public {
             auth.as_headers(&mut req);
             return self.service.call(req);
         }
+
+        auth.validate(&*self.db.get().unwrap());
 
         self.service.call(req)
     }

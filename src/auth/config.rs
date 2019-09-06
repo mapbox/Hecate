@@ -506,8 +506,6 @@ impl ValidAuth for CustomAuth {
 /// requirements of an endpoint
 ///
 fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
-    auth.validate(conn)?;
-
     match required {
         None => Err(not_authed()),
         Some(req) => match req.as_ref() {

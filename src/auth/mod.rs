@@ -155,8 +155,7 @@ impl Auth {
     }
 
     ///
-    /// The Rocket Request guard simply provides a utility wrapper from the request to a more
-    /// easily parsable auth object. It **does not** perform any authentication.
+    /// the validate function simply returns an easily parsable auth object. It **does not** perform any authentication.
     ///
     /// This function takes the populated Auth struct and checks if the token/basic auth is valid,
     /// populated the uid field
