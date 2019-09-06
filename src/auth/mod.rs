@@ -1,8 +1,9 @@
 use crate::err::HecateError;
 use actix_http::httpmessage::HttpMessage;
+use actix_web::http::header::{HeaderName, HeaderValue};
 
-mod config;
-mod middleware;
+pub mod config;
+pub mod middleware;
 pub use config::AuthContainer;
 pub use config::ValidAuth;
 pub use config::CustomAuth;
@@ -30,6 +31,109 @@ impl Auth {
             token: None,
             basic: None
         }
+    }
+
+    pub fn as_header(self, req: &mut actix_web::dev::ServiceRequest) {
+        let headers = req.headers_mut();
+
+        match self.uid {
+            Some(uid) => {
+                headers.insert(
+                    HeaderName::from_lowercase(b"hecate_uid").unwrap(),
+                    HeaderValue::from_str(uid.to_string().as_str()).unwrap()
+                );
+            },
+            None => {
+                headers.remove("hecate_uid");
+            }
+        };
+
+        match self.access {
+            Some(access) => {
+                headers.insert(
+                    HeaderName::from_lowercase(b"hecate_access").unwrap(),
+                    HeaderValue::from_str(access.as_str()).unwrap()
+                );
+            },
+            None => {
+                headers.remove("hecate_access");
+            }
+        };
+
+        match self.token {
+            Some(token) => {
+                headers.insert(
+                    HeaderName::from_lowercase(b"hecate_token").unwrap(),
+                    HeaderValue::from_str(token.as_str()).unwrap()
+                );
+            },
+            None => {
+                headers.remove("hecate_token");
+            }
+        };
+
+        match self.basic {
+            Some(basic) => {
+                headers.insert(
+                    HeaderName::from_lowercase(b"hecate_basic").unwrap(),
+                    HeaderValue::from_str(format!("{}:{}", basic.0, basic.1).as_str()).unwrap()
+                );
+            },
+            None => {
+                headers.remove("hecate_basic");
+            }
+        };
+    }
+
+    pub fn from_request(req: &actix_web::dev::ServiceRequest) -> Result<Self, HecateError> {
+        let mut auth = Auth::new();
+
+        match req.cookie("session") {
+            Some(token) => {
+                auth.token = Some(String::from(token.value()));
+
+                return Ok(auth);
+            },
+            None => ()
+        };
+
+        match req.headers().get("Authorization") {
+            Some(key) => {
+                if key.len() < 7 {
+                    return Ok(auth);
+                }
+
+                let mut authtype = match key.to_str() {
+                    Ok(key) => key.to_string(),
+                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                };
+                let auth_str = authtype.split_off(6);
+
+                if authtype != "Basic " {
+                    return Ok(auth);
+                }
+
+                match base64::decode(&auth_str) {
+                    Ok(decoded) => match String::from_utf8(decoded) {
+                        Ok(decoded_str) => {
+
+                            let split = decoded_str.split(":").collect::<Vec<&str>>();
+
+                            if split.len() != 2 { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+
+                            auth.basic = Some((String::from(split[0]), String::from(split[1])));
+
+                            return Ok(auth);
+                        },
+                        Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                    },
+                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                }
+            },
+            None => ()
+        };
+
+        Ok(auth)
     }
 
     ///
@@ -127,55 +231,7 @@ impl actix_web::FromRequest for Auth {
     type Config = ();
 
     fn from_request(req: &actix_web::HttpRequest, _payload: &mut actix_web::dev::Payload) -> Self::Future {
-        let mut auth = Auth::new();
-
-        match req.cookie("session") {
-            Some(token) => {
-                auth.token = Some(String::from(token.value()));
-
-                return Ok(auth);
-            },
-            None => ()
-        };
-
-
-        match req.headers().get("Authorization") {
-            Some(key) => {
-                if key.len() < 7 {
-                    return Ok(auth);
-                }
-
-                let mut authtype = match key.to_str() {
-                    Ok(key) => key.to_string(),
-                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
-                };
-                let auth_str = authtype.split_off(6);
-
-                if authtype != "Basic " {
-                    return Ok(auth);
-                }
-
-                match base64::decode(&auth_str) {
-                    Ok(decoded) => match String::from_utf8(decoded) {
-                        Ok(decoded_str) => {
-
-                            let split = decoded_str.split(":").collect::<Vec<&str>>();
-
-                            if split.len() != 2 { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
-
-                            auth.basic = Some((String::from(split[0]), String::from(split[1])));
-
-                            return Ok(auth);
-                        },
-                        Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
-                    },
-                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
-                }
-            },
-            None => ()
-        };
-
-        Ok(auth)
+        Ok(Auth::new())
     }
 }
 

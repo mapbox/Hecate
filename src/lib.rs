@@ -91,23 +91,16 @@ pub fn start(
     };
 
     HttpServer::new(move || {
-        let app = App::new();
-        let dbreplica = db_replica.clone();
-        let dbsandbox = db_sandbox.clone();
-        let dbmain = db_main.clone();
-
-        if default != auth::AuthDefault::Public {
-
-        }
-
-        app.wrap(middleware::NormalizePath)
+        App::new()
+            .wrap(middleware::NormalizePath)
             .wrap(middleware::Logger::default())
+            .wrap(auth::middleware::EnforceAuth::new(db_replica.clone(), default.clone()))
             .wrap(middleware::Compress::default())
             .data(auth_rules.clone())
             .data(worker.clone())
-            .data(dbreplica)
-            .data(dbsandbox)
-            .data(dbmain)
+            .data(db_replica.clone())
+            .data(db_sandbox.clone())
+            .data(db_main.clone())
             .data(schema.clone())
             //TODO HANDLE GENERIC 404
             .route("/", web::get().to(index))
