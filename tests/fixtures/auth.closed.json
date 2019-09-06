@@ -1,4 +1,5 @@
 {
+    "default": "user",
     "server": "public",
     "webhooks": {
         "list": "user",

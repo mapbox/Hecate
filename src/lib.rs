@@ -75,16 +75,39 @@ pub fn start(
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
+    let default = match auth_rules.0.default {
+        None => auth::AuthDefault::Public,
+        Some(ref default) => {
+            if default == &String::from("public") {
+                auth::AuthDefault::Public
+            } else if default == &String::from("user") {
+                auth::AuthDefault::User
+            } else if default == &String::from("admin") {
+                auth::AuthDefault::Admin
+            } else {
+                panic!("Invalid 'domain' value in custom auth");
+            }
+        }
+    };
+
     HttpServer::new(move || {
-        App::new()
-            .wrap(middleware::NormalizePath)
+        let app = App::new();
+        let dbreplica = db_replica.clone();
+        let dbsandbox = db_sandbox.clone();
+        let dbmain = db_main.clone();
+
+        if default != auth::AuthDefault::Public {
+
+        }
+
+        app.wrap(middleware::NormalizePath)
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .data(auth_rules.clone())
             .data(worker.clone())
-            .data(db_replica.clone())
-            .data(db_sandbox.clone())
-            .data(db_main.clone())
+            .data(dbreplica)
+            .data(dbsandbox)
+            .data(dbmain)
             .data(schema.clone())
             //TODO HANDLE GENERIC 404
             .route("/", web::get().to(index))
