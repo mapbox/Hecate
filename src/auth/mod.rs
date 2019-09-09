@@ -85,6 +85,38 @@ impl Auth {
         };
     }
 
+    pub fn from_headers(req: &actix_web::HttpRequest) -> Self {
+        let headers = req.headers();
+
+        Auth {
+            uid: match headers.get("hecate_uid") {
+                None => None,
+                Some(uid) => Some(uid.to_str().unwrap().parse().unwrap())
+            },
+            access: match headers.get("hecate_access") {
+                None => None,
+                Some(access) => Some(access.to_str().unwrap().to_string())
+            },
+            token: match headers.get("hecate_token") {
+                None => None,
+                Some(token) => Some(token.to_str().unwrap().to_string())
+            },
+            basic: match headers.get("hecate_basic") {
+                None => None,
+                Some(basic) => {
+                    let mut basic: Vec<String> = basic.to_str().unwrap().splitn(2, ":").map(|ele| {
+                        ele.to_string()
+                    }).collect();
+
+                    let pass = basic.pop().unwrap();
+                    let user = basic.pop().unwrap();
+
+                    Some((user, pass))
+                }
+            }
+        }
+    }
+
     pub fn from_request(req: &actix_web::dev::ServiceRequest) -> Result<Self, HecateError> {
         let mut auth = Auth::new();
 
@@ -230,7 +262,7 @@ impl actix_web::FromRequest for Auth {
     type Config = ();
 
     fn from_request(req: &actix_web::HttpRequest, _payload: &mut actix_web::dev::Payload) -> Self::Future {
-        Ok(Auth::new())
+        Ok(Auth::from_headers(req))
     }
 }
 
