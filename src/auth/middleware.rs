@@ -1,5 +1,5 @@
 use actix_service::{Service, Transform};
-use actix_web::{dev::ServiceRequest, dev::ServiceResponse, Error, HttpResponse};
+use actix_web::{http, dev::ServiceRequest, dev::ServiceResponse, Error, HttpResponse};
 use futures::future::{ok, FutureResult, Either};
 use futures::{Future, Poll};
 use crate::db::DbReplica;
@@ -72,14 +72,35 @@ where
         auth.validate(&*self.db.get().unwrap());
 
         if
-            auth.uid.is_none() 
+            auth.uid.is_none()
             || self.auth == AuthDefault::Admin && auth.access == Some(String::from("admin"))
         {
-            return Either::B(ok(req.into_response(
-                HttpResponse::Unauthorized()
-                    .finish()
-                    .into_body(),
-            )));
+            let path: Vec<String> = req.path().split("/").map(|p| {
+                p.to_string()
+            }).collect();
+
+            if path.len() >= 1 && path[0] == String::from("admin") {
+                // UI Results should redirect to an unauthenticated login portal
+                // or allowed if they are for the login page
+
+                if path.len() >= 2 && path[1] == String::from("login") {
+                    return Either::A(self.service.call(req));
+                } else {
+                    return Either::B(ok(req.into_response(
+                        HttpResponse::Unauthorized()
+                            .header(http::header::LOCATION, "/admin/login")
+                            .finish()
+                            .into_body(),
+                    )));
+                }
+            } else {
+                // API Results should simply return a 401
+                return Either::B(ok(req.into_response(
+                    HttpResponse::Unauthorized()
+                        .finish()
+                        .into_body(),
+                )));
+            }
         }
 
         Either::A(self.service.call(req))
