@@ -1,6 +1,6 @@
 use actix_service::{Service, Transform};
-use actix_web::{dev::ServiceRequest, dev::ServiceResponse, Error};
-use futures::future::{ok, FutureResult};
+use actix_web::{dev::ServiceRequest, dev::ServiceResponse, Error, HttpResponse};
+use futures::future::{ok, FutureResult, Either};
 use futures::{Future, Poll};
 use crate::db::DbReplica;
 use super::{Auth, AuthDefault};
@@ -55,7 +55,7 @@ where
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
     type Error = Error;
-    type Future = S::Future;
+    type Future = Either<S::Future, FutureResult<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self) -> Poll<(), Self::Error> {
         self.service.poll_ready()
@@ -66,17 +66,22 @@ where
 
         if self.auth == AuthDefault::Public {
             auth.as_headers(&mut req);
-            return self.service.call(req);
+            return Either::A(self.service.call(req));
         }
 
         auth.validate(&*self.db.get().unwrap());
 
-        if auth.uid.is_none() {
-            // REJECT
-        } else if self.auth == AuthDefault::Admin && auth.access == Some(String::from("admin")) {
-            // Reject
+        if
+            auth.uid.is_none() 
+            || self.auth == AuthDefault::Admin && auth.access == Some(String::from("admin"))
+        {
+            return Either::B(ok(req.into_response(
+                HttpResponse::Unauthorized()
+                    .finish()
+                    .into_body(),
+            )));
         }
 
-        self.service.call(req)
+        Either::A(self.service.call(req))
     }
 }
