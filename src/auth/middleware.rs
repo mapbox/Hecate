@@ -77,6 +77,12 @@ where
         {
             let path: Vec<String> = req.path().split("/").map(|p| {
                 p.to_string()
+            }).filter(|p| {
+                if p.len() == 0 {
+                    return false;
+                }
+
+                return true;
             }).collect();
 
             if path.len() >= 1 && path[0] == String::from("admin") {
@@ -87,7 +93,7 @@ where
                     return Either::A(self.service.call(req));
                 } else {
                     return Either::B(ok(req.into_response(
-                        HttpResponse::Unauthorized()
+                        HttpResponse::Found()
                             .header(http::header::LOCATION, "/admin/login")
                             .finish()
                             .into_body(),
