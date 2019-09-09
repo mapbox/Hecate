@@ -194,7 +194,7 @@ impl Auth {
     ///
     /// Note: Once validated the token/basic auth used to validate the user will be set to null
     ///
-    pub fn validate(&mut self, conn: &impl postgres::GenericConnection) -> Result<Option<i64>, HecateError> {
+    pub fn validate(&mut self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
         if self.basic.is_some() {
             match conn.query("
                 SELECT
@@ -215,7 +215,7 @@ impl Auth {
 
                     self.secure(Some((uid, access)));
 
-                    return Ok(Some(uid));
+                    return Ok(true);
                 },
                 _ => {
                     return Err(config::not_authed());
@@ -244,7 +244,7 @@ impl Auth {
 
                     self.secure(Some((uid, access)));
 
-                    return Ok(Some(uid));
+                    return Ok(true);
                 },
                 _ => {
                     return Err(config::not_authed());
@@ -252,7 +252,7 @@ impl Auth {
             }
         }
 
-        Ok(None)
+        Ok(false)
     }
 }
 

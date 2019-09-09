@@ -71,6 +71,12 @@ where
 
         auth.validate(&*self.db.get().unwrap());
 
+        if auth.uid.is_none() {
+            // REJECT
+        } else if self.auth == AuthDefault::Admin && auth.access == Some(String::from("admin")) {
+            // Reject
+        }
+
         self.service.call(req)
     }
 }
