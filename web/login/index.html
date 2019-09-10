@@ -9,10 +9,11 @@
         <script src='https://unpkg.com/vue@2.6.10/dist/vue.js'></script>
     </head>
     <body>
-        <div id="app h-full w-full">
+        <div id="app">
             <div class='col col--12'>
                 <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full'>
                     <div class='w240'>
+                        <div class='color-red' v-text='error'></div>
                         <div class='py12 col col--12'>
                             Username:
                             <input v-model='username' class='input w-full' placeholder='Username' />
@@ -22,7 +23,7 @@
                             <input v-model='password' class='input w-full' placeholder='Password' type='password' />
                         </div>
                         <div class='col col--12'>
-                            <button class='btn w-full'>Login</button>
+                            <button @click='login' class='btn w-full'>Login</button>
                         </div>
                     </div>
                 </div>
@@ -35,7 +36,37 @@
                 el: '#app',
                 data: {
                     username: '',
-                    password: ''
+                    password: '',
+                    error: ''
+                },
+                methods: {
+                    login: function() {
+                        this.error = '';
+
+                        if (!this.username.length) {
+                            return this.error = 'Username Required';
+                        }
+
+                        if (!this.password.length) {
+                            return this.error = 'Password Required';
+                        }
+
+                        fetch(`${window.location.protocol}//${window.location.host}/api/user/session`, {
+                            method: 'GET',
+                            credentials: 'same-origin',
+                            headers: new Headers({
+                                'Authorization': 'Basic '+ btoa(`${this.username}:${this.password}`)
+                            })
+                        }).then((response) => {
+                            if (response.status === 200) {
+                                window.location.href = '/admin';
+                            } else {
+                                this.error = 'Invalid Username/Password';
+                            }
+                        }).catch((err) => {
+                            this.error = err.message;
+                        });
+                    }
                 }
             });
         }
