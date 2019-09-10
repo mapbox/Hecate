@@ -122,9 +122,14 @@ impl Auth {
 
         match req.cookie("session") {
             Some(token) => {
-                auth.token = Some(String::from(token.value()));
+                let token = String::from(token.value());
 
-                return Ok(auth);
+                if token.len() > 0 {
+                    auth.token = Some(token);
+                    return Ok(auth);
+                }
+
+                ()
             },
             None => ()
         };
