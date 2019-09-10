@@ -94,7 +94,7 @@ where
                 } else {
                     return Either::B(ok(req.into_response(
                         HttpResponse::Found()
-                            .header(http::header::LOCATION, "/admin/login")
+                            .header(http::header::LOCATION, "/admin/login/index.html")
                             .finish()
                             .into_body(),
                     )));

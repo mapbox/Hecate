@@ -7,8 +7,8 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build": "NODE_ENV=prodution parcel build index.html --public-url='/admin/' --no-source-maps",
-    "dev": "NODE_ENV=development parcel index.html --public-url='/admin/'"
+    "build": "NODE_ENV=prodution parcel build index.html login/index.html --public-url='/admin/' --no-source-maps",
+    "dev": "NODE_ENV=development parcel index.html login/index.html --public-url='/admin/'"
   },
   "dependencies": {
     "@mapbox/assembly": "^0.23.0",
