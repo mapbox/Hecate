@@ -64,12 +64,18 @@ where
     fn call(&mut self, mut req: ServiceRequest) -> Self::Future {
         let mut auth = Auth::from_request(&req).unwrap_or(Auth::new());
 
+        auth.validate(&*self.db.get().unwrap());
+
         if self.auth == AuthDefault::Public {
             auth.as_headers(&mut req);
             return Either::A(self.service.call(req));
         }
 
-        auth.validate(&*self.db.get().unwrap());
+        //Session Management is always allowed
+        if req.path() == "/api/user/session" {
+            auth.as_headers(&mut req);
+            return Either::A(self.service.call(req))
+        }
 
         if
             auth.uid.is_none()
@@ -109,6 +115,7 @@ where
             }
         }
 
+        auth.as_headers(&mut req);
         Either::A(self.service.call(req))
     }
 }
