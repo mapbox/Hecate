@@ -53,19 +53,24 @@
         }
 
         fetch("".concat(window.location.protocol, "//").concat(window.location.host, "/api/user/session"), {
-          method: 'GET',
-          credentials: 'same-origin',
-          headers: new Headers({
-            'Authorization': 'Basic ' + btoa("".concat(this.username, ":").concat(this.password))
-          })
+          method: 'DELETE',
+          credentials: 'same-origin'
         }).then(function (response) {
-          if (response.status === 200) {
-            window.location.href = '/admin';
-          } else {
-            _this.error = 'Invalid Username/Password';
-          }
-        }).catch(function (err) {
-          _this.error = err.message;
+          fetch("".concat(window.location.protocol, "//").concat(window.location.host, "/api/user/session"), {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: new Headers({
+              'Authorization': 'Basic ' + btoa("".concat(_this.username, ":").concat(_this.password))
+            })
+          }).then(function (response) {
+            if (response.status === 200) {
+              window.location.href = '/admin';
+            } else {
+              _this.error = 'Invalid Username/Password';
+            }
+          }).catch(function (err) {
+            _this.error = err.message;
+          });
         });
       }
     }

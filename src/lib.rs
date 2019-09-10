@@ -626,8 +626,13 @@ fn user_delete_session(
         None => None
     };
 
+    let cookie = actix_http::http::Cookie::build("session", String::from(""))
+        .path("/")
+        .http_only(true)
+        .finish();
+
     let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK).json(json!(true));
-    resp.del_cookie("session");
+    resp.add_cookie(&cookie).unwrap();
 
     match token {
         Some(token) => match auth.uid {

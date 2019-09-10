@@ -1,7 +1,7 @@
 use actix_service::{Service, Transform};
 use actix_web::{http, dev::ServiceRequest, dev::ServiceResponse, Error, HttpResponse};
 use futures::future::{ok, FutureResult, Either};
-use futures::{Future, Poll};
+use futures::Poll;
 use crate::db::DbReplica;
 use super::{Auth, AuthDefault};
 

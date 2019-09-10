@@ -52,19 +52,24 @@
                         }
 
                         fetch(`${window.location.protocol}//${window.location.host}/api/user/session`, {
-                            method: 'GET',
-                            credentials: 'same-origin',
-                            headers: new Headers({
-                                'Authorization': 'Basic '+ btoa(`${this.username}:${this.password}`)
-                            })
+                            method: 'DELETE',
+                            credentials: 'same-origin'
                         }).then((response) => {
-                            if (response.status === 200) {
-                                window.location.href = '/admin';
-                            } else {
-                                this.error = 'Invalid Username/Password';
-                            }
-                        }).catch((err) => {
-                            this.error = err.message;
+                            fetch(`${window.location.protocol}//${window.location.host}/api/user/session`, {
+                                method: 'GET',
+                                credentials: 'same-origin',
+                                headers: new Headers({
+                                    'Authorization': 'Basic '+ btoa(`${this.username}:${this.password}`)
+                                })
+                            }).then((response) => {
+                                if (response.status === 200) {
+                                    window.location.href = '/admin';
+                                } else {
+                                    this.error = 'Invalid Username/Password';
+                                }
+                            }).catch((err) => {
+                                this.error = err.message;
+                            });
                         });
                     }
                 }
