@@ -108,7 +108,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
+            assert_eq!(resp.text().unwrap(), "");
             assert!(resp.status().is_client_error());
         }
 
@@ -127,7 +127,7 @@ mod test {
                 .send()
                 .unwrap();
 
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
+            assert_eq!(resp.text().unwrap(), "");
             assert!(resp.status().is_client_error());
         }
 
