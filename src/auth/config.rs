@@ -62,7 +62,7 @@ fn is_auth(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
             match scope_str as &str {
                 "user" => Ok(true),
                 "admin" => Ok(true),
-                _ => Err(format!("Auth Config Error: '{}' must be one of 'self', 'admin', or null", scope_type)),
+                _ => Err(format!("Auth Config Error: '{}' must be one of 'user', 'admin', or null", scope_type)),
             }
         }
     }

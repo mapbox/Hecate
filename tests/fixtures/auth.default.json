@@ -9,7 +9,7 @@
     "meta": {
         "get": "public",
         "list": "public",
-        "set": "public"
+        "set": "user"
     },
     "schema": {
         "get": "public"
@@ -44,20 +44,20 @@
         "list": "public"
     },
     "feature": {
-        "force": "public",
-        "create": "public",
+        "force": "user",
+        "create": "user",
         "get": "public",
         "history": "public"
     },
     "bounds": {
         "list": "public",
-        "create": "public",
+        "create": "user",
         "delete": "public",
         "get": "public"
     },
     "osm": {
         "get": "public",
-        "create": "public"
+        "create": "user"
     },
     "clone": {
         "get": "public",

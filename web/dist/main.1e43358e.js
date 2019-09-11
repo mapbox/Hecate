@@ -26121,6 +26121,7 @@ window.hecate = {
         method: 'GET',
         credentials: 'same-origin'
       }).then(function (response) {
+        if (response.status === 404) return cb(null, false);
         if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
         return response.json();
       }).then(function (response) {
@@ -26342,7 +26343,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "38787" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "42235" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

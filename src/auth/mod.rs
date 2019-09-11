@@ -117,7 +117,7 @@ impl Auth {
         }
     }
 
-    pub fn from_request(req: &actix_web::dev::ServiceRequest) -> Result<Self, HecateError> {
+    pub fn from_sreq(req: &actix_web::dev::ServiceRequest) -> Result<Self, HecateError> {
         let mut auth = Auth::new();
 
         match req.cookie("session") {
