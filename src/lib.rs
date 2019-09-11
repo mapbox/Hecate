@@ -1293,7 +1293,6 @@ fn osm_changeset_create(
 fn osm_changeset_close(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
-    conn: web::Data<DbReadWrite>,
     delta_id: web::Path<i64>
 ) -> Result<String, HecateError> {
     auth_rules.0.allows_osm_create(&mut auth)?;
