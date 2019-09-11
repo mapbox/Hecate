@@ -64,7 +64,27 @@ where
     fn call(&mut self, mut req: ServiceRequest) -> Self::Future {
         let mut auth = Auth::from_sreq(&req).unwrap_or(Auth::new());
 
-        auth.validate(&*self.db.get().unwrap());
+        let db = match self.db.get() {
+            Ok(db) => db,
+            Err(_err) => {
+                return Either::B(ok(req.into_response(
+                    HttpResponse::InternalServerError()
+                        .finish()
+                        .into_body(),
+                )));
+            }
+        };
+
+        match auth.validate(&*db) {
+            Err(_err) => {
+                return Either::B(ok(req.into_response(
+                    HttpResponse::Unauthorized()
+                        .finish()
+                        .into_body(),
+                )));
+            },
+            _ => ()
+        };
 
         if self.auth == AuthDefault::Public {
             auth.as_headers(&mut req);
