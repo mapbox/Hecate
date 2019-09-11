@@ -146,6 +146,7 @@ mod test {
             let resp_value: Value = resp.json().unwrap();
 
             assert_eq!(resp_value, json!({
+                "default": "public",
                 "server": "public",
                 "webhooks": {
                     "list": "user",
