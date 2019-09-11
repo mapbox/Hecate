@@ -58,9 +58,9 @@ mod test {
         }
 
         { // Attempt to access default server
-            let resp = reqwest::get("http://localhost:8000/").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/").unwrap();
             assert_eq!(resp.status().as_u16(), 200);
-            assert_eq!(resp.text.().unwrap(), "Hello World!");
+            assert_eq!(resp.text().unwrap(), "Hello World!");
         }
 
         { // Attempt to access public APIs unauthenticated
@@ -80,6 +80,11 @@ mod test {
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
             assert_eq!(json_body, json!([]));
+        }
+
+        { // Admin UI
+            let resp = reqwest::get("http://localhost:8000/admin/").unwrap();
+            assert_eq!(resp.status().as_u16(), 200);
         }
 
         server.kill().unwrap();
