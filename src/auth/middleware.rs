@@ -72,7 +72,7 @@ where
         }
 
         //Session Management is always allowed
-        if req.path() == "/api/user/session" {
+        if req.path() == "/api/user/session" || req.path() == "/" {
             auth.as_headers(&mut req);
             return Either::A(self.service.call(req))
         }

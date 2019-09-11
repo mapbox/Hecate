@@ -505,7 +505,7 @@ impl ValidAuth for CustomAuth {
 /// Determines whether the current auth state meets or exceeds the
 /// requirements of an endpoint
 ///
-fn auth_met(required: &Option<String>, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+fn auth_met(required: &Option<String>, auth: &mut Auth) -> Result<bool, HecateError> {
     match required {
         None => Err(not_authed()),
         Some(req) => match req.as_ref() {
@@ -570,284 +570,284 @@ impl CustomAuth {
     }
 
 
-    pub fn is_admin(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
-        auth_met(&Some(String::from("admin")), auth, conn)
+    pub fn is_admin(&self, auth: &mut Auth) -> Result<bool, HecateError> {
+        auth_met(&Some(String::from("admin")), auth)
     }
 
-    pub fn allows_server(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
-        auth_met(&self.server, auth, conn)
+    pub fn allows_server(&self, auth: &mut Auth) -> Result<bool, HecateError> {
+        auth_met(&self.server, auth)
     }
 
-    pub fn allows_webhooks_list(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_webhooks_list(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.webhooks {
             None => Err(not_authed()),
-            Some(webhooks) => auth_met(&webhooks.list, auth, conn)
+            Some(webhooks) => auth_met(&webhooks.list, auth)
         }
     }
 
-    pub fn allows_webhooks_delete(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_webhooks_delete(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.webhooks {
             None => Err(not_authed()),
-            Some(webhooks) => auth_met(&webhooks.delete, auth, conn)
+            Some(webhooks) => auth_met(&webhooks.delete, auth)
         }
     }
 
-    pub fn allows_webhooks_update(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_webhooks_update(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.webhooks {
             None => Err(not_authed()),
-            Some(webhooks) => auth_met(&webhooks.update, auth, conn)
+            Some(webhooks) => auth_met(&webhooks.update, auth)
         }
     }
 
-    pub fn allows_meta_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_meta_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.meta {
             None => Err(not_authed()),
-            Some(meta) => auth_met(&meta.get, auth, conn)
+            Some(meta) => auth_met(&meta.get, auth)
         }
     }
 
-    pub fn allows_meta_list(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_meta_list(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.meta {
             None => Err(not_authed()),
-            Some(meta) => auth_met(&meta.list, auth, conn)
+            Some(meta) => auth_met(&meta.list, auth)
         }
     }
 
-    pub fn allows_meta_set(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_meta_set(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.meta {
             None => Err(not_authed()),
-            Some(meta) => auth_met(&meta.set, auth, conn)
+            Some(meta) => auth_met(&meta.set, auth)
         }
     }
 
-    pub fn allows_stats_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_stats_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.stats {
             None => Err(not_authed()),
-            Some(stats) => auth_met(&stats.get, auth, conn)
+            Some(stats) => auth_met(&stats.get, auth)
         }
     }
 
-    pub fn allows_stats_bounds(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_stats_bounds(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.stats {
             None => Err(not_authed()),
-            Some(stats) => auth_met(&stats.bounds, auth, conn)
+            Some(stats) => auth_met(&stats.bounds, auth)
         }
     }
 
-    pub fn allows_mvt_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_mvt_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.mvt {
             None => Err(not_authed()),
-            Some(mvt) => auth_met(&mvt.get, auth, conn)
+            Some(mvt) => auth_met(&mvt.get, auth)
         }
     }
 
-    pub fn allows_mvt_delete(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_mvt_delete(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.mvt {
             None => Err(not_authed()),
-            Some(mvt) => auth_met(&mvt.delete, auth, conn)
+            Some(mvt) => auth_met(&mvt.delete, auth)
         }
     }
 
-    pub fn allows_mvt_regen(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_mvt_regen(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.mvt {
             None => Err(not_authed()),
-            Some(mvt) => auth_met(&mvt.regen, auth, conn)
+            Some(mvt) => auth_met(&mvt.regen, auth)
         }
     }
 
-    pub fn allows_mvt_meta(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_mvt_meta(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.mvt {
             None => Err(not_authed()),
-            Some(mvt) => auth_met(&mvt.meta, auth, conn)
+            Some(mvt) => auth_met(&mvt.meta, auth)
         }
     }
 
-    pub fn allows_user_list(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_user_list(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.user {
             None => Err(not_authed()),
-            Some(user) => auth_met(&user.list, auth, conn)
+            Some(user) => auth_met(&user.list, auth)
         }
     }
 
-    pub fn allows_user_create(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_user_create(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.user {
             None => Err(not_authed()),
-            Some(user) => auth_met(&user.create, auth, conn)
+            Some(user) => auth_met(&user.create, auth)
         }
     }
 
-    pub fn allows_user_info(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_user_info(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.user {
             None => Err(not_authed()),
-            Some(user) => auth_met(&user.info, auth, conn)
+            Some(user) => auth_met(&user.info, auth)
         }
     }
 
-    pub fn allows_user_create_session(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_user_create_session(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.user {
             None => Err(not_authed()),
-            Some(user) => auth_met(&user.create_session, auth, conn)
+            Some(user) => auth_met(&user.create_session, auth)
         }
     }
 
-    pub fn allows_style_create(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_style_create(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
-            Some(style) => auth_met(&style.create, auth, conn)
+            Some(style) => auth_met(&style.create, auth)
         }
     }
 
-    pub fn allows_style_patch(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_style_patch(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
-            Some(style) => auth_met(&style.patch, auth, conn)
+            Some(style) => auth_met(&style.patch, auth)
         }
     }
 
-    pub fn allows_style_set_public(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_style_set_public(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
-            Some(style) => auth_met(&style.set_public, auth, conn)
+            Some(style) => auth_met(&style.set_public, auth)
         }
     }
 
-    pub fn allows_style_set_private(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_style_set_private(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
-            Some(style) => auth_met(&style.set_private, auth, conn)
+            Some(style) => auth_met(&style.set_private, auth)
         }
     }
 
-    pub fn allows_style_delete(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_style_delete(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
-            Some(style) => auth_met(&style.delete, auth, conn)
+            Some(style) => auth_met(&style.delete, auth)
         }
     }
 
-    pub fn allows_style_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_style_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
-            Some(style) => auth_met(&style.get, auth, conn)
+            Some(style) => auth_met(&style.get, auth)
         }
     }
 
-    pub fn allows_style_list(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_style_list(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.style {
             None => Err(not_authed()),
-            Some(style) => auth_met(&style.list, auth, conn)
+            Some(style) => auth_met(&style.list, auth)
         }
     }
 
-    pub fn allows_delta_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_delta_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.delta {
             None => Err(not_authed()),
-            Some(delta) => auth_met(&delta.get, auth, conn)
+            Some(delta) => auth_met(&delta.get, auth)
         }
     }
 
-    pub fn allows_delta_list(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_delta_list(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.delta {
             None => Err(not_authed()),
-            Some(delta) => auth_met(&delta.list, auth, conn)
+            Some(delta) => auth_met(&delta.list, auth)
         }
     }
 
-    pub fn allows_clone_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_clone_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.clone {
             None => Err(not_authed()),
-            Some(clone) => auth_met(&clone.get, auth, conn)
+            Some(clone) => auth_met(&clone.get, auth)
         }
     }
 
-    pub fn allows_clone_query(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_clone_query(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.clone {
             None => Err(not_authed()),
-            Some(clone) => auth_met(&clone.query, auth, conn)
+            Some(clone) => auth_met(&clone.query, auth)
         }
     }
 
-    pub fn allows_bounds_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_bounds_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.bounds {
             None => Err(not_authed()),
-            Some(bounds) => auth_met(&bounds.get, auth, conn)
+            Some(bounds) => auth_met(&bounds.get, auth)
         }
     }
 
-    pub fn allows_bounds_create(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_bounds_create(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.bounds {
             None => Err(not_authed()),
-            Some(bounds) => auth_met(&bounds.create, auth, conn)
+            Some(bounds) => auth_met(&bounds.create, auth)
         }
     }
 
-    pub fn allows_bounds_delete(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_bounds_delete(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.bounds {
             None => Err(not_authed()),
-            Some(bounds) => auth_met(&bounds.delete, auth, conn)
+            Some(bounds) => auth_met(&bounds.delete, auth)
         }
     }
 
-    pub fn allows_bounds_list(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_bounds_list(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.bounds {
             None => Err(not_authed()),
-            Some(bounds) => auth_met(&bounds.list, auth, conn)
+            Some(bounds) => auth_met(&bounds.list, auth)
         }
     }
 
-    pub fn allows_feature_create(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_feature_create(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.feature {
             None => Err(not_authed()),
-            Some(feature) => auth_met(&feature.create, auth, conn)
+            Some(feature) => auth_met(&feature.create, auth)
         }
     }
 
-    pub fn allows_feature_force(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_feature_force(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.feature {
             None => Err(not_authed()),
-            Some(feature) => auth_met(&feature.force, auth, conn)
+            Some(feature) => auth_met(&feature.force, auth)
         }
     }
 
-    pub fn allows_feature_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_feature_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.feature {
             None => Err(not_authed()),
-            Some(feature) => auth_met(&feature.get, auth, conn)
+            Some(feature) => auth_met(&feature.get, auth)
         }
     }
 
-    pub fn allows_feature_history(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_feature_history(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.feature {
             None => Err(not_authed()),
-            Some(feature) => auth_met(&feature.history, auth, conn)
+            Some(feature) => auth_met(&feature.history, auth)
         }
     }
 
-    pub fn allows_schema_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_schema_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.schema {
             None => Err(not_authed()),
-            Some(schema) => auth_met(&schema.get, auth, conn)
+            Some(schema) => auth_met(&schema.get, auth)
         }
     }
 
-    pub fn allows_auth_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_auth_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.auth {
             None => Err(not_authed()),
-            Some(a) => auth_met(&a.get, auth, conn)
+            Some(a) => auth_met(&a.get, auth)
         }
     }
 
-    pub fn allows_osm_get(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_osm_get(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.osm {
             None => Err(not_authed()),
-            Some(osm) => auth_met(&osm.get, auth, conn)
+            Some(osm) => auth_met(&osm.get, auth)
         }
     }
 
-    pub fn allows_osm_create(&self, auth: &mut Auth, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn allows_osm_create(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         match &self.osm {
             None => Err(not_authed()),
-            Some(osm) => auth_met(&osm.create, auth, conn)
+            Some(osm) => auth_met(&osm.create, auth)
         }
     }
 }

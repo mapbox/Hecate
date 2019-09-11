@@ -12,7 +12,6 @@ mod test {
     use std::time::Duration;
     use std::thread;
     use reqwest;
-    use serde_json::value::Value;
 
     #[test]
     fn auth_default() {
@@ -50,23 +49,37 @@ mod test {
         ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
-        { // Attempt to access public APIs unauthenticated
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+        { // Create User
+            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
+            conn.execute("
+                INSERT INTO users (username, password, email)
+                    VALUES ('ingalls', crypt('yeaheh', gen_salt('bf', 10)), 'ingalls@protonmail.com')
+            ", &[]).unwrap();
+        }
 
-            assert!(resp.status().is_success());
-            assert_eq!(resp.text().unwrap(), "true");
+        { // Attempt to access default server
+            let resp = reqwest::get("http://localhost:8000/").unwrap();
+            assert_eq!(resp.status().as_u16(), 200);
+            assert_eq!(resp.text.().unwrap(), "Hello World!");
+        }
+
+        { // Attempt to access public APIs unauthenticated
+            let resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+
+            assert_eq!(resp.status().as_u16(), 401);
         }
 
         { // Attempt to access public APIs
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/deltas")
+            let mut resp = client.get("http://localhost:8000/api/deltas")
                 .basic_auth("ingalls", Some("yeaheh"))
-                .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
             assert!(resp.status().is_success());
-            assert_eq!(resp.text().unwrap(), "true");
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body, json!([]));
         }
 
         server.kill().unwrap();
