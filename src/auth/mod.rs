@@ -39,8 +39,8 @@ impl Auth {
         match self.uid {
             Some(uid) => {
                 headers.insert(
-                    HeaderName::from_lowercase(b"hecate_uid").unwrap(),
-                    HeaderValue::from_str(uid.to_string().as_str()).unwrap()
+                    HeaderName::from_static("hecate_uid"),
+                    HeaderValue::from_str(uid.to_string().as_str()).unwrap_or(HeaderValue::from_static(""))
                 );
             },
             None => {
@@ -51,8 +51,8 @@ impl Auth {
         match self.access {
             Some(access) => {
                 headers.insert(
-                    HeaderName::from_lowercase(b"hecate_access").unwrap(),
-                    HeaderValue::from_str(access.as_str()).unwrap()
+                    HeaderName::from_static("hecate_access"),
+                    HeaderValue::from_str(access.as_str()).unwrap_or(HeaderValue::from_static(""))
                 );
             },
             None => {
@@ -63,8 +63,8 @@ impl Auth {
         match self.token {
             Some(token) => {
                 headers.insert(
-                    HeaderName::from_lowercase(b"hecate_token").unwrap(),
-                    HeaderValue::from_str(token.as_str()).unwrap()
+                    HeaderName::from_static("hecate_token"),
+                    HeaderValue::from_str(token.as_str()).unwrap_or(HeaderValue::from_static(""))
                 );
             },
             None => {
@@ -75,8 +75,8 @@ impl Auth {
         match self.basic {
             Some(basic) => {
                 headers.insert(
-                    HeaderName::from_lowercase(b"hecate_basic").unwrap(),
-                    HeaderValue::from_str(format!("{}:{}", basic.0, basic.1).as_str()).unwrap()
+                    HeaderName::from_static("hecate_basic"),
+                    HeaderValue::from_str(format!("{}:{}", basic.0, basic.1).as_str()).unwrap_or(HeaderValue::from_static(""))
                 );
             },
             None => {
@@ -85,36 +85,82 @@ impl Auth {
         };
     }
 
-    pub fn from_headers(req: &actix_web::HttpRequest) -> Self {
+    pub fn from_headers(req: &actix_web::HttpRequest) -> Result<Self, HecateError> {
         let headers = req.headers();
 
-        Auth {
+        Ok(Auth {
             uid: match headers.get("hecate_uid") {
                 None => None,
-                Some(uid) => Some(uid.to_str().unwrap().parse().unwrap())
+                Some(uid) => match uid.to_str() {
+                    Ok(uid) => {
+                        if uid.len() == 0 {
+                            None
+                        } else {
+                            match uid.parse() {
+                                Ok(uid) => Some(uid),
+                                Err(err) => {
+                                    return Err(HecateError::new(500, String::from("Authentication Error"), Some(err.to_string())));
+                                }
+                            }
+                        }
+                    },
+                    Err(err) => {
+                        return Err(HecateError::new(500, String::from("Authentication Error"), Some(err.to_string())));
+                    }
+                }
             },
             access: match headers.get("hecate_access") {
                 None => None,
-                Some(access) => Some(access.to_str().unwrap().to_string())
+                Some(access) => match access.to_str() {
+                    Ok(access) => {
+                        Some(access.to_string())
+                    },
+                    Err(err) => {
+                        return Err(HecateError::new(500, String::from("Authentication Error"), Some(err.to_string())));
+                    }
+                }
             },
             token: match headers.get("hecate_token") {
                 None => None,
-                Some(token) => Some(token.to_str().unwrap().to_string())
+                Some(token) => match token.to_str() {
+                    Ok(token) => {
+                        Some(token.to_string())
+                    },
+                    Err(err) => {
+                        return Err(HecateError::new(500, String::from("Authentication Error"), Some(err.to_string())));
+                    }
+                }
             },
             basic: match headers.get("hecate_basic") {
                 None => None,
-                Some(basic) => {
-                    let mut basic: Vec<String> = basic.to_str().unwrap().splitn(2, ":").map(|ele| {
-                        ele.to_string()
-                    }).collect();
+                Some(basic) => match basic.to_str() {
+                    Ok(basic) => {
+                        let mut basic: Vec<String> = basic.splitn(2, ":").map(|ele| {
+                            ele.to_string()
+                        }).collect();
 
-                    let pass = basic.pop().unwrap();
-                    let user = basic.pop().unwrap();
+                        let pass = match basic.pop() {
+                            Some(pass) => pass,
+                            None => {
+                                return Err(HecateError::new(500, String::from("Authentication Error: No Password"), None));
+                            }
+                        };
 
-                    Some((user, pass))
+                        let user = match basic.pop() {
+                            Some(user) => user,
+                            None => {
+                                return Err(HecateError::new(500, String::from("Authentication Error: No Username"), None));
+                            }
+                        };
+
+                        Some((user, pass))
+                    },
+                    Err(err) => {
+                        return Err(HecateError::new(500, String::from("Authentication Error"), Some(err.to_string())));
+                    }
                 }
             }
-        }
+        })
     }
 
     pub fn from_sreq(req: &actix_web::dev::ServiceRequest) -> Result<Self, HecateError> {
@@ -267,7 +313,7 @@ impl actix_web::FromRequest for Auth {
     type Config = ();
 
     fn from_request(req: &actix_web::HttpRequest, _payload: &mut actix_web::dev::Payload) -> Self::Future {
-        Ok(Auth::from_headers(req))
+        Ok(Auth::from_headers(req)?)
     }
 }
 
