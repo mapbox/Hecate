@@ -216,6 +216,23 @@ impl Auth {
             None => ()
         };
 
+        let path: Vec<String> = req.path().split("/").map(|p| {
+            p.to_string()
+        }).filter(|p| {
+            if p.len() == 0 {
+                return false;
+            }
+
+            return true;
+        }).collect();
+
+        if
+            path.len() > 2
+            && path[0] == String::from("token")
+        {
+            auth.token = Some(path[1].to_string());
+        }
+
         Ok(auth)
     }
 

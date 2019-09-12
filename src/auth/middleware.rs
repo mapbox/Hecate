@@ -86,6 +86,7 @@ where
             _ => ()
         };
 
+        // If no default auth is set - allow all api endpoints
         if self.auth == AuthDefault::Public {
             auth.as_headers(&mut req);
             return Either::A(self.service.call(req));
