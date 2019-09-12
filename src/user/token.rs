@@ -30,9 +30,8 @@ impl Token {
                 VALUES (
                     $1,
                     $2,
-                    $3,
                     md5(random()::TEXT),
-                    now() + ($4::TEXT)::INTERVAL
+                    now() + ($3::TEXT)::INTERVAL
                 )
                 RETURNING
                     name,
