@@ -31,6 +31,8 @@ impl Token {
             return Err(HecateError::new(400, String::from("Token Expiry Cannot Exceed 16 hours"), None));
         }
 
+        let hours = format!("{} hours", hours);
+
         let scope_str = match scope {
             Scope::Full => "Full",
             Scope::Osm => "Osm"
@@ -43,7 +45,7 @@ impl Token {
                     $2,
                     $3,
                     md5(random()::TEXT),
-                    now() + INTERVAL '$4 hours'
+                    now() + ($4::TEXT)::INTERVAL
                 )
                 RETURNING
                     name,
