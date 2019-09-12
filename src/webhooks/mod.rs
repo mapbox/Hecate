@@ -1,26 +1,40 @@
 use postgres;
 use reqwest;
+use rand::{thread_rng, Rng};
+use rand::distributions::Alphanumeric;
+
 use crate::{
     worker,
     err::HecateError
 };
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct WebHook {
     pub id: Option<i64>,
     pub name: String,
     pub actions: Vec<String>,
-    pub url: String
+    pub url: String,
+    pub secret: Option<String>
 }
 
 impl WebHook {
-    pub fn new(id: i64, name: String, actions: Vec<String>, url: String) -> Self {
+    pub fn new(id: i64, name: String, actions: Vec<String>, url: String, secret: Option<String>) -> Self {
         WebHook {
             id: Some(id),
             name: name,
             actions: actions,
-            url: url
+            url: url,
+            secret: secret
         }
+    }
+
+    pub fn to_value(self) -> serde_json::Value {
+        json!({
+            "id": self.id,
+            "name": self.name,
+            "actions": self.actions,
+            "url": self.url
+        })
     }
 }
 
@@ -47,7 +61,8 @@ pub fn list(conn: &impl postgres::GenericConnection, action: Action) -> Result<V
             id,
             name,
             actions,
-            url
+            url,
+            secret
         FROM
             webhooks
         {action}
@@ -56,7 +71,7 @@ pub fn list(conn: &impl postgres::GenericConnection, action: Action) -> Result<V
             let mut hooks: Vec<WebHook> = Vec::with_capacity(results.len());
 
             for result in results.iter() {
-                hooks.push(WebHook::new(result.get(0), result.get(1), result.get(2), result.get(3)));
+                hooks.push(WebHook::new(result.get(0), result.get(1), result.get(2), result.get(3), result.get(4)));
             }
 
             Ok(hooks)
@@ -71,7 +86,8 @@ pub fn get(conn: &impl postgres::GenericConnection, id: i64) -> Result<WebHook, 
             id,
             name,
             actions,
-            url
+            url,
+            secret
         FROM
             webhooks
         WHERE
@@ -83,8 +99,7 @@ pub fn get(conn: &impl postgres::GenericConnection, id: i64) -> Result<WebHook, 
             }
 
             let result = results.get(0);
-
-            Ok(WebHook::new(result.get(0), result.get(1), result.get(2), result.get(3)))
+            Ok(WebHook::new(result.get(0), result.get(1), result.get(2), result.get(3), result.get(4)))
         },
         Err(err) => Err(HecateError::from_db(err))
     }
@@ -105,15 +120,28 @@ pub fn create(conn: &impl postgres::GenericConnection, mut webhook: WebHook) -> 
         return Err(HecateError::new(400, String::from("Invalid Action"), None));
     }
 
+    webhook.secret = match webhook.secret {
+        Some(secret) => Some(secret),
+        None => {
+            // if no secret exists, generate it
+            let secret: String = thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(30)
+                .collect();
+            Some(secret)
+        }
+    };
+
     match conn.query("
-        INSERT INTO webhooks (name, actions, url)
+        INSERT INTO webhooks (name, actions, url, secret)
             VALUES (
                 $1,
                 $2,
-                $3
+                $3,
+                $4
             )
             Returning id
-    ", &[&webhook.name, &webhook.actions, &webhook.url]) {
+    ", &[&webhook.name, &webhook.actions, &webhook.url, &webhook.secret]) {
         Ok(results) => {
             let id = results.get(0).get(0);
 
@@ -195,7 +223,7 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
                 }).to_string()
             }
         };
-
+        // create hash here
         match client.post(hook.url.as_str())
             .body(body)
             .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -212,4 +240,28 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn webhooks_new() {
+        assert_eq!(
+            WebHook::new(
+                1,
+                String::from("webhook"),
+                vec![String::from("delta")],
+                String::from("www.example.com"),
+                None),
+            WebHook {
+                id: Some(1),
+                name: String::from("webhook"),
+                actions: vec![String::from("delta")],
+                url: String::from("www.example.com"),
+                secret: None
+            }
+        );
+    }
 }

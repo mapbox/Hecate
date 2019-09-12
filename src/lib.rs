@@ -297,10 +297,6 @@ struct FeatureQuery {
     point: Option<String>
 }
 
-fn not_found() -> HecateError {
-    HecateError::new(404, String::from("Resource Not Found"), None)
-}
-
 fn index() -> &'static str { "Hello World!" }
 
 fn server(
@@ -948,10 +944,9 @@ fn webhooks_list(
 
     auth_rules.0.allows_webhooks_list(&mut auth, &*conn)?;
 
-    match serde_json::to_value(webhooks::list(&*conn, webhooks::Action::All)?) {
-        Ok(hooks) => Ok(Json(hooks)),
-        Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
-    }
+    let hooks = webhooks::list(&*conn, webhooks::Action::All)?;
+    let values: Vec<serde_json::Value> = hooks.into_iter().map(|h| h.to_value()).collect();
+    Ok(Json(serde_json::Value::Array(values)))
 }
 
 fn webhooks_get(
@@ -964,10 +959,8 @@ fn webhooks_get(
 
     auth_rules.0.allows_webhooks_list(&mut auth, &*conn)?;
 
-    match serde_json::to_value(webhooks::get(&*conn, id.into_inner())?) {
-        Ok(hooks) => Ok(Json(hooks)),
-        Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
-    }
+    let hook = webhooks::get(&*conn, id.into_inner())?.to_value();
+    Ok(Json(hook))
 }
 
 fn webhooks_delete(
@@ -1012,10 +1005,9 @@ fn webhooks_update(
 
     webhook.id = Some(id.into_inner());
 
-    match serde_json::to_value(webhooks::update(&*conn, webhook.into_inner())?) {
-        Ok(webhook) => Ok(Json(webhook)),
-        Err(_) => { return Err(HecateError::new(500, String::from("Failed to return webhook ID"), None)); }
-    }
+
+    let hook = webhooks::update(&*conn, webhook.into_inner())?.to_value();
+    Ok(Json(hook))
 }
 
 fn bounds_stats(

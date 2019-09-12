@@ -9,7 +9,8 @@ CREATE TABLE webhooks (
     id          BIGSERIAL PRIMARY KEY,
     name        TEXT NOT NULL,
     actions     TEXT[],
-    url         TEXT NOT NULL
+    url         TEXT NOT NULL,
+    secret      TEXT NOT NULL
 );
 
 DROP TABLE IF EXISTS meta;

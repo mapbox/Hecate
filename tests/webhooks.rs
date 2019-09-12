@@ -13,6 +13,7 @@ mod test {
     use std::thread;
     use reqwest;
     use serde_json;
+    use hecate::webhooks::WebHook;
 
     #[test]
     fn webhooks() {
@@ -50,7 +51,7 @@ mod test {
         ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
-        { //Create Username (ingalls)
+        { // Create Username (ingalls)
             let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
@@ -71,7 +72,7 @@ mod test {
             assert!(resp.status().is_success());
         }
 
-        {
+        { // Create a new webhook and generate a secret
             let client = reqwest::Client::new();
 
             let mut resp = client.post("http://localhost:8000/api/webhooks")
@@ -85,13 +86,41 @@ mod test {
                 .send()
                 .unwrap();
 
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            let webhook: WebHook = serde_json::from_value(json_body).unwrap();
+            assert_eq!(webhook.id, Some(1));
+            assert_eq!(webhook.name, String::from("webhook"));
+            assert_eq!(webhook.url, String::from("https://example.com"));
+            assert_eq!(webhook.actions, vec![String::from("delta")]);
+            assert!(webhook.secret.is_some());
+            assert_eq!(webhook.secret.unwrap().len(), 30);
+        }
+
+        { // Create a new webhook, passing in a custom secret
+            let client = reqwest::Client::new();
+
+            let mut resp = client.post("http://localhost:8000/api/webhooks")
+                .body(r#"{
+                    "name": "webhook",
+                    "url": "https://example.com",
+                    "actions": ["delta"],
+                    "secret": "my secret"
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body, json!({
-                "id": 1,
+                "id": 2,
                 "name": "webhook",
                 "url": "https://example.com",
-                "actions": ["delta"]
+                "actions": ["delta"],
+                "secret": "my secret"
             }));
             assert!(resp.status().is_success());
         }
@@ -135,6 +164,11 @@ mod test {
                 "name": "webhook",
                 "url": "https://example.com",
                 "actions": ["delta"]
+            }, {
+                "id": 2,
+                "name": "webhook",
+                "url": "https://example.com",
+                "actions": ["delta"]
             }]));
 
             assert!(resp.status().is_success());
@@ -145,7 +179,7 @@ mod test {
 
             let mut resp = client.post("http://localhost:8000/api/webhooks/1")
                 .body(r#"{
-                    "name": "webhook modify",
+                    "name": "webhook update",
                     "url": "https://example.com/modify",
                     "actions": ["delta"]
                 }"#)
@@ -158,7 +192,7 @@ mod test {
 
             assert_eq!(json_body, json!({
                 "id": 1,
-                "name": "webhook modify",
+                "name": "webhook update",
                 "url": "https://example.com/modify",
                 "actions": ["delta"]
             }));
