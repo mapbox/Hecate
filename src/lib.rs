@@ -331,8 +331,7 @@ struct Map {
 #[derive(Deserialize, Debug)]
 struct Token {
     name: Option<String>,
-    hours: Option<i64>,
-    scope: Option<String>,
+    hours: Option<i64>
 }
 
 #[derive(Deserialize, Debug)]
@@ -620,7 +619,7 @@ fn user_create_session(
 
     let uid = auth.uid.unwrap();
 
-    let token = user::Token::create(&*conn.get()?, "Session Token", &uid, &4, user::token::Scope::Full)?;
+    let token = user::Token::create(&*conn.get()?, "Session Token", &uid, &4)?;
 
     let cookie = actix_http::http::Cookie::build("session", token.token)
         .path("/")
@@ -677,18 +676,7 @@ fn user_create_token(
 
     let uid = auth.uid.unwrap();
 
-    let token_scope = match token.scope {
-        Some(scope) => match scope.as_str() {
-            "osm" => user::token::Scope::Osm,
-            "full" => user::token::Scope::Full,
-            _ => {
-                return Err(HecateError::new(400, String::from("Token Type must be one of 'osm' or 'full'"), None));
-            }
-        },
-        None => user::token::Scope::Full
-    };
-
-    let token = user::Token::create(&*conn.get()?, token.name.unwrap_or(String::from("Access Token")), &uid, &token.hours.unwrap_or(16), token_scope)?;
+    let token = user::Token::create(&*conn.get()?, token.name.unwrap_or(String::from("Access Token")), &uid, &token.hours.unwrap_or(16))?;
 
     match serde_json::to_value(token) {
         Ok(token) => Ok(Json(token)),

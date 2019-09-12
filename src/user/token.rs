@@ -1,45 +1,32 @@
 use crate::err::HecateError;
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Clone)]
-pub enum Scope {
-    Full,
-    Osm
-}
-
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct Token {
     pub name: String,
-    pub scope: Scope,
     pub uid: i64,
     pub token: String,
     pub expiry: String
 }
 
 impl Token {
-    pub fn new(name: String, uid: i64, token: String, expiry: String, scope: Scope) -> Self {
+    pub fn new(name: String, uid: i64, token: String, expiry: String) -> Self {
         Token {
             name: name,
             uid: uid,
             token: token,
-            expiry: expiry,
-            scope: scope
+            expiry: expiry
         }
     }
 
-    pub fn create(conn: &impl postgres::GenericConnection, name: impl ToString, uid: &i64, hours: &i64, scope: Scope) -> Result<Self, HecateError> {
+    pub fn create(conn: &impl postgres::GenericConnection, name: impl ToString, uid: &i64, hours: &i64) -> Result<Self, HecateError> {
         if hours > &16 {
             return Err(HecateError::new(400, String::from("Token Expiry Cannot Exceed 16 hours"), None));
         }
 
         let hours = format!("{} hours", hours);
 
-        let scope_str = match scope {
-            Scope::Full => "Full",
-            Scope::Osm => "Osm"
-        };
-
         match conn.query("
-            INSERT INTO users_tokens (name, uid, scope, token, expiry)
+            INSERT INTO users_tokens (name, uid, token, expiry)
                 VALUES (
                     $1,
                     $2,
@@ -52,14 +39,14 @@ impl Token {
                     uid,
                     token,
                     expiry::TEXT
-        ", &[ &name.to_string(), &uid, &scope_str, &hours ]) {
+        ", &[ &name.to_string(), &uid, &hours ]) {
             Ok(res) => {
                 let name: String = res.get(0).get(0);
                 let uid: i64 = res.get(0).get(1);
                 let token: String = res.get(0).get(2);
                 let expiry: String = res.get(0).get(3);
 
-                Ok(Token::new(name, uid, token, expiry, scope))
+                Ok(Token::new(name, uid, token, expiry))
             },
             Err(err) => Err(HecateError::from_db(err))
         }
