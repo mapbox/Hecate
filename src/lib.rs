@@ -112,6 +112,34 @@ pub fn start(
                 .service(web::resource("")
                     .route(web::get().to(server))
                 )
+                .service(web::scope("token/{token}")
+                    .service(web::resource("capabilities")
+                        .route(web::get().to(osm_capabilities))
+                    )
+                    .service(web::scope("0.6")
+                        .service(web::resource("capabilities")
+                            .route(web::get().to(osm_capabilities))
+                        )
+                        .service(web::resource("user/details")
+                            .route(web::get().to(osm_user))
+                        )
+                        .service(web::resource("map")
+                            .route(web::get().to(osm_map))
+                        )
+                        .service(web::resource("changeset/create")
+                            .route(web::put().to_async(osm_changeset_create))
+                        )
+                        .service(web::resource("changeset/{delta_id}")
+                            .route(web::put().to_async(osm_changeset_modify))
+                        )
+                        .service(web::resource("changeset/{delta_id}/close")
+                            .route(web::put().to(osm_changeset_close))
+                        )
+                        .service(web::resource("changeset/{delta_id}/upload")
+                            .route(web::post().to_async(osm_changeset_upload))
+                        )
+                    )
+                )
                 .service(web::resource("capabilities")
                     .route(web::get().to(osm_capabilities))
                 )
@@ -221,6 +249,12 @@ pub fn start(
                         .route(web::get().to(user_create_session))
                         .route(web::delete().to(user_delete_session))
                     )
+                    .service(web::resource("token")
+                        .route(web::post().to(user_create_token))
+                    )
+                    .service(web::resource("token/{token}")
+                        .route(web::delete().to(user_delete_token))
+                    )
                     .service(web::resource("{uid}")
                         .route(web::get().to(user_info))
                     )
@@ -292,6 +326,13 @@ struct Filter {
 struct Map {
     bbox: Option<String>,
     point: Option<String>
+}
+
+#[derive(Deserialize, Debug)]
+struct Token {
+    name: Option<String>,
+    hours: Option<i64>,
+    scope: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -579,7 +620,7 @@ fn user_create_session(
 
     let uid = auth.uid.unwrap();
 
-    let token = user::Token::create(&*conn.get()?, "Session Token", &uid)?;
+    let token = user::Token::create(&*conn.get()?, "Session Token", &uid, &4, user::token::Scope::Full)?;
 
     let cookie = actix_http::http::Cookie::build("session", token.token)
         .path("/")
@@ -622,6 +663,54 @@ fn user_delete_session(
         },
         None => Ok(resp)
     }
+}
+
+fn user_create_token(
+    conn: web::Data<DbReadWrite>,
+    mut auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>,
+    token: web::Query<Token>
+) -> Result<Json<serde_json::Value>, HecateError> {
+    auth_rules.0.allows_user_create_session(&mut auth)?;
+
+    let token = token.into_inner();
+
+    let uid = auth.uid.unwrap();
+
+    let token_scope = match token.scope {
+        Some(scope) => match scope.as_str() {
+            "osm" => user::token::Scope::Osm,
+            "full" => user::token::Scope::Full,
+            _ => {
+                return Err(HecateError::new(400, String::from("Token Type must be one of 'osm' or 'full'"), None));
+            }
+        },
+        None => user::token::Scope::Full
+    };
+
+    let token = user::Token::create(&*conn.get()?, token.name.unwrap_or(String::from("Access Token")), &uid, &token.hours.unwrap_or(16), token_scope)?;
+
+    match serde_json::to_value(token) {
+        Ok(token) => Ok(Json(token)),
+        Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
+    }
+}
+
+fn user_delete_token(
+    conn: web::Data<DbReadWrite>,
+    auth_rules: web::Data<auth::AuthContainer>,
+    mut auth: auth::Auth,
+    token: web::Path<String>
+) -> Result<Json<serde_json::Value>, HecateError> {
+    auth_rules.0.allows_user_create_session(&mut auth)?;
+
+    let uid = auth.uid.unwrap();
+
+    let token = token.into_inner();
+
+    user::token::destroy(&*conn.get()?, &uid, &token)?;
+
+    Ok(Json(json!(true)))
 }
 
 fn style_create(
