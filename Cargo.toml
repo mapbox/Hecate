@@ -36,6 +36,9 @@ r2d2 = "0.8.5"
 r2d2_postgres = "0.14.0"
 env_logger = "0.6"
 json-patch = { git = "https://github.com/ingalls/json-patch", branch = "uniform_paths" }
+hmac = "0.7"
+url = "2.1"
+sha2 = "0.8.0"
 
 [dependencies.geo]
 version = "0.12"

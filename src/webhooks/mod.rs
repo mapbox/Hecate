@@ -2,6 +2,12 @@ use postgres;
 use reqwest;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
+use sha2::Sha256;
+use hmac::{Hmac, Mac};
+use url::Url;
+
+// Create alias for HMAC-SHA256
+type HmacSha256 = Hmac<Sha256>;
 
 use crate::{
     worker,
@@ -120,6 +126,10 @@ pub fn create(conn: &impl postgres::GenericConnection, mut webhook: WebHook) -> 
         return Err(HecateError::new(400, String::from("Invalid Action"), None));
     }
 
+    if Url::parse(&webhook.url).is_err() {
+        return Err(HecateError::new(422, String::from("Invalid webhook url"), None))
+    }
+
     webhook.secret = match webhook.secret {
         Some(secret) => Some(secret),
         None => {
@@ -223,8 +233,20 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
                 }).to_string()
             }
         };
-        // create hash here
-        match client.post(hook.url.as_str())
+
+        let mut mac: HmacSha256 = match HmacSha256::new_varkey(hook.secret.unwrap().as_bytes()) {
+            Ok(mac) => mac,
+            Err(_) => return Err(HecateError::new(500, String::from("Internal Server Error"), None))
+        };
+        mac.input(body.as_bytes());
+        let token = mac.result().code();
+
+        let url = match Url::parse(hook.url.as_str()).unwrap().join(format!("token={:?}", token).as_str()) {
+            Ok(url) => url,
+            Err(_) => return Err(HecateError::new(500, String::from("Internal Server Error"), None))
+        };
+
+        match client.post(url.as_str())
             .body(body)
             .header(reqwest::header::CONTENT_TYPE, "application/json")
             .send()
