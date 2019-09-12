@@ -53,7 +53,7 @@ mod test {
         { //Create Username
             let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
-            assert!(resp.status().is_success());
+            assert!(resp.status().is_success())
         }
 
         {
@@ -146,6 +146,7 @@ mod test {
             let resp_value: Value = resp.json().unwrap();
 
             assert_eq!(resp_value, json!({
+                "default": "public",
                 "server": "public",
                 "webhooks": {
                     "list": "user",
