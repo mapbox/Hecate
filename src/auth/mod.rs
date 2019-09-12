@@ -163,8 +163,37 @@ impl Auth {
         })
     }
 
-    pub fn from_sreq(req: &actix_web::dev::ServiceRequest) -> Result<Self, HecateError> {
+    pub fn from_sreq(req: &mut actix_web::dev::ServiceRequest) -> Result<Self, HecateError> {
         let mut auth = Auth::new();
+
+        let path: Vec<String> = req.path().split("/").map(|p| {
+            p.to_string()
+        }).filter(|p| {
+            if p.len() == 0 {
+                return false;
+            }
+
+            return true;
+        }).collect();
+
+        if
+            path.len() > 2
+            && path[0] == String::from("token")
+        {
+            auth.token = Some(path[1].to_string());
+
+            let curr_path = req.match_info_mut();
+
+            let mut new_path = String::from("");
+            for i in 2..path.len() {
+                new_path = format!("{}/{}", new_path, path[i].to_string());
+            }
+
+            let new_url =  actix_web::dev::Url::new(new_path.parse::<actix_web::http::Uri>().unwrap());
+
+            curr_path.set(new_url);
+        }
+
 
         match req.cookie("session") {
             Some(token) => {
@@ -215,25 +244,6 @@ impl Auth {
             },
             None => ()
         };
-
-        if auth.token.is_none() && auth.basic.is_none() {
-            let path: Vec<String> = req.path().split("/").map(|p| {
-                p.to_string()
-            }).filter(|p| {
-                if p.len() == 0 {
-                    return false;
-                }
-
-                return true;
-            }).collect();
-
-            if
-                path.len() > 2
-                && path[0] == String::from("token")
-            {
-                auth.token = Some(path[1].to_string());
-            }
-        }
 
         Ok(auth)
     }

@@ -62,7 +62,7 @@ where
     }
 
     fn call(&mut self, mut req: ServiceRequest) -> Self::Future {
-        let mut auth = Auth::from_sreq(&req).unwrap_or(Auth::new());
+        let mut auth = Auth::from_sreq(&mut req).unwrap_or(Auth::new());
 
         let db = match self.db.get() {
             Ok(db) => db,
