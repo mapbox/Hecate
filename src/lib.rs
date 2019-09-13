@@ -379,7 +379,7 @@ fn meta_delete(
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_meta_set(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
 
     worker.queue(worker::Task::new(worker::TaskType::Meta));
 
@@ -394,7 +394,7 @@ fn meta_set(
     value: Json<serde_json::Value>,
     key: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_meta_set(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
 
     worker.queue(worker::Task::new(worker::TaskType::Meta));
 
@@ -449,7 +449,7 @@ fn mvt_wipe(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_mvt_delete(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_mvt_delete(&mut auth, auth::RW::Full)?;
 
     Ok(Json(mvt::wipe(&*conn.get()?)?))
 }
@@ -460,7 +460,7 @@ fn mvt_regen(
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_mvt_regen(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_mvt_regen(&mut auth, auth::RW::Full)?;
 
     let z = path.0;
     let x = path.1;
@@ -483,7 +483,7 @@ fn user_create(
     worker: web::Data<worker::Worker>,
     user: web::Query<user::User>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_user_create(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_user_create(&mut auth, auth::RW::Full)?;
 
     user.set(&*conn.get()?)?;
 
@@ -588,7 +588,7 @@ fn user_create_session(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Full)?;
 
     let uid = auth.uid.unwrap();
 
@@ -643,7 +643,7 @@ fn user_create_token(
     auth_rules: web::Data<auth::AuthContainer>,
     token: web::Query<Token>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Full)?;
 
     let token = token.into_inner();
 
@@ -680,7 +680,7 @@ fn user_delete_token(
     mut auth: auth::Auth,
     token: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Full)?;
 
     let uid = auth.uid.unwrap();
 
@@ -703,7 +703,7 @@ fn style_create(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_style_create(&mut auth, auth::RW::Write) {
+    match auth_rules.0.allows_style_create(&mut auth, auth::RW::Full) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -732,7 +732,7 @@ fn style_public(
     auth_rules: web::Data<auth::AuthContainer>,
     style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_style_set_public(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_style_set_public(&mut auth, auth::RW::Full)?;
     let uid = auth.uid.unwrap();
 
     let style_id = style_id.into_inner();
@@ -746,7 +746,7 @@ fn style_private(
     auth_rules: web::Data<auth::AuthContainer>,
     style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_style_set_private(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_style_set_private(&mut auth, auth::RW::Full)?;
     let uid = auth.uid.unwrap();
 
     let style_id = style_id.into_inner();
@@ -769,7 +769,7 @@ fn style_patch(
 
     let style_id = style_id.into_inner();
 
-    match auth_rules.0.allows_style_patch(&mut auth, auth::RW::Write) {
+    match auth_rules.0.allows_style_patch(&mut auth, auth::RW::Full) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -798,7 +798,7 @@ fn style_delete(
     worker: web::Data<worker::Worker>,
     style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_style_delete(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_style_delete(&mut auth, auth::RW::Full)?;
     let uid = auth.uid.unwrap();
 
     let style_id = style_id.into_inner();
@@ -947,7 +947,7 @@ fn bounds_set(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_bounds_create(&mut auth, auth::RW::Write) {
+    match auth_rules.0.allows_bounds_create(&mut auth, auth::RW::Full) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -977,7 +977,7 @@ fn bounds_delete(
     auth_rules: web::Data<auth::AuthContainer>,
     bounds: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_bounds_delete(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_bounds_delete(&mut auth, auth::RW::Full)?;
 
     Ok(Json(json!(bounds::delete(&*conn.get()?, &bounds.into_inner())?)))
 }
@@ -1015,7 +1015,7 @@ fn webhooks_delete(
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
 ) -> Result<Json<bool>, HecateError> {
-    auth_rules.0.allows_webhooks_delete(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_webhooks_delete(&mut auth, auth::RW::Full)?;
 
     Ok(Json(webhooks::delete(&*conn.get()?, id.into_inner())?))
 }
@@ -1026,7 +1026,7 @@ fn webhooks_create(
     auth_rules: web::Data<auth::AuthContainer>,
     webhook: Json<webhooks::WebHook>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_webhooks_update(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_webhooks_update(&mut auth, auth::RW::Full)?;
 
     match serde_json::to_value(webhooks::create(&*conn.get()?, webhook.into_inner())?) {
         Ok(webhook) => Ok(Json(webhook)),
@@ -1041,7 +1041,7 @@ fn webhooks_update(
     mut webhook: Json<webhooks::WebHook>,
     id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_webhooks_update(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_webhooks_update(&mut auth, auth::RW::Full)?;
 
     webhook.id = Some(id.into_inner());
 
@@ -1176,7 +1176,7 @@ fn features_action(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_feature_create(&mut auth, auth::RW::Write) {
+    match auth_rules.0.allows_feature_create(&mut auth, auth::RW::Full) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -1236,7 +1236,7 @@ fn features_action(
                 },
                 Ok(force) => {
                     if force {
-                        auth_rules.0.allows_feature_force(&mut auth, auth::RW::Write)?;
+                        auth_rules.0.allows_feature_force(&mut auth, auth::RW::Full)?;
                     }
                 }
             };
@@ -1314,7 +1314,7 @@ fn osm_changeset_create(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_osm_create(&mut auth, auth::RW::Write) {
+    match auth_rules.0.allows_osm_create(&mut auth, auth::RW::Full) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -1362,7 +1362,7 @@ fn osm_changeset_close(
     auth_rules: web::Data<auth::AuthContainer>,
     delta_id: web::Path<i64>
 ) -> Result<String, HecateError> {
-    auth_rules.0.allows_osm_create(&mut auth, auth::RW::Write)?;
+    auth_rules.0.allows_osm_create(&mut auth, auth::RW::Full)?;
 
     Ok(delta_id.into_inner().to_string())
 }
@@ -1379,7 +1379,7 @@ fn osm_changeset_modify(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_osm_create(&mut auth, auth::RW::Write) {
+    match auth_rules.0.allows_osm_create(&mut auth, auth::RW::Full) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -1460,7 +1460,7 @@ fn osm_changeset_upload(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_osm_create(&mut auth, auth::RW::Write) {
+    match auth_rules.0.allows_osm_create(&mut auth, auth::RW::Full) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -1623,7 +1623,7 @@ fn feature_action(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_feature_create(&mut auth, auth::RW::Write) {
+    match auth_rules.0.allows_feature_create(&mut auth, auth::RW::Full) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -1648,7 +1648,7 @@ fn feature_action(
         };
 
         if feature::is_force(&feat)? {
-            auth_rules.0.allows_feature_force(&mut auth, auth::RW::Write)?;
+            auth_rules.0.allows_feature_force(&mut auth, auth::RW::Full)?;
         };
 
         let delta_message = match feat.foreign_members {

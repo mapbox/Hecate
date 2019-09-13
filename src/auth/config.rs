@@ -1,13 +1,9 @@
 use crate::err::HecateError;
 use super::Auth;
+pub use crate::user::token::Scope as RW;
 
 pub fn not_authed() -> HecateError {
     HecateError::new(401, String::from("You must be logged in to access this resource"), None)
-}
-
-pub enum RW {
-    Read,
-    Write
 }
 
 #[derive(Clone)]
@@ -506,6 +502,14 @@ impl ValidAuth for CustomAuth {
     }
 }
 
+fn rw_met(rw: RW, auth: &Auth) -> Result<bool, HecateError> {
+    if rw == RW::Full && auth.scope == RW::Read {
+        return Err(not_authed());
+    }
+
+    return Ok(true);
+}
+
 ///
 /// Determines whether the current auth state meets or exceeds the
 /// requirements of an endpoint
@@ -580,6 +584,8 @@ impl CustomAuth {
     }
 
     pub fn allows_server(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         auth_met(&self.server, auth)
     }
 
