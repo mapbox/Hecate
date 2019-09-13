@@ -62,8 +62,6 @@ where
     }
 
     fn call(&mut self, mut req: ServiceRequest) -> Self::Future {
-        let mut auth = Auth::from_sreq(&mut req).unwrap_or(Auth::new());
-
         let db = match self.db.get() {
             Ok(db) => db,
             Err(_err) => {
@@ -75,15 +73,15 @@ where
             }
         };
 
-        match auth.validate(&*db) {
+        let mut auth = match Auth::from_sreq(&mut req, &*db) {
             Err(_err) => {
                 return Either::B(ok(req.into_response(
                     HttpResponse::Unauthorized()
                         .finish()
-                        .into_body(),
+                        .into_body()
                 )));
             },
-            _ => ()
+            Ok(auth) => auth
         };
 
         // If no default auth is set - allow all api endpoints

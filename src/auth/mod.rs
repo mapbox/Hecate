@@ -8,6 +8,7 @@ pub use config::AuthContainer;
 pub use config::ValidAuth;
 pub use config::CustomAuth;
 pub use config::RW;
+use crate::user::token::Scope;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum AuthDefault {
@@ -21,7 +22,8 @@ pub struct Auth {
     pub uid: Option<i64>,
     pub access: Option<String>,
     pub token: Option<String>,
-    pub basic: Option<(String, String)>
+    pub basic: Option<(String, String)>,
+    pub scope: Scope
 }
 
 impl Auth {
@@ -30,7 +32,8 @@ impl Auth {
             uid: None,
             access: None,
             token: None,
-            basic: None
+            basic: None,
+            scope: Scope::Read
         }
     }
 
