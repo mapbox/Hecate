@@ -76,6 +76,22 @@ impl Auth {
             }
         };
 
+        match self.scope {
+            Scope::Full => {
+                headers.insert(
+                    HeaderName::from_static("hecate_token"),
+                    HeaderValue::from_static("full")
+                );
+            },
+            Scope::Read => {
+                headers.insert(
+                    HeaderName::from_static("hecate_token"),
+                    HeaderValue::from_static("read")
+                );
+
+            }
+        };
+
         match self.basic {
             Some(basic) => {
                 headers.insert(
@@ -135,6 +151,18 @@ impl Auth {
                     }
                 }
             },
+            scope: match headers.get("hecate_scope") {
+                None => Scope::Read,
+                Some(scope) => match scope.to_str() {
+                    Ok(scope) => match scope {
+                        "full" => Scope::Full,
+                        _ => Scope::Read
+                    },
+                    Err(err) => {
+                        return Err(HecateError::new(500, String::from("Authentication Error"), Some(err.to_string())));
+                    }
+                }
+            },
             basic: match headers.get("hecate_basic") {
                 None => None,
                 Some(basic) => match basic.to_str() {
@@ -167,37 +195,8 @@ impl Auth {
         })
     }
 
-    pub fn from_sreq(req: &mut actix_web::dev::ServiceRequest) -> Result<Self, HecateError> {
+    pub fn from_sreq(req: &mut actix_web::dev::ServiceRequest, conn: &impl postgres::GenericConnection) -> Result<Self, HecateError> {
         let mut auth = Auth::new();
-
-        let path: Vec<String> = req.path().split("/").map(|p| {
-            p.to_string()
-        }).filter(|p| {
-            if p.len() == 0 {
-                return false;
-            }
-
-            return true;
-        }).collect();
-
-        if
-            path.len() > 2
-            && path[0] == String::from("token")
-        {
-            auth.token = Some(path[1].to_string());
-
-            let curr_path = req.match_info_mut();
-
-            let mut new_path = String::from("");
-            for i in 2..path.len() {
-                new_path = format!("{}/{}", new_path, path[i].to_string());
-            }
-
-            let new_url =  actix_web::dev::Url::new(new_path.parse::<actix_web::http::Uri>().unwrap());
-
-            curr_path.set(new_url);
-        }
-
 
         match req.cookie("session") {
             Some(token) => {
@@ -205,6 +204,7 @@ impl Auth {
 
                 if token.len() > 0 {
                     auth.token = Some(token);
+                    auth.validate(conn)?;
                     return Ok(auth);
                 }
 
@@ -239,6 +239,8 @@ impl Auth {
 
                             auth.basic = Some((String::from(split[0]), String::from(split[1])));
 
+                            auth.validate(conn)?;
+
                             return Ok(auth);
                         },
                         Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
@@ -248,6 +250,42 @@ impl Auth {
             },
             None => ()
         };
+
+        let path: Vec<String> = req.path().split("/").map(|p| {
+            p.to_string()
+        }).filter(|p| {
+            if p.len() == 0 {
+                return false;
+            }
+
+            return true;
+        }).collect();
+
+        if
+            path.len() > 2
+            && path[0] == String::from("token")
+        {
+            auth.token = Some(path[1].to_string());
+
+            let curr_path = req.match_info_mut();
+
+            let mut new_path = String::from("");
+            for i in 2..path.len() {
+                new_path = format!("{}/{}", new_path, path[i].to_string());
+            }
+
+            let new_url =  actix_web::dev::Url::new(new_path.parse::<actix_web::http::Uri>().unwrap());
+
+            curr_path.set(new_url);
+
+            auth.validate(conn)?;
+
+            // URL Token auth cannot exceed READ
+            auth.scope = Scope::Read;
+
+            return Ok(auth);
+        }
+
 
         Ok(auth)
     }

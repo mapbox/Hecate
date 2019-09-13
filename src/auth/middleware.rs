@@ -73,7 +73,7 @@ where
             }
         };
 
-        let mut auth = match Auth::from_sreq(&mut req, &*db) {
+        let auth = match Auth::from_sreq(&mut req, &*db) {
             Err(_err) => {
                 return Either::B(ok(req.into_response(
                     HttpResponse::Unauthorized()
