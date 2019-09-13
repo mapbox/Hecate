@@ -5,6 +5,7 @@ use rand::distributions::Alphanumeric;
 use sha2::Sha256;
 use hmac::{Hmac, Mac};
 use url::Url;
+use base64;
 
 // Create alias for HMAC-SHA256
 type HmacSha256 = Hmac<Sha256>;
@@ -197,6 +198,7 @@ pub fn is_valid_action(actions: &Vec<String>) -> bool {
 }
 
 pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) -> Result<(), HecateError> {
+
     let action = match task {
         worker::TaskType::Delta(_) => Action::Delta,
         worker::TaskType::User(_) => Action::User,
@@ -221,10 +223,10 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
                 }).to_string()
             },
             worker::TaskType::Style(style) => {
-                    json!({
-                        "id": style,
-                        "type": "style"
-                    }).to_string()
+                json!({
+                    "id": style,
+                    "type": "style"
+                }).to_string()
             },
             worker::TaskType::Meta => {
                 json!({
@@ -234,14 +236,14 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
             }
         };
 
-        let mut mac: HmacSha256 = match HmacSha256::new_varkey(hook.secret.unwrap().as_bytes()) {
+        let mut mac = match HmacSha256::new_varkey(hook.secret.unwrap().as_bytes()) {
             Ok(mac) => mac,
             Err(_) => return Err(HecateError::new(500, String::from("Internal Server Error"), None))
         };
         mac.input(body.as_bytes());
-        let token = mac.result().code();
+        let signature = base64::encode(&mac.result().code());
 
-        let url = match Url::parse(hook.url.as_str()).unwrap().join(format!("token={:?}", token).as_str()) {
+        let url = match Url::parse_with_params(hook.url.as_str(), &[("signature", signature)]) {
             Ok(url) => url,
             Err(_) => return Err(HecateError::new(500, String::from("Internal Server Error"), None))
         };
