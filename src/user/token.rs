@@ -1,20 +1,41 @@
 use crate::err::HecateError;
 
+pub struct Scope {
+    pub read: bool,
+    pub write: bool,
+    pub server: bool,
+    pub webhooks: bool,
+    pub meta: bool,
+    pub schema: bool,
+    pub stats: bool,
+    pub mvt: bool,
+    pub user: bool,
+    pub style: bool,
+    pub delta: bool,
+    pub feature: bool,
+    pub bounds: bool,
+    pub osm: bool,
+    pub clone: bool,
+    pub auth: bool,
+}
+
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct Token {
     pub name: String,
     pub uid: i64,
     pub token: String,
-    pub expiry: String
+    pub expiry: String,
+    pub scope: Scope
 }
 
 impl Token {
-    pub fn new(name: String, uid: i64, token: String, expiry: String) -> Self {
+    pub fn new(name: String, uid: i64, token: String, expiry: String, scope: Scope) -> Self {
         Token {
             name: name,
             uid: uid,
             token: token,
-            expiry: expiry
+            expiry: expiry,
+            scope: scope
         }
     }
 

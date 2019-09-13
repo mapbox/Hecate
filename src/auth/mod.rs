@@ -9,6 +9,25 @@ pub use config::ValidAuth;
 pub use config::CustomAuth;
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum RW {
+    Read,
+    Write
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Endpoint {
+
+}
+
+impl Endpoint {
+    pub fn new() {
+        Endpoint {
+
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum AuthDefault {
     Public,
     User,

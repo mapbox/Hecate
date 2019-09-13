@@ -349,6 +349,9 @@ fn meta_list(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> actix_web::Result<impl Responder> {
+    auth::Endpoint::new()
+        .set_type(auth::RW::Read)
+
     auth_rules.0.allows_meta_list(&mut auth)?;
 
     let list = serde_json::to_value(meta::list(&*conn.get()?)?).unwrap();
