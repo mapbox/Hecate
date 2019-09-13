@@ -590,6 +590,8 @@ impl CustomAuth {
     }
 
     pub fn allows_webhooks_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.webhooks {
             None => Err(not_authed()),
             Some(webhooks) => auth_met(&webhooks.list, auth)
@@ -597,6 +599,8 @@ impl CustomAuth {
     }
 
     pub fn allows_webhooks_delete(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.webhooks {
             None => Err(not_authed()),
             Some(webhooks) => auth_met(&webhooks.delete, auth)
@@ -604,6 +608,8 @@ impl CustomAuth {
     }
 
     pub fn allows_webhooks_update(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.webhooks {
             None => Err(not_authed()),
             Some(webhooks) => auth_met(&webhooks.update, auth)
@@ -611,6 +617,8 @@ impl CustomAuth {
     }
 
     pub fn allows_meta_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.meta {
             None => Err(not_authed()),
             Some(meta) => auth_met(&meta.get, auth)
@@ -618,6 +626,8 @@ impl CustomAuth {
     }
 
     pub fn allows_meta_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.meta {
             None => Err(not_authed()),
             Some(meta) => auth_met(&meta.list, auth)
@@ -625,6 +635,8 @@ impl CustomAuth {
     }
 
     pub fn allows_meta_set(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.meta {
             None => Err(not_authed()),
             Some(meta) => auth_met(&meta.set, auth)
@@ -632,6 +644,8 @@ impl CustomAuth {
     }
 
     pub fn allows_stats_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.stats {
             None => Err(not_authed()),
             Some(stats) => auth_met(&stats.get, auth)
@@ -639,6 +653,8 @@ impl CustomAuth {
     }
 
     pub fn allows_stats_bounds(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.stats {
             None => Err(not_authed()),
             Some(stats) => auth_met(&stats.bounds, auth)
@@ -646,6 +662,8 @@ impl CustomAuth {
     }
 
     pub fn allows_mvt_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.mvt {
             None => Err(not_authed()),
             Some(mvt) => auth_met(&mvt.get, auth)
@@ -653,6 +671,8 @@ impl CustomAuth {
     }
 
     pub fn allows_mvt_delete(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.mvt {
             None => Err(not_authed()),
             Some(mvt) => auth_met(&mvt.delete, auth)
@@ -660,6 +680,8 @@ impl CustomAuth {
     }
 
     pub fn allows_mvt_regen(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.mvt {
             None => Err(not_authed()),
             Some(mvt) => auth_met(&mvt.regen, auth)
@@ -667,6 +689,8 @@ impl CustomAuth {
     }
 
     pub fn allows_mvt_meta(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.mvt {
             None => Err(not_authed()),
             Some(mvt) => auth_met(&mvt.meta, auth)
@@ -674,6 +698,8 @@ impl CustomAuth {
     }
 
     pub fn allows_user_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.user {
             None => Err(not_authed()),
             Some(user) => auth_met(&user.list, auth)
@@ -681,6 +707,8 @@ impl CustomAuth {
     }
 
     pub fn allows_user_create(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.user {
             None => Err(not_authed()),
             Some(user) => auth_met(&user.create, auth)
@@ -688,6 +716,8 @@ impl CustomAuth {
     }
 
     pub fn allows_user_info(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.user {
             None => Err(not_authed()),
             Some(user) => auth_met(&user.info, auth)
@@ -695,6 +725,8 @@ impl CustomAuth {
     }
 
     pub fn allows_user_create_session(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.user {
             None => Err(not_authed()),
             Some(user) => auth_met(&user.create_session, auth)
@@ -702,6 +734,8 @@ impl CustomAuth {
     }
 
     pub fn allows_style_create(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.create, auth)
@@ -709,6 +743,8 @@ impl CustomAuth {
     }
 
     pub fn allows_style_patch(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.patch, auth)
@@ -716,6 +752,8 @@ impl CustomAuth {
     }
 
     pub fn allows_style_set_public(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.set_public, auth)
@@ -723,6 +761,8 @@ impl CustomAuth {
     }
 
     pub fn allows_style_set_private(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.set_private, auth)
@@ -730,6 +770,8 @@ impl CustomAuth {
     }
 
     pub fn allows_style_delete(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.delete, auth)
@@ -737,6 +779,8 @@ impl CustomAuth {
     }
 
     pub fn allows_style_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.get, auth)
@@ -744,6 +788,8 @@ impl CustomAuth {
     }
 
     pub fn allows_style_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.style {
             None => Err(not_authed()),
             Some(style) => auth_met(&style.list, auth)
@@ -751,6 +797,8 @@ impl CustomAuth {
     }
 
     pub fn allows_delta_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.delta {
             None => Err(not_authed()),
             Some(delta) => auth_met(&delta.get, auth)
@@ -758,6 +806,8 @@ impl CustomAuth {
     }
 
     pub fn allows_delta_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.delta {
             None => Err(not_authed()),
             Some(delta) => auth_met(&delta.list, auth)
@@ -765,6 +815,8 @@ impl CustomAuth {
     }
 
     pub fn allows_clone_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.clone {
             None => Err(not_authed()),
             Some(clone) => auth_met(&clone.get, auth)
@@ -772,6 +824,8 @@ impl CustomAuth {
     }
 
     pub fn allows_clone_query(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.clone {
             None => Err(not_authed()),
             Some(clone) => auth_met(&clone.query, auth)
@@ -779,6 +833,8 @@ impl CustomAuth {
     }
 
     pub fn allows_bounds_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.bounds {
             None => Err(not_authed()),
             Some(bounds) => auth_met(&bounds.get, auth)
@@ -786,6 +842,8 @@ impl CustomAuth {
     }
 
     pub fn allows_bounds_create(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.bounds {
             None => Err(not_authed()),
             Some(bounds) => auth_met(&bounds.create, auth)
@@ -793,6 +851,8 @@ impl CustomAuth {
     }
 
     pub fn allows_bounds_delete(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.bounds {
             None => Err(not_authed()),
             Some(bounds) => auth_met(&bounds.delete, auth)
@@ -800,6 +860,8 @@ impl CustomAuth {
     }
 
     pub fn allows_bounds_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.bounds {
             None => Err(not_authed()),
             Some(bounds) => auth_met(&bounds.list, auth)
@@ -807,6 +869,8 @@ impl CustomAuth {
     }
 
     pub fn allows_feature_create(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.feature {
             None => Err(not_authed()),
             Some(feature) => auth_met(&feature.create, auth)
@@ -814,6 +878,8 @@ impl CustomAuth {
     }
 
     pub fn allows_feature_force(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.feature {
             None => Err(not_authed()),
             Some(feature) => auth_met(&feature.force, auth)
@@ -821,6 +887,8 @@ impl CustomAuth {
     }
 
     pub fn allows_feature_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.feature {
             None => Err(not_authed()),
             Some(feature) => auth_met(&feature.get, auth)
@@ -828,6 +896,8 @@ impl CustomAuth {
     }
 
     pub fn allows_feature_history(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.feature {
             None => Err(not_authed()),
             Some(feature) => auth_met(&feature.history, auth)
@@ -835,6 +905,8 @@ impl CustomAuth {
     }
 
     pub fn allows_schema_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.schema {
             None => Err(not_authed()),
             Some(schema) => auth_met(&schema.get, auth)
@@ -842,6 +914,8 @@ impl CustomAuth {
     }
 
     pub fn allows_auth_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.auth {
             None => Err(not_authed()),
             Some(a) => auth_met(&a.get, auth)
@@ -849,6 +923,8 @@ impl CustomAuth {
     }
 
     pub fn allows_osm_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.osm {
             None => Err(not_authed()),
             Some(osm) => auth_met(&osm.get, auth)
@@ -856,6 +932,8 @@ impl CustomAuth {
     }
 
     pub fn allows_osm_create(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
+        rw_met(rw, &auth)?;
+
         match &self.osm {
             None => Err(not_authed()),
             Some(osm) => auth_met(&osm.create, auth)
