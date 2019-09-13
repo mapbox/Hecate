@@ -1,6 +1,6 @@
 [package]
 name = "hecate"
-version = "0.72.0"
+version = "0.73.0"
 edition = "2018"
 authors = ["ingalls <ingalls@protonmail.com>"]
 license = "MIT"
@@ -27,6 +27,7 @@ bytes = "0.4"
 actix-web = "1.0.7"
 actix-files = "0.1.4"
 actix-http = "0.2.9"
+actix-service = "0.4.2"
 geojson = "0.16.0"
 quick-xml = "0.16.1"
 serde = "1.0"

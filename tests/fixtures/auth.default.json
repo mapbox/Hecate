@@ -1,32 +1,32 @@
 {
-    "default": "public",
+    "default": "user",
     "server": "public",
     "webhooks": {
-        "list": "user",
-        "delete": "user",
-        "update": "user"
+        "list": "public",
+        "delete": "public",
+        "update": "public"
     },
     "meta": {
-        "get": "user",
-        "list": "user",
+        "get": "public",
+        "list": "public",
         "set": "user"
     },
     "schema": {
-        "get": "user"
+        "get": "public"
     },
     "stats": {
-        "get": "user",
-        "bounds": "user"
+        "get": "public",
+        "bounds": "public"
     },
     "mvt": {
-        "get": "user",
-        "regen": "user",
-        "delete": "user",
-        "meta": "user"
+        "get": "public",
+        "regen": "public",
+        "delete": "public",
+        "meta": "public"
     },
     "user": {
         "info": "self",
-        "list": "user",
+        "list": "public",
         "create": "public",
         "create_session": "self"
     },
@@ -36,32 +36,32 @@
         "set_public": "self",
         "set_private": "self",
         "delete": "self",
-        "get": "user",
-        "list": "user"
+        "get": "public",
+        "list": "public"
     },
     "delta": {
-        "get": "user",
-        "list": "user"
+        "get": "public",
+        "list": "public"
     },
     "feature": {
         "force": "user",
         "create": "user",
-        "get": "user",
-        "history": "user"
+        "get": "public",
+        "history": "public"
     },
     "bounds": {
-        "list": "user",
+        "list": "public",
         "create": "user",
-        "delete": "user",
-        "get": "user"
+        "delete": "public",
+        "get": "public"
     },
     "osm": {
-        "get": "user",
+        "get": "public",
         "create": "user"
     },
     "clone": {
-        "get": "user",
-        "query": "user"
+        "get": "public",
+        "query": "public"
     },
     "auth": {
         "get": "public"

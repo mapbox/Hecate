@@ -30,6 +30,7 @@ window.hecate = {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
+                if (response.status === 404) return cb(null, false);
                 if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
                 return response.json();
             }).then((response) => {

@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.73.0
+
+- :rocket: Add identity middleware to require every endpoint for authentication, returning 401
+    or redirecting to login page if the request is not authenticated
+
 ## v0.72.0
 
 - :rocket: Switch backend from `rocket` to `actix`
