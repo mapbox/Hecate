@@ -68,24 +68,31 @@ impl Token {
 
     pub fn get(conn: &impl postgres::GenericConnection, uid: &i64, token: &String) -> Result<Self, HecateError> {
         match conn.query("
-            SELECT row_to_json(t)
-            FROM (
-                SELECT
-                    name,
-                    uid,
-                    token,
-                    expiry
-                FROM
-                    users_tokens
-                WHERE
-                    uid = $1,
-                    token = $2
-            ) t
+            SELECT
+                name,
+                uid,
+                token,
+                expiry::TEXT,
+                scope
+            FROM
+                users_tokens
+            WHERE
+                uid = $1,
+                token = $2
         ", &[ &uid, &token ]) {
             Ok(res) => {
-                let token: serde_json::Value = res.get(0).get(0);
-                let token: Token = serde_json::from_value(token).unwrap();
-                Ok(token)
+                let name: String = res.get(0).get(0);
+                let uid: i64 = res.get(0).get(1);
+                let token: String = res.get(0).get(2);
+                let expiry: String = res.get(0).get(3);
+                let scope: String = res.get(0).get(4);
+
+                let scope = match token.as_str() {
+                    "full" => Scope::Full,
+                    _ => Scope::Read
+                };
+
+                Ok(Token::new(name, uid, token, expiry, scope))
             },
             Err(err) => Err(HecateError::from_db(err))
         }
