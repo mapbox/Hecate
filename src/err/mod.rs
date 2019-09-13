@@ -41,6 +41,8 @@ impl HecateError {
     }
 
     pub fn from_db(error: postgres::error::Error) -> Self {
+        println!("Database Error: {:?}", &error);
+
         match error.as_db() {
             Some(db_err) => HecateError {
                 code: 500,
@@ -83,6 +85,7 @@ impl HecateError {
 
 impl actix_http::ResponseError for HecateError {
     fn error_response(&self) -> actix_http::Response {
+        println!("{}", self.as_log());
 
         actix_http::Response::build(actix_web::http::StatusCode::from_u16(self.code).unwrap())
            .json(self.as_json())
