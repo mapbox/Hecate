@@ -1,22 +1,9 @@
 use crate::err::HecateError;
 
-pub struct Scope {
-    pub read: bool,
-    pub write: bool,
-    pub server: bool,
-    pub webhooks: bool,
-    pub meta: bool,
-    pub schema: bool,
-    pub stats: bool,
-    pub mvt: bool,
-    pub user: bool,
-    pub style: bool,
-    pub delta: bool,
-    pub feature: bool,
-    pub bounds: bool,
-    pub osm: bool,
-    pub clone: bool,
-    pub auth: bool,
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
+pub enum Scope {
+    Read,
+    Full
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
@@ -39,34 +26,40 @@ impl Token {
         }
     }
 
-    pub fn create(conn: &impl postgres::GenericConnection, name: impl ToString, uid: &i64, hours: &i64) -> Result<Self, HecateError> {
+    pub fn create(conn: &impl postgres::GenericConnection, name: impl ToString, uid: &i64, hours: &i64, scope: Scope) -> Result<Self, HecateError> {
         if hours > &16 {
             return Err(HecateError::new(400, String::from("Token Expiry Cannot Exceed 16 hours"), None));
         }
 
         let hours = format!("{} hours", hours);
 
+        let scope_str = match scope {
+            Scope::Full => "full",
+            Scope::Read => "read"
+        };
+
         match conn.query("
-            INSERT INTO users_tokens (name, uid, token, expiry)
+            INSERT INTO users_tokens (name, uid, token, expiry, scope)
                 VALUES (
                     $1,
                     $2,
                     md5(random()::TEXT),
-                    now() + ($3::TEXT)::INTERVAL
+                    now() + ($3::TEXT)::INTERVAL,
+                    $4
                 )
                 RETURNING
                     name,
                     uid,
                     token,
                     expiry::TEXT
-        ", &[ &name.to_string(), &uid, &hours ]) {
+        ", &[ &name.to_string(), &uid, &hours, &scope_str ]) {
             Ok(res) => {
                 let name: String = res.get(0).get(0);
                 let uid: i64 = res.get(0).get(1);
                 let token: String = res.get(0).get(2);
                 let expiry: String = res.get(0).get(3);
 
-                Ok(Token::new(name, uid, token, expiry))
+                Ok(Token::new(name, uid, token, expiry, scope))
             },
             Err(err) => Err(HecateError::from_db(err))
         }

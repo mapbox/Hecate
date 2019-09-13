@@ -50,7 +50,8 @@ CREATE TABLE users_tokens (
     name        TEXT,
     uid         BIGINT,
     token       TEXT PRIMARY KEY,
-    expiry      TIMESTAMP
+    expiry      TIMESTAMP,
+    scope       TEXT
 );
 
 DROP TABLE IF EXISTS geo;

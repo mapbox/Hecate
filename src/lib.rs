@@ -303,7 +303,8 @@ struct Map {
 #[derive(Deserialize, Debug)]
 struct Token {
     name: Option<String>,
-    hours: Option<i64>
+    hours: Option<i64>,
+    scope: Option<String> //read, full (default read)
 }
 
 #[derive(Deserialize, Debug)]
@@ -332,7 +333,7 @@ fn server(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_server(&mut auth)?;
+    auth_rules.0.allows_server(&mut auth, auth::RW::Read)?;
 
     Ok(Json(json!({
         "version": VERSION,
@@ -349,10 +350,7 @@ fn meta_list(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> actix_web::Result<impl Responder> {
-    auth::Endpoint::new()
-        .set_type(auth::RW::Read)
-
-    auth_rules.0.allows_meta_list(&mut auth)?;
+    auth_rules.0.allows_meta_list(&mut auth, auth::RW::Read)?;
 
     let list = serde_json::to_value(meta::list(&*conn.get()?)?).unwrap();
 
@@ -367,7 +365,7 @@ fn meta_get(
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
 ) -> actix_web::Result<Json<serde_json::Value>> {
-    auth_rules.0.allows_meta_get(&mut auth)?;
+    auth_rules.0.allows_meta_get(&mut auth, auth::RW::Read)?;
     worker.queue(worker::Task::new(worker::TaskType::Meta));
 
     Ok(Json(meta::Meta::get(&*conn.get()?, &key.into_inner())?.value))
@@ -381,7 +379,7 @@ fn meta_delete(
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_meta_set(&mut auth)?;
+    auth_rules.0.allows_meta_set(&mut auth, auth::RW::Write)?;
 
     worker.queue(worker::Task::new(worker::TaskType::Meta));
 
@@ -396,7 +394,7 @@ fn meta_set(
     value: Json<serde_json::Value>,
     key: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_meta_set(&mut auth)?;
+    auth_rules.0.allows_meta_set(&mut auth, auth::RW::Write)?;
 
     worker.queue(worker::Task::new(worker::TaskType::Meta));
 
@@ -416,7 +414,7 @@ fn mvt_get(
     let x = path.1;
     let y = path.2;
 
-    auth_rules.0.allows_mvt_get(&mut auth)?;
+    auth_rules.0.allows_mvt_get(&mut auth, auth::RW::Read)?;
 
     if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
@@ -435,7 +433,7 @@ fn mvt_meta(
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_mvt_meta(&mut auth)?;
+    auth_rules.0.allows_mvt_meta(&mut auth, auth::RW::Read)?;
 
     let z = path.0;
     let x = path.1;
@@ -451,7 +449,7 @@ fn mvt_wipe(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_mvt_delete(&mut auth)?;
+    auth_rules.0.allows_mvt_delete(&mut auth, auth::RW::Write)?;
 
     Ok(Json(mvt::wipe(&*conn.get()?)?))
 }
@@ -462,7 +460,7 @@ fn mvt_regen(
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_mvt_regen(&mut auth)?;
+    auth_rules.0.allows_mvt_regen(&mut auth, auth::RW::Write)?;
 
     let z = path.0;
     let x = path.1;
@@ -485,7 +483,7 @@ fn user_create(
     worker: web::Data<worker::Worker>,
     user: web::Query<user::User>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_user_create(&mut auth)?;
+    auth_rules.0.allows_user_create(&mut auth, auth::RW::Write)?;
 
     user.set(&*conn.get()?)?;
 
@@ -500,7 +498,7 @@ fn users(
     auth_rules: web::Data<auth::AuthContainer>,
     filter: web::Query<Filter>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_user_list(&mut auth)?;
+    auth_rules.0.allows_user_list(&mut auth, auth::RW::Read)?;
 
     let filter = filter.into_inner();
 
@@ -572,7 +570,7 @@ fn user_self(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_user_info(&mut auth)?;
+    auth_rules.0.allows_user_info(&mut auth, auth::RW::Read)?;
 
     let uid = match auth.uid {
         Some(uid) => uid,
@@ -590,11 +588,11 @@ fn user_create_session(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_user_create_session(&mut auth)?;
+    auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Write)?;
 
     let uid = auth.uid.unwrap();
 
-    let token = user::Token::create(&*conn.get()?, "Session Token", &uid, &4)?;
+    let token = user::Token::create(&*conn.get()?, "Session Token", &uid, &4, user::token::Scope::Full)?;
 
     let cookie = actix_http::http::Cookie::build("session", token.token)
         .path("/")
@@ -645,13 +643,30 @@ fn user_create_token(
     auth_rules: web::Data<auth::AuthContainer>,
     token: web::Query<Token>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_user_create_session(&mut auth)?;
+    auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Write)?;
 
     let token = token.into_inner();
 
     let uid = auth.uid.unwrap();
 
-    let token = user::Token::create(&*conn.get()?, token.name.unwrap_or(String::from("Access Token")), &uid, &token.hours.unwrap_or(16))?;
+    let scope = match token.scope {
+        Some(scope) => match scope.as_str() {
+            "full" => user::token::Scope::Full,
+            "read" => user::token::Scope::Read,
+            _ => {
+                return Err(HecateError::new(400, String::from("Invalid Token Scope"), None));
+            },
+        },
+        None => user::token::Scope::Read
+    };
+
+    let token = user::Token::create(
+        &*conn.get()?,
+        token.name.unwrap_or(String::from("Access Token")),
+        &uid,
+        &token.hours.unwrap_or(16),
+        scope
+    )?;
 
     match serde_json::to_value(token) {
         Ok(token) => Ok(Json(token)),
@@ -665,7 +680,7 @@ fn user_delete_token(
     mut auth: auth::Auth,
     token: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_user_create_session(&mut auth)?;
+    auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Write)?;
 
     let uid = auth.uid.unwrap();
 
@@ -688,7 +703,7 @@ fn style_create(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_style_create(&mut auth) {
+    match auth_rules.0.allows_style_create(&mut auth, auth::RW::Write) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -717,7 +732,7 @@ fn style_public(
     auth_rules: web::Data<auth::AuthContainer>,
     style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_style_set_public(&mut auth)?;
+    auth_rules.0.allows_style_set_public(&mut auth, auth::RW::Write)?;
     let uid = auth.uid.unwrap();
 
     let style_id = style_id.into_inner();
@@ -731,7 +746,7 @@ fn style_private(
     auth_rules: web::Data<auth::AuthContainer>,
     style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_style_set_private(&mut auth)?;
+    auth_rules.0.allows_style_set_private(&mut auth, auth::RW::Write)?;
     let uid = auth.uid.unwrap();
 
     let style_id = style_id.into_inner();
@@ -754,7 +769,7 @@ fn style_patch(
 
     let style_id = style_id.into_inner();
 
-    match auth_rules.0.allows_style_patch(&mut auth) {
+    match auth_rules.0.allows_style_patch(&mut auth, auth::RW::Write) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -783,7 +798,7 @@ fn style_delete(
     worker: web::Data<worker::Worker>,
     style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_style_delete(&mut auth)?;
+    auth_rules.0.allows_style_delete(&mut auth, auth::RW::Write)?;
     let uid = auth.uid.unwrap();
 
     let style_id = style_id.into_inner();
@@ -799,7 +814,7 @@ fn style_get(
     auth_rules: web::Data<auth::AuthContainer>,
     style_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_style_get(&mut auth)?;
+    auth_rules.0.allows_style_get(&mut auth, auth::RW::Read)?;
 
     let style_id = style_id.into_inner();
 
@@ -811,7 +826,7 @@ fn style_list_public(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_style_list(&mut auth)?;
+    auth_rules.0.allows_style_list(&mut auth, auth::RW::Read)?;
 
     Ok(Json(json!(style::list_public(&*conn.get()?)?)))
 }
@@ -822,7 +837,7 @@ fn style_list_user(
     auth_rules: web::Data<auth::AuthContainer>,
     user_id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_style_list(&mut auth)?;
+    auth_rules.0.allows_style_list(&mut auth, auth::RW::Read)?;
 
     let user_id = user_id.into_inner();
 
@@ -846,7 +861,7 @@ fn delta_list(
     auth_rules: web::Data<auth::AuthContainer>,
     opts: web::Query<DeltaList>
 ) ->  Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_delta_list(&mut auth)?;
+    auth_rules.0.allows_delta_list(&mut auth, auth::RW::Read)?;
 
     if opts.offset.is_none() && opts.limit.is_none() && opts.start.is_none() && opts.end.is_none() {
         Ok(Json(delta::list_by_offset(&*conn.get()?, None, None)?))
@@ -887,7 +902,7 @@ fn delta(
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
 ) ->  Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_delta_get(&mut auth)?;
+    auth_rules.0.allows_delta_get(&mut auth, auth::RW::Read)?;
 
     Ok(Json(delta::get_json(&*conn.get()?, &id.into_inner())?))
 }
@@ -899,7 +914,7 @@ fn bounds(
     auth_rules: web::Data<auth::AuthContainer>,
     filter: web::Query<Filter>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_bounds_list(&mut auth)?;
+    auth_rules.0.allows_bounds_list(&mut auth, auth::RW::Read)?;
 
     let filter = filter.into_inner();
     match filter.filter {
@@ -914,7 +929,7 @@ fn bounds_get(
     auth_rules: web::Data<auth::AuthContainer>,
     bounds: web::Path<String>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_bounds_list(&mut auth)?;
+    auth_rules.0.allows_bounds_list(&mut auth, auth::RW::Read)?;
 
     let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
     Ok(resp.streaming(bounds::get(conn.get()?, bounds.into_inner())?))
@@ -932,7 +947,7 @@ fn bounds_set(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_bounds_create(&mut auth) {
+    match auth_rules.0.allows_bounds_create(&mut auth, auth::RW::Write) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -962,7 +977,7 @@ fn bounds_delete(
     auth_rules: web::Data<auth::AuthContainer>,
     bounds: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_bounds_delete(&mut auth)?;
+    auth_rules.0.allows_bounds_delete(&mut auth, auth::RW::Write)?;
 
     Ok(Json(json!(bounds::delete(&*conn.get()?, &bounds.into_inner())?)))
 }
@@ -972,7 +987,7 @@ fn webhooks_list(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_webhooks_list(&mut auth)?;
+    auth_rules.0.allows_webhooks_list(&mut auth, auth::RW::Read)?;
 
     match serde_json::to_value(webhooks::list(&*conn.get()?, webhooks::Action::All)?) {
         Ok(hooks) => Ok(Json(hooks)),
@@ -986,7 +1001,7 @@ fn webhooks_get(
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_webhooks_list(&mut auth)?;
+    auth_rules.0.allows_webhooks_list(&mut auth, auth::RW::Read)?;
 
     match serde_json::to_value(webhooks::get(&*conn.get()?, id.into_inner())?) {
         Ok(hooks) => Ok(Json(hooks)),
@@ -1000,7 +1015,7 @@ fn webhooks_delete(
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
 ) -> Result<Json<bool>, HecateError> {
-    auth_rules.0.allows_webhooks_delete(&mut auth)?;
+    auth_rules.0.allows_webhooks_delete(&mut auth, auth::RW::Write)?;
 
     Ok(Json(webhooks::delete(&*conn.get()?, id.into_inner())?))
 }
@@ -1011,7 +1026,7 @@ fn webhooks_create(
     auth_rules: web::Data<auth::AuthContainer>,
     webhook: Json<webhooks::WebHook>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_webhooks_update(&mut auth)?;
+    auth_rules.0.allows_webhooks_update(&mut auth, auth::RW::Write)?;
 
     match serde_json::to_value(webhooks::create(&*conn.get()?, webhook.into_inner())?) {
         Ok(webhook) => Ok(Json(webhook)),
@@ -1026,7 +1041,7 @@ fn webhooks_update(
     mut webhook: Json<webhooks::WebHook>,
     id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_webhooks_update(&mut auth)?;
+    auth_rules.0.allows_webhooks_update(&mut auth, auth::RW::Write)?;
 
     webhook.id = Some(id.into_inner());
 
@@ -1042,7 +1057,7 @@ fn bounds_stats(
     auth_rules: web::Data<auth::AuthContainer>,
     bound: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_stats_bounds(&mut auth)?;
+    auth_rules.0.allows_stats_bounds(&mut auth, auth::RW::Read)?;
 
     Ok(Json(bounds::stats_json(&*conn.get()?, bound.into_inner())?))
 }
@@ -1053,7 +1068,7 @@ fn bounds_meta(
     auth_rules: web::Data<auth::AuthContainer>,
     bound: web::Path<String>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_bounds_get(&mut auth)?;
+    auth_rules.0.allows_bounds_get(&mut auth, auth::RW::Read)?;
 
     Ok(Json(bounds::meta(&*conn.get()?, bound.into_inner())?))
 }
@@ -1065,7 +1080,7 @@ fn clone_query(
     auth_rules: web::Data<auth::AuthContainer>,
     cquery: web::Query<CloneQuery>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_clone_query(&mut auth)?;
+    auth_rules.0.allows_clone_query(&mut auth, auth::RW::Read)?;
 
     let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
     Ok(resp.streaming(clone::query(sandbox_conn.get()?, &cquery.query, &cquery.limit)?))
@@ -1076,7 +1091,7 @@ fn clone_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_clone_get(&mut auth)?;
+    auth_rules.0.allows_clone_get(&mut auth, auth::RW::Read)?;
 
     let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
     Ok(resp.streaming(clone::get(conn.get()?)?))
@@ -1088,7 +1103,7 @@ fn features_query(
     auth_rules: web::Data<auth::AuthContainer>,
     map: web::Query<Map>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_feature_get(&mut auth)?;
+    auth_rules.0.allows_feature_get(&mut auth, auth::RW::Read)?;
 
     if map.bbox.is_some() && map.point.is_some() {
         Err(HecateError::new(400, String::from("key and point params cannot be used together"), None))
@@ -1111,7 +1126,7 @@ fn schema_get(
     auth_rules: web::Data<auth::AuthContainer>,
     schema: web::Data<Option<serde_json::value::Value>>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_schema_get(&mut auth)?;
+    auth_rules.0.allows_schema_get(&mut auth, auth::RW::Read)?;
 
     match schema.get_ref() {
         Some(s) => Ok(Json(json!(s))),
@@ -1123,7 +1138,7 @@ fn auth_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_auth_get(&mut auth)?;
+    auth_rules.0.allows_auth_get(&mut auth, auth::RW::Read)?;
 
     Ok(Json(auth_rules.0.to_json()))
 }
@@ -1133,7 +1148,7 @@ fn stats_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_stats_get(&mut auth)?;
+    auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
 
     Ok(Json(stats::get_json(&*conn.get()?)?))
 }
@@ -1143,7 +1158,7 @@ fn stats_regen(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_stats_get(&mut auth)?;
+    auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
 
     Ok(Json(json!(stats::regen(&*conn.get()?)?)))
 }
@@ -1161,7 +1176,7 @@ fn features_action(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_feature_create(&mut auth) {
+    match auth_rules.0.allows_feature_create(&mut auth, auth::RW::Write) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -1221,7 +1236,7 @@ fn features_action(
                 },
                 Ok(force) => {
                     if force {
-                        auth_rules.0.allows_feature_force(&mut auth)?;
+                        auth_rules.0.allows_feature_force(&mut auth, auth::RW::Write)?;
                     }
                 }
             };
@@ -1274,7 +1289,7 @@ fn osm_map(
     auth_rules: web::Data<auth::AuthContainer>,
     map: web::Query<Map>
 ) -> Result<String, HecateError> {
-    auth_rules.0.allows_osm_get(&mut auth)?;
+    auth_rules.0.allows_osm_get(&mut auth, auth::RW::Read)?;
 
     let query: Vec<f64> = map.bbox.as_ref().unwrap().split(',').map(|s| s.parse().unwrap()).collect();
 
@@ -1299,7 +1314,7 @@ fn osm_changeset_create(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_osm_create(&mut auth) {
+    match auth_rules.0.allows_osm_create(&mut auth, auth::RW::Write) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -1347,7 +1362,7 @@ fn osm_changeset_close(
     auth_rules: web::Data<auth::AuthContainer>,
     delta_id: web::Path<i64>
 ) -> Result<String, HecateError> {
-    auth_rules.0.allows_osm_create(&mut auth)?;
+    auth_rules.0.allows_osm_create(&mut auth, auth::RW::Write)?;
 
     Ok(delta_id.into_inner().to_string())
 }
@@ -1364,7 +1379,7 @@ fn osm_changeset_modify(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_osm_create(&mut auth) {
+    match auth_rules.0.allows_osm_create(&mut auth, auth::RW::Write) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -1445,7 +1460,7 @@ fn osm_changeset_upload(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_osm_create(&mut auth) {
+    match auth_rules.0.allows_osm_create(&mut auth, auth::RW::Write) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -1559,7 +1574,7 @@ fn osm_capabilities(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<String, HecateError> {
-    auth_rules.0.allows_osm_get(&mut auth)?;
+    auth_rules.0.allows_osm_get(&mut auth, auth::RW::Read)?;
 
     Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
@@ -1579,7 +1594,7 @@ fn osm_user(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<String, HecateError> {
-    auth_rules.0.allows_osm_get(&mut auth)?;
+    auth_rules.0.allows_osm_get(&mut auth, auth::RW::Read)?;
 
     Ok(String::from("
         <osm version=\"0.6\" generator=\"Hecate Server\">
@@ -1608,7 +1623,7 @@ fn feature_action(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth_rules.0.allows_feature_create(&mut auth) {
+    match auth_rules.0.allows_feature_create(&mut auth, auth::RW::Write) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
     };
@@ -1633,7 +1648,7 @@ fn feature_action(
         };
 
         if feature::is_force(&feat)? {
-            auth_rules.0.allows_feature_force(&mut auth)?;
+            auth_rules.0.allows_feature_force(&mut auth, auth::RW::Write)?;
         };
 
         let delta_message = match feat.foreign_members {
@@ -1716,7 +1731,7 @@ fn feature_get(
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_feature_get(&mut auth)?;
+    auth_rules.0.allows_feature_get(&mut auth, auth::RW::Read)?;
 
     match feature::get(&*conn.get()?, &id.into_inner()) {
         Ok(feature) => {
@@ -1737,7 +1752,7 @@ fn feature_get_history(
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_feature_history(&mut auth)?;
+    auth_rules.0.allows_feature_history(&mut auth, auth::RW::Read)?;
 
     Ok(Json(delta::history(&*conn.get()?, &id.into_inner())?))
 }
@@ -1748,7 +1763,7 @@ fn feature_query(
     auth_rules: web::Data<auth::AuthContainer>,
     fquery: web::Query<FeatureQuery>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_feature_get(&mut auth)?;
+    auth_rules.0.allows_feature_get(&mut auth, auth::RW::Read)?;
 
     if fquery.key.is_some() && fquery.point.is_some() {
         Err(HecateError::new(400, String::from("key and point params cannot be used together"), None))

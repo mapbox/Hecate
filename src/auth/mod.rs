@@ -7,25 +7,7 @@ pub mod middleware;
 pub use config::AuthContainer;
 pub use config::ValidAuth;
 pub use config::CustomAuth;
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum RW {
-    Read,
-    Write
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Endpoint {
-
-}
-
-impl Endpoint {
-    pub fn new() {
-        Endpoint {
-
-        }
-    }
-}
+pub use config::RW;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum AuthDefault {
