@@ -79,13 +79,13 @@ impl Auth {
         match self.scope {
             Scope::Full => {
                 headers.insert(
-                    HeaderName::from_static("hecate_token"),
+                    HeaderName::from_static("hecate_scope"),
                     HeaderValue::from_static("full")
                 );
             },
             Scope::Read => {
                 headers.insert(
-                    HeaderName::from_static("hecate_token"),
+                    HeaderName::from_static("hecate_scope"),
                     HeaderValue::from_static("read")
                 );
 
