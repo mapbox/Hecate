@@ -5,6 +5,7 @@ extern crate postgres;
 #[cfg(test)]
 mod test {
     use std::fs::File;
+    use std::env;
     use std::io::prelude::*;
     use postgres::{Connection, TlsMode};
     use std::process::Command;
@@ -41,14 +42,24 @@ mod test {
             file.read_to_string(&mut table_sql).unwrap();
             conn.batch_execute(&*table_sql).unwrap();
         }
-        let mut server = Command::new("cargo").args(&[ "run" ]).spawn().unwrap();
+
+        let mut server = Command::new("cargo").args(&[
+            "run",
+            "--",
+            "--auth", env::current_dir().unwrap().join("tests/fixtures/auth.default.json").to_str().unwrap()
+        ]).spawn().unwrap();
+
         thread::sleep(Duration::from_secs(1));
 
-        { // Seed DB with user to create others
+        { // Seed DB with admin user to create others
             let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
             conn.execute("
                 INSERT INTO users (username, password, email)
                     VALUES ('ingalls', crypt('yeaheh', gen_salt('bf', 10)), 'ingalls@protonmail.com')
+            ", &[]).unwrap();
+
+            conn.execute("
+                UPDATE users SET access = 'admin' WHERE id = 1;
             ", &[]).unwrap();
         }
 
@@ -105,9 +116,8 @@ mod test {
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
-
             assert!(resp.status().is_client_error());
-            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
+            assert_eq!(resp.text().unwrap(), "");
         }
 
         { //Feature Upload with bad username
@@ -279,7 +289,7 @@ mod test {
                 "username": "filter",
             },{
                 "id": 1,
-                "access": null,
+                "access": "admin",
                 "username": "ingalls",
             },{
                 "id": 2,
@@ -323,7 +333,7 @@ mod test {
 
             assert_eq!(json_body, json!([{
                 "id": 1,
-                "access": null,
+                "access": "admin",
                 "username": "ingalls",
             },{
                 "id": 2,
@@ -349,7 +359,7 @@ mod test {
 
             assert_eq!(json_body, json!([{
                 "id": 1,
-                "access": null,
+                "access": "admin",
                 "username": "ingalls",
             },{
                 "id": 2,
@@ -403,52 +413,14 @@ mod test {
 
             assert_eq!(json_body, json!({
                 "id": 1,
-                "access": null,
+                "access": "admin",
                 "username": "ingalls",
                 "email": "ingalls@protonmail.com",
                 "meta": {}
             }));
         }
 
-        { // A non-admin cannot get user info about an arbitrary user
-            let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/user/3")
-                .basic_auth("ingalls", Some("yeaheh"))
-                .send()
-                .unwrap();
-
-            assert!(resp.status().is_client_error());
-        }
-
-        { // A non-admin cannot set an admin
-            let client = reqwest::Client::new();
-            let resp = client.put("http://localhost:8000/api/user/1/admin")
-                .basic_auth("ingalls", Some("yeaheh"))
-                .send()
-                .unwrap();
-
-            assert!(resp.status().is_client_error());
-        }
-
-        { // A non-admin cannot unset an admin
-            let client = reqwest::Client::new();
-            let resp = client.delete("http://localhost:8000/api/user/1/admin")
-                .basic_auth("ingalls", Some("yeaheh"))
-                .send()
-                .unwrap();
-
-            assert!(resp.status().is_client_error());
-        }
-
-        {
-            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
-
-            conn.execute("
-                UPDATE users SET access = 'admin' WHERE id = 1;
-            ", &[]).unwrap();
-        }
-
-        { //Create Second User
+        { // Create user to be set as admin
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/user/create?username=future_admin&password=yeaheh&email=fake@example.com")
                 .basic_auth("ingalls", Some("yeaheh"))
@@ -476,6 +448,36 @@ mod test {
                 "email": "fake@example.com",
                 "meta": {}
             }));
+        }
+
+        { // A non-admin cannot get user info about an arbitrary user
+            let client = reqwest::Client::new();
+            let resp = client.get("http://localhost:8000/api/user/3")
+                .basic_auth("future_admin", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+        }
+
+        { // A non-admin cannot set an admin
+            let client = reqwest::Client::new();
+            let resp = client.put("http://localhost:8000/api/user/1/admin")
+                .basic_auth("future_admin", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+        }
+
+        { // A non-admin cannot unset an admin
+            let client = reqwest::Client::new();
+            let resp = client.delete("http://localhost:8000/api/user/1/admin")
+                .basic_auth("future_admin", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
         }
 
         { // An admin can set an admin
