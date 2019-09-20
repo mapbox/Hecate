@@ -88,13 +88,65 @@ mod test {
             token = json_body["token"].as_str().unwrap().to_string();
         }
 
-        { // Access the capabilities endpoint without token
+        { // Access the capabilities (READ scope) endpoint without token
             let resp = reqwest::get("http://localhost:8000/api/capabilities").unwrap();
             assert_eq!(resp.status().as_u16(), 401);
         }
 
-        { // Access the capabilities endpoint with token
+        { // Access the capabilities (READ scope) endpoint with token
             let resp = reqwest::get(format!("http://localhost:8000/token/{}/api/capabilities", token).as_str()).unwrap();
+            assert_eq!(resp.status().as_u16(), 200);
+        }
+
+        { // Access the feature create (FULL scope) endpoint without token
+            let client = reqwest::Client::new();
+            let resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "type": "Feature",
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+                }"#)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.status().as_u16(), 401);
+        }
+
+        { // Access the feature create (FULL scope) endpoint with token
+            let client = reqwest::Client::new();
+            let resp = client.post(format!("http://localhost:8000/token/{}/api/data/feature", token).as_str())
+                .body(r#"{
+                    "type": "Feature",
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+                }"#)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.status().as_u16(), 401);
+        }
+
+        { // Access the feature create (FULL scope) endpoint with token and basic auth
+            let client = reqwest::Client::new();
+            let resp = client.post(format!("http://localhost:8000/token/{}/api/data/feature", token).as_str())
+                .body(r#"{
+                    "type": "Feature",
+                    "action": "create",
+                    "message": "Creating a Point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeaheh"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
             assert_eq!(resp.status().as_u16(), 200);
         }
 
