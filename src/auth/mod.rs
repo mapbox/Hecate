@@ -281,7 +281,7 @@ impl Auth {
             },
             None => ()
         };
-        
+
         Ok(auth)
     }
 

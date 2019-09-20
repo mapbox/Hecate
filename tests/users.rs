@@ -45,32 +45,50 @@ mod test {
         let mut server = Command::new("cargo").args(&[ "run" ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
+        { // Seed DB with user to create others
+            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
+            conn.execute("
+                INSERT INTO users (username, password, email)
+                    VALUES ('ingalls', crypt('yeaheh', gen_salt('bf', 10)), 'ingalls@protonmail.com')
+            ", &[]).unwrap();
+        }
+
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls2&password=yeaheh&email=ingalls2@protonmail.com")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls2&password=yeaheh&email=ingalls2@protonmail.com").unwrap();
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls3&password=yeaheh&email=ingalls3@protonmail.com")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls3&password=yeaheh&email=ingalls3@protonmail.com").unwrap();
-            assert_eq!(resp.text().unwrap(), "true");
-            assert!(resp.status().is_success());
-        }
-
-        { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=filter&password=yeaheh&email=ingalls4@protonmail.com").unwrap();
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/create?username=filter&password=yeaheh&email=ingalls4@protonmail.com")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username Duplicate Error
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls3@protonmail.com").unwrap();
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls3@protonmail.com")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
             assert_eq!(resp.text().unwrap(), "{\"code\":400,\"reason\":\"User/Email Exists\",\"status\":\"Bad Request\"}");
             assert!(resp.status().is_client_error());
         }
@@ -363,7 +381,11 @@ mod test {
         }
 
         { //Create Second User
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=future_admin&password=yeaheh&email=fake@example.com").unwrap();
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/create?username=future_admin&password=yeaheh&email=fake@example.com")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
