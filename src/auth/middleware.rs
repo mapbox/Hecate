@@ -3,6 +3,7 @@ use actix_web::{http, dev::ServiceRequest, dev::ServiceResponse, Error, HttpResp
 use futures::future::{ok, FutureResult, Either};
 use futures::Poll;
 use crate::db::DbReplica;
+use crate::user::token::Scope;
 use super::{Auth, AuthDefault};
 
 #[derive(Clone)]
@@ -73,7 +74,7 @@ where
             }
         };
 
-        let auth = match Auth::from_sreq(&mut req, &*db) {
+        let mut auth = match Auth::from_sreq(&mut req, &*db) {
             Err(_err) => {
                 return Either::B(ok(req.into_response(
                     HttpResponse::Unauthorized()
@@ -86,6 +87,7 @@ where
 
         // If no default auth is set - allow all api endpoints
         if self.auth == AuthDefault::Public {
+            auth.scope = Scope::Full;
             auth.as_headers(&mut req);
             return Either::A(self.service.call(req));
         }
