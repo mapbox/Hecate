@@ -43,12 +43,10 @@ mod test {
         let mut server = Command::new("cargo").args(&[ "run" ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
-        { // Create User
-            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
-            conn.execute("
-                INSERT INTO users (username, password, email)
-                    VALUES ('ingalls', crypt('yeaheh', gen_salt('bf', 10)), 'ingalls@protonmail.com')
-            ", &[]).unwrap();
+        { //Create Username
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
         }
 
         { //XML Changeset Create (Node Create)
