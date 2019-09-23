@@ -27,7 +27,7 @@
     "user": {
         "info": "self",
         "list": "public",
-        "create": "admin",
+        "create": "public",
         "create_session": "self"
     },
     "style": {
