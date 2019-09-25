@@ -10,6 +10,12 @@
 
 # Version History
 
+## v0.74.0
+
+- :rocket: Add create and delete token endpoints, and allow for path-based tokens to fix JOSM
+    integration when basic authentication is not sent
+- :rocket: Add read/write scoping to every endpoint
+
 ## v0.73.0
 
 - :rocket: Add identity middleware to require every endpoint for authentication, returning 401
