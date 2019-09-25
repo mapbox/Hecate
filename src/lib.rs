@@ -1,4 +1,4 @@
-pub static VERSION: &'static str = "0.73.1-josm-tokens";
+pub static VERSION: &'static str = "0.73.0";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
 
