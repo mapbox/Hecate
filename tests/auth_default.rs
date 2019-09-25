@@ -87,6 +87,36 @@ mod test {
             assert_eq!(resp.status().as_u16(), 200);
         }
 
+        { // Attempt to create another user
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls2&password=yeaheh&email=ingalls2@protonmail.com")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+            assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
+        }
+
+        { // Set user to admin
+            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
+
+            conn.execute("
+                UPDATE users SET access = 'admin' WHERE id = 1;
+            ", &[]).unwrap();
+        }
+
+        { // Create another user as admin
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls2&password=yeaheh&email=ingalls2@protonmail.com")
+                .basic_auth("ingalls", Some("yeaheh"))
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
         server.kill().unwrap();
     }
 }

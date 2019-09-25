@@ -47,6 +47,20 @@
                             <label>Password</label>
                             <input type=password disabled class='input mb6' placeholder='Your Password Cannot Be Changed At This Time' />
                         </div>
+
+                        <div class='py6 col col--12 border--gray-light border-b'>
+                            <span class='txt-m'>JOSM URL</span>
+                        </div>
+
+                        <template v-if='url || !auth || auth && auth.default === "public"'>
+                            <pre class='pre my6'><code v-text='url || defaultJOSM()'></code></pre>
+                        </template>
+                        <template v-else>
+                            <div class='col col--12 py12'>
+                                Generate an authenticated URL
+                                <button @click='createUrl' class='fr btn round btn--stroke'>Generate</button>
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -59,6 +73,7 @@ export default {
     name: 'self',
     data: function() {
         return {
+            url: '',
             user: false,
             error: false
         };
@@ -70,13 +85,40 @@ export default {
         close: function() {
             this.$emit('close');
         },
+        defaultJOSM: function() {
+            return window.location.host + '/api';
+        },
+        createUrl: function() {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/token`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: new Headers({
+                    'Content-Type': 'application/json'
+                }),
+                body: JSON.stringify({
+                    name: 'JOSM Token',
+                    hours: 16
+                })
+            }).then((response) => {
+                if (response.status !== 200) {
+                    return this.error = response.status + ':' + response.statusText;
+                }
+
+                return response.json();
+            }).then((user) => {
+                this.url = `${window.location.host}/token/${user.token}/api`;
+            }).catch((err) => {
+                this.error = err.message;
+            });
+
+        },
         getSelf: function() {
             fetch(`${window.location.protocol}//${window.location.host}/api/user/info`, {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
                 if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
+                    return this.error = response.status + ':' + response.statusText;
                 }
 
                 return response.json();

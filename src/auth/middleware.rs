@@ -3,6 +3,7 @@ use actix_web::{http, dev::ServiceRequest, dev::ServiceResponse, Error, HttpResp
 use futures::future::{ok, FutureResult, Either};
 use futures::Poll;
 use crate::db::DbReplica;
+use crate::user::token::Scope;
 use super::{Auth, AuthDefault};
 
 #[derive(Clone)]
@@ -62,8 +63,6 @@ where
     }
 
     fn call(&mut self, mut req: ServiceRequest) -> Self::Future {
-        let mut auth = Auth::from_sreq(&req).unwrap_or(Auth::new());
-
         let db = match self.db.get() {
             Ok(db) => db,
             Err(_err) => {
@@ -75,18 +74,20 @@ where
             }
         };
 
-        match auth.validate(&*db) {
+        let mut auth = match Auth::from_sreq(&mut req, &*db) {
             Err(_err) => {
                 return Either::B(ok(req.into_response(
                     HttpResponse::Unauthorized()
                         .finish()
-                        .into_body(),
+                        .into_body()
                 )));
             },
-            _ => ()
+            Ok(auth) => auth
         };
 
+        // If no default auth is set - allow all api endpoints
         if self.auth == AuthDefault::Public {
+            auth.scope = Scope::Full;
             auth.as_headers(&mut req);
             return Either::A(self.service.call(req));
         }
