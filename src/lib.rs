@@ -405,7 +405,7 @@ fn meta_set(
 
 
 fn mvt_get(
-    conn: web::Data<DbReadWrite>,
+    conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
@@ -1010,7 +1010,7 @@ fn webhooks_get(
 }
 
 fn webhooks_delete(
-    conn: web::Data<DbReplica>,
+    conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
@@ -1021,7 +1021,7 @@ fn webhooks_delete(
 }
 
 fn webhooks_create(
-    conn: web::Data<DbReplica>,
+    conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     webhook: Json<webhooks::WebHook>
@@ -1035,7 +1035,7 @@ fn webhooks_create(
 }
 
 fn webhooks_update(
-    conn: web::Data<DbReplica>,
+    conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     mut webhook: Json<webhooks::WebHook>,
@@ -1144,7 +1144,7 @@ fn auth_get(
 }
 
 fn stats_get(
-    conn: web::Data<DbReadWrite>,
+    conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
