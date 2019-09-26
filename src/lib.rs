@@ -405,7 +405,7 @@ fn meta_set(
 
 
 fn mvt_get(
-    conn: web::Data<DbReadWrite>,
+    conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
@@ -1144,7 +1144,7 @@ fn auth_get(
 }
 
 fn stats_get(
-    conn: web::Data<DbReadWrite>,
+    conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
