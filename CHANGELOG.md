@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.74.1
+
+- :bug: Use read/write database connection for webhook create, update, and delete requests
+
 ## v0.74.0
 
 - :rocket: Add create and delete token endpoints, and allow for path-based tokens to fix JOSM
@@ -563,4 +567,3 @@
   - opening/committing/finalizing deltas
   - Pretty thorough suite of JS tests for JS integration
   - Basic Rust tests for node/way/rel objects
-
