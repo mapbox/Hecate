@@ -87,7 +87,7 @@ impl Token {
                 let expiry: String = res.get(0).get(3);
                 let scope: String = res.get(0).get(4);
 
-                let scope = match token.as_str() {
+                let scope = match scope.as_str() {
                     "full" => Scope::Full,
                     _ => Scope::Read
                 };
