@@ -989,10 +989,9 @@ fn webhooks_list(
 ) -> Result<Json<serde_json::Value>, HecateError> {
     auth_rules.0.allows_webhooks_list(&mut auth, auth::RW::Read)?;
 
-    match serde_json::to_value(webhooks::list(&*conn.get()?, webhooks::Action::All)?) {
-        Ok(hooks) => Ok(Json(hooks)),
-        Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
-    }
+    let hooks = webhooks::list(&*conn.get()?, webhooks::Action::All)?;
+    let values: Vec<serde_json::Value> = hooks.into_iter().map(|h| h.to_value()).collect();
+    Ok(Json(serde_json::Value::Array(values)))
 }
 
 fn webhooks_get(
@@ -1003,10 +1002,8 @@ fn webhooks_get(
 ) -> Result<Json<serde_json::Value>, HecateError> {
     auth_rules.0.allows_webhooks_list(&mut auth, auth::RW::Read)?;
 
-    match serde_json::to_value(webhooks::get(&*conn.get()?, id.into_inner())?) {
-        Ok(hooks) => Ok(Json(hooks)),
-        Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
-    }
+    let hook = webhooks::get(&*conn.get()?, id.into_inner())?.to_value();
+    Ok(Json(hook))
 }
 
 fn webhooks_delete(
@@ -1030,7 +1027,7 @@ fn webhooks_create(
 
     match serde_json::to_value(webhooks::create(&*conn.get()?, webhook.into_inner())?) {
         Ok(webhook) => Ok(Json(webhook)),
-        Err(_) => { return Err(HecateError::new(500, String::from("Failed to return webhook ID"), None)); }
+        Err(_) => { return Err(HecateError::new(500, String::from("Failed to create webhook"), None)); }
     }
 }
 
@@ -1045,10 +1042,8 @@ fn webhooks_update(
 
     webhook.id = Some(id.into_inner());
 
-    match serde_json::to_value(webhooks::update(&*conn.get()?, webhook.into_inner())?) {
-        Ok(webhook) => Ok(Json(webhook)),
-        Err(_) => { return Err(HecateError::new(500, String::from("Failed to return webhook ID"), None)); }
-    }
+    let hook = webhooks::update(&*conn.get()?, webhook.into_inner())?.to_value();
+    Ok(Json(hook))
 }
 
 fn bounds_stats(
