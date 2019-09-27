@@ -29,7 +29,7 @@ impl HecateError {
     }
 
     pub fn set_invalidate(mut self, invalidate: bool) -> Self {
-        self.custom_json = invalidate;
+        self.invalidate = invalidate;
         self
     }
 
@@ -97,8 +97,19 @@ impl actix_http::ResponseError for HecateError {
     fn error_response(&self) -> actix_http::Response {
         println!("{}", self.as_log());
 
-        actix_http::Response::build(actix_web::http::StatusCode::from_u16(self.code).unwrap())
-           .json(self.as_json())
+        let mut resp = actix_http::Response::build(actix_web::http::StatusCode::from_u16(self.code).unwrap())
+            .json(self.as_json());
+
+        if self.invalidate {
+            let cookie = actix_http::http::Cookie::build("session", String::from(""))
+                .path("/")
+                .http_only(true)
+                .finish();
+
+            resp.add_cookie(&cookie).unwrap();
+        }
+
+        resp
 
     }
 }
