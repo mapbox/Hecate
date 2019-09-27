@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.74.2
+
+- :rocket: [UI] Add protocol in JOSM token generation
+
 ## v0.74.1
 
 - :bug: Use read/write database connection for webhook create, update, and delete requests
