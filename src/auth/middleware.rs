@@ -75,12 +75,26 @@ where
         };
 
         let mut auth = match Auth::from_sreq(&mut req, &*db) {
-            Err(_err) => {
-                return Either::B(ok(req.into_response(
-                    HttpResponse::Unauthorized()
-                        .finish()
-                        .into_body()
-                )));
+            Err(err) => {
+                if err.invalidate {
+                    let cookie = actix_http::http::Cookie::build("session", String::from(""))
+                        .path("/")
+                        .http_only(true)
+                        .finish();
+
+                    return Either::B(ok(req.into_response(
+                        HttpResponse::Unauthorized()
+                            .cookie(cookie)
+                            .finish()
+                            .into_body()
+                    )));
+                } else {
+                    return Either::B(ok(req.into_response(
+                        HttpResponse::Unauthorized()
+                            .finish()
+                            .into_body()
+                    )));
+                }
             },
             Ok(auth) => auth
         };
