@@ -1,77 +1,53 @@
+'use strict';
+
+const cf = require('@mapbox/cloudfriend');
+
 module.exports = {
-    "Outputs": {
-        "AccessKeyId": {
-            "Value": {
-                "Ref": "AccessKey"
-            }
-        },
-        "SecretAccessKey": {
-            "Value": {
-                "Fn::GetAtt": [
-                    "AccessKey",
-                    "SecretAccessKey"
-                ]
-            }
+    Parameters: {
+        SecretPrefix: {
+            Type: 'String',
+            Description: 'Prefix of GitHub App'
         }
     },
-    "Parameters": {
-        "SecretPrefix": {
-            "Description": "Prefix of GitHub App",
-            "Type": "String"
-        }
-    },
-    "Resources": {
-        "AccessKey": {
-            "Properties": {
-                "UserName": {
-                    "Ref": "User"
-                }
-            },
-            "Type": "AWS::IAM::AccessKey"
-        },
-        "User": {
-            "Properties": {
-                "Policies": [
+    Resources: {
+        User: {
+            Type: 'AWS::IAM::User',
+            Properties: {
+                Policies: [
                     {
-                        "PolicyDocument": {
-                            "Statement": [
+                        PolicyName: 'github-apps',
+                        PolicyDocument: {
+                            Statement: [
                                 {
-                                    "Action": "secretsmanager:GetSecretValue",
-                                    "Effect": "Allow",
-                                    "Resource": {
-                                        "Fn::Join": [
-                                            ":",
-                                            [
-                                                "arn:aws:secretsmanager",
-                                                {
-                                                    "Ref": "AWS::Region"
-                                                },
-                                                {
-                                                    "Ref": "AWS::AccountId"
-                                                },
-                                                "secret",
-                                                {
-                                                    "Fn::Join": [
-                                                        "",
-                                                        [
-                                                            {
-                                                                "Ref": "SecretPrefix"
-                                                            },
-                                                            "/*"
-                                                        ]
-                                                    ]
-                                                }
-                                            ]
-                                        ]
-                                    }
+                                    Effect: 'Allow',
+                                    Action: 'secretsmanager:GetSecretValue',
+                                    Resource: cf.join(':', [
+                                        'arn:aws:secretsmanager',
+                                        cf.region,
+                                        cf.accountId,
+                                        'secret',
+                                        cf.join([cf.ref('SecretPrefix'), '/*'])
+                                    ])
                                 }
                             ]
-                        },
-                        "PolicyName": "github-apps"
+                        }
                     }
                 ]
-            },
-            "Type": "AWS::IAM::User"
+            }
+        },
+        AccessKey: {
+            Type: 'AWS::IAM::AccessKey',
+            Properties: {
+                UserName: cf.ref('User')
+            }
+        }
+    },
+    Outputs: {
+        AccessKeyId: {
+            Value: cf.ref('AccessKey')
+        },
+        SecretAccessKey: {
+            Value: cf.getAtt('AccessKey', 'SecretAccessKey')
         }
     }
-}
+};

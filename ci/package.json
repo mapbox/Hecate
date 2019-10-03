@@ -1,9 +1,8 @@
 {
-  "name": "hecate",
+  "name": "hecate-ci",
   "version": "1.0.0",
-  "description": "",
-  "author": "",
-  "license": "ISC",
+  "description": "CI and release management for Hecate",
+  "repository": "https://github.com/mapbox/Hecate",
   "dependencies": {
     "@octokit/app": "^4.1.0",
     "@octokit/rest": "^16.30.1",

@@ -13,4 +13,4 @@ cargo build --release
 
 echo "ok - Publishing release."
 
-node ./ci/token.js $GITHUB_APP_PREFIX
+node ./ci/publish.js $GITHUB_APP_PREFIX
