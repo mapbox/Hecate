@@ -38,12 +38,11 @@ jobs:
                     && bash -c "echo \"America/New_York\" > /etc/timezone"
             - checkout
             - run:
-                name: "Install NodeJS"
+                name: "Install node"
                 command: |
                   curl 'https://nodejs.org/dist/v10.15.3/node-v10.15.3-linux-x64.tar.gz' | tar -xzv \
                   && cp ./node-v10.15.3-linux-x64/bin/node /usr/bin/ \
-                  && ./node-v10.15.3-linux-x64/bin/npm install -g npm \
-                  && npm install @octokit/app @octokit/rest aws-sdk
+                  && ./node-v10.15.3-linux-x64/bin/npm install -g npm
             - run:
                 name: "Install rust"
                 command: |
@@ -54,8 +53,11 @@ jobs:
             #     name: "Run tests"
             #     command: ./tests/test.sh
             - run:
+                name: "npm install"
+                command: cd ci && npm install
+            - run:
                 name: "Publish Release"
-                command: ./scripts/publish.sh
+                command: ./ci/publish.sh
 
 workflows:
     version: 2
