@@ -5,6 +5,7 @@ jobs:
         docker:
             - image: ubuntu:18.04
             # - image: mdillon/postgis:11
+        resource_class: large
         steps:
             - run:
                 name: "Add ubuntu-toolchain"
@@ -42,12 +43,12 @@ jobs:
                   curl https://sh.rustup.rs -sSf > /tmp/rustup.sh \
                   && sh /tmp/rustup.sh -y --default-toolchain nightly-2019-06-01 \
                   && echo "export PATH=$HOME/.cargo/bin:$PATH" >> $BASH_ENV
-            - run:
-                name: "Run tests"
-                command: ./tests/test.sh
             # - run:
-            #     name: "Publish Release"
-            #     command: ./scripts/publish.sh
+            #     name: "Run tests"
+            #     command: ./tests/test.sh
+            - run:
+                name: "Publish Release"
+                command: ./scripts/publish.sh
 
 # RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 # ENV SHELL /bin/bash
