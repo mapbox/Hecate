@@ -37,14 +37,12 @@ async function uploadBinary(octokit, uploadUrl) {
 }
 
 async function createRelease(octokit) {
-    const res = await octokit.repos.createRelease({
+    return octokit.repos.createRelease({
         owner: 'mapbox',
         repo: 'Hecate',
-        tag_name: process.env.CIRCLE_TAG || '0.74.2-binaries',
+        tag_name: process.env.CIRCLE_TAG,
         prerelease: true
     });
-
-    return res;
 }
 
 (async function() {
@@ -62,8 +60,8 @@ async function createRelease(octokit) {
             }
         });
 
-        const { data: { uploadUrl } } = await createRelease(octokit);
-        await uploadBinary(octokit, uploadUrl);
+        const { data: { upload_url } } = await createRelease(octokit);
+        await uploadBinary(octokit, upload_url);
     } catch (err) {
         console.error(err);
         process.exit(1);
