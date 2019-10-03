@@ -14,3 +14,5 @@ cargo build --release
 echo "ok - Publishing release."
 
 node ./ci/publish.js $GITHUB_APP_PREFIX
+
+echo "ok - Release published and binary uploaded"

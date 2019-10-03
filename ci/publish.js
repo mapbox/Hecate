@@ -24,6 +24,18 @@ async function getCredentials(secretPrefix) {
     return { id, installationId, privateKey };
 }
 
+async function buildOctokit(secretPrefix) {
+    const { id, installationId, privateKey } = await getCredentials(secretPrefix);
+
+    const app = new App({ id, privateKey });
+    return new Octokit({
+        async auth() {
+            const installationAccessToken = await app.getInstallationAccessToken({ installationId });
+            return `token ${installationAccessToken}`;
+        }
+    });
+}
+
 async function uploadBinary(octokit, uploadUrl) {
     return octokit.repos.uploadReleaseAsset({
         name: 'hecate',
@@ -50,15 +62,7 @@ async function createRelease(octokit) {
     if (!secretPrefix) throw new Error('Prefix value required.');
 
     try {
-        const { id, installationId, privateKey } = await getCredentials(secretPrefix);
-
-        const app = new App({ id, privateKey });
-        const octokit = new Octokit({
-            async auth() {
-                const installationAccessToken = await app.getInstallationAccessToken({ installationId });
-                return `token ${installationAccessToken}`;
-            }
-        });
+        const octokit = await buildOctokit(secretPrefix);
 
         const { data: { upload_url } } = await createRelease(octokit);
         await uploadBinary(octokit, upload_url);
