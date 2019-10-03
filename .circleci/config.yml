@@ -38,6 +38,13 @@ jobs:
                     && bash -c "echo \"America/New_York\" > /etc/timezone"
             - checkout
             - run:
+                name: "Install NodeJS"
+                command: |
+                  curl 'https://nodejs.org/dist/v10.15.3/node-v10.15.3-linux-x64.tar.gz' | tar -xzv \
+                  && cp ./node-v10.15.3-linux-x64/bin/node /usr/bin/ \
+                  && ./node-v10.15.3-linux-x64/bin/npm install -g npm \
+                  && npm install @octokit/app @octokit/rest aws-sdk
+            - run:
                 name: "Install rust"
                 command: |
                   curl https://sh.rustup.rs -sSf > /tmp/rustup.sh \
@@ -49,13 +56,6 @@ jobs:
             - run:
                 name: "Publish Release"
                 command: ./scripts/publish.sh
-
-# RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-# ENV SHELL /bin/bash
-
-# RUN echo "local all all trust " > /etc/postgresql/10/main/pg_hba.conf \
-#     && echo "host all all 127.0.0.1/32 trust" >> /etc/postgresql/10/main/pg_hba.conf \
-#     && echo "host all all ::1/128 trust" >> /etc/postgresql/10/main/pg_hba.conf
 
 workflows:
     version: 2
