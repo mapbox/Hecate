@@ -25,19 +25,14 @@ async function getCredentials(secretPrefix) {
 }
 
 async function uploadBinary(octokit, uploadUrl) {
-    console.log(`uploadUrl: ${uploadUrl}`);
-    const headers = {
-        'content-length': fs.statSync(BINARY_PATH).size,
-        'content-type': 'application/octet-stream'
-    };
-
-    console.log(`headers: ${headers}`);
-
     return octokit.repos.uploadReleaseAsset({
         name: 'hecate',
         file: fs.createReadStream(BINARY_PATH),
         url: uploadUrl,
-        headers
+        headers: {
+            'content-length': fs.statSync(BINARY_PATH).size,
+            'content-type': 'application/octet-stream'
+        }
     });
 }
 
@@ -45,7 +40,7 @@ async function createRelease(octokit) {
     return octokit.repos.createRelease({
         owner: 'mapbox',
         repo: 'Hecate',
-        tag_name: process.env.CIRCLE_TAG || '0.74.2-binaries',
+        tag_name: process.env.CIRCLE_TAG,
         prerelease: true
     });
 }
@@ -65,9 +60,7 @@ async function createRelease(octokit) {
             }
         });
 
-        const res = await createRelease(octokit);
-        console.log(res);
-        const { data: { upload_url } } = res;
+        const { data: { upload_url } } = await createRelease(octokit);
         await uploadBinary(octokit, upload_url);
     } catch (err) {
         console.error(err);
