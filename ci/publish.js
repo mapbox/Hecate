@@ -67,8 +67,8 @@ async function createRelease(octokit) {
 
         const res = await createRelease(octokit);
         console.log(res);
-        const { data: { uploadUrl } } = res;
-        await uploadBinary(octokit, uploadUrl);
+        const { data: { upload_url } } = res;
+        await uploadBinary(octokit, upload_url);
     } catch (err) {
         console.error(err);
         process.exit(1);
