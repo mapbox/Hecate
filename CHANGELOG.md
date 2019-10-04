@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.74.4
+
+- :rocket: Add automatic session cookie clearing
+- :rocket: Set the expiration time on JOSM urls tokens to 2 weeks and on user session tokens to 24 hours
+
 ## v0.74.3
 
 - :rocket: Add webhook secrets so receivers can authenticate webhook requests from Hecate
