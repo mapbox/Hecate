@@ -100,7 +100,13 @@ mod test {
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
-            assert_eq!(json_body["bbox"], json!([ -0.00499999988824129, -0.00499999988824129, 1.00499999523163, 1.00499999523163 ]));
+            if json_body["bbox"][0] == 0 {
+                // PostgreSQL 11.2
+                assert_eq!(json_body["bbox"], json!([ 0, 0, 1, 1 ]));
+            } else {
+                // PostgreSQL 10, TODO delete me
+                assert_eq!(json_body["bbox"], json!([ -0.00499999988824129, -0.00499999988824129, 1.00499999523163, 1.00499999523163 ]));
+            }
             assert_eq!(json_body["total"], json!(2));
         }
 

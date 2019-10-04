@@ -1,0 +1,11 @@
+{
+  "name": "hecate-ci",
+  "version": "1.0.0",
+  "description": "CI and release management for Hecate",
+  "repository": "https://github.com/mapbox/Hecate",
+  "dependencies": {
+    "@octokit/app": "^4.1.0",
+    "@octokit/rest": "^16.30.1",
+    "aws-sdk": "^2.542.0"
+  }
+}

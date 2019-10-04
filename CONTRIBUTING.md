@@ -11,7 +11,6 @@
 - Bump the version in Cargo.toml
 - Bump the version in `src/lib.rs` (Top of file)
 - Bump the version in `src/cli.yml`
-- Build a Linux release from a Linux machine (`cargo build --release`)
 - `git commit -am "v#.#.#`
 - `git tag v#.#.#`
 - `git push`
@@ -38,14 +37,11 @@ ok - 0.71.0 => 0.71.1
 ok - release pushed!
 ```
 
-## 2. Create a new release
+## 2. Finalize release
 
-Via the GitHub interface create a new release and upload the Hecate binary
+CI will create a new prerelease and upload a binary for you. You can finalize this release by:
 
-- Go to the [Hecate GitHub UI](https://github.com/mapbox/Hecate) and click in `releases`
-- Click on the version you just released, it will look like `v0.71.1`
-- In the publish release UI in Github
-    - Add as title the new released version. _i.e. `v0.71.1`_
-    - Copy your comment in the `CHANGELOG.md` and paste it in the description field.
-    - Upload the binary from you local machine `~/Hecate/target/release/hecate`
-    - Click on the `publish release button`
+- Finding your release at https://github.com/mapbox/Hecate/releases
+- Copy your comment in the `CHANGELOG.md` and paste it in the description field.
+- Uncheck `This is a prerelease` if necessary.
+- Click on the `update release button`
