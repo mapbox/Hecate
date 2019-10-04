@@ -33,7 +33,6 @@ jobs:
                         wget \
                         git \
                         gcc \
-                        git \
                     && locale-gen en_US.UTF-8 \
                     && bash -c "echo \"America/New_York\" > /etc/timezone"
             - checkout
