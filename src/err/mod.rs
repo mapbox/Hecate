@@ -1,6 +1,7 @@
 #[derive(PartialEq, Debug)]
 pub struct HecateError {
     pub code: u16,
+    pub invalidate: bool,
     pub custom_json: Option<serde_json::Value>,
     pub safe_error: String,
     pub full_error: String
@@ -15,6 +16,7 @@ impl HecateError {
 
         HecateError {
             code: code,
+            invalidate: false,
             custom_json: None,
             safe_error: safe_error,
             full_error: full_error
@@ -26,6 +28,11 @@ impl HecateError {
         self
     }
 
+    pub fn set_invalidate(mut self, invalidate: bool) -> Self {
+        self.invalidate = invalidate;
+        self
+    }
+
     pub fn generic(code: u16) -> Self {
         let status = actix_web::http::StatusCode::from_u16(code).unwrap();
 
@@ -33,6 +40,7 @@ impl HecateError {
 
         HecateError {
             code: code,
+            invalidate: false,
             custom_json: None,
             safe_error: reason.clone(),
             full_error: reason
@@ -47,12 +55,14 @@ impl HecateError {
             Some(db_err) => HecateError {
                 code: 500,
                 custom_json: None,
+                invalidate: false,
                 safe_error: String::from("Database Error"),
                 full_error: format!("{}", db_err)
             },
             None => HecateError {
                 code: 500,
                 custom_json: None,
+                invalidate: false,
                 safe_error: String::from("Database Error"),
                 full_error: format!("{}", error)
             }
@@ -87,8 +97,19 @@ impl actix_http::ResponseError for HecateError {
     fn error_response(&self) -> actix_http::Response {
         println!("{}", self.as_log());
 
-        actix_http::Response::build(actix_web::http::StatusCode::from_u16(self.code).unwrap())
-           .json(self.as_json())
+        let mut resp = actix_http::Response::build(actix_web::http::StatusCode::from_u16(self.code).unwrap())
+            .json(self.as_json());
+
+        if self.invalidate {
+            let cookie = actix_http::http::Cookie::build("session", String::from(""))
+                .path("/")
+                .http_only(true)
+                .finish();
+
+            resp.add_cookie(&cookie).unwrap();
+        }
+
+        resp
 
     }
 }

@@ -234,8 +234,12 @@ impl Auth {
                 if token.len() > 0 {
                     auth.token = Some(token);
                     auth.scope = Scope::Full;
-                    auth.validate(conn)?;
-                    return Ok(auth);
+                    return match auth.validate(conn) {
+                        Err(err) => {
+                            return Err(err.set_invalidate(true));
+                        },
+                        Ok(_) => Ok(auth)
+                    };
                 }
 
                 ()
@@ -281,7 +285,7 @@ impl Auth {
             },
             None => ()
         };
-        
+
         Ok(auth)
     }
 

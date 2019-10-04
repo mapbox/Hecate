@@ -97,7 +97,7 @@ export default {
                 }),
                 body: JSON.stringify({
                     name: 'JOSM Token',
-                    hours: 16
+                    hours: 336
                 })
             }).then((response) => {
                 if (response.status !== 200) {
