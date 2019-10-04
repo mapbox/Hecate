@@ -4,8 +4,8 @@ jobs:
     build:
         docker:
             - image: ubuntu:18.04
-            # - image: mdillon/postgis:11
-        resource_class: large
+            - image: mdillon/postgis:11
+        resource_class: xlarge
         steps:
             - run:
                 name: "Add ubuntu-toolchain"
@@ -49,15 +49,15 @@ jobs:
                   curl https://sh.rustup.rs -sSf > /tmp/rustup.sh \
                   && sh /tmp/rustup.sh -y --default-toolchain nightly-2019-06-01 \
                   && echo "export PATH=$HOME/.cargo/bin:$PATH" >> $BASH_ENV
+            - run:
+                name: "Run tests"
+                command: ./tests/test.sh
             # - run:
-            #     name: "Run tests"
-            #     command: ./tests/test.sh
-            - run:
-                name: "npm install"
-                command: cd ci && npm install
-            - run:
-                name: "Publish Release"
-                command: ./ci/publish.sh
+            #     name: "npm install"
+            #     command: cd ci && npm install
+            # - run:
+            #     name: "Publish Release"
+            #     command: ./ci/publish.sh
 
 workflows:
     version: 2
