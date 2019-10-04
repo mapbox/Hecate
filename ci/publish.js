@@ -52,6 +52,7 @@ async function createRelease(octokit) {
     return octokit.repos.createRelease({
         owner: 'mapbox',
         repo: 'Hecate',
+        name: process.env.CIRCLE_TAG,
         tag_name: process.env.CIRCLE_TAG,
         prerelease: true
     });

@@ -42,7 +42,6 @@ ok - release pushed!
 CI will create a new prerelease and upload a binary for you. You can finalize this release by:
 
 - Finding your release at https://github.com/mapbox/Hecate/releases
-- Add as title the new released version. _i.e. `v0.71.1`_
 - Copy your comment in the `CHANGELOG.md` and paste it in the description field.
 - Uncheck `This is a prerelease` if necessary.
 - Click on the `update release button`
