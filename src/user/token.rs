@@ -27,8 +27,8 @@ impl Token {
     }
 
     pub fn create(conn: &impl postgres::GenericConnection, name: impl ToString, uid: &i64, hours: &i64, scope: Scope) -> Result<Self, HecateError> {
-        if hours > &16 {
-            return Err(HecateError::new(400, String::from("Token Expiry Cannot Exceed 16 hours"), None));
+        if hours > &336 {
+            return Err(HecateError::new(400, String::from("Token Expiry Cannot Exceed 2 weeks (336 hours)"), None));
         }
 
         let hours = format!("{} hours", hours);
