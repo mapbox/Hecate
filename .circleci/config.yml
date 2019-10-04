@@ -52,12 +52,12 @@ jobs:
             - run:
                 name: "Run tests"
                 command: ./tests/test.sh
-            # - run:
-            #     name: "npm install"
-            #     command: cd ci && npm install
-            # - run:
-            #     name: "Publish Release"
-            #     command: ./ci/publish.sh
+            - run:
+                name: "npm install"
+                command: cd ci && npm install
+            - run:
+                name: "Publish Release"
+                command: ./ci/publish.sh
 
 workflows:
     version: 2

@@ -8,7 +8,7 @@ if [[ ! -f Cargo.toml ]]; then
     exit 1
 fi
 
-CVER=$(grep -Po '(?<=^version = ")\d+\.\d+\.\d+(?="$)' ./Cargo.toml | head -1)
+CVER=$(grep -E '^version' Cargo.toml | head -1 | sed -E 's/version\ =\ "(.+)"/\1/')
 
 if [[ -z $1 ]]; then
     echo
@@ -26,46 +26,48 @@ if [[ $(git rev-parse --abbrev-ref HEAD) != "master" ]]; then
     exit 1
 fi
 
-if [[ $(git status -s | wc -l | grep -Po '\d+') -gt 0 ]]; then
+if [[ $(git status -s | wc -l | awk '{print $1}') -gt 0 ]]; then
     echo "not ok - Please commit all changes before releasing"
     exit 1
 fi
 
 NVER=$1
 
-if [[ ! $(grep "v${NVER}" CHANGELOG.md | wc -l | grep -Po '^\d+') -eq 1 ]]; then
+if [[ ! $(grep "v${NVER}" CHANGELOG.md | wc -l | awk '{print $1}') -eq 1 ]]; then
     echo "not ok - Add version to CHANGELOG.md before releasing"
     exit 1
 fi
 
-sed -i "s/\"$CVER\"/\"$NVER\"/" ./Cargo.toml
+sed -i.bak "s/\"$CVER\"/\"$NVER\"/" ./Cargo.toml
+rm ./Cargo.toml.bak
 echo "ok - Updated Cargo.toml"
 
-if [[ ! $(git diff Cargo.toml | grep '^+' | wc -l | grep -Po '^\d+') -eq 2 ]]; then
+if [[ ! $(git diff Cargo.toml | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
     echo "not ok - Failed to update Cargo.toml"
     exit 1
 fi
 
-sed -i "s/\"$CVER\"/\"$NVER\"/" ./src/lib.rs
+sed -i.bak "s/\"$CVER\"/\"$NVER\"/" ./src/lib.rs
+rm -f ./src/lib.rs.bak
 echo "ok - Updated src/lib.rs"
 
-if [[ ! $(git diff ./src/lib.rs | grep '^+' | wc -l | grep -Po '^\d+') -eq 2 ]]; then
+if [[ ! $(git diff ./src/lib.rs | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
     echo "not ok - Failed to update src/lib.rs"
     exit 1
 fi
 
-sed -i "s/$CVER/$NVER/" ./src/cli.yml
+sed -i.bak "s/$CVER/$NVER/" ./src/cli.yml
+rm -f ./src/cli.yml.bak
 echo "ok - Updated src/cli.yml"
 
-if [[ ! $(git diff ./src/cli.yml | grep '^+' | wc -l | grep -Po '^\d+') -eq 2 ]]; then
+if [[ ! $(git diff ./src/cli.yml | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
     echo "not ok - Failed to update src/cli.yml"
     exit 1
 fi
 
 # Get CHANGELOG INFO
-
-CHANGE_START=$(echo $(grep -n "## v${NVER}" CHANGELOG.md | grep -Po '^\d+') + 1 | bc)
-CHANGE_END=$(echo $(grep -n "## v${CVER}" CHANGELOG.md | grep -Po '^\d+') - 1 | bc)
+CHANGE_START=$(echo $(grep -n "## v${NVER}" CHANGELOG.md | grep -Eo '^[0-9]+') + 1 | bc)
+CHANGE_END=$(echo $(grep -n "## v${CVER}" CHANGELOG.md | grep -Eo '^[0-9]+') - 1 | bc)
 CHANGE="$(sed -n "${CHANGE_START},${CHANGE_END}p" CHANGELOG.md)"
 
 git commit -am "v${NVER}"
