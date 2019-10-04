@@ -592,11 +592,13 @@ fn user_create_session(
 
     let uid = auth.uid.unwrap();
 
-    let token = user::Token::create(&*conn.get()?, "Session Token", &uid, &4, user::token::Scope::Full)?;
-
+    // max age of user session
+    const HOURS: i64 = 4;
+    let token = user::Token::create(&*conn.get()?, "Session Token", &uid, &HOURS, user::token::Scope::Full)?;
     let cookie = actix_http::http::Cookie::build("session", token.token)
         .path("/")
         .http_only(true)
+        .max_age(HOURS * 60 * 60)
         .finish();
 
     let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK).json(json!(true));
