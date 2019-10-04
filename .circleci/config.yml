@@ -17,14 +17,11 @@ jobs:
                         apt-transport-https \
                         postgresql-contrib \
                         build-essential \
-                        libiberty-dev \
                         binutils-dev \
                         pkg-config \
                         zlib1g-dev \
                         postgresql \
                         libssl-dev \
-                        libelf-dev \
-                        libdw-dev \
                         locales \
                         postgis \
                         openssl \
@@ -59,11 +56,14 @@ jobs:
                 name: "Run tests"
                 command: ./tests/test.sh
             - run:
-                name: "npm install"
-                command: cd ci && npm install
-            - run:
-                name: "Publish Release"
-                command: ./ci/publish.sh
+                name: "Test release build"
+                command: cargo build --release
+            # - run:
+            #     name: "npm install"
+            #     command: cd ci && npm install
+            # - run:
+            #     name: "Publish Release"
+            #     command: ./ci/publish.sh
 
 workflows:
     version: 2
