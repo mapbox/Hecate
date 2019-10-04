@@ -592,8 +592,8 @@ fn user_create_session(
 
     let uid = auth.uid.unwrap();
 
-    // max age of user session == 2 weeks
-    const HOURS: i64 = 336;
+    // max age of user session
+    const HOURS: i64 = 24;
     let token = user::Token::create(&*conn.get()?, "Session Token", &uid, &HOURS, user::token::Scope::Full)?;
     let cookie = actix_http::http::Cookie::build("session", token.token)
         .path("/")
