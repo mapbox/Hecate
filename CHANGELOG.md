@@ -10,6 +10,15 @@
 
 # Version History
 
+## v0.74.3
+
+- :rocket: Add webhook secrets so receivers can authenticate webhook requests from Hecate
+- :rocket: [UI] Show webhook secret when creating a webhook
+
+## v0.74.2
+
+- :rocket: [UI] Add protocol in JOSM token generation
+
 ## v0.74.1
 
 - :bug: Use read/write database connection for webhook create, update, and delete requests

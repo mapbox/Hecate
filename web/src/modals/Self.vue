@@ -106,7 +106,7 @@ export default {
 
                 return response.json();
             }).then((user) => {
-                this.url = `${window.location.host}/token/${user.token}/api`;
+                this.url = `${window.location.origin}/token/${user.token}/api`;
             }).catch((err) => {
                 this.error = err.message;
             });
