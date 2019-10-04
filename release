@@ -68,8 +68,6 @@ CHANGE_START=$(echo $(grep -n "## v${NVER}" CHANGELOG.md | grep -Po '^\d+') + 1 
 CHANGE_END=$(echo $(grep -n "## v${CVER}" CHANGELOG.md | grep -Po '^\d+') - 1 | bc)
 CHANGE="$(sed -n "${CHANGE_START},${CHANGE_END}p" CHANGELOG.md)"
 
-cargo build --release
-
 git commit -am "v${NVER}"
 git tag "v${NVER}"
 
@@ -81,4 +79,4 @@ echo "ok - release pushed!"
 echo
 echo "${CHANGE}"
 echo
-echo "ok - publish the new release - https://github.com/mapbox/Hecate/releases/new?tag=v${NVER}"
+echo "ok - your release will be available here once CI is complete - https://github.com/mapbox/Hecate/releases"
