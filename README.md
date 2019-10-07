@@ -125,6 +125,31 @@ host all all ::1/128 trust
 host replication postgres samenet trust
 ```
 
+- [Install Node/Npm](https://nodejs.org/en/) for building the frontend code
+
+- [Install Yarn](https://yarnpkg.com/lang/en/docs/install/) for installing
+  frontend dependencies
+
+- Install frontend dependencies
+
+```
+cd web/
+yarn install
+```
+
+- Build frontend UI
+
+```
+yarn build
+```
+
+Note: if actively working on developing the UI, a live reloading server
+can be started via:
+
+```
+yarn dev
+```
+
 - Start the server
 
 ```bash
