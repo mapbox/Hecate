@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.75.0
+
+- :rocket: Don't include `web/dist` folder in git to avoid constant conflicts
+- :pencil2: Update docs around building frontend UI
+
 ## v0.74.4
 
 - :rocket: Add automatic session cookie clearing
