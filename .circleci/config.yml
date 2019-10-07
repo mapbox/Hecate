@@ -60,7 +60,7 @@ jobs:
                 command: cargo build --release
             # - run:
             #     name: "npm install"
-            #     command: cd ci && npm install
+            #     command: cd ci && yarn install
             # - run:
             #     name: "Publish Release"
             #     command: ./ci/publish.sh
