@@ -607,7 +607,7 @@ fn user_reset(
 
     user::User::reset(&*conn.get()?, &uid, &reset.current, &reset.update)?;
 
-    Ok(Json(true))
+    Ok(Json(json!(true)))
 
 }
 

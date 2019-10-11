@@ -32,7 +32,7 @@ impl User {
         })
     }
 
-    pub fn reset(&mut self, conn: &impl postgres::GenericConnection, uid: i64, current: String, new: String) -> Result<bool, HecateError> {
+    pub fn reset(conn: &impl postgres::GenericConnection, uid: &i64, current: &String, new: &String) -> Result<bool, HecateError> {
         match conn.query("
             UPDATE users
                 SET
