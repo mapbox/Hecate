@@ -78,7 +78,7 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
                 }
 
                 for tile in tiles {
-                    if mvt::get(&conn, tile.2, tile.0 as u32, tile.1 as u32, true).is_err() {
+                    if mvt::regen(&conn, tile.2, tile.0 as u32, tile.1 as u32).is_some() {
                         println!("Daemon: Failed to generate tile: {:?}", tile);
                     }
                 }
