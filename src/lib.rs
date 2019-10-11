@@ -217,6 +217,9 @@ pub fn start(
                     .service(web::resource("info")
                         .route(web::get().to(user_self))
                     )
+                    .service(web::resource("reset")
+                        .route(web::get().to(user_reset))
+                    )
                     .service(web::resource("session")
                         .route(web::get().to(user_create_session))
                         .route(web::delete().to(user_delete_session))
@@ -292,6 +295,12 @@ pub fn start(
 struct Filter {
     filter: Option<String>,
     limit: Option<i16>
+}
+
+#[derive(Deserialize, Debug)]
+struct PwReset {
+    current: String,
+    update: String 
 }
 
 #[derive(Deserialize, Debug)]
@@ -580,6 +589,25 @@ fn user_self(
     let user = user::User::get(&*conn.get()?, &uid)?.to_value();
 
     Ok(Json(user))
+
+}
+
+fn user_reset(
+    conn: web::Data<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>,
+    reset: Json<PwReset>
+) -> Result<Json<serde_json::Value>, HecateError> {
+    auth_rules.0.allows_user_info(&mut auth, auth::RW::Read)?;
+
+    let uid = match auth.uid {
+        Some(uid) => uid,
+        None => { return Err(HecateError::generic(401)); }
+    };
+
+    user::User::reset(&*conn.get()?, &uid, &reset.current, &reset.update)?;
+
+    Ok(Json(true))
 
 }
 

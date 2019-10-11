@@ -32,6 +32,20 @@ impl User {
         })
     }
 
+    pub fn reset(&mut self, conn: &impl postgres::GenericConnection, uid: i64, current: String, new: String) -> Result<bool, HecateError> {
+        match conn.query("
+            UPDATE users
+                SET
+                    password = crypt($2, gen_salt('bf', 10));
+                WHERE
+                    id = $1
+                    AND password = crypt($2, password)
+        ", &[ &uid, ]) {
+            Ok(_) => Ok(true),
+            Err(err) => Err(HecateError::new(401, String::from("password does not match"), None))
+        }
+    }
+
     pub fn password(&mut self, password: String) {
         self.password = Some(password);
     }
