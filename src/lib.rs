@@ -1,4 +1,4 @@
-pub static VERSION: &'static str = "0.75.0";
+pub static VERSION: &'static str = "0.76.0";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
 
@@ -414,7 +414,8 @@ fn meta_set(
 
 
 fn mvt_get(
-    conn: web::Data<DbReplica>,
+    conn_write: web::Data<DbReadWrite>,
+    conn_read: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
@@ -427,7 +428,7 @@ fn mvt_get(
 
     if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    let tile = mvt::get(&*conn.get()?, z, x, y, false)?;
+    let tile = mvt::get(&*conn_read.get()?, &*conn_write.get()?, z, x, y, false)?;
 
     Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
         .content_type("application/x-protobuf")
@@ -464,7 +465,8 @@ fn mvt_wipe(
 }
 
 fn mvt_regen(
-    conn: web::Data<DbReadWrite>,
+    conn_write: web::Data<DbReadWrite>,
+    conn_read: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
@@ -477,7 +479,7 @@ fn mvt_regen(
 
     if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    let tile = mvt::get(&*conn.get()?, z, x, y, true)?;
+    let tile = mvt::get(&*conn_read.get()?, &*conn_write.get()?, z, x, y, true)?;
 
     Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
         .content_type("application/x-protobuf")
