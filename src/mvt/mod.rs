@@ -102,17 +102,53 @@ pub fn meta(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> R
     }
 }
 
-pub fn get(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32, regen: bool) -> Result<Vec<u8>, HecateError> {
+///
+/// If you only have a single database connection and want a tile regen
+/// but no tile return, this function can be used to force a regen
+///
+pub fn regen(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> Option<HecateError> {
+    let tile = match db_create(conn, &z, &x, &y) {
+        Ok(tile) => tile,
+        Err(err) => {
+            return Some(err);
+        }
+    };
+
+    match db_cache(conn, format!("{}/{}/{}", &z, &x, &y), &tile) {
+        Ok(_) => None,
+        Err(err) => Some(err)
+    }
+}
+
+///
+/// Database friendly connection to return a tile if it exists
+/// and if not create & cache it
+///
+/// It uses a readonly connection where possible, only writing
+/// to the master as neede to cache a tile
+///
+pub fn get(
+    conn_read: &impl postgres::GenericConnection,
+    conn_write: &impl postgres::GenericConnection,
+    z: u8, x: u32, y: u32,
+    regen: bool
+) -> Result<Vec<u8>, HecateError> {
     if regen == false {
-        match db_get(conn, format!("{}/{}/{}", &z, &x, &y))? {
+        match db_get(conn_read, format!("{}/{}/{}", &z, &x, &y))? {
             Some(tile) => { return Ok(tile); }
             _ => ()
         };
     }
 
-    let tile = db_create(conn, &z, &x, &y)?;
+    let tile = db_create(conn_read, &z, &x, &y)?;
 
-    db_cache(conn, format!("{}/{}/{}", &z, &x, &y), &tile)?;
-
-    Ok(tile)
+    // A failing cache should be logged but not affect the returned response
+    // since we have already generated a valid tile
+    match db_cache(conn_write, format!("{}/{}/{}", &z, &x, &y), &tile) {
+        Ok(_) => Ok(tile),
+        Err(err) => {
+            println!("{}", err.as_log());
+            Ok(tile)
+        }
+    }
 }
