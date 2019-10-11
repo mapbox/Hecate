@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.76.0
+
+- :bug: Ensure MVT::get fn is able to write cached tile to DB
+
 ## v0.75.0
 
 - :rocket: Don't include `web/dist` folder in git to avoid constant conflicts
