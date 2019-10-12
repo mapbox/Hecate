@@ -218,7 +218,7 @@ pub fn start(
                         .route(web::get().to(user_self))
                     )
                     .service(web::resource("reset")
-                        .route(web::get().to(user_pwreset))
+                        .route(web::post().to(user_pwreset))
                     )
                     .service(web::resource("session")
                         .route(web::get().to(user_create_session))

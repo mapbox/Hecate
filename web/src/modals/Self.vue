@@ -33,10 +33,10 @@
 
                         <div class='col col--12 py12'>
                             <label>Username</label>
-                            <input class='input mb6' v-model='user.username' placeholder='Username' />
+                            <input disabled class='input mb6' v-model='user.username' placeholder='Username' />
 
                             <label>Email</label>
-                            <input class='input mb6' v-model='user.email' placeholder='Email' />
+                            <input disabled class='input mb6' v-model='user.email' placeholder='Email' />
                         </div>
 
                         <div class='py6 col col--12 border--gray-light border-b'>
