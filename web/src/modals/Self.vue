@@ -45,15 +45,15 @@
 
                         <div class='col col--12 py12'>
                             <label>Current Password</label>
-                            <input type=password class='input mb6' placeholder='Your Password Cannot Be Changed At This Time' />
+                            <input type=password v-model='pw.current' class='input mb6' placeholder='Current Password' />
                         </div>
                         <div class='col col--5'>
                             <label>New Password</label>
-                            <input type=password class='input mb6' placeholder='Your Password Cannot Be Changed At This Time' />
+                            <input type=password v-model='pw.newPass' class='input mb6' placeholder='New Password' />
                         </div>
                         <div class='col col--5'>
                             <label>Confirm New Password</label>
-                            <input type=password class='input mb6' placeholder='Your Password Cannot Be Changed At This Time' />
+                            <input type=password v-model='pw.newConf' class='input mb6' placeholder='New Password' />
                         </div>
                         <div class='col col--2'>
                             <button @click='setPassword' style='margin-top: 22px;' class='btn'>Update</button>
@@ -86,7 +86,12 @@ export default {
         return {
             url: '',
             user: false,
-            error: false
+            error: false,
+            pw: {
+                current: '',
+                newPass: '',
+                newConf: ''
+            }
         };
     },
     mounted: function() {
@@ -124,6 +129,35 @@ export default {
 
         },
         setPassword: function() {
+            if (!this.pw.newPass || !this.pw.newConf || !this.pw.current) {
+                this.error = 'No Password Fields Can Be Blank';
+                return;
+            } else if (this.pw.newPass !== this.pw.newConf) {
+                this.pw.newPass = '';
+                this.pw.newConf = '';
+                this.error = 'New Passwords Must Match!';
+                return;
+            }
+
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/reset`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: new Headers({
+                    'Content-Type': 'application/json'
+                }),
+                body: JSON.stringify({
+                    current: this.pw.current,
+                    update: this.pw.newPass
+                })
+            }).then((response) => {
+                if (response.status !== 200) {
+                    return this.error = response.status + ':' + response.statusText;
+                }
+            }).then(() => {
+                this.error = 'Password Changed!';
+            }).catch((err) => {
+                this.error = err.message;
+            });
 
         },
         getSelf: function() {
