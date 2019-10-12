@@ -218,7 +218,7 @@ pub fn start(
                         .route(web::get().to(user_self))
                     )
                     .service(web::resource("reset")
-                        .route(web::get().to(user_reset))
+                        .route(web::get().to(user_pwreset))
                     )
                     .service(web::resource("session")
                         .route(web::get().to(user_create_session))
@@ -300,7 +300,7 @@ struct Filter {
 #[derive(Deserialize, Debug)]
 struct PwReset {
     current: String,
-    update: String 
+    update: String
 }
 
 #[derive(Deserialize, Debug)]
@@ -594,8 +594,8 @@ fn user_self(
 
 }
 
-fn user_reset(
-    conn: web::Data<DbReplica>,
+fn user_pwreset(
+    conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     reset: Json<PwReset>

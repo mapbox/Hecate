@@ -21,7 +21,7 @@
                     </div>
                 </template>
                 <template v-else>
-                    <div class='col col--12'>
+                    <div class='grid grid--gut12 col col--12'>
                         <div class='col col--12 txt-m txt-bold'>
                             Account Settings
                             <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
@@ -44,8 +44,19 @@
                         </div>
 
                         <div class='col col--12 py12'>
-                            <label>Password</label>
-                            <input type=password disabled class='input mb6' placeholder='Your Password Cannot Be Changed At This Time' />
+                            <label>Current Password</label>
+                            <input type=password class='input mb6' placeholder='Your Password Cannot Be Changed At This Time' />
+                        </div>
+                        <div class='col col--5'>
+                            <label>New Password</label>
+                            <input type=password class='input mb6' placeholder='Your Password Cannot Be Changed At This Time' />
+                        </div>
+                        <div class='col col--5'>
+                            <label>Confirm New Password</label>
+                            <input type=password class='input mb6' placeholder='Your Password Cannot Be Changed At This Time' />
+                        </div>
+                        <div class='col col--2'>
+                            <button @click='setPassword' style='margin-top: 22px;' class='btn'>Update</button>
                         </div>
 
                         <div class='py6 col col--12 border--gray-light border-b'>
@@ -53,7 +64,7 @@
                         </div>
 
                         <template v-if='url || !auth || auth && auth.default === "public"'>
-                            <pre class='pre my6'><code v-text='url || defaultJOSM()'></code></pre>
+                            <pre class='pre my6 w-full'><code class='w-full' v-text='url || defaultJOSM()'></code></pre>
                         </template>
                         <template v-else>
                             <div class='col col--12 py12'>
@@ -110,6 +121,9 @@ export default {
             }).catch((err) => {
                 this.error = err.message;
             });
+
+        },
+        setPassword: function() {
 
         },
         getSelf: function() {
