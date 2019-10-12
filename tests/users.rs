@@ -45,31 +45,31 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls2&password=yeaheh&email=ingalls2@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls2&password=yeahehyeah&email=ingalls2@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls3&password=yeaheh&email=ingalls3@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls3&password=yeahehyeah&email=ingalls3@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=filter&password=yeaheh&email=ingalls4@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=filter&password=yeahehyeah&email=ingalls4@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username Duplicate Error
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls3@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls3@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "{\"code\":400,\"reason\":\"User/Email Exists\",\"status\":\"Bad Request\"}");
             assert!(resp.status().is_client_error());
         }
@@ -431,7 +431,7 @@ mod test {
         }
 
         { //Create Second User
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=future_admin&password=yeaheh&email=fake@example.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=future_admin&password=yeahehyeah&email=fake@example.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -484,6 +484,85 @@ mod test {
                 .unwrap();
 
             assert!(resp.status().is_client_error());
+        }
+
+        { // Attempt to change the password (too short)
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/user/reset")
+                .body(r#"{
+                    "current": "yeahehyeah",
+                    "update": "yeah"
+                }"#)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .basic_auth("ingalls", Some("yeahehyeah"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "Password must be at least 8 characters",
+                "status": "Bad Request"
+            }));
+        }
+
+        { // Attempt to change the password (no password)
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/user/reset")
+                .body(r#"{
+                    "current": "yeahehyeah",
+                    "update": ""
+                }"#)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .basic_auth("ingalls", Some("yeahehyeah"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body, json!({
+                "code": 400,
+                "reason": "Password cannot be empty",
+                "status": "Bad Request"
+            }));
+        }
+
+        { // Change the password
+            let client = reqwest::Client::new();
+            let resp = client.post("http://localhost:8000/api/user/reset")
+                .body(r#"{
+                    "current": "yeahehyeah",
+                    "update": "yeahyeah"
+                }"#)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .basic_auth("ingalls", Some("yeahehyeah"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+        }
+
+        { // Ensure password was changed
+            let client = reqwest::Client::new();
+            let resp = client.get("http://localhost:8000/api/user/info")
+                .basic_auth("ingalls", Some("yeahehyeah"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_client_error());
+        }
+
+        { // Ensure new password works
+            let client = reqwest::Client::new();
+            let resp = client.get("http://localhost:8000/api/user/info")
+                .basic_auth("ingalls", Some("yeahyeah"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
         }
 
         server.kill().unwrap();
