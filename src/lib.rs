@@ -597,10 +597,9 @@ fn user_self(
 fn user_pwreset(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
-    auth_rules: web::Data<auth::AuthContainer>,
     reset: Json<PwReset>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_user_info(&mut auth, auth::RW::Read)?;
+    // No auth rules here - user can always change their password
 
     let uid = match auth.uid {
         Some(uid) => uid,
