@@ -39,13 +39,21 @@ impl User {
         match conn.query("
             UPDATE users
                 SET
-                    password = crypt($3, gen_salt('bf', 10));
+                    password = crypt($3, gen_salt('bf', 10))
                 WHERE
                     id = $1
                     AND password = crypt($2, password)
+                RETURNING
+                    users
         ", &[ &uid, &current, &new ]) {
-            Ok(_) => Ok(true),
-            Err(_) => Err(HecateError::new(401, String::from("password does not match"), None))
+            Ok(users) => {
+                if users.len() == 0 {
+                    Err(HecateError::new(400, String::from("Incorrect Current Password"), None))
+                } else {
+                    Ok(true)
+                }
+            },
+            Err(err) => Err(HecateError::from_db(err))
         }
     }
 

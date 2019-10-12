@@ -139,6 +139,8 @@ export default {
                 return;
             }
 
+            console.error(JSON.stringify(this.pw));
+
             fetch(`${window.location.protocol}//${window.location.host}/api/user/reset`, {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -151,10 +153,14 @@ export default {
                 })
             }).then((response) => {
                 if (response.status !== 200) {
-                    return this.error = response.status + ':' + response.statusText;
+                    response.json().then((response) => {
+                        return this.error = response.status + ': ' + response.reason;
+                    }).catch(() => {
+                        return this.error = response.status + ': ' + response.statusText
+                    });
+                } else {
+                    this.error = 'Password Changed!';
                 }
-            }).then(() => {
-                this.error = 'Password Changed!';
             }).catch((err) => {
                 this.error = err.message;
             });
