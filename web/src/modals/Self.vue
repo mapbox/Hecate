@@ -160,6 +160,9 @@ export default {
                     });
                 } else {
                     this.error = 'Password Changed!';
+                    this.pw.newPass = '';
+                    this.pw.newConf = '';
+                    this.pw.current = '';
                 }
             }).catch((err) => {
                 this.error = err.message;
