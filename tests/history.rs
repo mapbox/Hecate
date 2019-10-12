@@ -59,7 +59,7 @@ mod test {
                     "properties": { "number": "123" },
                     "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -86,7 +86,7 @@ mod test {
                     "properties": { "number": "123", "test": true },
                     "geometry": { "type": "Point", "coordinates": [ 1, 1 ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -113,7 +113,7 @@ mod test {
                     "properties": null,
                     "geometry": null
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();

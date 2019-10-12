@@ -71,7 +71,7 @@ mod test {
                         "coordinates": [0, 0]
                     }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -96,7 +96,7 @@ mod test {
                         "coordinates": [0, 0]
                     }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -121,7 +121,7 @@ mod test {
                         "coordinates": [0, 0]
                     }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -147,7 +147,7 @@ mod test {
                         "coordinates": [0, 0]
                     }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -159,7 +159,7 @@ mod test {
         {
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/data/feature/1")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -199,7 +199,7 @@ mod test {
                         "coordinates": [1, 1]
                     }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -211,7 +211,7 @@ mod test {
         {
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/data/feature/1")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -254,7 +254,7 @@ mod test {
                         }
                     }]
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -266,7 +266,7 @@ mod test {
         {
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/data/feature/1")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -308,7 +308,7 @@ mod test {
                         }
                     }]
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
