@@ -53,7 +53,7 @@ mod test {
             let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
             conn.execute("
                 INSERT INTO users (username, password, email)
-                    VALUES ('ingalls', crypt('yeaheh', gen_salt('bf', 10)), 'ingalls@protonmail.com')
+                    VALUES ('ingalls', crypt('yeahehyeah', gen_salt('bf', 10)), 'ingalls@protonmail.com')
             ", &[]).unwrap();
         }
 
