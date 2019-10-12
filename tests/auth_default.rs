@@ -53,7 +53,7 @@ mod test {
             let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
             conn.execute("
                 INSERT INTO users (username, password, email)
-                    VALUES ('ingalls', crypt('yeaheh', gen_salt('bf', 10)), 'ingalls@protonmail.com')
+                    VALUES ('ingalls', crypt('yeahehyeah', gen_salt('bf', 10)), 'ingalls@protonmail.com')
             ", &[]).unwrap();
         }
 
@@ -72,7 +72,7 @@ mod test {
         { // Attempt to access public APIs
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/deltas")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -89,8 +89,8 @@ mod test {
 
         { // Attempt to create another user
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls2&password=yeaheh&email=ingalls2@protonmail.com")
-                .basic_auth("ingalls", Some("yeaheh"))
+            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls2&password=yeahehyeah&email=ingalls2@protonmail.com")
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -108,8 +108,8 @@ mod test {
 
         { // Create another user as admin
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls2&password=yeaheh&email=ingalls2@protonmail.com")
-                .basic_auth("ingalls", Some("yeaheh"))
+            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls2&password=yeahehyeah&email=ingalls2@protonmail.com")
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
