@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.77.0
+
+- :arrow_up: Update all general deps to latest versions
+- :rocket: Add API endpoint and UI functionality to reset a user password
+
 ## v0.76.0
 
 - :bug: Ensure MVT::get fn is able to write cached tile to DB
