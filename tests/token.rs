@@ -53,7 +53,7 @@ mod test {
             let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
             conn.execute("
                 INSERT INTO users (username, password, email)
-                    VALUES ('ingalls', crypt('yeaheh', gen_salt('bf', 10)), 'ingalls@protonmail.com')
+                    VALUES ('ingalls', crypt('yeahehyeah', gen_salt('bf', 10)), 'ingalls@protonmail.com')
             ", &[]).unwrap();
         }
 
@@ -73,7 +73,7 @@ mod test {
                     "name": "JOSM Token",
                     "hours": 5
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -142,7 +142,7 @@ mod test {
                     "properties": { "number": "123" },
                     "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -154,7 +154,7 @@ mod test {
             let client = reqwest::Client::new();
 
             let resp = client.delete(format!("http://localhost:8000/api/user/token/{}", token).as_str())
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 

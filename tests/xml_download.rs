@@ -44,7 +44,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -59,7 +59,7 @@ mod test {
                     "properties": { "addr:housenumber": "1234", "addr:street": "Main St" },
                     "geometry": { "type": "Point", "coordinates": [ -79.46014970541, 43.67263458218963 ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -78,7 +78,7 @@ mod test {
                     "properties": { "addr:housenumber": "1234", "addr:street": "yet another street" },
                     "geometry": { "type": "MultiPoint", "coordinates": [[ -79.45843040943144, 43.67243669841148 ], [ -79.45821315050125, 43.67242699820951 ] ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -97,7 +97,7 @@ mod test {
                     "properties": { "highway": "residential", "name": "Main St E" },
                     "geometry": { "type": "LineString", "coordinates": [ [ -79.46089804172516, 43.67312928878038 ], [ -79.46036696434021, 43.67187602416343 ] ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -116,7 +116,7 @@ mod test {
                     "properties": { "highway": "service", "name": "Don't drive on me" },
                     "geometry": { "type": "MultiLineString", "coordinates": [[ [ -79.4596266746521, 43.672062269477344 ], [ -79.45907950401306, 43.67215539191757 ], [ -79.45853233337401, 43.6720661495819 ] ],[ [ -79.4583123922348, 43.67200406787885 ], [ -79.45751309394836, 43.67179066153475 ] ]] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -135,7 +135,7 @@ mod test {
                     "properties": { "building": true },
                     "geometry": { "type": "Polygon", "coordinates": [[ [ -79.46098119020462, 43.6734687909438 ], [ -79.46066468954086, 43.6734687909438 ], [ -79.46066468954086, 43.673674431320244 ], [ -79.46098119020462, 43.673674431320244 ], [ -79.46098119020462, 43.6734687909438 ] ]] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -169,7 +169,7 @@ mod test {
                         ] ]
                     }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -217,7 +217,7 @@ mod test {
                         ]
                     }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();

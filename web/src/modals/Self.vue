@@ -21,7 +21,7 @@
                     </div>
                 </template>
                 <template v-else>
-                    <div class='col col--12'>
+                    <div class='grid grid--gut12 col col--12'>
                         <div class='col col--12 txt-m txt-bold'>
                             Account Settings
                             <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
@@ -33,10 +33,10 @@
 
                         <div class='col col--12 py12'>
                             <label>Username</label>
-                            <input class='input mb6' v-model='user.username' placeholder='Username' />
+                            <input disabled class='input mb6' v-model='user.username' placeholder='Username' />
 
                             <label>Email</label>
-                            <input class='input mb6' v-model='user.email' placeholder='Email' />
+                            <input disabled class='input mb6' v-model='user.email' placeholder='Email' />
                         </div>
 
                         <div class='py6 col col--12 border--gray-light border-b'>
@@ -44,8 +44,19 @@
                         </div>
 
                         <div class='col col--12 py12'>
-                            <label>Password</label>
-                            <input type=password disabled class='input mb6' placeholder='Your Password Cannot Be Changed At This Time' />
+                            <label>Current Password</label>
+                            <input type=password v-model='pw.current' class='input mb6' placeholder='Current Password' />
+                        </div>
+                        <div class='col col--5'>
+                            <label>New Password</label>
+                            <input type=password v-model='pw.newPass' class='input mb6' placeholder='New Password' />
+                        </div>
+                        <div class='col col--5'>
+                            <label>Confirm New Password</label>
+                            <input type=password v-model='pw.newConf' class='input mb6' placeholder='New Password' />
+                        </div>
+                        <div class='col col--2'>
+                            <button @click='setPassword' style='margin-top: 22px;' class='btn'>Update</button>
                         </div>
 
                         <div class='py6 col col--12 border--gray-light border-b'>
@@ -53,7 +64,7 @@
                         </div>
 
                         <template v-if='url || !auth || auth && auth.default === "public"'>
-                            <pre class='pre my6'><code v-text='url || defaultJOSM()'></code></pre>
+                            <pre class='pre my6 w-full'><code class='w-full' v-text='url || defaultJOSM()'></code></pre>
                         </template>
                         <template v-else>
                             <div class='col col--12 py12'>
@@ -75,7 +86,12 @@ export default {
         return {
             url: '',
             user: false,
-            error: false
+            error: false,
+            pw: {
+                current: '',
+                newPass: '',
+                newConf: ''
+            }
         };
     },
     mounted: function() {
@@ -107,6 +123,47 @@ export default {
                 return response.json();
             }).then((user) => {
                 this.url = `${window.location.origin}/token/${user.token}/api`;
+            }).catch((err) => {
+                this.error = err.message;
+            });
+
+        },
+        setPassword: function() {
+            if (!this.pw.newPass || !this.pw.newConf || !this.pw.current) {
+                this.error = 'No Password Fields Can Be Blank';
+                return;
+            } else if (this.pw.newPass !== this.pw.newConf) {
+                this.pw.newPass = '';
+                this.pw.newConf = '';
+                this.error = 'New Passwords Must Match!';
+                return;
+            }
+
+            console.error(JSON.stringify(this.pw));
+
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/reset`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: new Headers({
+                    'Content-Type': 'application/json'
+                }),
+                body: JSON.stringify({
+                    current: this.pw.current,
+                    update: this.pw.newPass
+                })
+            }).then((response) => {
+                if (response.status !== 200) {
+                    response.json().then((response) => {
+                        return this.error = response.status + ': ' + response.reason;
+                    }).catch(() => {
+                        return this.error = response.status + ': ' + response.statusText
+                    });
+                } else {
+                    this.error = 'Password Changed!';
+                    this.pw.newPass = '';
+                    this.pw.newConf = '';
+                    this.pw.current = '';
+                }
             }).catch((err) => {
                 this.error = err.message;
             });

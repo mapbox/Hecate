@@ -1,5 +1,21 @@
 use crate::err::HecateError;
 
+///
+/// Validate a password against hecate's basic password rules
+///
+pub fn password(pw: &String) -> Result<(), HecateError> {
+    if pw.len() == 0 {
+        Err(HecateError::new(400, String::from("Password cannot be empty"), None))
+    } else if pw.len() < 8 {
+        Err(HecateError::new(400, String::from("Password must be at least 8 characters"), None))
+    } else {
+        Ok(())
+    }
+}
+
+///
+/// Validate a single EPSG:4326 Coordinate
+///
 pub fn point(point: &String) -> Result<(f64, f64), HecateError> {
     let lnglat = point.split(",").collect::<Vec<&str>>();
 
@@ -25,6 +41,9 @@ pub fn point(point: &String) -> Result<(f64, f64), HecateError> {
     Ok((lng, lat))
 }
 
+///
+/// Validate a BBOX of EPSG:4326 Min/Max corners
+///
 pub fn bbox(bbox: &Vec<f64>) -> Result<(), HecateError> {
     if bbox.len() != 4 {
         return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
@@ -51,7 +70,18 @@ pub fn bbox(bbox: &Vec<f64>) -> Result<(), HecateError> {
 mod tests {
     use super::*;
 
-    #[test]   
+    #[test]
+    fn valid_pw() {
+        assert!(password(&String::from("yeahehImapass")).is_ok());
+    }
+
+    #[test]
+    fn invalid_pw() {
+        assert_eq!(password(&String::from("")), Err(HecateError::new(400, String::from("Password cannot be empty"), None)));
+        assert_eq!(password(&String::from("a")), Err(HecateError::new(400, String::from("Password must be at least 8 characters"), None)));
+    }
+
+    #[test]
     fn valid_point() {
         assert_eq!(point(&String::from("-34.696,70.56")).ok(),Some((-34.696,70.56)), "ok - point coordinates is valid.");
     }
@@ -116,7 +146,7 @@ mod tests {
         }
     }
 
-    #[test]   
+    #[test]
     fn valid_bbox() {
         assert_eq!(bbox(&[-107.578125,-30.600094,56.162109,46.377254].to_vec()).ok(),Some(()), "ok - point coordinates is valid.");
     }

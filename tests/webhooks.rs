@@ -52,7 +52,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { // Create Username (ingalls)
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -61,7 +61,7 @@ mod test {
             let client = reqwest::Client::new();
 
             let mut resp = client.get("http://localhost:8000/api/webhooks")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -81,7 +81,7 @@ mod test {
                     "url": "https://example.com",
                     "actions": ["delta"]
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -108,7 +108,7 @@ mod test {
                     "actions": ["delta"],
                     "secret": "my secret"
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -134,7 +134,7 @@ mod test {
                     "url": "https://example.com",
                     "actions": ["delta", "fake"]
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -158,7 +158,7 @@ mod test {
                     "url": "bad-url",
                     "actions": ["delta", "fake"]
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -177,7 +177,7 @@ mod test {
             let client = reqwest::Client::new();
 
             let mut resp = client.get("http://localhost:8000/api/webhooks")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -202,7 +202,7 @@ mod test {
             let client = reqwest::Client::new();
 
             let mut resp = client.get("http://localhost:8000/api/webhooks/1")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -222,7 +222,7 @@ mod test {
             let client = reqwest::Client::new();
 
             let mut resp = client.get("http://localhost:8000/api/webhooks/10")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -244,7 +244,7 @@ mod test {
                     "url": "https://example.com/modify",
                     "actions": ["delta"]
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -269,7 +269,7 @@ mod test {
                     "url": "https://example.com/modify",
                     "actions": ["fake"]
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -293,7 +293,7 @@ mod test {
                     "url": "bad-url",
                     "actions": ["delta"]
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -312,7 +312,7 @@ mod test {
             let client = reqwest::Client::new();
 
             let resp = client.delete("http://localhost:8000/api/webhooks/1")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 

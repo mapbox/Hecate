@@ -1,4 +1,5 @@
 use crate::err::HecateError;
+use crate::validate;
 
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct User {
@@ -30,6 +31,30 @@ impl User {
             "meta": self.meta,
             "access": self.access
         })
+    }
+
+    pub fn reset(conn: &impl postgres::GenericConnection, uid: &i64, current: &String, new: &String) -> Result<bool, HecateError> {
+        validate::password(&new)?;
+
+        match conn.query("
+            UPDATE users
+                SET
+                    password = crypt($3, gen_salt('bf', 10))
+                WHERE
+                    id = $1
+                    AND password = crypt($2, password)
+                RETURNING
+                    users
+        ", &[ &uid, &current, &new ]) {
+            Ok(users) => {
+                if users.len() == 0 {
+                    Err(HecateError::new(400, String::from("Incorrect Current Password"), None))
+                } else {
+                    Ok(true)
+                }
+            },
+            Err(err) => Err(HecateError::from_db(err))
+        }
     }
 
     pub fn password(&mut self, password: String) {
@@ -69,7 +94,11 @@ impl User {
 
         } else {
             let password = match self.password {
-                Some(ref password) => password,
+                Some(ref password) => {
+                    validate::password(password)?;
+
+                    password
+                },
                 None => { return Err(HecateError::new(400, String::from("Password must be present to create new user"), None)); }
             };
 
