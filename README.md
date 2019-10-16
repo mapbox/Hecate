@@ -73,10 +73,16 @@ Built something cool that uses the Hecate API? Let us know!
 
 <details>
 
-- Start by installing Rust from [rust-lang.org](https://www.rust-lang.org/en-US/), this will install the current stable version. Hecate is designed to run on the latest stable version of Rust, but has been thoroughly tested with `1.38.0`.
+- Start by installing Rust from [rust-lang.org](https://www.rust-lang.org/en-US/), this will install the current stable version
 
 ```bash
 curl https://sh.rustup.rs -sSf | sh
+```
+
+Hecate is designed to run on the latest stable version of Rust, but has been thoroughly tested with `1.38.0`. This will install `1.38.0`
+
+```bash 
+curl https://sh.rustup.rs -sSf | sh -s --  --default-toolchain 1.38.0
 ```
 
 - Source your `bashrc/bash_profile` to update your `PATH` variable
