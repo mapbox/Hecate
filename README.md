@@ -79,7 +79,7 @@ Built something cool that uses the Hecate API? Let us know!
 curl https://sh.rustup.rs -sSf | sh
 ```
 
-Hecate is designed to run on the latest stable version of Rust, but has been thoroughly tested with `1.38.0`. This will install `1.38.0`
+- Hecate is designed to run on the latest stable version of Rust, but has been thoroughly tested with `1.38.0`. This will install `1.38.0`
 
 ```bash 
 curl https://sh.rustup.rs -sSf | sh -s --  --default-toolchain 1.38.0
