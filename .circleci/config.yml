@@ -17,14 +17,11 @@ jobs:
                         apt-transport-https \
                         postgresql-contrib \
                         build-essential \
-                        libiberty-dev \
                         binutils-dev \
                         pkg-config \
                         zlib1g-dev \
                         postgresql \
                         libssl-dev \
-                        libelf-dev \
-                        libdw-dev \
                         locales \
                         postgis \
                         openssl \
@@ -47,7 +44,7 @@ jobs:
                 name: "Install rust"
                 command: |
                   curl https://sh.rustup.rs -sSf > /tmp/rustup.sh \
-                  && sh /tmp/rustup.sh -y --default-toolchain nightly-2019-06-01 \
+                  && sh /tmp/rustup.sh -y --default-toolchain 1.38.0 \
                   && echo "export PATH=$HOME/.cargo/bin:$PATH" >> $BASH_ENV
             - run:
                 name: "Build Frontend"
@@ -60,7 +57,7 @@ jobs:
                 command: ./tests/test.sh
             - run:
                 name: "npm install"
-                command: cd ci && npm install
+                command: cd ci && yarn install
             - run:
                 name: "Publish Release"
                 command: ./ci/publish.sh
