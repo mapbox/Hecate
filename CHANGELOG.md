@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.77.1
+
+- :rocket: Move from nightly to stable rust
+
 ## v0.77.0
 
 - :arrow_up: Update all general deps to latest versions
