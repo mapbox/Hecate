@@ -70,6 +70,9 @@ CHANGE_START=$(echo $(grep -n "## v${NVER}" CHANGELOG.md | grep -Eo '^[0-9]+') +
 CHANGE_END=$(echo $(grep -n "## v${CVER}" CHANGELOG.md | grep -Eo '^[0-9]+') - 1 | bc)
 CHANGE="$(sed -n "${CHANGE_START},${CHANGE_END}p" CHANGELOG.md)"
 
+# Ensure that a release can be built and Cargo.lock is updated
+cargo build --release
+
 git commit -am "v${NVER}"
 git tag "v${NVER}"
 
