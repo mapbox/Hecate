@@ -596,7 +596,7 @@ fn user_self(
 
 fn user_pwreset(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     reset: Json<PwReset>
 ) -> Result<Json<serde_json::Value>, HecateError> {
     // No auth rules here - user can always change their password

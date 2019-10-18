@@ -13,7 +13,7 @@
                     </div>
 
                     <div class='col col--12'>
-                        <textarea :readonly="!credentials.uid" class='textarea w-full h360' v-model="query" placeholder="Query SQL"></textarea>
+                        <textarea id='editor' :readonly="!credentials.uid" class='textarea w-full h360' v-model="query" placeholder="Query SQL"></textarea>
                     </div>
 
                     <div class='col col--12'>
@@ -35,20 +35,11 @@
                     </div>
 
                     <div class='col col--1'>
-                        <button @click='close()' class='fr btn round bg-white color-black bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use href='#icon-arrow-left'/></button>
+                        <button @click='close()' class='fr btn round bg-white color-black bg-darken25-on-hover color-gray-dark fl'><svg class='icon'><use href='#icon-close'/></button>
                     </div>
 
                     <div class='col col--12'>
                         <textarea readonly class='textarea w-full h360' v-model="results" placeholder="SQL Results"></textarea>
-                    </div>
-
-                    <div class='col col--12'>
-                        <div class='grid grid--gut12'>
-                            <div class='col col--8 py12'></div>
-                            <div class='col col--4 py12'>
-                                <button @click="close()" class='btn round btn--stroke w-full'>Close</button>
-                            </div>
-                        </div>
                     </div>
                 </template>
             </div>
@@ -58,13 +49,22 @@
 </template>
 
 <script>
+import Behave from 'behave-js';
+
 export default {
     name: 'query',
     data: function() {
         return {
             query: '',
-            results: []
+            results: [],
+            editor: false
         }
+    },
+    mounted: function() {
+        this.editor = new Behave({
+            textarea: document.getElementById('editor'),
+            softTabs: false,
+        });
     },
     methods: {
         close: function() {
