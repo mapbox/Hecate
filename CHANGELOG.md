@@ -16,10 +16,6 @@
 
 ## v0.77.1
 
-- :bug: Don't return duplicates on get_bounds when a point exists on a subdivision line
-
-## v0.77.1
-
 - :rocket: Move from nightly to stable rust
 
 ## v0.77.0
