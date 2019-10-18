@@ -61,7 +61,7 @@ export default {
     name: 'query',
     data: function() {
         return {
-            query: 'SELECT\n    *\nFROM\n    props',
+            query: 'SELECT\n    *\nFROM\n    geo',
             results: [],
             editor: false,
             error: false
@@ -85,8 +85,12 @@ export default {
             window.hecate.query.get(this.query, (err, results) => {
                 if (err) return this.error = true;
 
-                const EOF = results.pop();
-                this.results = results;
+                // Ensure the query result contains an End Of Transmission Character
+                if (results.substring(results.length - 1, results.length) === '\x04') {
+                    this.results = results.substring(0, results.length - 1);
+                } else {
+                    this.error = true;
+                }
             });
         }
     },
