@@ -99,12 +99,6 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
                     ) as b
                 WHERE
                     ST_Intersects(geo.geom, b.subgeom)
-                GROUP BY
-                    geo.id,
-                    geo.key,
-                    geo.version,
-                    geo.geom,
-                    geo.props
             ) t
     "#), &[&bounds]) {
         Ok(stream) => Ok(stream),
