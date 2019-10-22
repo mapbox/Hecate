@@ -121,7 +121,7 @@ mod test {
             assert_eq!(delete_session_resp.text().unwrap(), "true");
         }
 
-        { // Attempt to access admin page with expired cookie (redirects disabled)
+        { // Attempt to access admin page with invalid cookie (redirects disabled)
             let client = reqwest::Client::builder()
                 .redirect(reqwest::RedirectPolicy::none())
                 .build()
@@ -136,7 +136,7 @@ mod test {
             assert_eq!(admin_resp.headers().get("location").unwrap(), &"/admin/login/index.html");
         }
 
-        { // Attempt to access admin page with expired cookie (should redirect to login)
+        { // Attempt to access admin page with invalid cookie (should redirect to login)
             let client = reqwest::Client::new();
 
             let admin_resp = client.get("http://localhost:8000/admin/index.html")
