@@ -1,6 +1,5 @@
 extern crate reqwest;
 extern crate postgres;
-#[macro_use] extern crate serde_json;
 
 #[cfg(test)]
 mod test {
@@ -12,7 +11,6 @@ mod test {
     use std::thread;
     use std::env;
     use reqwest;
-    use serde_json;
 
     #[test]
     fn user_session_closed() {
@@ -96,6 +94,57 @@ mod test {
             assert!(cookies[0].value().len() > 0);
 
             cookie = format!("{}={}", cookies[0].name(), cookies[0].value());
+        }
+
+        { // With session cookie we should get the actual admin page - no redirect
+            let client = reqwest::Client::builder()
+                .redirect(reqwest::RedirectPolicy::none())
+                .build()
+                .unwrap();
+
+            let admin_resp = client.get("http://localhost:8000/admin/index.html")
+                .header(reqwest::header::COOKIE, cookie.clone())
+                .send()
+                .unwrap();
+
+            assert_eq!(admin_resp.status().as_str(), "200");
+        }
+
+        { // Delete user session
+            let client = reqwest::Client::new();
+            let mut delete_session_resp = client.delete("http://localhost:8000/api/user/session")
+                .header(reqwest::header::COOKIE, cookie.clone())
+                .send()
+                .unwrap();
+
+            assert!(delete_session_resp.status().is_success());
+            assert_eq!(delete_session_resp.text().unwrap(), "true");
+        }
+
+        { // Attempt to access admin page with expired cookie (redirects disabled)
+            let client = reqwest::Client::builder()
+                .redirect(reqwest::RedirectPolicy::none())
+                .build()
+                .unwrap();
+
+            let admin_resp = client.get("http://localhost:8000/admin/index.html")
+                .header(reqwest::header::COOKIE, cookie.clone())
+                .send()
+                .unwrap();
+
+            assert_eq!(admin_resp.status().as_str(), "302");
+            assert_eq!(admin_resp.headers().get("location").unwrap(), &"/admin/login/index.html");
+        }
+
+        { // Attempt to access admin page with expired cookie (should redirect to login)
+            let client = reqwest::Client::new();
+
+            let admin_resp = client.get("http://localhost:8000/admin/index.html")
+                .header(reqwest::header::COOKIE, cookie.clone())
+                .send()
+                .unwrap();
+
+            assert_eq!(admin_resp.status().as_str(), "401");
         }
 
         server.kill().unwrap();
