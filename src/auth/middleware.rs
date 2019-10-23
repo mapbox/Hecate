@@ -74,6 +74,16 @@ where
             }
         };
 
+        let path: Vec<String> = req.path().split("/").map(|p| {
+            p.to_string()
+        }).filter(|p| {
+            if p.len() == 0 {
+                return false;
+            }
+
+            return true;
+        }).collect();
+
         let mut auth = match Auth::from_sreq(&mut req, &*db) {
             Err(err) => {
                 if err.invalidate {
@@ -82,12 +92,33 @@ where
                         .http_only(true)
                         .finish();
 
-                    return Either::B(ok(req.into_response(
-                        HttpResponse::Unauthorized()
-                            .cookie(cookie)
-                            .finish()
-                            .into_body()
-                    )));
+                    // Invalid cookies to the UI should remove session and
+                    // redirect to login
+                    if
+                        (
+                            path.len() == 1
+                            && path[0] == String::from("admin")
+                        ) || (
+                            path.len() >= 2
+                            && path[0] == String::from("admin")
+                            && path[1] != String::from("login")
+                        )
+                    {
+                        return Either::B(ok(req.into_response(
+                            HttpResponse::Found()
+                                .cookie(cookie)
+                                .header(http::header::LOCATION, "/admin/login/index.html")
+                                .finish()
+                                .into_body(),
+                        )));
+                    } else {
+                        return Either::B(ok(req.into_response(
+                            HttpResponse::Unauthorized()
+                                .cookie(cookie)
+                                .finish()
+                                .into_body()
+                        )));
+                    }
                 } else {
                     return Either::B(ok(req.into_response(
                         HttpResponse::Unauthorized()
@@ -116,16 +147,6 @@ where
             auth.uid.is_none()
             || self.auth == AuthDefault::Admin && auth.access == Some(String::from("admin"))
         {
-            let path: Vec<String> = req.path().split("/").map(|p| {
-                p.to_string()
-            }).filter(|p| {
-                if p.len() == 0 {
-                    return false;
-                }
-
-                return true;
-            }).collect();
-
             if path.len() >= 1 && path[0] == String::from("admin") {
                 // UI Results should redirect to an unauthenticated login portal
                 // or allowed if they are for the login page
