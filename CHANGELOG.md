@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.77.3
+
+- :bug: Revert v0.77.2 due to timeout issues
+- :white_check_mark: Add tests for session invalidation
+
 ## v0.77.2
 
 - :bug: Don't return duplicates on get_bounds when a point exists on a subdivision line
