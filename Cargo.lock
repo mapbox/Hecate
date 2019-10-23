@@ -886,7 +886,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "hecate"
-version = "0.77.2"
+version = "0.77.3"
 dependencies = [
  "actix-files 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-http 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
