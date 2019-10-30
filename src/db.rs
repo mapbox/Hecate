@@ -97,3 +97,26 @@ impl DbReadWrite {
         }
     }
 }
+
+///
+/// Return a JSON definition of the schema, including comments
+///
+pub fn meta(conn: &impl postgres::GenericConnection) -> Result<serde_json::Value, HecateError> {
+    match conn.query("
+        SELECT
+            table_name,
+            column_name,
+            data_type
+        FROM
+            information_schema.COLUMNS
+        WHERE
+            TABLE_NAME = 'geo'
+            OR TABLE_NAME = 'deltas'
+    ", &[]) {
+        Ok(rows) => {
+            Ok(json!(false))
+        },
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}
+

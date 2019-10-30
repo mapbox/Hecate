@@ -24,6 +24,21 @@ window.hecate = {
             });
         }
     },
+    query: {
+        get: function(query, cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/data/query?limit=100&query=${encodeURIComponent(query.replace(/;/g, ''))}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                return response.text();
+            }).then((response) => {
+                return cb(null, response);
+            }).catch((err) => {
+                return cb(err);
+            });
+        }
+    },
     schema: {
         get: function(cb) {
             fetch(`${window.location.protocol}//${window.location.host}/api/schema`, {
