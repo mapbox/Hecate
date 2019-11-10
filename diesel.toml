@@ -1,0 +1,8 @@
+[print_schema]
+file = "./srv/schema.rs"
+
+import_types = [
+    "diesel_geography::sql_types::*",
+    "diesel::pg::types::sql_types::*",
+    "diesel::sql_types::*"
+]

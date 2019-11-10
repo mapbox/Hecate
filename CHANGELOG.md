@@ -10,6 +10,79 @@
 
 # Version History
 
+## v0.77.3
+
+- :bug: Revert v0.77.2 due to timeout issues
+- :white_check_mark: Add tests for session invalidation
+
+## v0.77.2
+
+- :bug: Don't return duplicates on get_bounds when a point exists on a subdivision line
+
+## v0.77.1
+
+- :rocket: Move from nightly to stable rust
+
+## v0.77.0
+
+- :arrow_up: Update all general deps to latest versions
+- :rocket: Add API endpoint and UI functionality to reset a user password
+
+## v0.76.0
+
+- :bug: Ensure MVT::get fn is able to write cached tile to DB
+
+## v0.75.0
+
+- :rocket: Don't include `web/dist` folder in git to avoid constant conflicts
+- :pencil2: Update docs around building frontend UI
+
+## v0.74.4
+
+- :rocket: Add automatic session cookie clearing
+- :rocket: Set the expiration time on JOSM urls tokens to 2 weeks and on user session tokens to 24 hours
+
+## v0.74.3
+
+- :rocket: Add webhook secrets so receivers can authenticate webhook requests from Hecate
+- :rocket: [UI] Show webhook secret when creating a webhook
+
+## v0.74.2
+
+- :rocket: [UI] Add protocol in JOSM token generation
+
+## v0.74.1
+
+- :bug: Use read/write database connection for webhook create, update, and delete requests
+
+## v0.74.0
+
+- :rocket: Add create and delete token endpoints, and allow for path-based tokens to fix JOSM
+    integration when basic authentication is not sent
+- :rocket: Add read/write scoping to every endpoint
+
+## v0.73.0
+
+- :rocket: Add identity middleware to require every endpoint for authentication, returning 401
+    or redirecting to login page if the request is not authenticated
+
+## v0.72.0
+
+- :rocket: Switch backend from `rocket` to `actix`
+
+## v0.71.1
+
+- :rocket: Add validation for bbox.
+
+## v0.71.0
+
+- :rocket: [UI] Completely rework UI based error handling into a single error handling component
+- :rocket: [UI] Move more UI API calls into the standard hecate library
+- :rocket: [UI] Add support for loading the server schema at load time
+- :tada: [UI] Add support for displaying schema descriptions in the features panel
+- :tada: [UI] Add support for optionally loading the feature history
+- :tada: [UI] Rough support for feature history UI
+
 ## v0.70.5
 
 - :rocket: [UI] Show back button when individual feature is selected of multiple potential
@@ -535,4 +608,3 @@
   - opening/committing/finalizing deltas
   - Pretty thorough suite of JS tests for JS integration
   - Basic Rust tests for node/way/rel objects
-

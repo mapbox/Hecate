@@ -1,0 +1,69 @@
+{
+    "default": "user",
+    "server": "public",
+    "webhooks": {
+        "list": "public",
+        "delete": "public",
+        "update": "public"
+    },
+    "meta": {
+        "get": "public",
+        "list": "public",
+        "set": "user"
+    },
+    "schema": {
+        "get": "public"
+    },
+    "stats": {
+        "get": "public",
+        "bounds": "public"
+    },
+    "mvt": {
+        "get": "public",
+        "regen": "public",
+        "delete": "public",
+        "meta": "public"
+    },
+    "user": {
+        "info": "self",
+        "list": "public",
+        "create": "admin",
+        "create_session": "self"
+    },
+    "style": {
+        "create": "self",
+        "patch": "self",
+        "set_public": "self",
+        "set_private": "self",
+        "delete": "self",
+        "get": "public",
+        "list": "public"
+    },
+    "delta": {
+        "get": "public",
+        "list": "public"
+    },
+    "feature": {
+        "force": "user",
+        "create": "user",
+        "get": "public",
+        "history": "public"
+    },
+    "bounds": {
+        "list": "public",
+        "create": "user",
+        "delete": "public",
+        "get": "public"
+    },
+    "osm": {
+        "get": "public",
+        "create": "user"
+    },
+    "clone": {
+        "get": "public",
+        "query": "public"
+    },
+    "auth": {
+        "get": "public"
+    }
+}

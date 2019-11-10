@@ -10,5 +10,12 @@ ets-wfs20/
 /target/
 **/*.rs.bk
 node_modules/
+<<<<<<< HEAD
 ets-wfs20-master/
 test-run-props.xml
+=======
+web/dist/
+
+.env
+.cache
+>>>>>>> 382997b699879d1f826d114be787340619982a62

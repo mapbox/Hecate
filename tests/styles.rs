@@ -44,7 +44,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username (ingalls)
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -56,7 +56,7 @@ mod test {
                     "name": "Awesome Style",
                     "style": "I am a style"
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -74,7 +74,7 @@ mod test {
         { //Get Style - Authed: ingalls
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/style/1")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Awesome Style","public":false,"style":"I am a style","uid":1,"username":"ingalls"}"#);
@@ -84,7 +84,7 @@ mod test {
         { //Get Non-Existant Style - Auth: ingalls
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/style/100")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), "{\"code\":404,\"reason\":\"Style Not Found\",\"status\":\"Not Found\"}");
@@ -97,7 +97,7 @@ mod test {
                 .body(r#"{
                     "name": "Modified Awesome Style"
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -109,7 +109,7 @@ mod test {
         { //Get Style - Authed: ingalls
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/style/1")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","public":false,"style":"I am a style","uid":1,"username":"ingalls"}"#);
@@ -123,7 +123,7 @@ mod test {
                 .body(r#"{
                     "style": "I am a modified style"
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -135,7 +135,7 @@ mod test {
         { //Get Style - Authed: ingalls
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/style/1")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), r#"{"id":1,"name":"Modified Awesome Style","public":false,"style":"I am a modified style","uid":1,"username":"ingalls"}"#);
@@ -154,7 +154,7 @@ mod test {
         { //Delete Ingalls - ingalls
             let client = reqwest::Client::new();
             let mut resp = client.delete("http://localhost:8000/api/style/1")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), r#"true"#);
@@ -164,7 +164,7 @@ mod test {
         { //Delete Style - Doesnt Exist
             let client = reqwest::Client::new();
             let mut resp = client.delete("http://localhost:8000/api/style/100")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), "{\"code\":404,\"reason\":\"Style Not Found\",\"status\":\"Not Found\"}");
@@ -178,7 +178,7 @@ mod test {
                     "name": "Style 1",
                     "style": "I am a style"
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -194,7 +194,7 @@ mod test {
                     "name": "Style 2",
                     "style": "I am a style"
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -212,7 +212,7 @@ mod test {
         { //Mark Style 1 as Public
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/style/2/public")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -244,7 +244,7 @@ mod test {
         { //Get User List of All Styles - authed user checking their own styles should see all
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/styles/1")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), r#"[{"id":2,"name":"Style 1","public":true,"uid":1,"username":"ingalls"},{"id":3,"name":"Style 2","public":false,"uid":1,"username":"ingalls"}]"#);
@@ -254,7 +254,7 @@ mod test {
         { //Mark Style 1 as Private again
             let client = reqwest::Client::new();
             let mut resp = client.post("http://localhost:8000/api/style/2/private")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 

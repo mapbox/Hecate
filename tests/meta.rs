@@ -51,7 +51,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username (ingalls)
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -60,7 +60,7 @@ mod test {
             let client = reqwest::Client::new();
             
             let mut resp = client.get("http://localhost:8000/api/meta")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -75,13 +75,13 @@ mod test {
             let client = reqwest::Client::new();
             
             let mut resp = client.get("http://localhost:8000/api/meta/key")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
-            assert_eq!(json_body, json!(null));
+            assert_eq!(json_body, json!(false));
 
             assert!(resp.status().is_success());
         }
@@ -91,7 +91,7 @@ mod test {
             
             let mut resp = client.post("http://localhost:8000/api/meta/key")
                 .body(r#"{ "value": "test" }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -106,7 +106,7 @@ mod test {
             let client = reqwest::Client::new();
             
             let mut resp = client.get("http://localhost:8000/api/meta")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -121,7 +121,7 @@ mod test {
             let client = reqwest::Client::new();
             
             let mut resp = client.get("http://localhost:8000/api/meta/key")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -139,7 +139,7 @@ mod test {
             
             let mut resp = client.post("http://localhost:8000/api/meta/key")
                 .body(r#"{ "value": false }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -154,7 +154,7 @@ mod test {
             let client = reqwest::Client::new();
             
             let mut resp = client.get("http://localhost:8000/api/meta")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -169,7 +169,7 @@ mod test {
             let client = reqwest::Client::new();
             
             let mut resp = client.get("http://localhost:8000/api/meta/key")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 

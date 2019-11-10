@@ -18,36 +18,18 @@
     </template>
     <template v-else-if='feature'>
         <div class="flex-child scroll-auto">
-            <table class='table txt-xs'>
-                <thead><tr><th>Key</th><th>Value</th></tr></thead>
-                <tbody>
-                    <tr v-for="prop in Object.keys(feature.properties)">
-                        <td v-text="prop"></td>
+            <template v-if='Array.isArray(feature)'>
+                <template v-for="historic_feature in feature">
+                    <key class='my12' :feature='historic_feature.feat' :schema="schema" v-on:error="description($event)"/>
+                </template>
+            </template>
+            <template v-else>
+                <key :feature='feature' :schema="schema" v-on:error="description($event)"/>
 
-                        <!-- element: (Array) -->
-                        <td v-if="Array.isArray(feature.properties[prop])">
-                            <template v-for="element in feature.properties[prop]" style="border-bottom: dotted;">
-                                <!-- element: Array: (Object) -->
-                                <template v-if="typeof element === 'object' && !Array.isArray(element)">
-                                    <tr v-for="key in Object.keys(element)">
-                                        <td v-text="key"></td>
-                                        <td v-text="element[key]"></td>
-                                    </tr>
-                                </template>
-                                <!-- element: Array: (Array, String, Number) -->
-                                <template v-else>
-                                    <td v-text="JSON.stringify(element)"></td>
-                                </template>
-
-                                <div style="border-bottom: solid #CBCBCB 1px;"></div>
-                            </template>
-                        </td>
-
-                        <!-- element: (Object, String, Number) -->
-                        <td v-else v-text="JSON.stringify(feature.properties[prop])"></td>
-                    </tr>
-                </tbody>
-            </table>
+                <div class="w-full align-center my12">
+                    <button @click='history' class='btn btn--s round bg-gray-light bg-darken25-on-hover color-gray-dark'>Load History</button>
+                </div>
+            </template>
         </div>
     </template>
     <template v-else-if='features.length'>
@@ -69,6 +51,7 @@
 
 <script>
 import Foot from '../components/Foot.vue';
+import Key from '../components/Key.vue';
 
 export default {
     name: 'feature',
@@ -80,7 +63,8 @@ export default {
         }
     },
     components: {
-        foot: Foot
+        foot: Foot,
+        key: Key
     },
     watch: {
         id: function() {
@@ -94,6 +78,23 @@ export default {
         close: function() {
             this.$emit('close');
         },
+        description: function(text) {
+            this.$emit('error', {
+                title: 'Property Details',
+                body: text
+            });
+        },
+        history: function() {
+            window.hecate.feature.history(this.feature.id, (err, history) => {
+                if (err) return this.$emit('error', err);
+                history = history.map((feat, ele) => {
+                    feat.feat.version = ele + 1;
+                    return feat;
+                });
+                history.reverse();
+                this.feature = history;
+            });
+        },
         get: function(id) {
             if (!id) return;
 
@@ -103,48 +104,32 @@ export default {
             this.is404 = false;
 
             if (typeof id === 'number' || typeof id === 'string') {
-                fetch(`${window.location.protocol}//${window.location.host}/api/data/feature/${id}`, {
-                    method: 'GET',
-                    credentials: 'same-origin'
-                }).then((response) => {
-                      if (response.status === 404) {
-                          this.is404 = true;
-                          this.feature = false;
-                      } else {
-                          return response.json();
-                      }
-                }).then((body) => {
-                    this.feature = body;
+                window.hecate.feature.get(id, (err, feature) => {
+                    if (err) return this.$emit('error', err);
+                    
+                    if (!feature) {
+                        this.is404 = true;
+                    } else {
+                        this.feature = feature;
+                    }
                 });
             } else if (Array.isArray(id)) {
-                fetch(`${window.location.protocol}//${window.location.host}/api/data/features?point=${encodeURIComponent(id[0] + ',' + id[1])}`, {
-                    method: 'GET',
-                    credentials: 'same-origin'
-                }).then((response) => {
-                      if (response.status === 404) {
-                          this.is404 = true;
-                      } else {
-                          return response.text();
-                      }
-                }).then((body) => {
-                    body = body.split('\n');
-                    body.pop(); // Remove EOS ctrl char
-                    body = body.map((b) => {
-                        return JSON.parse(b);
-                    });
-
-                    if (body.length === 0) {
+                window.hecate.features.point(id, (err, features) => {
+                    if (err) return this.$emit('error', err);
+                    
+                    if (!features) {
                         this.is404 = true;
-                    } else if (body.length === 1) {
-                        this.feature = body[0];
+                    } else if (features.length === 1) {
+                        this.feature = features[0];
                     } else {
-                        this.features = body;
+                        this.features = features;
                     }
-                })
+                });
+
             }
         }
     },
     render: h => h(App),
-    props: ['id', 'map']
+    props: ['id', 'map', 'schema']
 }
 </script>

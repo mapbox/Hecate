@@ -2,25 +2,7 @@
     <div class='absolute top left bottom right z3' style="pointer-events: none;">
         <div class='flex-parent flex-parent--center-main flex-parent--center-cross h-full' style="pointer-events: auto;">
             <div class="flex-child px12 py12 w600 h80 bg-white round-ml shadow-darken10">
-                <template v-if='error'>
-                    <div class='grid w-full col'>
-                        <div class='col--12'>
-                            <h3 class='w-full py6 txt-m txt-bold align-center'>ERROR!</h3>
-                        </div>
-
-                        <div class='col--12 py12' v-text='error'></div>
-
-                        <div class='col--12 py12'>
-                            <div class='grid grid--gut12'>
-                                <div class='col col--6'></div>
-                                <div class='col col--6'>
-                                    <button @click='error = false' class='btn round w-full'>Ok</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-                <template v-else-if='mode === "addLayer"'>
+                <template v-if='mode === "addLayer"'>
                     <div class='grid w-full col'>
 
                         <template v-if='layerData.error'>
@@ -90,12 +72,11 @@
                         <div class='col--12'>
                             <template v-if='webhookData.id === false'>
                                 <h3 class='fl py6 txt-m txt-bold'>Add A New Webhook</h3>
-                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </template>
                             <template v-else>
                                 <h3 class='fl py6 txt-m txt-bold' v-text='"Modify the " + webhookData.name + " webhook"'></h3>
-                                <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </template>
+                            <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                         </div>
 
                         <div class='col--12 py12 px12'>
@@ -133,23 +114,47 @@
                                     <label>Webhook URL</label>
                                     <input v-model='webhookData.url' class='input w-full' placeholder='https://' v-bind:class="{ 'input--border-red': webhookData.urlError }" />
                                 </div>
+                                <template v-if='webhookData.id === false'>
+                                    <div class='col col--12 pb12'>
+                                        <label>Webhook Secret (optional)</label>
+                                        <input v-model='webhookData.secret' class='input w-full' placeholder='A webhook secret will automatically be generated if omitted' />
+                                    </div>
+                                </template>
                             </div>
                         </div>
 
                         <div class='col--12 py12'>
                             <div class='grid grid--gut12'>
-                                <div class='col col--6'>
-                                    <button @click='deleteHook(webhookData.id)' class='btn btn--red round w-full'>Delete</button>
-                                </div>
-                                <div class='col col--6'>
-                                    <template v-if='webhookData.id === false'>
+
+                                <template v-if='webhookData.id === false'>
+                                    <div class='col col--6'>
                                         <button @click='modifyHook()' class='btn round w-full'>Create Webhook</button>
-                                    </template>
-                                    <template v-else>
+                                    </div>
+                                    <div class='col col--6'>
+                                        <button @click='close' class='btn btn--red round w-full'>Cancel</button>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <div class='col col--6'>
                                         <button @click='modifyHook(webhookData.id)' class='btn round w-full'>Update Webhook</button>
-                                    </template>
-                                </div>
+                                    </div>
+                                    <div class='col col--6'>
+                                        <button @click='deleteHook(webhookData.id)' class='btn btn--red round w-full'>Delete</button>
+                                    </div>
+                                </template>
                             </div>
+                        </div>
+                    </div>
+                </template>
+                <template v-else-if='mode === "showHookSecret"'>
+                    <div class='grid w-full col'>
+                        <div class='col col--12 txt-m txt-bold'>
+                            Webhook Secret
+                            <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                        </div>
+                        <div class='col--12 py12 px12'>
+                            <label>Be sure to copy your webhook secret now. You'll need it to authenticate webhooks from hecate and won’t be able to see it again.</label>
+                            <input class='input w-full' :value="webhookData.secret" readonly/>
                         </div>
                     </div>
                 </template>
@@ -381,8 +386,13 @@
 </template>
 
 <script>
+import Err from '../components/Error.vue';
+
 export default {
     name: 'settings',
+    components: {
+        error: Err
+    },
     data: function() {
         return {
             mode: 'settings',
@@ -392,7 +402,6 @@ export default {
             layers: [],
             users: [],
             userFilter: '',
-            error: '',
             delLayerData: {
                 idx: false,
                 name: '',
@@ -460,13 +469,13 @@ export default {
         },
         clearCache: function() {
             window.hecate.tiles.clear((err) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
                 this.tilecache = true;
             });
         },
         getLayers: function() {
             window.hecate.meta.get('layers', (err, layers) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
                 this.layers = layers;
             });
         },
@@ -490,19 +499,20 @@ export default {
         },
         getUsers: function() {
             window.hecate.users.list(this.userFilter, (err, users) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
+
                 this.users = users;
             });
         },
         getHooks: function() {
             window.hecate.webhooks.list((err, hooks) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
                 this.hooks = hooks;
             });
         },
         getHook: function(hook_id) {
             window.hecate.webhooks.get(hook_id, (err, hook) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
 
                 this.webhookData.id = hook.id;
                 this.webhookData.name = hook.name;
@@ -522,7 +532,7 @@ export default {
         },
         deleteHook: function(hook_id) {
             window.hecate.webhooks.delete(hook_id, (err, hook) => {
-                if (err) return this.error = err.message;
+                if (err) return this.$emit('error', err);
 
                 this.mode = 'addHook';
                 this.getHooks();
@@ -537,7 +547,9 @@ export default {
                 body: JSON.stringify(this.layers)
             }).then((response) => {
                 if (response.status !== 200) {
-                    this.error = response.status + ':' + response.statusText;
+                    return this.$emit('error', {
+                        body: response.statusText
+                    });
                 }
 
                 return response.json();
@@ -545,7 +557,7 @@ export default {
                 if (!layers)
                 this.layers = layers;
             }).catch((err) => {
-                this.error = err.message;
+                this.$emit('error', err);
             });
         },
         deleteLayer: function() {
@@ -639,18 +651,21 @@ export default {
             const hook = {
                 name: this.webhookData.name,
                 actions: actions,
-                url: this.webhookData.url
+                url: this.webhookData.url,
+                secret: this.webhookData.secret || null
             };
 
             if (!hook_id) {
-                window.hecate.webhooks.create(hook, (err) => {
-                    if (err) return this.error = err.message;
+                window.hecate.webhooks.create(hook, (err, hook) => {
+                    if (err) return this.$emit('error', err);
+                    // Set the webhook secret from the server response in case it was generated
+                    this.webhookData.secret = hook.secret;
                     this.getHooks();
-                    this.close();
+                    this.mode = 'showHookSecret';
                 });
             } else {
                 window.hecate.webhooks.update(hook_id, hook, (err) => {
-                    if (err) return this.error = err.message;
+                    if (err) return this.$emit('error', err);
                     this.getHooks();
                     this.close();
                 });
@@ -690,6 +705,7 @@ export default {
             this.webhookData.nameError = false;
             this.webhookData.url = '';
             this.webhookData.urlError = false;
+            this.webhookData.secret = '';
 
             for (let action of Object.keys(this.webhookData.actions)) {
                 this.webhookData.actions[action] = false;

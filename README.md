@@ -79,18 +79,17 @@ Built something cool that uses the Hecate API? Let us know!
 curl https://sh.rustup.rs -sSf | sh
 ```
 
+- Hecate is designed to run on the latest stable version of Rust, but has been thoroughly tested with `1.38.0`. This will install `1.38.0`
+
+```bash 
+curl https://sh.rustup.rs -sSf | sh -s --  --default-toolchain 1.38.0
+```
+
 - Source your `bashrc/bash_profile` to update your `PATH` variable
 
 ```bash
 source ~/.bashrc        # Most Linux Distros, some OSX
 source ~/.bash_profile  # Most OSX, some Linux Distros
-```
-
-- Install the `nightly-2019-06-01` build of rust, `Rocket`, the web-framework relies on some advanced compiler options not yet included in the default build.
-
-```bash
-rustup install nightly-2019-06-01
-rustup default nightly-2019-06-01
 ```
 
 - Download and compile the project and all of it's libraries
@@ -123,6 +122,31 @@ local all all trust
 host all all 127.0.0.1/32 trust
 host all all ::1/128 trust
 host replication postgres samenet trust
+```
+
+- [Install Node/Npm](https://nodejs.org/en/) for building the frontend code
+
+- [Install Yarn](https://yarnpkg.com/lang/en/docs/install/) for installing
+  frontend dependencies
+
+- Install frontend dependencies
+
+```
+cd web/
+yarn install
+```
+
+- Build frontend UI
+
+```
+yarn build
+```
+
+Note: if actively working on developing the UI, a live reloading server
+can be started via:
+
+```
+yarn dev
 ```
 
 - Start the server

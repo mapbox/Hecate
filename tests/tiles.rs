@@ -40,7 +40,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -59,13 +59,13 @@ mod test {
                     },
                     "geometry": { "type": "Point", "coordinates": [ -97.734375,56.559482483762245 ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
 
-            assert!(resp.status().is_success());
             assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
         }
 
         { //Request a tile via API
@@ -131,7 +131,7 @@ mod test {
         { //Request a tile regen - authenticated
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0/regen")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
@@ -153,7 +153,7 @@ mod test {
         { //Wipe Tile DB
             let client = reqwest::Client::new();
             let resp = client.delete("http://localhost:8000/api/tiles")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 

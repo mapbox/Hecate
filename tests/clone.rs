@@ -44,7 +44,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -59,7 +59,7 @@ mod test {
                     "properties": { "indc": true },
                     "geometry": { "type": "Point", "coordinates": [ -77.01210021972656,38.925763232374514 ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -71,11 +71,12 @@ mod test {
         { //Get Clone
             let client = reqwest::Client::new();
             let mut resp = client.get("http://localhost:8000/api/data/clone")
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
 
             let mut body_str = String::from(resp.text().unwrap());
+            println!("{}", body_str);
             body_str.pop();
             body_str.pop();
             assert_eq!(&*body_str, r#"{"id":1,"key":null,"type":"Feature","version":1,"geometry":{"type":"Point","coordinates":[-77.0121002197266,38.9257632323745]},"properties":{"indc": true}}"#);

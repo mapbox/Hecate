@@ -1,17 +1,47 @@
 # Contributing
 
-## Merging Pull Requests
+## 1. Merging Pull Requests
 
-All PRs to master _must_ have a corresponding versioned release
+:warning: All PRs to master **_must_** have a corresponding versioned release
 
-- add CHANGELOG.md comment following current formatting
+- Add a `CHANGELOG.md` comment following current formatting, commit and push it.
+
+### Manual way
+
 - Bump the version in Cargo.toml
 - Bump the version in `src/lib.rs` (Top of file)
 - Bump the version in `src/cli.yml`
-- Build a linux release from a linux machine (`cargo build --release`)
 - `git commit -am "v#.#.#`
 - `git tag v#.#.#`
 - `git push`
 - `git push --tags`
 - `cargo publish` (Optionally)
-- Via the github interface create a new release and upload the hecate binary
+
+### Automatic way
+
+- Run the `release script` without any argument to get the current version.
+
+```
+./release
+```
+
+- Run the release script with the first argument being the new version you intend to release
+
+```
+./release 0.71.1
+```
+
+and you should get a comment like:
+```
+ok - 0.71.0 => 0.71.1
+ok - release pushed!
+```
+
+## 2. Finalize release
+
+CI will create a new prerelease and upload a binary for you. You can finalize this release by:
+
+- Finding your release at https://github.com/mapbox/Hecate/releases
+- Copy your comment in the `CHANGELOG.md` and paste it in the description field.
+- Uncheck `This is a prerelease` if necessary.
+- Click on the `update release button`

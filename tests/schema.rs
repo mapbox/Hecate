@@ -49,7 +49,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -70,7 +70,7 @@ mod test {
                     "properties": { "number": "123" },
                     "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -93,7 +93,7 @@ mod test {
                     },
                     "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -116,7 +116,7 @@ mod test {
                     },
                     "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
                 }"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
                 .send()
                 .unwrap();
@@ -129,7 +129,7 @@ mod test {
             let client = reqwest::Client::new();
             let mut resp = client.put("http://localhost:8000/api/0.6/changeset/create")
                 .body(r#"<osm><changeset><tag k="created_by" v="Hecate Server"/><tag k="comment" v="Buncho Random Text"/></changeset></osm>"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), "4");
@@ -150,7 +150,7 @@ mod test {
                         </create>
                     </osmChange>
                 "#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), "{\"feature\":{\"action\":\"create\",\"geometry\":{\"coordinates\":[0.0,0.0],\"type\":\"Point\"},\"id\":-1,\"properties\":{\"number\":123,\"source\":\"Test Data\",\"street\":[{\"test\":\"123\"}]},\"type\":\"Feature\"},\"id\":-1,\"message\":\"Failed to Match Schema\"}");
@@ -171,7 +171,7 @@ mod test {
                         </create>
                     </osmChange>
                 "#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), "<diffResult generator=\"Hecate Server\" version=\"0.6\"><node old_id=\"-1\" new_id=\"2\" new_version=\"1\"/></diffResult>");

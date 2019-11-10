@@ -44,7 +44,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeaheh&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -53,7 +53,7 @@ mod test {
             let client = reqwest::Client::new();
             let mut resp = client.put("http://localhost:8000/api/0.6/changeset/create")
                 .body(r#"<osm><changeset><tag k="created_by" v="Hecate Server"/><tag k="comment" v="Buncho Random Text"/></changeset></osm>"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), "1");
@@ -79,7 +79,7 @@ mod test {
                         </create>
                     </osmChange>
                 "#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), r#"<diffResult generator="Hecate Server" version="0.6"><node old_id="-1" new_id="1" new_version="1"/></diffResult>"#);
@@ -96,7 +96,7 @@ mod test {
             let client = reqwest::Client::new();
             let mut resp = client.put("http://localhost:8000/api/0.6/changeset/create")
                 .body(r#"<osm><changeset><tag k="created_by" v="Hecate Server"/><tag k="comment" v="Buncho Random Text"/></changeset></osm>"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), "2");
@@ -121,7 +121,7 @@ mod test {
                         </modify>
                     </osmChange>
                 "#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), r#"<diffResult generator="Hecate Server" version="0.6"><node old_id="1" new_id="1" new_version="2"/></diffResult>"#);
@@ -138,7 +138,7 @@ mod test {
             let client = reqwest::Client::new();
             let mut resp = client.put("http://localhost:8000/api/0.6/changeset/create")
                 .body(r#"<osm><changeset><tag k="created_by" v="Hecate Server"/><tag k="comment" v="Buncho Random Text"/></changeset></osm>"#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), "3");
@@ -161,7 +161,7 @@ mod test {
                         </delete>
                     </osmChange>
                 "#)
-                .basic_auth("ingalls", Some("yeaheh"))
+                .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
             assert_eq!(resp.text().unwrap(), r#"<diffResult generator="Hecate Server" version="0.6"><node old_id="1"/></diffResult>"#);
