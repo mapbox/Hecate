@@ -146,9 +146,9 @@ pub fn start(
                     .route(web::get().to_async(meta_list))
                 )
                 .service(web::resource("meta/{key}")
-                    .route(web::post().to(meta_set))
-                    .route(web::delete().to(meta_delete))
-                    .route(web::get().to(meta_get))
+                    .route(web::post().to_async(meta_set))
+                    .route(web::delete().to_async(meta_delete))
+                    .route(web::get().to_async(meta_get))
                 )
                 .service(web::scope("style")
                     .service(web::resource("")
@@ -377,11 +377,17 @@ fn meta_get(
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
-) -> actix_web::Result<Json<serde_json::Value>> {
-    auth_rules.0.allows_meta_get(&mut auth, auth::RW::Read)?;
-    worker.queue(worker::Task::new(worker::TaskType::Meta));
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_meta_get(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(meta::Meta::get(&*conn.get()?, &key.into_inner())?.value))
+        worker.queue(worker::Task::new(worker::TaskType::Meta));
+
+        Ok(meta::Meta::get(&*conn.get()?, &key.into_inner())?.value)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 
@@ -391,12 +397,17 @@ fn meta_delete(
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
 
-    worker.queue(worker::Task::new(worker::TaskType::Meta));
+        worker.queue(worker::Task::new(worker::TaskType::Meta));
 
-    Ok(Json(json!(meta::delete(&*conn.get()?, &key.into_inner())?)))
+        Ok(json!(meta::delete(&*conn.get()?, &key.into_inner())?))
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 fn meta_set(
@@ -406,14 +417,19 @@ fn meta_set(
     worker: web::Data<worker::Worker>,
     value: Json<serde_json::Value>,
     key: web::Path<String>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
 
-    worker.queue(worker::Task::new(worker::TaskType::Meta));
+        worker.queue(worker::Task::new(worker::TaskType::Meta));
 
-    let meta = meta::Meta::new(key.into_inner(), value.into_inner());
+        let meta = meta::Meta::new(key.into_inner(), value.into_inner());
 
-    Ok(Json(json!(meta.set(&*conn.get()?)?)))
+        Ok(json!(meta.set(&*conn.get()?)?))
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 
