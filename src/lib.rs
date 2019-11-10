@@ -196,16 +196,16 @@ pub fn start(
                 )
                 .service(web::scope("tiles")
                     .service(web::resource("")
-                        .route(web::delete().to(mvt_wipe))
+                        .route(web::delete().to_async(mvt_wipe))
                     )
                     .service(web::resource("{z}/{x}/{y}")
-                        .route(web::get().to(mvt_get))
+                        .route(web::get().to_async(mvt_get))
                     )
                     .service(web::resource("{z}/{x}/{y}/meta")
-                        .route(web::get().to(mvt_meta))
+                        .route(web::get().to_async(mvt_meta))
                     )
                     .service(web::resource("{z}/{x}/{y}/regen")
-                        .route(web::get().to(mvt_regen))
+                        .route(web::get().to_async(mvt_regen))
                     )
                 )
                 .service(web::resource("users")
@@ -439,21 +439,26 @@ fn mvt_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
-) -> Result<HttpResponse, HecateError> {
-    let z = path.0;
-    let x = path.1;
-    let y = path.2;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        let z = path.0;
+        let x = path.1;
+        let y = path.2;
 
-    auth_rules.0.allows_mvt_get(&mut auth, auth::RW::Read)?;
+        auth_rules.0.allows_mvt_get(&mut auth, auth::RW::Read)?;
 
-    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
+        if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    let tile = mvt::get(&*conn_read.get()?, &*conn_write.get()?, z, x, y, false)?;
-
-    Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
-        .content_type("application/x-protobuf")
-        .content_length(tile.len() as u64)
-        .body(tile))
+        Ok(mvt::get(&*conn_read.get()?, &*conn_write.get()?, z, x, y, false)?)
+    }).then(|res: Result<Vec<u8>, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(tile) => {
+            Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
+                .content_type("application/x-protobuf")
+                .content_length(tile.len() as u64)
+                .body(tile))
+        },
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 
@@ -462,26 +467,36 @@ fn mvt_meta(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_mvt_meta(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_mvt_meta(&mut auth, auth::RW::Read)?;
 
-    let z = path.0;
-    let x = path.1;
-    let y = path.2;
+        let z = path.0;
+        let x = path.1;
+        let y = path.2;
 
-    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
+        if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    Ok(Json(mvt::meta(&*conn.get()?, z, x, y)?))
+        Ok(mvt::meta(&*conn.get()?, z, x, y)?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 fn mvt_wipe(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_mvt_delete(&mut auth, auth::RW::Full)?;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_mvt_delete(&mut auth, auth::RW::Full)?;
 
-    Ok(Json(mvt::wipe(&*conn.get()?)?))
+        Ok(mvt::wipe(&*conn.get()?)?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(wipe) => Ok(actix_web::HttpResponse::Ok().json(wipe)),
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 fn mvt_regen(
@@ -490,21 +505,26 @@ fn mvt_regen(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
-) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_mvt_regen(&mut auth, auth::RW::Full)?;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_mvt_regen(&mut auth, auth::RW::Full)?;
 
-    let z = path.0;
-    let x = path.1;
-    let y = path.2;
+        let z = path.0;
+        let x = path.1;
+        let y = path.2;
 
-    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
+        if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    let tile = mvt::get(&*conn_read.get()?, &*conn_write.get()?, z, x, y, true)?;
-
-    Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
-        .content_type("application/x-protobuf")
-        .content_length(tile.len() as u64)
-        .body(tile))
+        Ok(mvt::get(&*conn_read.get()?, &*conn_write.get()?, z, x, y, true)?)
+    }).then(|res: Result<Vec<u8>, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(tile) => {
+            Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
+                .content_type("application/x-protobuf")
+                .content_length(tile.len() as u64)
+                .body(tile))
+        },
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 fn user_create(
