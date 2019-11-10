@@ -29,8 +29,9 @@ pub mod osm;
 pub mod user;
 pub mod auth;
 
+use actix_http::error::ResponseError;
 use actix_http::httpmessage::HttpMessage;
-use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, Responder, middleware};
+use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, middleware};
 use futures::{Future, Stream, future::Either};
 use geojson::GeoJson;
 use crate::{
@@ -142,7 +143,7 @@ pub fn start(
                     .route(web::get().to(auth_get))
                 )
                 .service(web::resource("meta")
-                    .route(web::get().to(meta_list))
+                    .route(web::get().to_async(meta_list))
                 )
                 .service(web::resource("meta/{key}")
                     .route(web::post().to(meta_set))
@@ -358,12 +359,15 @@ fn meta_list(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> actix_web::Result<impl Responder> {
-    auth_rules.0.allows_meta_list(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_meta_list(&mut auth, auth::RW::Read)?;
 
-    let list = serde_json::to_value(meta::list(&*conn.get()?)?).unwrap();
-
-    Ok(Json(list))
+        Ok(serde_json::to_value(meta::list(&*conn.get()?)?).unwrap())
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(list) => Ok(actix_web::HttpResponse::Ok().json(list)),
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 
