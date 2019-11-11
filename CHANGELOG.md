@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.78.0
+
+- :rocket: Use `web::block` to make a number of calls async in nature
+
 ## v0.77.3
 
 - :bug: Revert v0.77.2 due to timeout issues
