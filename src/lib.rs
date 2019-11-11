@@ -29,8 +29,9 @@ pub mod osm;
 pub mod user;
 pub mod auth;
 
+use actix_http::error::ResponseError;
 use actix_http::httpmessage::HttpMessage;
-use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, Responder, middleware};
+use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, middleware};
 use futures::{Future, Stream, future::Either};
 use geojson::GeoJson;
 use crate::{
@@ -142,12 +143,12 @@ pub fn start(
                     .route(web::get().to(auth_get))
                 )
                 .service(web::resource("meta")
-                    .route(web::get().to(meta_list))
+                    .route(web::get().to_async(meta_list))
                 )
                 .service(web::resource("meta/{key}")
-                    .route(web::post().to(meta_set))
-                    .route(web::delete().to(meta_delete))
-                    .route(web::get().to(meta_get))
+                    .route(web::post().to_async(meta_set))
+                    .route(web::delete().to_async(meta_delete))
+                    .route(web::get().to_async(meta_get))
                 )
                 .service(web::scope("style")
                     .service(web::resource("")
@@ -195,16 +196,16 @@ pub fn start(
                 )
                 .service(web::scope("tiles")
                     .service(web::resource("")
-                        .route(web::delete().to(mvt_wipe))
+                        .route(web::delete().to_async(mvt_wipe))
                     )
                     .service(web::resource("{z}/{x}/{y}")
-                        .route(web::get().to(mvt_get))
+                        .route(web::get().to_async(mvt_get))
                     )
                     .service(web::resource("{z}/{x}/{y}/meta")
-                        .route(web::get().to(mvt_meta))
+                        .route(web::get().to_async(mvt_meta))
                     )
                     .service(web::resource("{z}/{x}/{y}/regen")
-                        .route(web::get().to(mvt_regen))
+                        .route(web::get().to_async(mvt_regen))
                     )
                 )
                 .service(web::resource("users")
@@ -254,10 +255,10 @@ pub fn start(
                         .route(web::get().to(features_query))
                     )
                     .service(web::resource("stats")
-                        .route(web::get().to(stats_get))
+                        .route(web::get().to_async(stats_get))
                     )
                     .service(web::resource("stats/regen")
-                        .route(web::get().to(stats_regen))
+                        .route(web::get().to_async(stats_regen))
                     )
                     .service(web::resource("query")
                         .route(web::get().to(clone_query))
@@ -270,10 +271,10 @@ pub fn start(
                             .route(web::get().to(bounds))
                         )
                         .service(web::resource("{bound}/stats")
-                            .route(web::get().to(bounds_stats))
+                            .route(web::get().to_async(bounds_stats))
                         )
                         .service(web::resource("{bound}/meta")
-                            .route(web::get().to(bounds_meta))
+                            .route(web::get().to_async(bounds_meta))
                         )
                         .service(web::resource("{bound}")
                             .route(web::get().to(bounds_get))
@@ -358,12 +359,15 @@ fn meta_list(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> actix_web::Result<impl Responder> {
-    auth_rules.0.allows_meta_list(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_meta_list(&mut auth, auth::RW::Read)?;
 
-    let list = serde_json::to_value(meta::list(&*conn.get()?)?).unwrap();
-
-    Ok(Json(list))
+        Ok(serde_json::to_value(meta::list(&*conn.get()?)?).unwrap())
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(list) => Ok(actix_web::HttpResponse::Ok().json(list)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 
@@ -373,11 +377,17 @@ fn meta_get(
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
-) -> actix_web::Result<Json<serde_json::Value>> {
-    auth_rules.0.allows_meta_get(&mut auth, auth::RW::Read)?;
-    worker.queue(worker::Task::new(worker::TaskType::Meta));
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_meta_get(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(meta::Meta::get(&*conn.get()?, &key.into_inner())?.value))
+        worker.queue(worker::Task::new(worker::TaskType::Meta));
+
+        Ok(meta::Meta::get(&*conn.get()?, &key.into_inner())?.value)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 
@@ -387,12 +397,17 @@ fn meta_delete(
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
 
-    worker.queue(worker::Task::new(worker::TaskType::Meta));
+        worker.queue(worker::Task::new(worker::TaskType::Meta));
 
-    Ok(Json(json!(meta::delete(&*conn.get()?, &key.into_inner())?)))
+        Ok(json!(meta::delete(&*conn.get()?, &key.into_inner())?))
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn meta_set(
@@ -402,14 +417,19 @@ fn meta_set(
     worker: web::Data<worker::Worker>,
     value: Json<serde_json::Value>,
     key: web::Path<String>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
 
-    worker.queue(worker::Task::new(worker::TaskType::Meta));
+        worker.queue(worker::Task::new(worker::TaskType::Meta));
 
-    let meta = meta::Meta::new(key.into_inner(), value.into_inner());
+        let meta = meta::Meta::new(key.into_inner(), value.into_inner());
 
-    Ok(Json(json!(meta.set(&*conn.get()?)?)))
+        Ok(json!(meta.set(&*conn.get()?)?))
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 
@@ -419,21 +439,26 @@ fn mvt_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
-) -> Result<HttpResponse, HecateError> {
-    let z = path.0;
-    let x = path.1;
-    let y = path.2;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        let z = path.0;
+        let x = path.1;
+        let y = path.2;
 
-    auth_rules.0.allows_mvt_get(&mut auth, auth::RW::Read)?;
+        auth_rules.0.allows_mvt_get(&mut auth, auth::RW::Read)?;
 
-    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
+        if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    let tile = mvt::get(&*conn_read.get()?, &*conn_write.get()?, z, x, y, false)?;
-
-    Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
-        .content_type("application/x-protobuf")
-        .content_length(tile.len() as u64)
-        .body(tile))
+        Ok(mvt::get(&*conn_read.get()?, &*conn_write.get()?, z, x, y, false)?)
+    }).then(|res: Result<Vec<u8>, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(tile) => {
+            Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
+                .content_type("application/x-protobuf")
+                .content_length(tile.len() as u64)
+                .body(tile))
+        },
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 
@@ -442,26 +467,36 @@ fn mvt_meta(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_mvt_meta(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_mvt_meta(&mut auth, auth::RW::Read)?;
 
-    let z = path.0;
-    let x = path.1;
-    let y = path.2;
+        let z = path.0;
+        let x = path.1;
+        let y = path.2;
 
-    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
+        if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    Ok(Json(mvt::meta(&*conn.get()?, z, x, y)?))
+        Ok(mvt::meta(&*conn.get()?, z, x, y)?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn mvt_wipe(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_mvt_delete(&mut auth, auth::RW::Full)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_mvt_delete(&mut auth, auth::RW::Full)?;
 
-    Ok(Json(mvt::wipe(&*conn.get()?)?))
+        Ok(mvt::wipe(&*conn.get()?)?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(wipe) => Ok(actix_web::HttpResponse::Ok().json(wipe)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn mvt_regen(
@@ -470,21 +505,26 @@ fn mvt_regen(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
-) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_mvt_regen(&mut auth, auth::RW::Full)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_mvt_regen(&mut auth, auth::RW::Full)?;
 
-    let z = path.0;
-    let x = path.1;
-    let y = path.2;
+        let z = path.0;
+        let x = path.1;
+        let y = path.2;
 
-    if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
+        if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
-    let tile = mvt::get(&*conn_read.get()?, &*conn_write.get()?, z, x, y, true)?;
-
-    Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
-        .content_type("application/x-protobuf")
-        .content_length(tile.len() as u64)
-        .body(tile))
+        Ok(mvt::get(&*conn_read.get()?, &*conn_write.get()?, z, x, y, true)?)
+    }).then(|res: Result<Vec<u8>, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(tile) => {
+            Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
+                .content_type("application/x-protobuf")
+                .content_length(tile.len() as u64)
+                .body(tile))
+        },
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn user_create(
@@ -1082,10 +1122,15 @@ fn bounds_stats(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     bound: web::Path<String>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_stats_bounds(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_stats_bounds(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(bounds::stats_json(&*conn.get()?, bound.into_inner())?))
+        Ok(bounds::stats_json(&*conn.get()?, bound.into_inner())?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn bounds_meta(
@@ -1093,12 +1138,16 @@ fn bounds_meta(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     bound: web::Path<String>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_bounds_get(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_bounds_get(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(bounds::meta(&*conn.get()?, bound.into_inner())?))
+        Ok(bounds::meta(&*conn.get()?, bound.into_inner())?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
-
 
 fn clone_query(
     sandbox_conn: web::Data<DbSandbox>,
@@ -1173,20 +1222,30 @@ fn stats_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(stats::get_json(&*conn.get()?)?))
+        Ok(stats::get_json(&*conn.get()?)?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn stats_regen(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(json!(stats::regen(&*conn.get()?)?)))
+        Ok(json!(stats::regen(&*conn.get()?)?))
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn features_action(
