@@ -359,7 +359,7 @@ fn meta_list(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_meta_list(&mut auth, auth::RW::Read)?;
 
@@ -377,7 +377,7 @@ fn meta_get(
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_meta_get(&mut auth, auth::RW::Read)?;
 
@@ -397,7 +397,7 @@ fn meta_delete(
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
 
@@ -417,7 +417,7 @@ fn meta_set(
     worker: web::Data<worker::Worker>,
     value: Json<serde_json::Value>,
     key: web::Path<String>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
 
@@ -439,7 +439,7 @@ fn mvt_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         let z = path.0;
         let x = path.1;
@@ -467,7 +467,7 @@ fn mvt_meta(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_mvt_meta(&mut auth, auth::RW::Read)?;
 
@@ -488,7 +488,7 @@ fn mvt_wipe(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_mvt_delete(&mut auth, auth::RW::Full)?;
 
@@ -505,7 +505,7 @@ fn mvt_regen(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     path: web::Path<(u8, u32, u32)>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_mvt_regen(&mut auth, auth::RW::Full)?;
 
@@ -523,7 +523,14 @@ fn mvt_regen(
                 .content_length(tile.len() as u64)
                 .body(tile))
         },
-        Err(err) => Ok(err.error_response())
+        Err(err) => match err {
+            actix_threadpool::BlockingError::Error(err) => {
+                Ok(err.error_response())
+            },
+            actix_threadpool::BlockingError::Canceled => {
+                Ok(HecateError::new(500, String::from("Internal Server Error"), None).error_response())
+            }
+        }
     })
 }
 
@@ -1122,7 +1129,7 @@ fn bounds_stats(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     bound: web::Path<String>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_stats_bounds(&mut auth, auth::RW::Read)?;
 
@@ -1138,7 +1145,7 @@ fn bounds_meta(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     bound: web::Path<String>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_bounds_get(&mut auth, auth::RW::Read)?;
 
@@ -1222,7 +1229,7 @@ fn stats_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
 
@@ -1237,7 +1244,7 @@ fn stats_regen(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
         auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
 
