@@ -366,7 +366,7 @@ fn meta_list(
         Ok(serde_json::to_value(meta::list(&*conn.get()?)?).unwrap())
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(list) => Ok(actix_web::HttpResponse::Ok().json(list)),
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -386,7 +386,7 @@ fn meta_get(
         Ok(meta::Meta::get(&*conn.get()?, &key.into_inner())?.value)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -406,7 +406,7 @@ fn meta_delete(
         Ok(json!(meta::delete(&*conn.get()?, &key.into_inner())?))
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -428,7 +428,7 @@ fn meta_set(
         Ok(json!(meta.set(&*conn.get()?)?))
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -457,7 +457,7 @@ fn mvt_get(
                 .content_length(tile.len() as u64)
                 .body(tile))
         },
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -480,7 +480,7 @@ fn mvt_meta(
         Ok(mvt::meta(&*conn.get()?, z, x, y)?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(meta) => Ok(actix_web::HttpResponse::Ok().json(meta)),
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -495,7 +495,7 @@ fn mvt_wipe(
         Ok(mvt::wipe(&*conn.get()?)?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(wipe) => Ok(actix_web::HttpResponse::Ok().json(wipe)),
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -523,14 +523,7 @@ fn mvt_regen(
                 .content_length(tile.len() as u64)
                 .body(tile))
         },
-        Err(err) => match err {
-            actix_threadpool::BlockingError::Error(err) => {
-                Ok(err.error_response())
-            },
-            actix_threadpool::BlockingError::Canceled => {
-                Ok(HecateError::new(500, String::from("Internal Server Error"), None).error_response())
-            }
-        }
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -1136,7 +1129,7 @@ fn bounds_stats(
         Ok(bounds::stats_json(&*conn.get()?, bound.into_inner())?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -1152,7 +1145,7 @@ fn bounds_meta(
         Ok(bounds::meta(&*conn.get()?, bound.into_inner())?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -1236,7 +1229,7 @@ fn stats_get(
         Ok(stats::get_json(&*conn.get()?)?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
@@ -1251,7 +1244,7 @@ fn stats_regen(
         Ok(json!(stats::regen(&*conn.get()?)?))
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
-        Err(err) => Ok(err.error_response())
+        Err(err) => Ok(HecateError::from(err).error_response())
     })
 }
 
