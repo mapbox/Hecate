@@ -255,10 +255,10 @@ pub fn start(
                         .route(web::get().to(features_query))
                     )
                     .service(web::resource("stats")
-                        .route(web::get().to(stats_get))
+                        .route(web::get().to_async(stats_get))
                     )
                     .service(web::resource("stats/regen")
-                        .route(web::get().to(stats_regen))
+                        .route(web::get().to_async(stats_regen))
                     )
                     .service(web::resource("query")
                         .route(web::get().to(clone_query))
@@ -271,10 +271,10 @@ pub fn start(
                             .route(web::get().to(bounds))
                         )
                         .service(web::resource("{bound}/stats")
-                            .route(web::get().to(bounds_stats))
+                            .route(web::get().to_async(bounds_stats))
                         )
                         .service(web::resource("{bound}/meta")
-                            .route(web::get().to(bounds_meta))
+                            .route(web::get().to_async(bounds_meta))
                         )
                         .service(web::resource("{bound}")
                             .route(web::get().to(bounds_get))
@@ -1122,10 +1122,15 @@ fn bounds_stats(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     bound: web::Path<String>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_stats_bounds(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_stats_bounds(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(bounds::stats_json(&*conn.get()?, bound.into_inner())?))
+        Ok(bounds::stats_json(&*conn.get()?, bound.into_inner())?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 fn bounds_meta(
@@ -1133,12 +1138,16 @@ fn bounds_meta(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     bound: web::Path<String>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_bounds_get(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_bounds_get(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(bounds::meta(&*conn.get()?, bound.into_inner())?))
+        Ok(bounds::meta(&*conn.get()?, bound.into_inner())?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
+        Err(err) => Ok(err.error_response())
+    })
 }
-
 
 fn clone_query(
     sandbox_conn: web::Data<DbSandbox>,
@@ -1213,20 +1222,30 @@ fn stats_get(
     conn: web::Data<DbReplica>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(stats::get_json(&*conn.get()?)?))
+        Ok(stats::get_json(&*conn.get()?)?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 fn stats_regen(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = actix_web::Error> {
+    web::block(move || {
+        auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(json!(stats::regen(&*conn.get()?)?)))
+        Ok(json!(stats::regen(&*conn.get()?)?))
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(stats) => Ok(actix_web::HttpResponse::Ok().json(stats)),
+        Err(err) => Ok(err.error_response())
+    })
 }
 
 fn features_action(
