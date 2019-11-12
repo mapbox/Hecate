@@ -1,6 +1,7 @@
 pub static VERSION: &'static str = "0.78.0";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
+pub static HOURS: i64 = 24;
 
 ///
 /// The Maximum number of bytes allowed in
@@ -178,10 +179,10 @@ pub fn start(
                     .route(web::get().to(schema_get))
                 )
                 .service(web::resource("deltas")
-                    .route(web::get().to(delta_list))
+                    .route(web::get().to_async(delta_list))
                 )
                 .service(web::resource("delta/{id}")
-                    .route(web::get().to(delta))
+                    .route(web::get().to_async(delta))
                 )
                 .service(web::scope("webhooks")
                     .service(web::resource("")
@@ -222,8 +223,8 @@ pub fn start(
                         .route(web::post().to(user_pwreset))
                     )
                     .service(web::resource("session")
-                        .route(web::get().to(user_create_session))
-                        .route(web::delete().to(user_delete_session))
+                        .route(web::get().to_async(user_create_session))
+                        .route(web::delete().to_async(user_delete_session))
                     )
                     .service(web::resource("token")
                         .route(web::post().to(user_create_token))
@@ -248,7 +249,7 @@ pub fn start(
                         .route(web::get().to_async(feature_get))
                     )
                     .service(web::resource("feature/{id}/history")
-                        .route(web::get().to(feature_get_history))
+                        .route(web::get().to_async(feature_get_history))
                     )
                     .service(web::resource("features")
                         .route(web::post().to_async(features_action))
@@ -268,7 +269,7 @@ pub fn start(
                     )
                     .service(web::scope("bounds")
                         .service(web::resource("")
-                            .route(web::get().to(bounds))
+                            .route(web::get().to_async(bounds))
                         )
                         .service(web::resource("{bound}/stats")
                             .route(web::get().to_async(bounds_stats))
@@ -279,7 +280,7 @@ pub fn start(
                         .service(web::resource("{bound}")
                             .route(web::get().to(bounds_get))
                             .route(web::post().to_async(bounds_set))
-                            .route(web::delete().to(bounds_delete))
+                            .route(web::delete().to_async(bounds_delete))
                         )
                     )
                 )
@@ -656,56 +657,68 @@ fn user_create_session(
     conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
-) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Full)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_user_create_session(&mut auth, auth::RW::Full)?;
 
-    let uid = auth.uid.unwrap();
+        let uid = auth.uid.unwrap();
 
-    // max age of user session
-    const HOURS: i64 = 24;
-    let token = user::Token::create(&*conn.get()?, "Session Token", &uid, &HOURS, user::token::Scope::Full)?;
-    let cookie = actix_http::http::Cookie::build("session", token.token)
-        .path("/")
-        .http_only(true)
-        .max_age(HOURS * 60 * 60)
-        .finish();
+        // max age of user session
+        Ok(user::Token::create(&*conn.get()?, "Session Token", &uid, &HOURS, user::token::Scope::Full)?)
+    }).then(|res: Result<user::Token, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(token) => {
 
-    let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK).json(json!(true));
-    resp.add_cookie(&cookie).unwrap();
+            let cookie = actix_http::http::Cookie::build("session", token.token)
+                .path("/")
+                .http_only(true)
+                .max_age(HOURS * 60 * 60)
+                .finish();
 
-    Ok(resp)
+            let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK).json(json!(true));
+            resp.add_cookie(&cookie).unwrap();
+
+            Ok(resp)
+        },
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn user_delete_session(
     conn: web::Data<DbReadWrite>,
     auth: auth::Auth,
     req: HttpRequest
-) -> Result<HttpResponse, HecateError> {
-    // there is no auth check here for deleting tokens, the web interface should
-    // always be able to de-authenticate to prevent errors
-
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
     let token = match req.cookie("session") {
         Some(session) => Some(String::from(session.value())),
         None => None
     };
 
-    let cookie = actix_http::http::Cookie::build("session", String::from(""))
-        .path("/")
-        .http_only(true)
-        .finish();
-
-    let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK).json(json!(true));
-    resp.add_cookie(&cookie).unwrap();
-
-    match token {
-        Some(token) => match auth.uid {
-            Some(uid) => match user::token::destroy(&*conn.get()?, &uid, &token) {
-                _ => Ok(resp)
+    web::block(move || {
+        // there is no auth check here for deleting tokens, the web interface should
+        // always be able to de-authenticate to prevent errors
+        match token {
+            Some(token) => match auth.uid {
+                Some(uid) => match user::token::destroy(&*conn.get()?, &uid, &token) {
+                    _ => Ok(true)
+                },
+                None => Ok(true)
             },
-            None => Ok(resp)
+            None => Ok(true)
+        }
+    }).then(|res: Result<bool, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(_) => {
+            let cookie = actix_http::http::Cookie::build("session", String::from(""))
+                .path("/")
+                .http_only(true)
+                .finish();
+
+            let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK).json(json!(true));
+            resp.add_cookie(&cookie).unwrap();
+
+            Ok(resp)
         },
-        None => Ok(resp)
-    }
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn user_create_token(
@@ -931,40 +944,45 @@ fn delta_list(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     opts: web::Query<DeltaList>
-) ->  Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_delta_list(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_delta_list(&mut auth, auth::RW::Read)?;
 
-    if opts.offset.is_none() && opts.limit.is_none() && opts.start.is_none() && opts.end.is_none() {
-        Ok(Json(delta::list_by_offset(&*conn.get()?, None, None)?))
-    } else if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
-        return Err(HecateError::new(400, String::from("Offset cannot be used with start or end"), None));
-    } else if opts.start.is_some() || opts.end.is_some() {
-        let start: Option<chrono::NaiveDateTime> = match &opts.start {
-            None => None,
-            Some(start) => {
-                match start.parse() {
-                    Err(_) => { return Err(HecateError::new(400, String::from("Invalid Start Timestamp"), None)); },
-                    Ok(start) => Some(start)
+        if opts.offset.is_none() && opts.limit.is_none() && opts.start.is_none() && opts.end.is_none() {
+            Ok(delta::list_by_offset(&*conn.get()?, None, None)?)
+        } else if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
+            return Err(HecateError::new(400, String::from("Offset cannot be used with start or end"), None));
+        } else if opts.start.is_some() || opts.end.is_some() {
+            let start: Option<chrono::NaiveDateTime> = match &opts.start {
+                None => None,
+                Some(start) => {
+                    match start.parse() {
+                        Err(_) => { return Err(HecateError::new(400, String::from("Invalid Start Timestamp"), None)); },
+                        Ok(start) => Some(start)
+                    }
                 }
-            }
-        };
+            };
 
-        let end: Option<chrono::NaiveDateTime> = match &opts.end {
-            None => None,
-            Some(end) => {
-                match end.parse() {
-                    Err(_) => { return Err(HecateError::new(400, String::from("Invalid end Timestamp"), None)); },
-                    Ok(end) => Some(end)
+            let end: Option<chrono::NaiveDateTime> = match &opts.end {
+                None => None,
+                Some(end) => {
+                    match end.parse() {
+                        Err(_) => { return Err(HecateError::new(400, String::from("Invalid end Timestamp"), None)); },
+                        Ok(end) => Some(end)
+                    }
                 }
-            }
-        };
+            };
 
-        Ok(Json(delta::list_by_date(&*conn.get()?, start, end, opts.limit)?))
-    } else if opts.offset.is_some() || opts.limit.is_some() {
-        Ok(Json(delta::list_by_offset(&*conn.get()?, opts.offset, opts.limit)?))
-    } else {
-        return Err(HecateError::new(400, String::from("Invalid Query Params"), None));
-    }
+            Ok(delta::list_by_date(&*conn.get()?, start, end, opts.limit)?)
+        } else if opts.offset.is_some() || opts.limit.is_some() {
+            Ok(delta::list_by_offset(&*conn.get()?, opts.offset, opts.limit)?)
+        } else {
+            return Err(HecateError::new(400, String::from("Invalid Query Params"), None));
+        }
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(list) => Ok(actix_web::HttpResponse::Ok().json(list)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn delta(
@@ -972,10 +990,15 @@ fn delta(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
-) ->  Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_delta_get(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_delta_get(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(delta::get_json(&*conn.get()?, &id.into_inner())?))
+        Ok(delta::get_json(&*conn.get()?, &id.into_inner())?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(delta) => Ok(actix_web::HttpResponse::Ok().json(delta)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn bounds(
@@ -984,14 +1007,19 @@ fn bounds(
     auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     filter: web::Query<Filter>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_bounds_list(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_bounds_list(&mut auth, auth::RW::Read)?;
 
-    let filter = filter.into_inner();
-    match filter.filter {
-        Some(search) => Ok(Json(json!(bounds::filter(&*conn.get()?, &search, &filter.limit)?))),
-        None => Ok(Json(json!(bounds::list(&*conn.get()?, &filter.limit)?)))
-    }
+        let filter = filter.into_inner();
+        match filter.filter {
+            Some(search) => Ok(json!(bounds::filter(&*conn.get()?, &search, &filter.limit)?)),
+            None => Ok(json!(bounds::list(&*conn.get()?, &filter.limit)?))
+        }
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(bounds) => Ok(actix_web::HttpResponse::Ok().json(bounds)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn bounds_get(
@@ -1047,10 +1075,15 @@ fn bounds_delete(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     bounds: web::Path<String>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_bounds_delete(&mut auth, auth::RW::Full)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_bounds_delete(&mut auth, auth::RW::Full)?;
 
-    Ok(Json(json!(bounds::delete(&*conn.get()?, &bounds.into_inner())?)))
+        Ok(json!(bounds::delete(&*conn.get()?, &bounds.into_inner())?))
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(bounds) => Ok(actix_web::HttpResponse::Ok().json(bounds)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn webhooks_list(
@@ -1815,20 +1848,23 @@ fn feature_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
-) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_feature_get(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_feature_get(&mut auth, auth::RW::Read)?;
 
-    match feature::get(&*conn.get()?, &id.into_inner()) {
+        match feature::get(&*conn.get()?, &id.into_inner()) {
+            Ok(feature) => Ok(geojson::GeoJson::from(feature).to_string()),
+            Err(err) => Err(err)
+        }
+    }).then(|res: Result<String, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(feature) => {
-            let feature = geojson::GeoJson::from(feature).to_string();
-
             Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
                 .content_type("application/json")
                 .content_length(feature.len() as u64)
                 .body(feature))
         },
-        Err(err) => Err(err)
-    }
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn feature_get_history(
@@ -1836,10 +1872,15 @@ fn feature_get_history(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_feature_history(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_feature_history(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(delta::history(&*conn.get()?, &id.into_inner())?))
+        Ok(delta::history(&*conn.get()?, &id.into_inner())?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(history) => Ok(actix_web::HttpResponse::Ok().json(history)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn feature_query(
