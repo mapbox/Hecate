@@ -178,10 +178,10 @@ pub fn start(
                     .route(web::get().to(schema_get))
                 )
                 .service(web::resource("deltas")
-                    .route(web::get().to(delta_list))
+                    .route(web::get().to_async(delta_list))
                 )
                 .service(web::resource("delta/{id}")
-                    .route(web::get().to(delta))
+                    .route(web::get().to_async(delta))
                 )
                 .service(web::scope("webhooks")
                     .service(web::resource("")
@@ -931,40 +931,45 @@ fn delta_list(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     opts: web::Query<DeltaList>
-) ->  Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_delta_list(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_delta_list(&mut auth, auth::RW::Read)?;
 
-    if opts.offset.is_none() && opts.limit.is_none() && opts.start.is_none() && opts.end.is_none() {
-        Ok(Json(delta::list_by_offset(&*conn.get()?, None, None)?))
-    } else if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
-        return Err(HecateError::new(400, String::from("Offset cannot be used with start or end"), None));
-    } else if opts.start.is_some() || opts.end.is_some() {
-        let start: Option<chrono::NaiveDateTime> = match &opts.start {
-            None => None,
-            Some(start) => {
-                match start.parse() {
-                    Err(_) => { return Err(HecateError::new(400, String::from("Invalid Start Timestamp"), None)); },
-                    Ok(start) => Some(start)
+        if opts.offset.is_none() && opts.limit.is_none() && opts.start.is_none() && opts.end.is_none() {
+            Ok(delta::list_by_offset(&*conn.get()?, None, None)?)
+        } else if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
+            return Err(HecateError::new(400, String::from("Offset cannot be used with start or end"), None));
+        } else if opts.start.is_some() || opts.end.is_some() {
+            let start: Option<chrono::NaiveDateTime> = match &opts.start {
+                None => None,
+                Some(start) => {
+                    match start.parse() {
+                        Err(_) => { return Err(HecateError::new(400, String::from("Invalid Start Timestamp"), None)); },
+                        Ok(start) => Some(start)
+                    }
                 }
-            }
-        };
+            };
 
-        let end: Option<chrono::NaiveDateTime> = match &opts.end {
-            None => None,
-            Some(end) => {
-                match end.parse() {
-                    Err(_) => { return Err(HecateError::new(400, String::from("Invalid end Timestamp"), None)); },
-                    Ok(end) => Some(end)
+            let end: Option<chrono::NaiveDateTime> = match &opts.end {
+                None => None,
+                Some(end) => {
+                    match end.parse() {
+                        Err(_) => { return Err(HecateError::new(400, String::from("Invalid end Timestamp"), None)); },
+                        Ok(end) => Some(end)
+                    }
                 }
-            }
-        };
+            };
 
-        Ok(Json(delta::list_by_date(&*conn.get()?, start, end, opts.limit)?))
-    } else if opts.offset.is_some() || opts.limit.is_some() {
-        Ok(Json(delta::list_by_offset(&*conn.get()?, opts.offset, opts.limit)?))
-    } else {
-        return Err(HecateError::new(400, String::from("Invalid Query Params"), None));
-    }
+            Ok(delta::list_by_date(&*conn.get()?, start, end, opts.limit)?)
+        } else if opts.offset.is_some() || opts.limit.is_some() {
+            Ok(delta::list_by_offset(&*conn.get()?, opts.offset, opts.limit)?)
+        } else {
+            return Err(HecateError::new(400, String::from("Invalid Query Params"), None));
+        }
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(list) => Ok(actix_web::HttpResponse::Ok().json(list)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn delta(
@@ -972,10 +977,15 @@ fn delta(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
-) ->  Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_delta_get(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_delta_get(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(delta::get_json(&*conn.get()?, &id.into_inner())?))
+        Ok(delta::get_json(&*conn.get()?, &id.into_inner())?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(delta) => Ok(actix_web::HttpResponse::Ok().json(delta)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn bounds(
