@@ -1,6 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-
-static HECATEVERSION: &'static str = "0.77.3";
+pub static HECATEVERSION: &'static str = "0.77.3";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
 
@@ -102,6 +100,7 @@ pub fn start(
             .wrap(middleware::Logger::default())
             .wrap(auth::middleware::EnforceAuth::new(db_replica.clone(), default.clone()))
             .wrap(middleware::Compress::default())
+            .data(domain.clone())
             .data(auth_rules.clone())
             .data(worker.clone())
             .data(db_replica.clone())
@@ -1809,13 +1808,18 @@ fn feature_query(
     }
 }
 
-#[get("/wfs?<wfsreq..>")]
-fn wfsall(conn: State<DbReadWrite>, domain: State<String>, mut auth: auth::Auth, auth_rules: State<auth::CustomAuth>, wfsreq: Form<wfs::Req>) -> Result<impl Responder<'static>, HecateError> {
+fn wfsall(
+    conn: web::Data<DbReadWrite>,
+    domain: web::Data<String>,
+    mut auth: auth::Auth,
+    auth_rules: State<auth::CustomAuth>,
+    req: HttpRequest
+) -> Result<impl Responder<'static>, HecateError> {
     // TODO Error on non 2.0.0 version
-    
+
     let query = wfs::Query::new(&wfsreq);
 
-    let conn = conn.get().unwrap();
+    let conn = conn.get()?;
 
     //TODO THIS NEEDS TO BE WFS SPECFIC
     auth_rules.allows_feature_history(&mut auth, &*conn).unwrap();

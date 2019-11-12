@@ -11,7 +11,6 @@ pub use self::describe_feature_type::describe_feature_type;
 ///
 /// It must be converted to a WFSQuery before it is used by any of the functions in this mod
 ///
-#[derive(FromForm, Debug)]
 pub struct Req {
     pub service: Option<String>,
     pub version: Option<String>,
