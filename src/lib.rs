@@ -248,7 +248,7 @@ pub fn start(
                         .route(web::get().to_async(feature_get))
                     )
                     .service(web::resource("feature/{id}/history")
-                        .route(web::get().to(feature_get_history))
+                        .route(web::get().to_async(feature_get_history))
                     )
                     .service(web::resource("features")
                         .route(web::post().to_async(features_action))
@@ -1815,20 +1815,23 @@ fn feature_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
-) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_feature_get(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_feature_get(&mut auth, auth::RW::Read)?;
 
-    match feature::get(&*conn.get()?, &id.into_inner()) {
+        match feature::get(&*conn.get()?, &id.into_inner()) {
+            Ok(feature) => Ok(geojson::GeoJson::from(feature).to_string()),
+            Err(err) => Err(err)
+        }
+    }).then(|res: Result<String, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(feature) => {
-            let feature = geojson::GeoJson::from(feature).to_string();
-
             Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
                 .content_type("application/json")
                 .content_length(feature.len() as u64)
                 .body(feature))
         },
-        Err(err) => Err(err)
-    }
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn feature_get_history(
@@ -1836,10 +1839,15 @@ fn feature_get_history(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
-) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_feature_history(&mut auth, auth::RW::Read)?;
+) -> impl Future<Item = HttpResponse, Error = HecateError> {
+    web::block(move || {
+        auth_rules.0.allows_feature_history(&mut auth, auth::RW::Read)?;
 
-    Ok(Json(delta::history(&*conn.get()?, &id.into_inner())?))
+        Ok(delta::history(&*conn.get()?, &id.into_inner())?)
+    }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
+        Ok(history) => Ok(actix_web::HttpResponse::Ok().json(history)),
+        Err(err) => Ok(HecateError::from(err).error_response())
+    })
 }
 
 fn feature_query(
