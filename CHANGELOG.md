@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.79.0
+
+- :rocket: Even more uses of `web::block` to make more calls async in nature
+
 ## v0.78.0
 
 - :rocket: Use `web::block` to make a number of calls async in nature
