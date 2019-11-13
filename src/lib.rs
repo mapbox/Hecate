@@ -234,6 +234,7 @@ pub fn start(
                     )
                     .service(web::resource("{uid}")
                         .route(web::get().to(user_info))
+                        .route(web::post().to_async(user_modify_info))
                     )
                     .service(web::resource("{uid}/admin")
                         .route(web::put().to(user_set_admin))
@@ -571,6 +572,41 @@ fn user_info(
     let user = user::User::get(&*conn.get()?, &uid)?.to_value();
 
     Ok(Json(user))
+}
+
+fn user_modify_info(
+    conn: web::Data<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>,
+    uid: web::Path<i64>,
+    body: web::Payload
+) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
+    match auth_rules.0.is_admin(&mut auth) {
+        Err(err) => { return Either::A(futures::future::err(err)); },
+        _ => ()
+    };
+
+    Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
+        body.extend_from_slice(&chunk);
+        Ok::<_, HecateError>(body)
+    }).and_then(move |body| {
+        let body = match String::from_utf8(body.to_vec()) {
+            Ok(body) => body,
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
+        };
+
+        let mut user: user::User = match serde_json::from_str(&*body) {
+            Ok(user) => match serde_json::from_value(user) {
+                Ok(user) => user,
+                Err(err) => { return Err(HecateError::new(500, String::from("Failed to deserialize user"), Some(err.to_string()))); }
+            },
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid JSON"), Some(err.to_string()))); }
+        };
+
+        user.id = Some(*uid);
+
+        Ok(Json(json!(user.set(&*conn.get()?)?)))
+    }))
 }
 
 fn user_set_admin(
@@ -1041,11 +1077,6 @@ fn bounds_set(
     bounds: web::Path<String>,
     body: web::Payload
 ) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
-    let conn = match conn.get() {
-        Ok(conn) => conn,
-        Err(err) => { return Either::A(futures::future::err(err)); }
-    };
-
     match auth_rules.0.allows_bounds_create(&mut auth, auth::RW::Full) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
@@ -1066,7 +1097,7 @@ fn bounds_set(
             }
         };
 
-        Ok(Json(json!(bounds::set(&*conn, &bounds, &geom)?)))
+        Ok(Json(json!(bounds::set(&*conn.get()?, &bounds, &geom)?)))
     }))
 }
 
