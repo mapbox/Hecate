@@ -145,6 +145,19 @@ window.hecate = {
             }).catch((err) => {
                 return cb(err);
             });
+        },
+        get: function(user_id, cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/${user_id}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                return response.json();
+            }).then((user) => {
+                return cb(null, user);
+            }).catch((err) => {
+                return cb(err);
+            });
         }
     },
     webhooks: {

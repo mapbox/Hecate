@@ -60,9 +60,55 @@
                         </div>
                     </div>
                 </template>
+                <template v-else-if='mode === "user"'>
+                    <div class='col col--12 txt-m txt-bold py6'>
+                        User Account Settings
+                        <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                    </div>
+
+                    <div class='grid grid--gut12'>
+                        <div class='col col--6 pb12'>
+                            <label>Username</label>
+                            <input v-model='userData.username' class='input' placeholder='Username'/>
+                        </div>
+                        <div class='col col--6 pb12'>
+                            <label>Email</label>
+                            <input v-model='userData.email' class='input' placeholder='Email'/>
+                        </div>
+
+                        <div class='col col--6'>
+                            <label >Account Type</label>
+                            <div class='select-container w-full'>
+                                <select v-model='userData.access' class='select'>
+                                    <option>default</option>
+                                    <option>admin</option>
+                                </select>
+                                <div class='select-arrow'></div>
+                            </div>
+                        </div>
+                        <div class='col col--6'>
+                            <label class='switch-container fr pt30'>
+                                <template v-if='userData.enabled'>
+                                    Account Enabled
+                                </template>
+                                <template v-else>
+                                    Account Disabled
+                                </template>
+                                <input v-model='userData.enabled' type='checkbox' />
+                                <div class='switch ml6'></div>
+                            </label>
+                        </div>
+
+                        <div class='col col--6 pt30'>
+                            <button @click='modifyUser()' class='btn round w-full'>Save</button>
+                        </div>
+                        <div class='col col--6 pt30'>
+                            <button @click='close' class='btn btn--red round w-full'>Cancel</button>
+                        </div>
+                    </div>
+                </template>
                 <template v-else-if='mode === "addHook"'>
                     <div class='grid w-full col'>
-
                         <template v-if='webhookData.error'>
                             <div class='col--12 color-white px12 bg-red round align-center'>
                                 <h3 class='w-full py6 txt-m txt-bold' v-text='webhookData.error'></h3>
@@ -302,7 +348,7 @@
                             <div class='col col--12 h240 scroll-auto'>
                                 <template v-for='(user, user_idx) of users'>
                                     <div class='col col--12'>
-                                       <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
+                                       <div @click='userSelect(user)' class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
                                             <div class='col--2'>
                                                 <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 mx3 txt-xs txt-bold round' v-text="user.id"></span>
                                             </div>
@@ -375,6 +421,13 @@ export default {
                 name: '',
                 type: ''
             },
+            userData: {
+                id: false,
+                access: 'default',
+                enabled: false,
+                username: '',
+                meta: {}
+            },
             layerData: {
                 id: false,
                 error: '',
@@ -420,6 +473,29 @@ export default {
             } else {
                 this.$emit('close');
             }
+        },
+        userSelect: function(user) {
+            window.hecate.users.get(user.id, (err, user) => {
+                if (err) return this.$emit('error', err);
+
+                this.userData.id = user.id;
+                this.userData.username = user.username;
+                this.userData.email = user.email;
+                this.userData.meta = user.meta;
+
+                if (user.access === 'disabled') {
+                    this.userData.enabled = false;
+                    this.userData.access = 'default';
+                } else {
+                    this.userData.enabled = true;
+                    this.userData.access = user.access;
+                }
+
+                this.mode = 'user';
+            });
+        },
+        modifyUser: function() {
+            console.error('SAVED');
         },
         clearCache: function() {
             window.hecate.tiles.clear((err) => {
