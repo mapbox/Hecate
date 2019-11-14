@@ -60,8 +60,17 @@ CREATE TABLE users_tokens (
     scope       TEXT
 );
 
-DROP INDEX IF EXISTS geo_gist;
-DROP INDEX IF EXISTS geo_idx;
+CREATE TABLE deltas (
+    id          BIGSERIAL PRIMARY KEY,
+    created     TIMESTAMP,
+    affected    BIGINT[],
+    props       JSONB,
+    uid         BIGINT REFERENCES users(id),
+    finalized   BOOLEAN DEFAULT FALSE
+);
+CREATE INDEX deltas_idx ON deltas(id);
+CREATE INDEX deltas_affected_idx on deltas USING GIN (affected);
+
 CREATE TABLE geo (
     id          BIGSERIAL UNIQUE,
     key         TEXT UNIQUE,
@@ -73,11 +82,9 @@ CREATE TABLE geo (
 CREATE INDEX geo_gist ON geo USING GIST(geom);
 CREATE INDEX geo_idx ON geo(id);
 
-DROP INDEX IF EXISTS geo_history_gist;
-DROP INDEX IF EXISTS geo_history_idx;
-DROP INDEX IF EXISTS geo_history_versionx;
 CREATE TABLE geo_history (
     id          BIGSERIAL UNIQUE,
+    delta       BIGINT NOT NULL REFERENCES deltas(id),
     key         TEXT UNIQUE,
     version     BIGINT NOT NULL,
     geom        GEOMETRY(GEOMETRY, 4326) NOT NULL,
@@ -85,7 +92,7 @@ CREATE TABLE geo_history (
 );
 CREATE INDEX geo_history_gist ON geo_history USING GIST(geom);
 CREATE INDEX geo_history_idx ON geo_history(id);
-CREATE INDEX geo_history_versionx ON geo_history(version);
+CREATE INDEX geo_history_deltax ON geo_history(delta);
 
 CREATE TABLE styles (
     id          BIGSERIAL PRIMARY KEY,
@@ -94,18 +101,6 @@ CREATE TABLE styles (
     uid         BIGINT NOT NULL REFERENCES users(id),
     public      BOOLEAN NOT NULL
 );
-
-CREATE TABLE deltas (
-    id          BIGSERIAL PRIMARY KEY,
-    created     TIMESTAMP,
-    features    JSONB,
-    affected    BIGINT[],
-    props       JSONB,
-    uid         BIGINT REFERENCES users(id),
-    finalized   BOOLEAN DEFAULT FALSE
-);
-CREATE INDEX deltas_idx ON deltas(id);
-CREATE INDEX deltas_affected_idx on deltas USING GIN (affected);
 
 -- delete_geo( id, version )
 CREATE OR REPLACE FUNCTION delete_geo(BIGINT, BIGINT)
