@@ -8,7 +8,7 @@ pub struct User {
     password: Option<String>,
     pub email: String,
     pub meta: Option<serde_json::Value>,
-    pub access: Option<String>
+    pub access: String
 }
 
 impl User {
@@ -19,7 +19,7 @@ impl User {
             password: password,
             email: email,
             meta: meta,
-            access: None
+            access: String::from("default")
         }
     }
 
@@ -62,7 +62,7 @@ impl User {
     }
 
     pub fn is_admin(&self) -> bool {
-        if self.access == Some(String::from("admin")) {
+        if self.access == String::from("admin") {
             true
         } else {
             false
@@ -71,8 +71,8 @@ impl User {
 
     pub fn admin(&mut self, admin: bool) {
         match admin {
-            true => self.access = Some(String::from("admin")),
-            false => self.access = None
+            true => self.access = String::from("admin"),
+            false => self.access = String::from("default")
         };
     }
 
@@ -81,17 +81,45 @@ impl User {
             match conn.query("
                 UPDATE users
                     SET
-                        username = $1,
-                        email = $2,
-                        meta = $3,
-                        access = $4
+                        username = COALESCE($1, username),
+                        email = COALESCE($2, email),
+                        meta = COALESCE($3, meta),
+                        access = COALESCE($4, access)
                     WHERE
                         id = $5
             ", &[ &self.username, &self.email, &self.meta, &self.access, &self.id ]) {
-                Ok(_) => Ok(true),
-                Err(err) => Err(HecateError::from_db(err))
+                Ok(_) => (),
+                Err(err) => { return Err(HecateError::from_db(err)); }
+            };
+
+            if self.access != String::from("disabled") {
+                return Ok(true);
             }
 
+            // Once the user is disable, cycle the password to prevent
+            // accidental enablement
+            match conn.query("
+                UPDATE users
+                    SET
+                        password = crypt(random()::TEXT, gen_salt('bf', 10))
+                    WHERE
+                        id = $1
+            ", &[ &self.id ]) {
+                Ok(_) => (),
+                Err(err) => { return Err(HecateError::from_db(err)); }
+            };
+
+            // Destroy all tokens associated with a disabled user
+            match conn.query("
+                DELETE FROM users_tokens
+                    WHERE
+                        uid = $1
+            ", &[ &self.id ]) {
+                Ok(_) => (),
+                Err(err) => { return Err(HecateError::from_db(err)); }
+            };
+
+            Ok(true)
         } else {
             let password = match self.password {
                 Some(ref password) => {
