@@ -8,7 +8,7 @@ pub struct User {
     password: Option<String>,
     pub email: String,
     pub meta: Option<serde_json::Value>,
-    pub access: String
+    pub access: Option<String>
 }
 
 impl User {
@@ -19,17 +19,22 @@ impl User {
             password: password,
             email: email,
             meta: meta,
-            access: String::from("default")
+            access: Some(String::from("default"))
         }
     }
 
     pub fn to_value(self) -> serde_json::Value {
+        let access = match self.access {
+            Some(access) => access,
+            None => String::from("default")
+        };
+
         json!({
             "id": self.id,
             "username": self.username,
             "email": self.email,
             "meta": self.meta,
-            "access": self.access
+            "access": access
         })
     }
 
@@ -62,7 +67,7 @@ impl User {
     }
 
     pub fn is_admin(&self) -> bool {
-        if self.access == String::from("admin") {
+        if self.access == Some(String::from("admin")) {
             true
         } else {
             false
@@ -71,8 +76,8 @@ impl User {
 
     pub fn admin(&mut self, admin: bool) {
         match admin {
-            true => self.access = String::from("admin"),
-            false => self.access = String::from("default")
+            true => self.access = Some(String::from("admin")),
+            false => self.access = Some(String::from("default"))
         };
     }
 
@@ -92,7 +97,7 @@ impl User {
                 Err(err) => { return Err(HecateError::from_db(err)); }
             };
 
-            if self.access != String::from("disabled") {
+            if self.access != Some(String::from("disabled")) {
                 return Ok(true);
             }
 

@@ -4,7 +4,7 @@ use futures::future::{ok, FutureResult, Either};
 use futures::Poll;
 use crate::db::DbReplica;
 use crate::user::token::Scope;
-use super::{Auth, AuthDefault};
+use super::{Auth, AuthDefault, AuthAccess};
 
 #[derive(Clone)]
 pub struct EnforceAuth {
@@ -145,7 +145,7 @@ where
 
         if
             auth.uid.is_none()
-            || self.auth == AuthDefault::Admin && auth.access == Some(String::from("admin"))
+            || self.auth == AuthDefault::Admin && auth.access == AuthAccess::Admin
         {
             if path.len() >= 1 && path[0] == String::from("admin") {
                 // UI Results should redirect to an unauthenticated login portal
