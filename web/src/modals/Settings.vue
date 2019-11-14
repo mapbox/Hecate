@@ -426,6 +426,7 @@ export default {
                 access: 'default',
                 enabled: false,
                 username: '',
+                email: '',
                 meta: {}
             },
             layerData: {
@@ -495,7 +496,18 @@ export default {
             });
         },
         modifyUser: function() {
-            console.error('SAVED');
+            window.hecate.users.update({
+                id: this.userData.id,
+                username: this.userData.username,
+                email: this.userData.email,
+                access: this.userData.enabled ? this.userData.access : 'disabled',
+                meta: this.userData.meta
+            }, (err) => {
+                if (err) return this.$emit('error', err);
+
+                this.getUsers();
+                this.close();
+            });
         },
         clearCache: function() {
             window.hecate.tiles.clear((err) => {

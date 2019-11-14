@@ -158,6 +158,23 @@ window.hecate = {
             }).catch((err) => {
                 return cb(err);
             });
+        },
+        update: function(user, cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/${user.id}`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: new Headers({
+                    'Content-Type': 'application/json'
+                }),
+                body: JSON.stringify(user)
+            }).then((response) => {
+                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                return response.json();
+            }).then((user) => {
+                return cb(null, user);
+            }).catch((err) => {
+                return cb(err);
+            });
         }
     },
     webhooks: {
