@@ -5,38 +5,16 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS hstore;
 
 DROP TABLE IF EXISTS webhooks;
-CREATE TABLE webhooks (
-    id          BIGSERIAL PRIMARY KEY,
-    name        TEXT NOT NULL,
-    actions     TEXT[],
-    url         TEXT NOT NULL,
-    secret      TEXT NOT NULL
-);
-
 DROP TABLE IF EXISTS meta;
-CREATE TABLE meta (
-    key         TEXT PRIMARY KEY,
-    value       JSONB NOT NULL
-);
-
-DROP TABLE IF EXISTS tiles;
-CREATE TABLE tiles (
-    created     TIMESTAMP NOT NULL,
-    ref         TEXT PRIMARY KEY,
-    tile        BYTEA NOT NULL
-);
-
+DROP TABLE IF EXISTS users_tokens;
 DROP TABLE IF EXISTS bounds;
-CREATE TABLE bounds (
-    id          BIGSERIAL,
-    geom        GEOMETRY(MULTIPOLYGON, 4326) NOT NULL,
-    name        TEXT PRIMARY KEY,
-    props       JSONB NOT NULL
-);
-CREATE INDEX bounds_gist ON bounds USING GIST(geom);
-CREATE INDEX bounds_idx ON bounds(name);
-
+DROP TABLE IF EXISTS tiles;
+DROP TABLE IF EXISTS geo;
+DROP TABLE IF EXISTS geo_history;
+DROP TABLE IF EXISTS styles;
+DROP TABLE IF EXISTS deltas;
 DROP TABLE IF EXISTS users;
+
 CREATE TABLE users (
     id          BIGSERIAL PRIMARY KEY,
     access      TEXT,
@@ -46,16 +24,42 @@ CREATE TABLE users (
     meta        JSONB
 );
 
-DROP TABLE IF EXISTS users_tokens;
+CREATE TABLE webhooks (
+    id          BIGSERIAL PRIMARY KEY,
+    name        TEXT NOT NULL,
+    actions     TEXT[] NOT NULL,
+    url         TEXT NOT NULL,
+    secret      TEXT NOT NULL
+);
+
+CREATE TABLE meta (
+    key         TEXT PRIMARY KEY,
+    value       JSONB NOT NULL
+);
+
+CREATE TABLE tiles (
+    created     TIMESTAMP NOT NULL,
+    ref         TEXT PRIMARY KEY,
+    tile        BYTEA NOT NULL
+);
+
+CREATE TABLE bounds (
+    id          BIGSERIAL,
+    geom        GEOMETRY(MULTIPOLYGON, 4326) NOT NULL,
+    name        TEXT PRIMARY KEY,
+    props       JSONB NOT NULL
+);
+CREATE INDEX bounds_gist ON bounds USING GIST(geom);
+CREATE INDEX bounds_idx ON bounds(name);
+
 CREATE TABLE users_tokens (
     name        TEXT,
-    uid         BIGINT,
+    uid         BIGINT REFERENCES users(id),
     token       TEXT PRIMARY KEY,
     expiry      TIMESTAMP,
     scope       TEXT
 );
 
-DROP TABLE IF EXISTS geo;
 DROP INDEX IF EXISTS geo_gist;
 DROP INDEX IF EXISTS geo_idx;
 CREATE TABLE geo (
@@ -69,23 +73,35 @@ CREATE TABLE geo (
 CREATE INDEX geo_gist ON geo USING GIST(geom);
 CREATE INDEX geo_idx ON geo(id);
 
-DROP TABLE IF EXISTS styles;
+DROP INDEX IF EXISTS geo_history_gist;
+DROP INDEX IF EXISTS geo_history_idx;
+DROP INDEX IF EXISTS geo_history_versionx;
+CREATE TABLE geo_history (
+    id          BIGSERIAL UNIQUE,
+    key         TEXT UNIQUE,
+    version     BIGINT NOT NULL,
+    geom        GEOMETRY(GEOMETRY, 4326) NOT NULL,
+    props       JSONB NOT NULL
+);
+CREATE INDEX geo_history_gist ON geo_history USING GIST(geom);
+CREATE INDEX geo_history_idx ON geo_history(id);
+CREATE INDEX geo_history_versionx ON geo_history(version);
+
 CREATE TABLE styles (
     id          BIGSERIAL PRIMARY KEY,
     name        TEXT NOT NULL,
     style       JSONB NOT NULL,
-    uid         BIGINT NOT NULL,
+    uid         BIGINT NOT NULL REFERENCES users(id),
     public      BOOLEAN NOT NULL
 );
 
-DROP TABLE IF EXISTS deltas;
 CREATE TABLE deltas (
     id          BIGSERIAL PRIMARY KEY,
     created     TIMESTAMP,
     features    JSONB,
     affected    BIGINT[],
     props       JSONB,
-    uid         BIGINT,
+    uid         BIGINT REFERENCES users(id),
     finalized   BOOLEAN DEFAULT FALSE
 );
 CREATE INDEX deltas_idx ON deltas(id);
