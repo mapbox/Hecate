@@ -60,6 +60,27 @@
                         </div>
                     </div>
                 </template>
+                <template v-else-if='mode === "userDisable"'>
+                    <div class='col col--12 txt-m txt-bold py6'>
+                        Disable User Account
+                    </div>
+
+                    <div class='col col--12'>
+                        Warning: disabling a user will do the following once you click "save"
+
+                        <div class='pl12 py3'>
+                            - Permanently destroy all user sessions &amp; API Tokens
+                        </div>
+                        <div class='pl12 py3'>
+                            - Randomize the user's password
+                        </div>
+
+                        Although a user can be re-enabled, past API tokens and the previous
+                        password cannot be recovered.
+                    </div>
+
+                    <button @click='mode = "user"' class='btn round fr'>Got It!</button>
+                </template>
                 <template v-else-if='mode === "user"'>
                     <div class='col col--12 txt-m txt-bold py6'>
                         User Account Settings
@@ -461,6 +482,11 @@ export default {
         this.getHooks();
     },
     watch: {
+        'userData.enabled': function() {
+            if (this.userData.enabled) return;
+
+            this.mode = 'userDisable';
+        },
         userFilter: function() {
             this.getUsers();
         }
