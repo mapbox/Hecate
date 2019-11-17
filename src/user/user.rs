@@ -138,7 +138,7 @@ impl User {
             match conn.query("
                 INSERT INTO users (username, password, email, meta, access)
                     VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, $4, $5);
-            ", &[ &self.username, &password, &self.email, &self.meta, &self.access ]) {
+            ", &[ &self.username, &password, &self.email, &self.meta, &self.access.as_ref().unwrap_or(&String::from("default")) ]) {
                 Ok(_) => Ok(true),
                 Err(err) => {
                     if err.as_db().is_some() && err.as_db().unwrap().code.code() == "23505" {
