@@ -76,11 +76,52 @@ mod test {
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body, json!({
-                "id": 6,
+                "id": 2,
                 "access": "default",
                 "username": "future_admin",
                 "email": "fake@example.com",
                 "meta": {}
+            }));
+        }
+
+        { // An admin can change user information
+            let client = reqwest::Client::new();
+            let resp = client.post("http://localhost:8000/api/user/2")
+                .body(r#"{
+                    "access": "default",
+                    "username": "changed",
+                    "email": "changed@example.com",
+                    "meta": {
+                        "random": "key"
+                    }
+                }"#)
+                .basic_auth("ingalls", Some("yeahehyeah"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+        }
+
+        { // Ensure information was changed about the given user
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/2")
+                .basic_auth("ingalls", Some("yeahehyeah"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 2,
+                "access": "default",
+                "username": "changed",
+                "email": "changed@example.com",
+                "meta": {
+                    "random": "key"
+                }
             }));
         }
 
