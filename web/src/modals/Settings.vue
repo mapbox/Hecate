@@ -357,28 +357,38 @@
                                 <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </div>
 
-                            <div class='py6 col col--12 border--gray-light border-b mb12'>
-                                <span class='txt-m'>Users</span>
-                            </div>
+                            <template v-if='allowed.users'>
+                                <div class='py6 col col--12 border--gray-light border-b mb12'>
+                                    <span class='txt-m'>Users</span>
+                                </div>
 
-                            <div class='relative mb12'>
-                                <div class='absolute flex-parent flex-parent--center-cross flex-parent--center-main w36 h36'><svg class='icon'><use href='#icon-search'></use></svg></div>
-                                <input v-model='userFilter' class='input pl36' placeholder='Filter Users'>
-                            </div>
+                                <div class='relative mb12'>
+                                    <div class='absolute flex-parent flex-parent--center-cross flex-parent--center-main w36 h36'><svg class='icon'><use href='#icon-search'></use></svg></div>
+                                    <input v-model='userFilter' class='input pl36' placeholder='Filter Users'>
+                                </div>
 
-                            <div class='col col--12 h240 scroll-auto'>
-                                <template v-for='(user, user_idx) of users'>
-                                    <div class='col col--12'>
-                                       <div @click='userSelect(user)' class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
-                                            <div class='col--2'>
-                                                <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 mx3 txt-xs txt-bold round' v-text="user.id"></span>
+                                <div class='col col--12 h240 scroll-auto'>
+                                    <template v-for='(user, user_idx) of users'>
+                                        <div class='col col--12'>
+                                           <div @click='userSelect(user)' class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
+                                                <div class='col--2'>
+                                                    <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 mx3 txt-xs txt-bold round' v-text="user.id"></span>
+                                                </div>
+                                                <div class='col--8' v-text='user.username'></div>
+                                                <div class='col--2' v-text='user.access'></div>
                                             </div>
-                                            <div class='col--8' v-text='user.username'></div>
-                                            <div class='col--2' v-text='user.access'></div>
                                         </div>
-                                    </div>
-                                </template>
-                            </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div class='col col--12 pt60'>
+                                    <svg class='icon w60 h60 mx-auto'><use xlink:href='#icon-alert'/></svg>
+                                </div>
+                                <div class='align-center'>
+                                    Insufficient Permissions
+                                </div>
+                            </template>
                         </template>
                         <template v-if='submode === "webhooks"'>
                             <div class='col col--12 txt-m txt-bold'>
@@ -386,30 +396,40 @@
                                 <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </div>
 
-                            <div class='py6 col col--12 border--gray-light border-b mb12'>
-                                <span class='txt-m'>Webhooks</span>
-                                <button @click="addHookClick" class='btn round h24 fr'>
-                                    <svg class='icon h-full'><use href='#icon-plus'/></svg>
-                                </button>
-                            </div>
-
-                            <template v-if="hooks.length">
-                                <div class='col col--12 h240 scroll-auto'>
-                                    <template v-for='(hook, hook_idx) of hooks'>
-                                        <div class='col col--12'>
-                                           <div @click="getHook(hook.id)" class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
-                                                <span class="mx6" v-text='hook.name'></span>
-                                                <template v-for='hook_action of hook.actions'>
-                                                    <span class='bg-blue-faint color-blue px6 py3 my3 mx3 txt-xs txt-bold round' v-text="hook_action"></span>
-                                                </template>
-                                           </div>
-                                        </div>
-                                    </template>
+                            <template v-if='allowed.hooks'>
+                                <div class='py6 col col--12 border--gray-light border-b mb12'>
+                                    <span class='txt-m'>Webhooks</span>
+                                    <button @click="addHookClick" class='btn round h24 fr'>
+                                        <svg class='icon h-full'><use href='#icon-plus'/></svg>
+                                    </button>
                                 </div>
+
+                                <template v-if="hooks.length">
+                                    <div class='col col--12 h240 scroll-auto'>
+                                        <template v-for='(hook, hook_idx) of hooks'>
+                                            <div class='col col--12'>
+                                               <div @click="getHook(hook.id)" class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
+                                                    <span class="mx6" v-text='hook.name'></span>
+                                                    <template v-for='hook_action of hook.actions'>
+                                                        <span class='bg-blue-faint color-blue px6 py3 my3 mx3 txt-xs txt-bold round' v-text="hook_action"></span>
+                                                    </template>
+                                               </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <div class='col col--12 h240 scroll-auto'>
+                                        <div class="align-center">No Webhooks Yet!</div>
+                                    </div>
+                                </template>
                             </template>
                             <template v-else>
-                                <div class='col col--12 h240 scroll-auto'>
-                                    <div class="align-center">No Webhooks Yet!</div>
+                                <div class='col col--12 pt60'>
+                                    <svg class='icon w60 h60 mx-auto'><use xlink:href='#icon-alert'/></svg>
+                                </div>
+                                <div class='align-center'>
+                                    Insufficient Permissions
                                 </div>
                             </template>
                         </template>
@@ -437,6 +457,11 @@ export default {
             layers: [],
             users: [],
             userFilter: '',
+            allowed: {
+                // If the fetcher gets a 401, add a nice "you don't have perms message"
+                users: true,
+                hooks: true
+            },
             delLayerData: {
                 idx: false,
                 name: '',
@@ -549,14 +574,23 @@ export default {
         },
         getUsers: function() {
             window.hecate.users.list(this.userFilter, (err, users) => {
-                if (err) return this.$emit('error', err);
+                if (err && err.status === 401) {
+                    this.allowed.users = false;
+                } else if (err) {
+                    return this.$emit('error', err);
+                }
 
                 this.users = users;
             });
         },
         getHooks: function() {
             window.hecate.webhooks.list((err, hooks) => {
-                if (err) return this.$emit('error', err);
+                if (err && err.status === 401) {
+                    this.allowed.hooks = false;
+                } else if (err) {
+                    return this.$emit('error', err);
+                }
+
                 this.hooks = hooks;
             });
         },
