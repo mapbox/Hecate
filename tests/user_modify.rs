@@ -231,7 +231,29 @@ mod test {
                 .unwrap();
 
             assert!(session_resp.status().is_client_error());
+        }
 
+        // The password for a disabled user account is changed automatically
+        //
+        // Change the password back to something we know and make sure the endpoint still fails
+        // as it has access: disabled
+        {
+            let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
+
+            conn.execute("
+                UPDATE users
+                    SET
+                        password = crypt('yeahehyeah', gen_salt('bf', 10))
+                    WHERE id = 2;
+            ", &[]).unwrap();
+
+            let client = reqwest::Client::new();
+            let session_resp = client.get("http://localhost:8000/api/user/session")
+                .basic_auth("changed", Some("yeahehyeah"))
+                .send()
+                .unwrap();
+
+            assert!(session_resp.status().is_client_error());
         }
 
         server.kill().unwrap();
