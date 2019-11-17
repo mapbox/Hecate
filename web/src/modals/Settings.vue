@@ -383,7 +383,7 @@
                             </template>
                             <template v-else>
                                 <div class='col col--12 pt60'>
-                                    <svg class='icon w60 h60 mx-auto'><use xlink:href='#icon-alert'/></svg>
+                                    <svg class='icon w60 h60 mx-auto'><use href='#icon-alert'/></svg>
                                 </div>
                                 <div class='align-center'>
                                     Insufficient Permissions
@@ -426,7 +426,7 @@
                             </template>
                             <template v-else>
                                 <div class='col col--12 pt60'>
-                                    <svg class='icon w60 h60 mx-auto'><use xlink:href='#icon-alert'/></svg>
+                                    <svg class='icon w60 h60 mx-auto'><use href='#icon-alert'/></svg>
                                 </div>
                                 <div class='align-center'>
                                     Insufficient Permissions

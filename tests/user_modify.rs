@@ -125,6 +125,115 @@ mod test {
             }));
         }
 
+        let cookie: String;
+
+        // Create a session which should be destroyted in a subsequent call when
+        // the user account is disabled
+        {
+            let client = reqwest::Client::new();
+            let mut session_resp = client.get("http://localhost:8000/api/user/session")
+                .basic_auth("changed", Some("yeahehyeah"))
+                .send()
+                .unwrap();
+
+            assert!(session_resp.status().is_success());
+            assert_eq!(session_resp.text().unwrap(), "true");
+
+            let cookies: Vec<reqwest::cookie::Cookie> = session_resp.cookies().into_iter().collect();
+
+            assert_eq!(cookies[0].name(), "session");
+            assert!(cookies[0].value().len() > 0);
+
+            cookie = format!("{}={}", cookies[0].name(), cookies[0].value());
+        }
+
+        { // Access the style create (FULL scope) endpoint with cookie
+            let client = reqwest::Client::new();
+            let mut create_style_resp = client.post("http://localhost:8000/api/style")
+                .body(r#"{
+                    "name": "Awesome Style",
+                    "style": "I am a style"
+                }"#)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .header(reqwest::header::COOKIE, cookie.clone())
+                .send()
+                .unwrap();
+
+            assert_eq!(create_style_resp.text().unwrap(), "1");
+            assert!(create_style_resp.status().is_success());
+        }
+
+        { // Disable user account
+            let client = reqwest::Client::new();
+            let resp = client.post("http://localhost:8000/api/user/2")
+                .body(r#"{
+                    "access": "disabled",
+                    "username": "changed",
+                    "email": "changed@example.com",
+                    "meta": {
+                        "random": "key"
+                    }
+                }"#)
+                .basic_auth("ingalls", Some("yeahehyeah"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+        }
+
+        { // Ensure information was changed about the given user
+            let client = reqwest::Client::new();
+            let mut resp = client.get("http://localhost:8000/api/user/2")
+                .basic_auth("ingalls", Some("yeahehyeah"))
+                .send()
+                .unwrap();
+
+            assert!(resp.status().is_success());
+
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+
+            assert_eq!(json_body, json!({
+                "id": 2,
+                "access": "disabled",
+                "username": "changed",
+                "email": "changed@example.com",
+                "meta": {
+                    "random": "key"
+                }
+            }));
+        }
+
+        // Access the style create (FULL scope) endpoint with cookie - this should fail
+        // as when a user account is disabled, all sessions/tokens are destroyed
+        {
+            let client = reqwest::Client::new();
+            let create_style_resp = client.post("http://localhost:8000/api/style")
+                .body(r#"{
+                    "name": "Awesome Style",
+                    "style": "I am a style"
+                }"#)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .header(reqwest::header::COOKIE, cookie.clone())
+                .send()
+                .unwrap();
+
+            assert!(create_style_resp.status().is_client_error());
+        }
+
+        // The account should also not be able to make any subsequent API calls as it has been
+        // disabled
+        {
+            let client = reqwest::Client::new();
+            let session_resp = client.get("http://localhost:8000/api/user/session")
+                .basic_auth("changed", Some("yeahehyeah"))
+                .send()
+                .unwrap();
+
+            assert!(session_resp.status().is_client_error());
+
+        }
+
         server.kill().unwrap();
     }
 }

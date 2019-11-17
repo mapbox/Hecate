@@ -699,7 +699,6 @@ fn user_create_session(
 
         let uid = auth.uid.unwrap();
 
-        // max age of user session
         Ok(user::Token::create(&*conn.get()?, "Session Token", &uid, &HOURS, user::token::Scope::Full)?)
     }).then(|res: Result<user::Token, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(token) => {
