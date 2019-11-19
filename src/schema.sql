@@ -72,7 +72,7 @@ CREATE INDEX deltas_idx ON deltas(id);
 CREATE INDEX deltas_affected_idx on deltas USING GIN (affected);
 
 CREATE TABLE geo (
-    id          BIGSERIAL UNIQUE,
+    id          BIGSERIAL PRIMARY KEY,
     key         TEXT UNIQUE,
     version     BIGINT NOT NULL,
     geom        GEOMETRY(GEOMETRY, 4326) NOT NULL,
@@ -83,12 +83,13 @@ CREATE INDEX geo_gist ON geo USING GIST(geom);
 CREATE INDEX geo_idx ON geo(id);
 
 CREATE TABLE geo_history (
-    id          BIGSERIAL UNIQUE,
+    id          BIGINT NOT NULL,
     delta       BIGINT NOT NULL REFERENCES deltas(id),
     key         TEXT UNIQUE,
     version     BIGINT NOT NULL,
     geom        GEOMETRY(GEOMETRY, 4326) NOT NULL,
-    props       JSONB NOT NULL
+    props       JSONB NOT NULL,
+    PRIMARY KEY (id, version)
 );
 CREATE INDEX geo_history_gist ON geo_history USING GIST(geom);
 CREATE INDEX geo_history_idx ON geo_history(id);
