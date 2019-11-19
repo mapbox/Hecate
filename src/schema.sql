@@ -63,6 +63,7 @@ CREATE TABLE users_tokens (
 CREATE TABLE deltas (
     id          BIGSERIAL PRIMARY KEY,
     created     TIMESTAMP,
+    features    JSONB,
     affected    BIGINT[],
     props       JSONB,
     uid         BIGINT REFERENCES users(id),
