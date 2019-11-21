@@ -65,7 +65,7 @@ pub fn history(conn: &impl postgres::GenericConnection, feat_id: &i64) -> Result
     WHERE
         geo_history.id = $1 AND
         geo_history.delta = deltas.id AND
-        deltas.uid = users.id
+        deltas.uid = users.id;
     ", &[&feat_id]) {
         Ok(res) => {
             if res.len() == 0 {

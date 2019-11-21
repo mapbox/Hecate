@@ -409,12 +409,43 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
         Err(err) => { return Err(import_error(&feat, "Failed to stringify properties", Some(err.to_string()))) }
     };
 
-    match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4, $6);", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
-        Ok(_) => Ok(Response {
-            old: Some(id),
-            new: Some(id),
-            version: Some(version + 1)
-        }),
+    match trans.query("
+            SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4, $6);
+        ", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
+        Ok(_) => {
+            match trans.query("
+                INSERT INTO geo_history (geom, props, id, version, delta, key, action)
+                    VALUES (
+                        ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                        $2::TEXT::JSON,
+                        $3,
+                        $4,
+                        COALESCE($5, currval('deltas_id_seq')::BIGINT),
+                        $6,
+                        'modify'
+                    );
+            ", &[&geom_str, &props_str, &id, &(version + 1), &delta, &key]) {
+                Ok(_) => Ok(Response {
+                            old: Some(id),
+                            new: Some(id),
+                            version: Some(version + 1)
+                        }),
+                Err(err) => {
+                    match err.as_db() {
+                        Some(e) => {
+                            if e.message == "MODIFY: ID or VERSION Mismatch" {
+                                Err(import_error(&feat, "Modify Version Mismatch", None))
+                            } else if e.message == "duplicate key value violates unique constraint \"geo_history_key_key\"" {
+                                Err(import_error(&feat, "Duplicate Key Value", None))
+                            } else {
+                                Err(import_error(&feat, e.message.as_str(), None))
+                            }
+                        },
+                        _ => Err(import_error(&feat, "Generic Error", None))
+                    }
+                }
+            }
+        },
         Err(err) => {
             match err.as_db() {
                 Some(e) => {
