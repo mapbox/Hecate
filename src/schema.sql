@@ -73,7 +73,7 @@ DROP TABLE IF EXISTS geo_history;
 CREATE TABLE geo_history (
     id          BIGINT NOT NULL,
     delta       BIGINT NOT NULL,
-    key         TEXT UNIQUE,
+    key         TEXT,
     action      TEXT NOT NULL,
     version     BIGINT NOT NULL,
     geom        GEOMETRY(GEOMETRY, 4326) NOT NULL,

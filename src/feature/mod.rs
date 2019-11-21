@@ -281,30 +281,24 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
                         geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                         props = $2::TEXT::JSON,
                         deltas = array_append(geo.deltas, COALESCE($3, currval('deltas_id_seq')::BIGINT))
-                RETURNING id;
+                RETURNING id, version;
         ", &[&geom_str, &props_str, &delta, &key]) {
             Ok(res) => {
                 let new: i64 = res.get(0).get(0);
+                let version: i64 = res.get(0).get(1);
+
                 match trans.query("
-                    INSERT INTO geo_history (version, action, geom, props, delta, key, id)
+                    INSERT INTO geo_history (action, geom, props, delta, key, id, version)
                         VALUES (
-                            1,
                             'create',
                             ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                             $2::TEXT::JSON,
                             COALESCE($3, currval('deltas_id_seq')::BIGINT),
                             $4,
-                            $5
+                            $5,
+                            $6
                         )
-                        ON CONFLICT (key) DO UPDATE
-                            SET
-                                version = geo_history.version + 1,
-                                action = 'create',
-                                geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
-                                props = $2::TEXT::JSON,
-                                delta = COALESCE($3, currval('deltas_id_seq')::BIGINT),
-                                id = $5;
-                ", &[&geom_str, &props_str, &delta, &key, &new]) {
+                ", &[&geom_str, &props_str, &delta, &key, &new, &version]) {
                     Err(err) => {
                         match err.as_db() {
                             Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
@@ -352,13 +346,7 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
                     ", &[&geom_str, &props_str, &delta, &key, &new]) {
                         Err(err) => {
                             match err.as_db() {
-                                Some(e) => {
-                                    if e.message == "duplicate key value violates unique constraint \"geo_history_key_key\"" {
-                                        Err(import_error(&feat, "Duplicate Key Value", None))
-                                    } else {
-                                        Err(import_error(&feat, e.message.as_str(), None))
-                                    }
-                                },
+                                Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
                                 _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
                             }
                         },
@@ -435,8 +423,6 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
                         Some(e) => {
                             if e.message == "MODIFY: ID or VERSION Mismatch" {
                                 Err(import_error(&feat, "Modify Version Mismatch", None))
-                            } else if e.message == "duplicate key value violates unique constraint \"geo_history_key_key\"" {
-                                Err(import_error(&feat, "Duplicate Key Value", None))
                             } else {
                                 Err(import_error(&feat, e.message.as_str(), None))
                             }
