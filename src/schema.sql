@@ -87,11 +87,13 @@ CREATE TABLE geo_history (
     id          BIGINT NOT NULL,
     delta       BIGINT NOT NULL REFERENCES deltas(id),
     key         TEXT UNIQUE,
+    action      TEXT NOT NULL,
     version     BIGINT NOT NULL,
     geom        GEOMETRY(GEOMETRY, 4326) NOT NULL,
     props       JSONB NOT NULL,
     PRIMARY KEY (id, version)
 );
+
 CREATE INDEX geo_history_gist ON geo_history USING GIST(geom);
 CREATE INDEX geo_history_idx ON geo_history(id);
 CREATE INDEX geo_history_deltax ON geo_history(delta);
