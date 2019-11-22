@@ -305,13 +305,15 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
                             _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
                         }
                     },
-                    Ok(_) => Ok(Response {
-                                old: id,
-                                new: Some(new),
-                                version: Some(1)
-                            })
-                        }
-                    },
+                    Ok(_) => {
+                        Ok(Response {
+                            old: id,
+                            new: Some(new),
+                            version: Some(version)
+                        })
+                    }
+                }
+            },
             Err(err) => {
                 match err.as_db() {
                     Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
@@ -328,34 +330,38 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
                     $2::TEXT::JSON,
                     array[COALESCE($3, currval('deltas_id_seq')::BIGINT)],
                     $4
-                ) RETURNING id;
+                ) RETURNING id, version;
         ", &[&geom_str, &props_str, &delta, &key]) {
-                Ok(res) => {
-                    let new: i64 = res.get(0).get(0);
-                    match trans.query("
-                        INSERT INTO geo_history (version, action, geom, props, delta, key, id)
-                            VALUES (
-                                1,
-                                'create',
-                                ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
-                                $2::TEXT::JSON,
-                                COALESCE($3, currval('deltas_id_seq')::BIGINT),
-                                $4,
-                                $5
-                            );
-                    ", &[&geom_str, &props_str, &delta, &key, &new]) {
-                        Err(err) => {
-                            match err.as_db() {
-                                Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
-                                _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
-                            }
-                        },
-                        Ok(_) => Ok(Response {
-                                    old: id,
-                                    new: Some(new),
-                                    version: Some(1)
-                                })
+            Ok(res) => {
+                let new: i64 = res.get(0).get(0);
+                let version: i64 = res.get(0).get(1);
+
+                match trans.query("
+                    INSERT INTO geo_history (action, geom, props, delta, key, id, version)
+                        VALUES (
+                            'create',
+                            ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                            $2::TEXT::JSON,
+                            COALESCE($3, currval('deltas_id_seq')::BIGINT),
+                            $4,
+                            $5,
+                            $6
+                        ) RETURNING version;
+                ", &[&geom_str, &props_str, &delta, &key, &new, &version]) {
+                    Err(err) => {
+                        match err.as_db() {
+                            Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
+                            _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
+                        }
+                    },
+                    Ok(_) => {
+                        Ok(Response {
+                            old: id,
+                            new: Some(new),
+                            version: Some(version)
+                        })
                     }
+                }
             },
             Err(err) => {
                 match err.as_db() {
@@ -407,17 +413,20 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
                         ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                         $2::TEXT::JSON,
                         $3,
-                        $4,
+                        $4::BIGINT + 1,
                         COALESCE($5, currval('deltas_id_seq')::BIGINT),
                         $6,
                         'modify'
-                    );
-            ", &[&geom_str, &props_str, &id, &(version + 1), &delta, &key]) {
-                Ok(_) => Ok(Response {
-                            old: Some(id),
-                            new: Some(id),
-                            version: Some(version + 1)
-                        }),
+                    ) RETURNING version;
+            ", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
+                Ok(res) => {
+                    let new_version: i64 = res.get(0).get(0);
+                    Ok(Response {
+                        old: Some(id),
+                        new: Some(id),
+                        version: Some(new_version)
+                    })
+                },
                 Err(err) => {
                     match err.as_db() {
                         Some(e) => {
@@ -460,17 +469,19 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
                 INSERT INTO geo_history (id, version, delta, key, action)
                     VALUES (
                         $1,
-                        $2,
+                        $2::BIGINT + 1,
                         COALESCE($3, currval('deltas_id_seq')::BIGINT),
                         $4,
                         'delete'
                     );
-            ", &[&id, &(version + 1), &delta, &key]) {
-                Ok(_) => Ok(Response {
-                            old: Some(id),
-                            new: None,
-                            version: None
-                        }),
+            ", &[&id, &version, &delta, &key]) {
+                Ok(_) => {
+                    Ok(Response {
+                        old: Some(id),
+                        new: None,
+                        version: None
+                    })
+                },
                 Err(err) => {
                     match err.as_db() {
                         Some(e) => {
@@ -670,9 +681,10 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                         $4::TEXT::JSON,
                         array_append($5::BIGINT[], COALESCE($6, currval('deltas_id_seq')::BIGINT)),
                         $7
-                    );
+                    ) RETURNING version;
             ", &[&id, &prev_version, &geom_str, &props_str, &affected, &delta, &key]) {
-                Ok(_) => {
+                Ok(res) => {
+                    let new_version: i64 = res.get(0).get(0);
                     match trans.query("
                         INSERT INTO geo_history (geom, props, id, version, delta, key, action)
                             VALUES (
@@ -684,12 +696,14 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                                 $6,
                                 'restore'
                             );
-                    ", &[&geom_str, &props_str, &id, &(version + 1), &delta, &key]) {
-                        Ok(_) => Ok(Response {
-                                    old: Some(id),
-                                    new: Some(id),
-                                    version: Some(version + 1)
-                                }),
+                    ", &[&geom_str, &props_str, &id, &new_version, &delta, &key]) {
+                        Ok(_) => {
+                            Ok(Response {
+                                old: Some(id),
+                                new: Some(id),
+                                version: Some(new_version)
+                            })
+                        },
                         Err(err) => {
                             match err.as_db() {
                                 Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
