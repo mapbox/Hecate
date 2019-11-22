@@ -124,7 +124,7 @@ mod test {
 
         {
             let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1/history").unwrap();
-            assert_eq!(resp.text().unwrap(), r#"[{"feat":{"action":"delete","geometry":null,"id":1,"message":"Delete a Point","properties":{},"type":"Feature","version":2},"id":3,"uid":1,"username":"ingalls"},{"feat":{"action":"modify","geometry":{"coordinates":[1.0,1.0],"type":"Point"},"id":1,"message":"Modify a Point","properties":{"number":"123","test":true},"type":"Feature","version":1},"id":2,"uid":1,"username":"ingalls"},{"feat":{"action":"create","geometry":{"coordinates":[0.0,0.0],"type":"Point"},"id":1,"message":"Creating a Point","properties":{"number":"123"},"type":"Feature"},"id":1,"uid":1,"username":"ingalls"}]"#);
+            assert_eq!(resp.text().unwrap(), r#"[{"feat":{"action":"delete","geometry":null,"id":1,"key":null,"properties":null,"type":"Feature","version":3},"id":3,"uid":1,"username":"ingalls"},{"feat":{"action":"modify","geometry":{"coordinates":[1,1],"type":"Point"},"id":1,"key":null,"properties":{"number":"123","test":true},"type":"Feature","version":2},"id":2,"uid":1,"username":"ingalls"},{"feat":{"action":"create","geometry":{"coordinates":[0,0],"type":"Point"},"id":1,"key":null,"properties":{"number":"123"},"type":"Feature","version":1},"id":1,"uid":1,"username":"ingalls"}]"#);
             assert!(resp.status().is_success());
         }
 

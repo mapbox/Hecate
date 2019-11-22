@@ -76,8 +76,8 @@ CREATE TABLE geo_history (
     key         TEXT,
     action      TEXT NOT NULL,
     version     BIGINT NOT NULL,
-    geom        GEOMETRY(GEOMETRY, 4326) NOT NULL,
-    props       JSONB NOT NULL,
+    geom        GEOMETRY(GEOMETRY, 4326),
+    props       JSONB,
     PRIMARY KEY (id, version)
 );
 

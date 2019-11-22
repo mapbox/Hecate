@@ -228,7 +228,7 @@ pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<s
         Action::Create => create(&trans, &schema, &feat, &delta)?,
         Action::Modify => modify(&trans, &schema, &feat, &delta)?,
         Action::Restore => restore(&trans, &schema, &feat, &delta)?,
-        Action::Delete => delete(&trans, &feat)?
+        Action::Delete => delete(&trans, &feat, &delta)?
     };
 
     Ok(res)
@@ -449,16 +449,42 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
     }
 }
 
-pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<Response, HecateError> {
+pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, HecateError> {
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
+    let key = get_key(&feat)?;
 
     match trans.query("SELECT delete_geo($1, $2);", &[&id, &version]) {
-        Ok(_) => Ok(Response {
-            old: Some(id),
-            new: None,
-            version: None
-        }),
+        Ok(_) => {
+            match trans.query("
+                INSERT INTO geo_history (id, version, delta, key, action)
+                    VALUES (
+                        $1,
+                        $2,
+                        COALESCE($3, currval('deltas_id_seq')::BIGINT),
+                        $4,
+                        'delete'
+                    );
+            ", &[&id, &(version + 1), &delta, &key]) {
+                Ok(_) => Ok(Response {
+                            old: Some(id),
+                            new: None,
+                            version: None
+                        }),
+                Err(err) => {
+                    match err.as_db() {
+                        Some(e) => {
+                            if e.message == "DELETE: ID or VERSION Mismatch" {
+                                Err(import_error(&feat, "Delete Version Mismatch", None))
+                            } else {
+                                Err(import_error(&feat, e.message.as_str(), None))
+                            }
+                        },
+                        _ => Err(import_error(&feat, "Generic Error", None))
+                    }
+                }
+            }
+        },
         Err(err) => {
             match err.as_db() {
                 Some(e) => {
