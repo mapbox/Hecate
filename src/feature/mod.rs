@@ -624,46 +624,41 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
         Err(_) => { return Err(import_error(&feat, "Failed to stringify properties", None)) }
     };
 
-    //Get the previous version of a given feature
+    //Get the previous version, action, and all deltas of a given feature
     match trans.query("
+    SELECT
+        ARRAY_AGG(delta ORDER BY delta) as delta_ids,
+        MAX(version) as max_version,
+        (ARRAY_AGG(action ORDER BY version DESC))[1] as action
+    FROM (
         SELECT
-            ARRAY_AGG(id ORDER BY id) AS delta_ids,
-            MAX(feat->>'version')::BIGINT + 1 AS max_version
-        FROM (
-            SELECT
-                deltas.id,
-                JSON_Array_Elements((deltas.features -> 'features')::JSON) AS feat
-            FROM
-                deltas
-            WHERE
-                affected @> ARRAY[$1]::BIGINT[]
-            ORDER BY id DESC
-        ) f
+            delta,
+            version,
+            action
+        FROM
+            geo_history
         WHERE
-            (feat->>'id')::BIGINT = $1
-        GROUP BY feat->>'id'
+            id=$1
+    ) t
     ", &[&id]) {
-        Ok(history) => {
-
-            if history.len() != 1 {
-                return Err(import_error(&feat, "Feature Not Found", None));
-            }
-
-            //Version will be None if the feature was created but has never been modified since the
-            //original create does not need a version
-            let prev_version: Option<i64> = history.get(0).get(1);
-            match prev_version {
-                None => {
-                    return Err(import_error(&feat, "Feature Not In Deleted State", None));
-                },
-                Some(prev_version) => {
-                    if prev_version != version {
-                        return Err(import_error(&feat, "Restore Version Mismatch", None));
-                    }
-                }
+        Ok(res) => {
+            // Agg function returns row of NULLs if inner query doesn't return results
+            let affected: Option<Vec<i64>> = res.get(0).get(0);
+            let affected = match affected {
+                None => return Err(import_error(&feat, "Feature Not Found", None)),
+                Some(deltas) => deltas
             };
 
-            let affected: Vec<i64> = history.get(0).get(0);
+            let prev_version: i64 = res.get(0).get(1);
+            // previous version of a feature must match version passed in request
+            if prev_version != version {
+                return Err(import_error(&feat, "Restore Version Mismatch", None));
+            }
+
+            let prev_action: String = res.get(0).get(2);
+            if prev_action != String::from("delete") {
+                return Err(import_error(&feat, "Feature Not In Deleted State", None));
+            }
 
             //Create Delta History Array
             match trans.query("
@@ -677,11 +672,32 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                         $7
                     );
             ", &[&id, &prev_version, &geom_str, &props_str, &affected, &delta, &key]) {
-                Ok(_) => Ok(Response {
-                    old: Some(id),
-                    new: Some(id),
-                    version: Some(version + 1)
-                }),
+                Ok(_) => {
+                    match trans.query("
+                        INSERT INTO geo_history (geom, props, id, version, delta, key, action)
+                            VALUES (
+                                ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                                $2::TEXT::JSON,
+                                $3,
+                                $4,
+                                COALESCE($5, currval('deltas_id_seq')::BIGINT),
+                                $6,
+                                'restore'
+                            );
+                    ", &[&geom_str, &props_str, &id, &(version + 1), &delta, &key]) {
+                        Ok(_) => Ok(Response {
+                                    old: Some(id),
+                                    new: Some(id),
+                                    version: Some(version + 1)
+                                }),
+                        Err(err) => {
+                            match err.as_db() {
+                                Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
+                                _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
+                            }
+                        }
+                    }
+                },
                 Err(err) => {
                     match err.as_db() {
                         Some(e) => {
@@ -690,7 +706,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                             } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
                                 Err(import_error(&feat, "Duplicate Key Value", None))
                             } else {
-                                Err(import_error(&feat, "Generic Error", Some(err.to_string())))
+                                Err(import_error(&feat, e.message.as_str(), None))
                             }
                         }
                         _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
