@@ -823,3 +823,44 @@ pub fn get_bbox(conn: &impl postgres::GenericConnection, bbox: Vec<f64>) -> Resu
         Err(err) => Err(HecateError::from_db(err))
     }
 }
+
+///Get the history of a particular feature
+pub fn history(conn: &impl postgres::GenericConnection, feat_id: &i64) -> Result<serde_json::Value, HecateError> {
+    match conn.query("
+        SELECT json_agg (
+            JSON_Build_Object(
+                'id', deltas.id,
+                'uid', deltas.uid,
+                'feat', JSON_Build_Object(
+                    'id', geo_history.id,
+                    'action', geo_history.action,
+                    'key', geo_history.key,
+                    'type', 'Feature',
+                    'version', geo_history.version,
+                    'geometry', ST_AsGeoJSON(geom)::JSON,
+                    'properties', geo_history.props
+                ),
+                'username', users.username
+            )
+            ORDER BY geo_history.version DESC
+        )
+        FROM
+            geo_history,
+            deltas,
+            users
+        WHERE
+            geo_history.id = $1 AND
+            geo_history.delta = deltas.id AND
+            deltas.uid = users.id;
+    ", &[&feat_id]) {
+        Ok(res) => {
+            if res.len() == 0 {
+                return Err(HecateError::new(400, String::from("Could not find history for given id"), None))
+            }
+            let history: serde_json::Value = res.get(0).get(0);
+
+            Ok(history)
+        },
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}

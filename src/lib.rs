@@ -1876,7 +1876,7 @@ fn feature_get_history(
     web::block(move || {
         auth_rules.0.allows_feature_history(&mut auth, auth::RW::Read)?;
 
-        Ok(delta::history(&*conn.get()?, &id.into_inner())?)
+        Ok(feature::history(&*conn.get()?, &id.into_inner())?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(history) => Ok(actix_web::HttpResponse::Ok().json(history)),
         Err(err) => Ok(HecateError::from(err).error_response())
