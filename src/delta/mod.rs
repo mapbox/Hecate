@@ -95,10 +95,8 @@ pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, 
 }
 
 pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, HecateError> {
-    let fc_str = serde_json::to_string(&fc).unwrap();
-
     match trans.query("
-        INSERT INTO deltas (id, created, features, uid, props, affected) VALUES (
+        INSERT INTO deltas (id, created, uid, props, affected) VALUES (
             nextval('deltas_id_seq'),
             current_timestamp,
             $1::TEXT::JSON,
@@ -106,7 +104,7 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
             to_json($3::HSTORE),
             $4
         ) RETURNING id;
-    ", &[&fc_str, &uid, &props, &affected(&fc)]) {
+    ", &[&uid, &props, &affected(&fc)]) {
         Err(err) => Err(HecateError::from_db(err)),
         Ok(res) => { Ok(res.get(0).get(0)) }
     }
@@ -206,11 +204,11 @@ pub fn list_by_offset(conn: &impl postgres::GenericConnection, offset: Option<i6
 pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64, min_zoom: u8, max_zoom: u8) -> Result<Vec<(i32, i32, u8)>, HecateError> {
     match conn.query("
         SELECT
-            ST_GeomFromGeoJSON(json_array_elements((features->>'features')::JSON)->>'geometry')
+            geom
         FROM
-            deltas
+            geo_history
         WHERE
-            id = $1
+            delta = $1
     ", &[&id]) {
         Err(err) => Err(HecateError::from_db(err)),
         Ok(results) => {
@@ -257,24 +255,38 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64, min_zoom: u8, ma
 
 pub fn get_json(conn: &impl postgres::GenericConnection, id: &i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
-        SELECT COALESCE(row_to_json(d), 'false'::JSON)
+        SELECT COALESCE(row_to_json(t), 'false'::JSON)
         FROM (
             SELECT
                 deltas.id,
                 deltas.uid,
                 users.username,
-                deltas.features,
+                (
+                    SELECT json_agg(row_to_json(d))
+                    FROM (
+                        SELECT
+                            id,
+                            action,
+                            key,
+                            'Feature' as type,
+                            version,
+                            ST_AsGeoJSON(geom)::JSON as geometry,
+                            props as properties
+                        FROM geo_history
+                        WHERE delta = $1
+                        ORDER BY id
+                    ) d
+                ) as features,
                 deltas.affected,
                 deltas.props,
-                deltas.created,
-                deltas.props
+                deltas.created
             FROM
                 deltas,
                 users
             WHERE
-                deltas.uid = users.id
-                AND deltas.id = $1
-        ) d
+                deltas.id = $1
+                AND deltas.uid = users.id
+        ) t
     ", &[&id]) {
         Err(err) => Err(HecateError::from_db(err)),
         Ok(res) => {
@@ -300,18 +312,15 @@ pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props:
 }
 
 pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, uid: &i64) -> Result<i64, HecateError> {
-    let fc_str = serde_json::to_string(&fc).unwrap();
-
     match trans.query("
         UPDATE deltas
             SET
-                features = $2::TEXT::JSON,
-                affected = $4
+                affected = $3
             WHERE
                 id = $1
-                AND uid = $3
+                AND uid = $2
                 AND finalized = false;
-    ", &[&id, &fc_str, &uid, &affected(&fc)]) {
+    ", &[&id, &uid, &affected(&fc)]) {
         Err(err) => Err(HecateError::from_db(err)),
         _ => { Ok(*id) }
     }

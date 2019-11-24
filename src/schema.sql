@@ -98,7 +98,6 @@ DROP TABLE IF EXISTS deltas;
 CREATE TABLE deltas (
     id          BIGSERIAL PRIMARY KEY,
     created     TIMESTAMP,
-    features    JSONB,
     affected    BIGINT[],
     props       JSONB,
     uid         BIGINT,
