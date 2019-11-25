@@ -184,13 +184,36 @@ mod test {
 
         { //Check Point - success
             let mut resp = reqwest::get("http://localhost:8000/api/data/features/history?point=0.0%2C0.0").unwrap();
+            assert!(resp.status().is_success());
 
             let mut body_str = String::from(resp.text().unwrap());
             body_str.pop();
             body_str.pop();
+            let features: Vec<&str> = body_str.split("\n").collect();
 
-            assert_eq!(&*body_str, "{\"id\":1,\"action\":\"create\",\"key\":null,\"delta\":1,\"type\":\"Feature\",\"version\":1,\"geometry\":{\"type\":\"Point\",\"coordinates\":[0,0]},\"properties\":{\"number\": \"123\"}}\n{\"id\":1,\"action\":\"modify\",\"key\":null,\"delta\":2,\"type\":\"Feature\",\"version\":2,\"geometry\":{\"type\":\"Point\",\"coordinates\":[0,0]},\"properties\":{\"test\": true, \"number\": \"123\"}}");
-            assert!(resp.status().is_success());
+            let feat1: serde_json::value::Value = serde_json::from_str(features[0]).unwrap();
+            assert_eq!(feat1, json!({
+                "type": "Feature",
+                "delta": 1,
+                "id": 1,
+                "key": null,
+                "version": 1,
+                "action": "create",
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+            }));
+
+            let feat2: serde_json::value::Value = serde_json::from_str(features[1]).unwrap();
+            assert_eq!(feat2, json!({
+                "type": "Feature",
+                "delta": 2,
+                "id": 1,
+                "key": null,
+                "version": 2,
+                "action": "modify",
+                "properties": { "number": "123", "test": true },
+                "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+            }));
         }
 
         { // Check bbox - minX in bbox out of range
@@ -267,13 +290,36 @@ mod test {
 
         { //Check BBOX - success
             let mut resp = reqwest::get("http://localhost:8000/api/data/features/history?bbox=-1,-1,1,1").unwrap();
+            assert!(resp.status().is_success());
 
             let mut body_str = String::from(resp.text().unwrap());
             body_str.pop();
             body_str.pop();
+            let features: Vec<&str> = body_str.split("\n").collect();
 
-            assert_eq!(&*body_str, "{\"id\":1,\"action\":\"create\",\"key\":null,\"delta\":1,\"type\":\"Feature\",\"version\":1,\"geometry\":{\"type\":\"Point\",\"coordinates\":[0,0]},\"properties\":{\"number\": \"123\"}}\n{\"id\":1,\"action\":\"modify\",\"key\":null,\"delta\":2,\"type\":\"Feature\",\"version\":2,\"geometry\":{\"type\":\"Point\",\"coordinates\":[0,0]},\"properties\":{\"test\": true, \"number\": \"123\"}}");
-            assert!(resp.status().is_success());
+            let feat1: serde_json::value::Value = serde_json::from_str(features[0]).unwrap();
+            assert_eq!(feat1, json!({
+                "type": "Feature",
+                "delta": 1,
+                "id": 1,
+                "key": null,
+                "version": 1,
+                "action": "create",
+                "properties": { "number": "123" },
+                "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+            }));
+
+            let feat2: serde_json::value::Value = serde_json::from_str(features[1]).unwrap();
+            assert_eq!(feat2, json!({
+                "type": "Feature",
+                "delta": 2,
+                "id": 1,
+                "key": null,
+                "version": 2,
+                "action": "modify",
+                "properties": { "number": "123", "test": true },
+                "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
+            }));
         }
 
         server.kill().unwrap();
