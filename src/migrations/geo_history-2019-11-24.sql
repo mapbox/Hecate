@@ -12,6 +12,7 @@ SELECT
     END AS version,
     feat->>'action' AS action,
     feat->'properties' AS props,
+    feat->>'key' AS key,
     ST_SetSRID(
         ST_MakePoint(
             (feat->'geometry'->'coordinates'->>0)::FLOAT,
