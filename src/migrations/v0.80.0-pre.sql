@@ -1,4 +1,15 @@
--- populates the geo_history table using the delta.features JSON
+-- creates, populates, and creates indexes on the geo_history table using the delta.features JSON
+DROP TABLE IF EXISTS geo_history;
+CREATE TABLE geo_history (
+    id          BIGINT NOT NULL,
+    delta       BIGINT NOT NULL,
+    key         TEXT,
+    action      TEXT NOT NULL,
+    version     BIGINT NOT NULL,
+    geom        GEOMETRY(GEOMETRY, 4326),
+    props       JSONB,
+    PRIMARY KEY (id, version)
+);
 
 INSERT INTO geo_history (id, delta, version, action, props, geom)
 SELECT
@@ -27,3 +38,7 @@ FROM (
     FROM
         deltas
 ) t;
+
+CREATE INDEX geo_history_gist ON geo_history USING GIST(geom);
+CREATE INDEX geo_history_idx ON geo_history(id);
+CREATE INDEX geo_history_deltax ON geo_history(delta);
