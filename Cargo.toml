@@ -1,6 +1,6 @@
 [package]
 name = "hecate"
-version = "0.79.0-geo-history"
+version = "0.79.0-geo-history-1"
 edition = "2018"
 authors = ["ingalls <ingalls@protonmail.com>"]
 license = "MIT"
