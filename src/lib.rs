@@ -255,6 +255,9 @@ pub fn start(
                         .route(web::post().to_async(features_action))
                         .route(web::get().to(features_query))
                     )
+                    .service(web::resource("features/history")
+                        .route(web::get().to(features_history_query))
+                    )
                     .service(web::resource("stats")
                         .route(web::get().to_async(stats_get))
                     )
@@ -1226,7 +1229,29 @@ fn features_query(
     } else {
         Err(HecateError::new(400, String::from("key or point param must be used"), None))
     }
+}
 
+fn features_history_query(
+    conn: web::Data<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>,
+    map: web::Query<Map>
+) -> Result<HttpResponse, HecateError> {
+    auth_rules.0.allows_feature_get(&mut auth, auth::RW::Read)?;
+
+    if map.bbox.is_some() && map.point.is_some() {
+        Err(HecateError::new(400, String::from("key and point params cannot be used together"), None))
+    } else if map.bbox.is_some() {
+        let bbox: Vec<f64> = map.bbox.as_ref().unwrap().split(',').map(|s| s.parse().unwrap()).collect();
+
+        let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
+        Ok(resp.streaming(feature::get_bbox_history_stream(conn.get()?, &bbox)?))
+    } else if map.point.is_some() {
+        let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
+        Ok(resp.streaming(feature::get_point_history_stream(conn.get()?, &map.point.as_ref().unwrap())?))
+    } else {
+        Err(HecateError::new(400, String::from("key or point param must be used"), None))
+    }
 }
 
 fn schema_get(

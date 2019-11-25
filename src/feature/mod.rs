@@ -864,3 +864,54 @@ pub fn history(conn: &impl postgres::GenericConnection, feat_id: &i64) -> Result
         Err(err) => Err(HecateError::from_db(err))
     }
 }
+
+pub fn get_point_history_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<PGStream, HecateError> {
+    let (lng, lat) = validate::point(point)?;
+
+    Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
+        DECLARE next_features CURSOR FOR
+            SELECT
+                row_to_json(f)::TEXT AS feature
+            FROM (
+                SELECT
+                    id,
+                    action,
+                    key,
+                    delta,
+                    'Feature' AS type,
+                    version,
+                    ST_AsGeoJSON(geom)::JSON AS geometry,
+                    props AS properties
+                FROM geo_history
+                WHERE
+                    ST_DWithin(ST_SetSRID(ST_MakePoint($1, $2), 4326), geom, 0.00005)
+                ORDER BY
+                    ST_Distance(ST_SetSRID(ST_MakePoint($1, $2), 4326), geom) DESC
+            ) f;
+    "#), &[&lng, &lat])?)
+}
+
+pub fn get_bbox_history_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: &Vec<f64>) -> Result<PGStream, HecateError> {
+    validate::bbox(bbox)?;
+
+    Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
+        DECLARE next_features CURSOR FOR
+            SELECT
+                row_to_json(f)::TEXT AS feature
+            FROM (
+                SELECT
+                    id,
+                    action,
+                    key,
+                    delta,
+                    'Feature' AS type,
+                    version,
+                    ST_AsGeoJSON(geom)::JSON AS geometry,
+                    props AS properties
+                FROM geo_history
+                WHERE
+                    ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
+                    OR ST_Within(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
+            ) f;
+    "#), &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]])?)
+}
