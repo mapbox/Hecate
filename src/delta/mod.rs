@@ -220,20 +220,27 @@ pub fn get_json(conn: &impl postgres::GenericConnection, id: &i64) -> Result<ser
                 deltas.uid,
                 users.username,
                 (
-                    SELECT json_agg(row_to_json(d))
+                    SELECT row_to_json(featCollection)
                     FROM (
                         SELECT
-                            id,
-                            action,
-                            key,
-                            'Feature' as type,
-                            version,
-                            ST_AsGeoJSON(geom)::JSON as geometry,
-                            props as properties
-                        FROM geo_history
-                        WHERE delta = $1
-                        ORDER BY id
-                    ) d
+                            'FeatureCollection' as type,
+                            (
+                                SELECT json_agg(row_to_json(d))
+                                FROM (
+                                    SELECT
+                                        id,
+                                        action,
+                                        key,
+                                        'Feature' as type,
+                                        version,
+                                        ST_AsGeoJSON(geom)::JSON as geometry,
+                                        props as properties
+                                    FROM geo_history
+                                    WHERE delta = $1
+                                    ORDER BY id
+                                ) d
+                            ) as features
+                    ) as featCollection
                 ) as features,
                 deltas.affected,
                 deltas.props,

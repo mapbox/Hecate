@@ -108,11 +108,14 @@ mod test {
             assert_eq!(json_body["props"], json!({ "message": "Basic Creation" }));
             assert_eq!(json_body["uid"], json!(1));
             assert_eq!(json_body["username"], json!("ingalls"));
-            assert_eq!(json_body["features"], json!([
-                {"action":"create","geometry":{"coordinates":[1,1],"type":"Point"},"id":1,"key":null,"properties":{"shop":true},"type":"Feature","version":1},
-                {"action":"create","geometry":{"coordinates":[1.1,1.1],"type":"Point"},"id":2,"key":null,"properties":{"shop":true},"type":"Feature","version":1},
-                {"action":"create","geometry":{"coordinates":[1.2,1.2],"type":"Point"},"id":3,"key":null,"properties":{"shop":true},"type":"Feature","version":1}
-            ]));
+            assert_eq!(json_body["features"], json!({
+                "type": "FeatureCollection",
+                "features": [
+                    {"action":"create","geometry":{"coordinates":[1,1],"type":"Point"},"id":1,"key":null,"properties":{"shop":true},"type":"Feature","version":1},
+                    {"action":"create","geometry":{"coordinates":[1.1,1.1],"type":"Point"},"id":2,"key":null,"properties":{"shop":true},"type":"Feature","version":1},
+                    {"action":"create","geometry":{"coordinates":[1.2,1.2],"type":"Point"},"id":3,"key":null,"properties":{"shop":true},"type":"Feature","version":1}
+                ]
+            }));
             let keys: Vec<String> = json_body.as_object().unwrap().keys().map(|k| k.to_owned()).collect();
             assert_eq!(keys, vec![String::from("affected"), String::from("created"), String::from("features"), String::from("id"), String::from("props"), String::from("uid"), String::from("username")]);
             assert!(resp.status().is_success());
@@ -182,11 +185,14 @@ mod test {
             assert_eq!(json_body["props"], json!({ "message": "Basic Modify" }));
             assert_eq!(json_body["uid"], json!(1));
             assert_eq!(json_body["username"], json!("ingalls"));
-            assert_eq!(json_body["features"], json!([
-                {"action":"modify","geometry":{"coordinates":[2,2],"type":"Point"},"id":1,"key":null,"properties":{"shop":false},"type":"Feature","version":2},
-                {"action":"modify","geometry":{"coordinates":[0.1,0.1],"type":"Point"},"id":2,"key":null,"properties":{"building":true,"shop":true},"type":"Feature","version":2},
-                {"action":"modify","geometry":{"coordinates":[2.2,2.2],"type":"Point"},"id":3,"key":null,"properties":{"shop":true},"type":"Feature","version":2}
-            ]));
+            assert_eq!(json_body["features"], json!({
+                "type": "FeatureCollection",
+                "features": [
+                    {"action":"modify","geometry":{"coordinates":[2,2],"type":"Point"},"id":1,"key":null,"properties":{"shop":false},"type":"Feature","version":2},
+                    {"action":"modify","geometry":{"coordinates":[0.1,0.1],"type":"Point"},"id":2,"key":null,"properties":{"building":true,"shop":true},"type":"Feature","version":2},
+                    {"action":"modify","geometry":{"coordinates":[2.2,2.2],"type":"Point"},"id":3,"key":null,"properties":{"shop":true},"type":"Feature","version":2}
+                ]
+            }));
             let keys: Vec<String> = json_body.as_object().unwrap().keys().map(|k| k.to_owned()).collect();
             assert_eq!(keys, vec![String::from("affected"), String::from("created"), String::from("features"), String::from("id"), String::from("props"), String::from("uid"), String::from("username")]);
             assert!(resp.status().is_success());
