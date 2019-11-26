@@ -1455,7 +1455,7 @@ curl -X GET 'http://localhost:8000/api/data/features/?point=-95.2734375%2C36.031
 
 #### `GET` `/api/data/features/history`
 
-Return streaming Line-Delimited GeoJSON of all versions of features that fall within the provided BBOX or Point. This includes the current version of the feature.
+Return streaming Line-Delimited GeoJSON of all versions of features that fall within the provided BBOX or Point. This includes the current version of the feature. Features in `delete` state will not be included as their geometries are not recorded.
 
 Note: All streaming GeoJSON endpoints will send the Unicode End Of Transmission, EOT
 (`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
