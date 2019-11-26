@@ -7,11 +7,10 @@ CREATE TABLE geo_history (
     action      TEXT NOT NULL,
     version     BIGINT NOT NULL,
     geom        GEOMETRY(GEOMETRY, 4326),
-    props       JSONB,
-    PRIMARY KEY (id, version)
+    props       JSONB
 );
 
-INSERT INTO geo_history (id, delta, version, action, props, geom)
+INSERT INTO geo_history (id, delta, version, action, props, key, geom)
 SELECT
     (feat->>'id')::BIGINT AS id,
     id AS delta,
@@ -38,6 +37,27 @@ FROM (
     FROM
         deltas
 ) t;
+
+-- Modifies the action of features that were erroneously created twice -- affects 26 features
+UPDATE geo_history
+SET
+    action = 'modify'
+WHERE
+    delta = 7729
+    AND action = 'create'
+    AND id IN (27810597, 27805167, 27816051, 27924080, 27927837, 27923999, 27932150, 27930883, 27932151, 27926520, 27930630, 27931128, 27919336, 27927921, 27921858, 27931856, 27918601, 27925779, 27930666, 27934313, 27934226, 27934331, 27666332, 27666029, 27671491, 27671127);
+
+-- Modifies the version of features that did not have their versions incremented -- affects 26 features
+UPDATE geo_history
+SET
+    version = 3
+WHERE
+    delta = 7730
+    AND version = 2
+    AND id IN (27810597, 27805167, 27816051, 27924080, 27927837, 27923999, 27932150, 27930883, 27932151, 27926520, 27930630, 27931128, 27919336, 27927921, 27921858, 27931856, 27918601, 27925779, 27930666, 27934313, 27934226, 27934331, 27666332, 27666029, 27671491, 27671127);
+
+-- Once modification is complete, add primary key constraint
+ALTER TABLE geo_history ADD PRIMARY KEY (id, version);
 
 CREATE INDEX geo_history_gist ON geo_history USING GIST(geom);
 CREATE INDEX geo_history_idx ON geo_history(id);
