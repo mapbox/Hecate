@@ -1,4 +1,4 @@
-pub static VERSION: &'static str = "0.79.0-geo-history-2";
+pub static VERSION: &'static str = "0.79.0-geo-history-3";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
 pub static HOURS: i64 = 24;
@@ -1812,7 +1812,7 @@ fn feature_action(
 
         let mut map: HashMap<String, Option<String>> = HashMap::new();
         map.insert(String::from("message"), Some(delta_message));
-        let delta_id = match delta::open(&trans, &map, &uid) {
+        let delta_id = match delta::open(&trans, &map, &uid) { // add non feature info to deltas table, get next delta id
             Ok(id) => id,
             Err(err) => {
                 trans.set_rollback();
@@ -1820,7 +1820,8 @@ fn feature_action(
                 return Err(err);
             }
         };
-
+        // inserts feature into geo table
+        // version is incremented by 1 here
         match feature::action(&trans, &schema, &feat, &None) {
             Ok(res) => {
                 if res.new.is_some() {
@@ -1839,7 +1840,7 @@ fn feature_action(
             features: vec![ feat ],
             foreign_members: None,
         };
-
+        // modifies the delta entry to include the features json blob
         match delta::modify(&delta_id, &trans, &fc, &uid) {
             Err(err) => {
                 trans.set_rollback();
@@ -1854,7 +1855,7 @@ fn feature_action(
                 if trans.commit().is_err() {
                     return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
                 }
-
+                // triggers webhook
                 worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
 
                 Ok(Json(json!(true)))
