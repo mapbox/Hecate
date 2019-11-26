@@ -1,4 +1,4 @@
-pub static VERSION: &'static str = "0.79.0";
+pub static VERSION: &'static str = "0.79.0-geo-history-4";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
 pub static HOURS: i64 = 24;
@@ -254,6 +254,9 @@ pub fn start(
                     .service(web::resource("features")
                         .route(web::post().to_async(features_action))
                         .route(web::get().to(features_query))
+                    )
+                    .service(web::resource("features/history")
+                        .route(web::get().to(features_history_query))
                     )
                     .service(web::resource("stats")
                         .route(web::get().to_async(stats_get))
@@ -1226,7 +1229,29 @@ fn features_query(
     } else {
         Err(HecateError::new(400, String::from("key or point param must be used"), None))
     }
+}
 
+fn features_history_query(
+    conn: web::Data<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>,
+    map: web::Query<Map>
+) -> Result<HttpResponse, HecateError> {
+    auth_rules.0.allows_feature_get(&mut auth, auth::RW::Read)?;
+
+    if map.bbox.is_some() && map.point.is_some() {
+        Err(HecateError::new(400, String::from("key and point params cannot be used together"), None))
+    } else if map.bbox.is_some() {
+        let bbox: Vec<f64> = map.bbox.as_ref().unwrap().split(',').map(|s| s.parse().unwrap()).collect();
+
+        let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
+        Ok(resp.streaming(feature::get_bbox_history_stream(conn.get()?, &bbox)?))
+    } else if map.point.is_some() {
+        let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
+        Ok(resp.streaming(feature::get_point_history_stream(conn.get()?, &map.point.as_ref().unwrap())?))
+    } else {
+        Err(HecateError::new(400, String::from("key or point param must be used"), None))
+    }
 }
 
 fn schema_get(
@@ -1787,7 +1812,7 @@ fn feature_action(
 
         let mut map: HashMap<String, Option<String>> = HashMap::new();
         map.insert(String::from("message"), Some(delta_message));
-        let delta_id = match delta::open(&trans, &map, &uid) {
+        let delta_id = match delta::open(&trans, &map, &uid) { // add non feature info to deltas table, get next delta id
             Ok(id) => id,
             Err(err) => {
                 trans.set_rollback();
@@ -1795,7 +1820,8 @@ fn feature_action(
                 return Err(err);
             }
         };
-
+        // inserts feature into geo table
+        // version is incremented by 1 here
         match feature::action(&trans, &schema, &feat, &None) {
             Ok(res) => {
                 if res.new.is_some() {
@@ -1814,7 +1840,7 @@ fn feature_action(
             features: vec![ feat ],
             foreign_members: None,
         };
-
+        // modifies the delta entry to include the features json blob
         match delta::modify(&delta_id, &trans, &fc, &uid) {
             Err(err) => {
                 trans.set_rollback();
@@ -1829,7 +1855,7 @@ fn feature_action(
                 if trans.commit().is_err() {
                     return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
                 }
-
+                // triggers webhook
                 worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
 
                 Ok(Json(json!(true)))
@@ -1876,7 +1902,7 @@ fn feature_get_history(
     web::block(move || {
         auth_rules.0.allows_feature_history(&mut auth, auth::RW::Read)?;
 
-        Ok(delta::history(&*conn.get()?, &id.into_inner())?)
+        Ok(feature::history(&*conn.get()?, &id.into_inner())?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(history) => Ok(actix_web::HttpResponse::Ok().json(history)),
         Err(err) => Ok(HecateError::from(err).error_response())
