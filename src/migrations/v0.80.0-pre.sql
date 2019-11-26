@@ -11,7 +11,7 @@ CREATE TABLE geo_history (
     PRIMARY KEY (id, version)
 );
 
-INSERT INTO geo_history (id, delta, version, action, props, geom)
+INSERT INTO geo_history (id, delta, version, action, props, key, geom)
 SELECT
     (feat->>'id')::BIGINT AS id,
     id AS delta,
