@@ -10,6 +10,14 @@
 
 # Version History
 
+## v0.80.0
+
+- :rocket: Create new `geo_history` table to retrieve feature history
+- :rocket: Remove `features` column from the `deltas` table; features are now stored in `geo_history`
+- :bug: Make responses from the deltas and feature history API consistent
+- :rocket: Add `features/history` streaming endpoint
+- :rocket: Add `migrations` directory to track database migrations
+
 ## v0.79.0
 
 - :rocket: Even more uses of `web::block` to make more calls async in nature

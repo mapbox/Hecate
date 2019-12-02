@@ -69,6 +69,22 @@ CREATE TABLE geo (
 CREATE INDEX geo_gist ON geo USING GIST(geom);
 CREATE INDEX geo_idx ON geo(id);
 
+DROP TABLE IF EXISTS geo_history;
+CREATE TABLE geo_history (
+    id          BIGINT NOT NULL,
+    delta       BIGINT NOT NULL,
+    key         TEXT,
+    action      TEXT NOT NULL,
+    version     BIGINT NOT NULL,
+    geom        GEOMETRY(GEOMETRY, 4326),
+    props       JSONB,
+    PRIMARY KEY (id, version)
+);
+
+CREATE INDEX geo_history_gist ON geo_history USING GIST(geom);
+CREATE INDEX geo_history_idx ON geo_history(id);
+CREATE INDEX geo_history_deltax ON geo_history(delta);
+
 DROP TABLE IF EXISTS styles;
 CREATE TABLE styles (
     id          BIGSERIAL PRIMARY KEY,
@@ -82,7 +98,6 @@ DROP TABLE IF EXISTS deltas;
 CREATE TABLE deltas (
     id          BIGSERIAL PRIMARY KEY,
     created     TIMESTAMP,
-    features    JSONB,
     affected    BIGINT[],
     props       JSONB,
     uid         BIGINT,

@@ -1,5 +1,6 @@
 extern crate reqwest;
 extern crate postgres;
+#[macro_use] extern crate serde_json;
 
 #[cfg(test)]
 mod test {
@@ -10,6 +11,7 @@ mod test {
     use std::time::Duration;
     use std::thread;
     use reqwest;
+    use serde_json;
 
     #[test]
     fn history() {
@@ -70,7 +72,10 @@ mod test {
 
         {
             let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1/history").unwrap();
-            assert_eq!(resp.text().unwrap(), r#"[{"feat":{"action":"create","geometry":{"coordinates":[0.0,0.0],"type":"Point"},"id":1,"message":"Creating a Point","properties":{"number":"123"},"type":"Feature"},"id":1,"uid":1,"username":"ingalls"}]"#);
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body, json!([
+                {"feat":{"action":"create","geometry":{"coordinates":[0,0],"type":"Point"},"id":1,"key":null,"properties":{"number":"123"},"type":"Feature","version":1},"id":1,"uid":1,"username":"ingalls"}
+            ]));
             assert!(resp.status().is_success());
         }
 
@@ -97,7 +102,11 @@ mod test {
 
         {
             let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1/history").unwrap();
-            assert_eq!(resp.text().unwrap(), r#"[{"feat":{"action":"modify","geometry":{"coordinates":[1.0,1.0],"type":"Point"},"id":1,"message":"Modify a Point","properties":{"number":"123","test":true},"type":"Feature","version":1},"id":2,"uid":1,"username":"ingalls"},{"feat":{"action":"create","geometry":{"coordinates":[0.0,0.0],"type":"Point"},"id":1,"message":"Creating a Point","properties":{"number":"123"},"type":"Feature"},"id":1,"uid":1,"username":"ingalls"}]"#);
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body, json!([
+                {"feat":{"action":"modify","geometry":{"coordinates":[1,1],"type":"Point"},"id":1,"key":null,"properties":{"number":"123","test":true},"type":"Feature","version":2},"id":2,"uid":1,"username":"ingalls"},
+                {"feat":{"action":"create","geometry":{"coordinates":[0,0],"type":"Point"},"id":1,"key":null,"properties":{"number":"123"},"type":"Feature","version":1},"id":1,"uid":1,"username":"ingalls"}
+            ]));
             assert!(resp.status().is_success());
         }
 
@@ -124,7 +133,45 @@ mod test {
 
         {
             let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1/history").unwrap();
-            assert_eq!(resp.text().unwrap(), r#"[{"feat":{"action":"delete","geometry":null,"id":1,"message":"Delete a Point","properties":{},"type":"Feature","version":2},"id":3,"uid":1,"username":"ingalls"},{"feat":{"action":"modify","geometry":{"coordinates":[1.0,1.0],"type":"Point"},"id":1,"message":"Modify a Point","properties":{"number":"123","test":true},"type":"Feature","version":1},"id":2,"uid":1,"username":"ingalls"},{"feat":{"action":"create","geometry":{"coordinates":[0.0,0.0],"type":"Point"},"id":1,"message":"Creating a Point","properties":{"number":"123"},"type":"Feature"},"id":1,"uid":1,"username":"ingalls"}]"#);
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body, json!([
+                {"feat":{"action":"delete","geometry":null,"id":1,"key":null,"properties":null,"type":"Feature","version":3},"id":3,"uid":1,"username":"ingalls"},
+                {"feat":{"action":"modify","geometry":{"coordinates":[1,1],"type":"Point"},"id":1,"key":null,"properties":{"number":"123","test":true},"type":"Feature","version":2},"id":2,"uid":1,"username":"ingalls"},
+                {"feat":{"action":"create","geometry":{"coordinates":[0,0],"type":"Point"},"id":1,"key":null,"properties":{"number":"123"},"type":"Feature","version":1},"id":1,"uid":1,"username":"ingalls"}
+            ]));
+            assert!(resp.status().is_success());
+        }
+
+        { //Restore Point
+            let client = reqwest::Client::new();
+            let mut resp = client.post("http://localhost:8000/api/data/feature")
+                .body(r#"{
+                    "id": 1,
+                    "type": "Feature",
+                    "version": 3,
+                    "action": "restore",
+                    "message": "Restore previously deleted point",
+                    "properties": { "number": "123" },
+                    "geometry": { "type": "Point", "coordinates": [ 1, 1 ] }
+                }"#)
+                .basic_auth("ingalls", Some("yeahehyeah"))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
+                .unwrap();
+
+            assert_eq!(resp.text().unwrap(), "true");
+            assert!(resp.status().is_success());
+        }
+
+        {
+            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1/history").unwrap();
+            let json_body: serde_json::value::Value = resp.json().unwrap();
+            assert_eq!(json_body, json!([
+                {"feat":{"action":"restore","geometry":{"coordinates":[1,1],"type":"Point"},"id":1,"key":null,"properties":{"number":"123"},"type":"Feature","version":4},"id":4,"uid":1,"username":"ingalls"},
+                {"feat":{"action":"delete","geometry":null,"id":1,"key":null,"properties":null,"type":"Feature","version":3},"id":3,"uid":1,"username":"ingalls"},
+                {"feat":{"action":"modify","geometry":{"coordinates":[1,1],"type":"Point"},"id":1,"key":null,"properties":{"number":"123","test":true},"type":"Feature","version":2},"id":2,"uid":1,"username":"ingalls"},
+                {"feat":{"action":"create","geometry":{"coordinates":[0,0],"type":"Point"},"id":1,"key":null,"properties":{"number":"123"},"type":"Feature","version":1},"id":1,"uid":1,"username":"ingalls"}
+            ]));
             assert!(resp.status().is_success());
         }
 

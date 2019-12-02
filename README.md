@@ -81,7 +81,7 @@ curl https://sh.rustup.rs -sSf | sh
 
 - Hecate is designed to run on the latest stable version of Rust, but has been thoroughly tested with `1.38.0`. This will install `1.38.0`
 
-```bash 
+```bash
 curl https://sh.rustup.rs -sSf | sh -s --  --default-toolchain 1.38.0
 ```
 
@@ -1432,7 +1432,7 @@ curl -X GET 'http://localhost:8000/api/data/feature/1542/history'
 
 Return streaming Line-Delimited GeoJSON within the provided BBOX or Point
 
-Note: All streaming GeoJSON endpoints will send the Unitcode End Of Transmission, EOT
+Note: All streaming GeoJSON endpoints will send the Unicode End Of Transmission, EOT
 (`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
 
 
@@ -1451,6 +1451,31 @@ curl -X GET 'http://localhost:8000/api/data/features/?bbox=-122.51791%2C37.60447
 
 ```bash
 curl -X GET 'http://localhost:8000/api/data/features/?point=-95.2734375%2C36.03133177633187'
+```
+
+#### `GET` `/api/data/features/history`
+
+Return streaming Line-Delimited GeoJSON of all versions of features that fall within the provided BBOX or Point. This includes the current version of the feature. Features in `delete` state will not be included as their geometries are not recorded.
+
+Note: All streaming GeoJSON endpoints will send the Unicode End Of Transmission, EOT
+(`0x04`) on stream completion. This can be used to ensure that a stream did not exit early.
+
+
+*Options*
+
+| Option | Notes |
+| :----: | ----- |
+| `bbox=<minX,minY,maxX,maxY>` | `Optional` Bounding Box in format `left,bottom,right,top` |
+| `point=<Lng,Lat>` | `Optional` Point to query for intersections |
+
+*Example*
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/features/history?bbox=-122.51791%2C37.60447%2C-122.35499%2C37.83244'
+```
+
+```bash
+curl -X GET 'http://localhost:8000/api/data/features/history?point=-95.2734375%2C36.03133177633187'
 ```
 
 </details>
