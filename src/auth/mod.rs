@@ -10,8 +10,14 @@ pub use config::CustomAuth;
 pub use config::RW;
 use crate::user::token::Scope;
 
+///
+/// The server's default auth stragegy for all endpoints
+///
+/// Setting to User/Admin will enable auth for all UI/API
+/// endpoints, regardless of indivudual auth settings
+///
 #[derive(Debug, PartialEq, Clone)]
-pub enum AuthDefault {
+pub enum ServerAuthDefault {
     Public,
     User,
     Admin

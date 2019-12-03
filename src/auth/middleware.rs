@@ -4,16 +4,16 @@ use futures::future::{ok, FutureResult, Either};
 use futures::Poll;
 use crate::db::DbReplica;
 use crate::user::token::Scope;
-use super::{Auth, AuthDefault, AuthAccess};
+use super::{Auth, ServerAuthDefault, AuthAccess};
 
 #[derive(Clone)]
 pub struct EnforceAuth {
     db: DbReplica,
-    auth: super::AuthDefault
+    auth: super::ServerAuthDefault
 }
 
 impl EnforceAuth {
-    pub fn new(db: DbReplica, auth: super::AuthDefault) -> EnforceAuth {
+    pub fn new(db: DbReplica, auth: super::ServerAuthDefault) -> EnforceAuth {
         EnforceAuth {
             db: db,
             auth: auth
@@ -45,7 +45,7 @@ where
 pub struct EnforceAuthMiddleware<S> {
     service: S,
     db: DbReplica,
-    auth: super::AuthDefault
+    auth: super::ServerAuthDefault
 }
 
 impl<S, B> Service for EnforceAuthMiddleware<S>
@@ -130,8 +130,18 @@ where
             Ok(auth) => auth
         };
 
+        // Disabled accounts should always 401
+        if auth.access == AuthAccess::Disabled {
+            return Either::B(ok(req.into_response(
+                HttpResponse::Unauthorized()
+                    .finish()
+                    .into_body(),
+            )));
+        }
+
+
         // If no default auth is set - allow all api endpoints
-        if self.auth == AuthDefault::Public {
+        if self.auth == ServerAuthDefault::Public {
             auth.scope = Scope::Full;
             auth.as_headers(&mut req);
             return Either::A(self.service.call(req));
@@ -145,7 +155,7 @@ where
 
         if
             auth.uid.is_none()
-            || self.auth == AuthDefault::Admin && auth.access == AuthAccess::Admin
+            || self.auth == ServerAuthDefault::Admin && auth.access == AuthAccess::Admin
         {
             if path.len() >= 1 && path[0] == String::from("admin") {
                 // UI Results should redirect to an unauthenticated login portal

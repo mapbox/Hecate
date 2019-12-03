@@ -78,14 +78,14 @@ pub fn start(
     env_logger::init();
 
     let default = match auth_rules.0.default {
-        None => auth::AuthDefault::Public,
+        None => auth::ServerAuthDefault::Public,
         Some(ref default) => {
             if default == &String::from("public") {
-                auth::AuthDefault::Public
+                auth::ServerAuthDefault::Public
             } else if default == &String::from("user") {
-                auth::AuthDefault::User
+                auth::ServerAuthDefault::User
             } else if default == &String::from("admin") {
-                auth::AuthDefault::Admin
+                auth::ServerAuthDefault::Admin
             } else {
                 panic!("Invalid 'domain' value in custom auth");
             }
