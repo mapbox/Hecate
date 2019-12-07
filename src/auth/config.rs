@@ -75,26 +75,23 @@ pub trait ValidAuth {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthWebhooks {
-    pub list: Option<String>,
-    pub delete: Option<String>,
-    pub update: Option<String>
+    pub get: String,
+    pub set: String
 }
 
 impl AuthWebhooks {
     fn new() -> Self {
         AuthWebhooks {
-            list: Some(String::from("admin")),
-            delete: Some(String::from("admin")),
-            update: Some(String::from("admin"))
+            get: String::from("admin"),
+            set: String::from("admin")
         }
     }
 }
 
 impl ValidAuth for AuthWebhooks {
     fn is_valid(&self) -> Result<bool, String> {
-        is_auth("webhooks::list", &self.list)?;
-        is_auth("webhooks::delete", &self.delete)?;
-        is_auth("webhooks::update", &self.update)?;
+        is_auth("webhooks::get", &Some(self.get.clone()))?;
+        is_auth("webhooks::set", &Some(self.set.clone()))?;
 
         Ok(true)
     }
@@ -102,26 +99,23 @@ impl ValidAuth for AuthWebhooks {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthMeta {
-    pub get: Option<String>,
-    pub list: Option<String>,
-    pub set: Option<String>
+    pub get: String,
+    pub set: String
 }
 
 impl AuthMeta {
     fn new() -> Self {
         AuthMeta {
-            get: Some(String::from("public")),
-            list: Some(String::from("public")),
-            set: Some(String::from("admin"))
+            get: String::from("public"),
+            set: String::from("admin")
         }
     }
 }
 
 impl ValidAuth for AuthMeta {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("meta::get", &self.get)?;
-        is_all("meta::list", &self.list)?;
-        is_auth("meta::set", &self.set)?;
+        is_all("meta::get", &Some(self.get.clone()))?;
+        is_auth("meta::set", &Some(self.set.clone()))?;
 
         Ok(true)
     }
@@ -428,9 +422,9 @@ impl ValidAuth for AuthOSM {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct CustomAuth {
     pub default: Option<String>,
-    pub server: Option<String>,
-    pub meta: Option<AuthMeta>,
-    pub webhooks: Option<AuthWebhooks>,
+    pub server: String,
+    pub meta: AuthMeta,
+    pub webhooks: AuthWebhooks,
     pub stats: Option<AuthStats>,
     pub mvt: Option<AuthMVT>,
     pub schema: Option<AuthSchema>,
@@ -446,12 +440,9 @@ pub struct CustomAuth {
 
 impl ValidAuth for CustomAuth {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("server", &self.server)?;
+        is_all("server", &Some(self.server.clone()))?;
 
-        match &self.meta {
-            None => (),
-            Some(ref meta) => { meta.is_valid()?; }
-        };
+        &self.meta.is_valid()?;
 
         match &self.mvt {
             None => (),
@@ -502,12 +493,12 @@ impl ValidAuth for CustomAuth {
     }
 }
 
-fn rw_met(rw: RW, auth: &Auth) -> Result<bool, HecateError> {
+pub fn rw_met(rw: RW, auth: &Auth) -> Result<(), HecateError> {
     if rw == RW::Full && auth.scope == RW::Read {
         return Err(not_authed());
     }
 
-    return Ok(true);
+    return Ok(());
 }
 
 ///
@@ -555,9 +546,9 @@ impl CustomAuth {
     pub fn new() -> Self {
         CustomAuth {
             default: Some(String::from("public")),
-            server: Some(String::from("public")),
-            webhooks: Some(AuthWebhooks::new()),
-            meta: Some(AuthMeta::new()),
+            server: String::from("public"),
+            webhooks: AuthWebhooks::new(),
+            meta: AuthMeta::new(),
             stats: Some(AuthStats::new()),
             schema: Some(AuthSchema::new()),
             auth: Some(AuthAuth::new()),
@@ -581,66 +572,6 @@ impl CustomAuth {
 
     pub fn is_admin(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         auth_met(&Some(String::from("admin")), auth)
-    }
-
-    pub fn allows_server(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        auth_met(&self.server, auth)
-    }
-
-    pub fn allows_webhooks_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.webhooks {
-            None => Err(not_authed()),
-            Some(webhooks) => auth_met(&webhooks.list, auth)
-        }
-    }
-
-    pub fn allows_webhooks_delete(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.webhooks {
-            None => Err(not_authed()),
-            Some(webhooks) => auth_met(&webhooks.delete, auth)
-        }
-    }
-
-    pub fn allows_webhooks_update(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.webhooks {
-            None => Err(not_authed()),
-            Some(webhooks) => auth_met(&webhooks.update, auth)
-        }
-    }
-
-    pub fn allows_meta_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.meta {
-            None => Err(not_authed()),
-            Some(meta) => auth_met(&meta.get, auth)
-        }
-    }
-
-    pub fn allows_meta_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.meta {
-            None => Err(not_authed()),
-            Some(meta) => auth_met(&meta.list, auth)
-        }
-    }
-
-    pub fn allows_meta_set(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.meta {
-            None => Err(not_authed()),
-            Some(meta) => auth_met(&meta.set, auth)
-        }
     }
 
     pub fn allows_stats_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {

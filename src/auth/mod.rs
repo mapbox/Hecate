@@ -26,6 +26,42 @@ pub struct Auth {
     pub scope: Scope
 }
 
+pub fn check(rule: &String, rw: config::RW, auth: &Auth) -> Result<(), HecateError> {
+    config::rw_met(rw, &auth)?;
+
+    match rule.as_ref() {
+        "public" => Ok(()),
+        "admin" => {
+            if auth.uid.is_none() || auth.access.is_none() {
+                return Err(config::not_authed());
+            } else if auth.access == Some(String::from("admin")) {
+                return Ok(());
+            } else {
+                return Err(config::not_authed());
+            }
+        },
+        "user" => {
+            if auth.uid.is_some() {
+                return Ok(());
+            } else {
+                return Err(config::not_authed());
+            }
+        },
+        "self" => {
+            //Note: This ensures the user is validated,
+            //it is up to the parent caller to ensure
+            //the UID of 'self' matches the requested resource
+
+            if auth.uid.is_some() {
+                return Ok(());
+            } else {
+                return Err(config::not_authed());
+            }
+        },
+        _ => Err(config::not_authed())
+    }
+}
+
 impl Auth {
     pub fn new() -> Self {
         Auth {

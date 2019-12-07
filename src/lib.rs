@@ -344,10 +344,10 @@ struct FeatureQuery {
 fn index() -> &'static str { "Hello World!" }
 
 fn server(
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_server(&mut auth, auth::RW::Read)?;
+    auth::check(&auth_rules.0.server, auth::RW::Read, &auth)?;
 
     Ok(Json(json!({
         "version": VERSION,
@@ -361,11 +361,11 @@ fn server(
 
 fn meta_list(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
-        auth_rules.0.allows_meta_list(&mut auth, auth::RW::Read)?;
+        auth::check(&auth_rules.0.meta.get, auth::RW::Read, &auth)?;
 
         Ok(serde_json::to_value(meta::list(&*conn.get()?)?).unwrap())
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
@@ -377,13 +377,13 @@ fn meta_list(
 
 fn meta_get(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
-        auth_rules.0.allows_meta_get(&mut auth, auth::RW::Read)?;
+        auth::check(&auth_rules.0.meta.get, auth::RW::Read, &auth)?;
 
         worker.queue(worker::Task::new(worker::TaskType::Meta));
 
@@ -397,13 +397,13 @@ fn meta_get(
 
 fn meta_delete(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     key: web::Path<String>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
-        auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
+        auth::check(&auth_rules.0.meta.set, auth::RW::Full, &auth)?;
 
         worker.queue(worker::Task::new(worker::TaskType::Meta));
 
@@ -416,14 +416,14 @@ fn meta_delete(
 
 fn meta_set(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     worker: web::Data<worker::Worker>,
     value: Json<serde_json::Value>,
     key: web::Path<String>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
-        auth_rules.0.allows_meta_set(&mut auth, auth::RW::Full)?;
+        auth::check(&auth_rules.0.meta.set, auth::RW::Full, &auth)?;
 
         worker.queue(worker::Task::new(worker::TaskType::Meta));
 
@@ -1091,10 +1091,10 @@ fn bounds_delete(
 
 fn webhooks_list(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_webhooks_list(&mut auth, auth::RW::Read)?;
+    auth::check(&auth_rules.0.webhooks.get, auth::RW::Read, &auth)?;
 
     let hooks = webhooks::list(&*conn.get()?, webhooks::Action::All)?;
     let values: Vec<serde_json::Value> = hooks.into_iter().map(|h| h.to_value()).collect();
@@ -1103,11 +1103,11 @@ fn webhooks_list(
 
 fn webhooks_get(
     conn: web::Data<DbReplica>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_webhooks_list(&mut auth, auth::RW::Read)?;
+    auth::check(&auth_rules.0.webhooks.get, auth::RW::Read, &auth)?;
 
     let hook = webhooks::get(&*conn.get()?, id.into_inner())?.to_value();
     Ok(Json(hook))
@@ -1115,22 +1115,22 @@ fn webhooks_get(
 
 fn webhooks_delete(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     id: web::Path<i64>
 ) -> Result<Json<bool>, HecateError> {
-    auth_rules.0.allows_webhooks_delete(&mut auth, auth::RW::Full)?;
+    auth::check(&auth_rules.0.webhooks.set, auth::RW::Full, &auth)?;
 
     Ok(Json(webhooks::delete(&*conn.get()?, id.into_inner())?))
 }
 
 fn webhooks_create(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     webhook: Json<webhooks::WebHook>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_webhooks_update(&mut auth, auth::RW::Full)?;
+    auth::check(&auth_rules.0.webhooks.set, auth::RW::Full, &auth)?;
 
     match serde_json::to_value(webhooks::create(&*conn.get()?, webhook.into_inner())?) {
         Ok(webhook) => Ok(Json(webhook)),
@@ -1140,12 +1140,12 @@ fn webhooks_create(
 
 fn webhooks_update(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     mut webhook: Json<webhooks::WebHook>,
     id: web::Path<i64>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_webhooks_update(&mut auth, auth::RW::Full)?;
+    auth::check(&auth_rules.0.webhooks.set, auth::RW::Full, &auth)?;
 
     webhook.id = Some(id.into_inner());
 
