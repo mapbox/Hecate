@@ -123,23 +123,23 @@ impl ValidAuth for AuthMeta {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthClone {
-    pub get: Option<String>,
-    pub query: Option<String>
+    pub get: String,
+    pub query: String
 }
 
 impl AuthClone {
     fn new() -> Self {
         AuthClone {
-            get: Some(String::from("user")),
-            query: Some(String::from("user"))
+            get: String::from("user"),
+            query: String::from("user")
         }
     }
 }
 
 impl ValidAuth for AuthClone {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("clone::get", &self.get)?;
-        is_all("clone::query", &self.query)?;
+        is_all("clone::get", &Some(self.get.clone()))?;
+        is_all("clone::query", &Some(self.query.clone()))?;
 
         Ok(true)
     }
@@ -147,20 +147,20 @@ impl ValidAuth for AuthClone {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthSchema {
-    pub get: Option<String>
+    pub get: String
 }
 
 impl AuthSchema {
     fn new() -> Self {
         AuthSchema {
-            get: Some(String::from("public"))
+            get: String::from("public")
         }
     }
 }
 
 impl ValidAuth for AuthSchema {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("schema::get", &self.get)?;
+        is_all("schema::get", &Some(self.get.clone()))?;
 
         Ok(true)
     }
@@ -168,23 +168,20 @@ impl ValidAuth for AuthSchema {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthStats {
-    pub get: Option<String>,
-    pub bounds: Option<String>
+    pub get: String
 }
 
 impl AuthStats {
     fn new() -> Self {
         AuthStats {
-            get: Some(String::from("public")),
-            bounds: Some(String::from("public"))
+            get: String::from("public"),
         }
     }
 }
 
 impl ValidAuth for AuthStats {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("stats::get", &self.get)?;
-        is_all("stats::bounds", &self.bounds)?;
+        is_all("stats::get", &Some(self.get.clone()))?;
 
         Ok(true)
     }
@@ -192,20 +189,20 @@ impl ValidAuth for AuthStats {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthAuth {
-    pub get: Option<String>
+    pub get: String
 }
 
 impl AuthAuth {
     fn new() -> Self {
         AuthAuth {
-            get: Some(String::from("public"))
+            get: String::from("public")
         }
     }
 }
 
 impl ValidAuth for AuthAuth {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("auth::get", &self.get)?;
+        is_all("auth::get", &Some(self.get.clone()))?;
 
         Ok(true)
     }
@@ -213,29 +210,29 @@ impl ValidAuth for AuthAuth {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthMVT {
-    pub get: Option<String>,
-    pub delete: Option<String>,
-    pub regen: Option<String>,
-    pub meta: Option<String>
+    pub get: String,
+    pub delete: String,
+    pub regen: String,
+    pub meta: String
 }
 
 impl AuthMVT {
     fn new() -> Self {
         AuthMVT {
-            get: Some(String::from("public")),
-            delete: Some(String::from("admin")),
-            regen: Some(String::from("user")),
-            meta: Some(String::from("public"))
+            get: String::from("public"),
+            delete: String::from("admin"),
+            regen: String::from("user"),
+            meta: String::from("public")
         }
     }
 }
 
 impl ValidAuth for AuthMVT {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("mvt::get", &self.get)?;
-        is_all("mvt::regen", &self.regen)?;
-        is_all("mvt::delete", &self.regen)?;
-        is_all("mvt::meta", &self.meta)?;
+        is_all("mvt::get", &Some(self.get.clone()))?;
+        is_all("mvt::regen", &Some(self.regen.clone()))?;
+        is_all("mvt::delete", &Some(self.regen.clone()))?;
+        is_all("mvt::meta", &Some(self.meta.clone()))?;
 
         Ok(true)
     }
@@ -425,16 +422,16 @@ pub struct CustomAuth {
     pub server: String,
     pub meta: AuthMeta,
     pub webhooks: AuthWebhooks,
-    pub stats: Option<AuthStats>,
-    pub mvt: Option<AuthMVT>,
-    pub schema: Option<AuthSchema>,
-    pub auth: Option<AuthAuth>,
+    pub stats: AuthStats,
+    pub mvt: AuthMVT,
+    pub schema: AuthSchema,
+    pub auth: AuthAuth,
     pub user: Option<AuthUser>,
     pub feature: Option<AuthFeature>,
     pub style: Option<AuthStyle>,
     pub delta: Option<AuthDelta>,
     pub bounds: Option<AuthBounds>,
-    pub clone: Option<AuthClone>,
+    pub clone: AuthClone,
     pub osm: Option<AuthOSM>
 }
 
@@ -443,16 +440,10 @@ impl ValidAuth for CustomAuth {
         is_all("server", &Some(self.server.clone()))?;
 
         &self.meta.is_valid()?;
-
-        match &self.mvt {
-            None => (),
-            Some(ref mvt) => { mvt.is_valid()?; }
-        };
-
-        match &self.schema {
-            None => (),
-            Some(ref schema) => { schema.is_valid()?; }
-        };
+        &self.mvt.is_valid()?;
+        &self.stats.is_valid()?;
+        &self.clone.is_valid()?;
+        &self.schema.is_valid()?;
 
         match &self.user {
             None => (),
@@ -477,11 +468,6 @@ impl ValidAuth for CustomAuth {
         match &self.bounds {
             None => (),
             Some(ref bounds) => { bounds.is_valid()?; }
-        };
-
-        match &self.clone {
-            None => (),
-            Some(ref clone) => { clone.is_valid()?; }
         };
 
         match &self.osm {
@@ -549,16 +535,16 @@ impl CustomAuth {
             server: String::from("public"),
             webhooks: AuthWebhooks::new(),
             meta: AuthMeta::new(),
-            stats: Some(AuthStats::new()),
-            schema: Some(AuthSchema::new()),
-            auth: Some(AuthAuth::new()),
-            mvt: Some(AuthMVT::new()),
+            stats: AuthStats::new(),
+            schema: AuthSchema::new(),
+            auth: AuthAuth::new(),
+            mvt: AuthMVT::new(),
             user: Some(AuthUser::new()),
             feature: Some(AuthFeature::new()),
             style: Some(AuthStyle::new()),
             delta: Some(AuthDelta::new()),
             bounds: Some(AuthBounds::new()),
-            clone: Some(AuthClone::new()),
+            clone: AuthClone::new(),
             osm: Some(AuthOSM::new())
         }
     }
@@ -572,60 +558,6 @@ impl CustomAuth {
 
     pub fn is_admin(&self, auth: &mut Auth) -> Result<bool, HecateError> {
         auth_met(&Some(String::from("admin")), auth)
-    }
-
-    pub fn allows_stats_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.stats {
-            None => Err(not_authed()),
-            Some(stats) => auth_met(&stats.get, auth)
-        }
-    }
-
-    pub fn allows_stats_bounds(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.stats {
-            None => Err(not_authed()),
-            Some(stats) => auth_met(&stats.bounds, auth)
-        }
-    }
-
-    pub fn allows_mvt_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.mvt {
-            None => Err(not_authed()),
-            Some(mvt) => auth_met(&mvt.get, auth)
-        }
-    }
-
-    pub fn allows_mvt_delete(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.mvt {
-            None => Err(not_authed()),
-            Some(mvt) => auth_met(&mvt.delete, auth)
-        }
-    }
-
-    pub fn allows_mvt_regen(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.mvt {
-            None => Err(not_authed()),
-            Some(mvt) => auth_met(&mvt.regen, auth)
-        }
-    }
-
-    pub fn allows_mvt_meta(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.mvt {
-            None => Err(not_authed()),
-            Some(mvt) => auth_met(&mvt.meta, auth)
-        }
     }
 
     pub fn allows_user_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
@@ -745,24 +677,6 @@ impl CustomAuth {
         }
     }
 
-    pub fn allows_clone_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.clone {
-            None => Err(not_authed()),
-            Some(clone) => auth_met(&clone.get, auth)
-        }
-    }
-
-    pub fn allows_clone_query(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.clone {
-            None => Err(not_authed()),
-            Some(clone) => auth_met(&clone.query, auth)
-        }
-    }
-
     pub fn allows_bounds_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
         rw_met(rw, &auth)?;
 
@@ -832,24 +746,6 @@ impl CustomAuth {
         match &self.feature {
             None => Err(not_authed()),
             Some(feature) => auth_met(&feature.history, auth)
-        }
-    }
-
-    pub fn allows_schema_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.schema {
-            None => Err(not_authed()),
-            Some(schema) => auth_met(&schema.get, auth)
-        }
-    }
-
-    pub fn allows_auth_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.auth {
-            None => Err(not_authed()),
-            Some(a) => auth_met(&a.get, auth)
         }
     }
 

@@ -445,11 +445,11 @@ fn mvt_get(
     path: web::Path<(u8, u32, u32)>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
+        auth::check(&auth_rules.0.mvt.get, auth::RW::Read, &auth)?;
+
         let z = path.0;
         let x = path.1;
         let y = path.2;
-
-        auth_rules.0.allows_mvt_get(&mut auth, auth::RW::Read)?;
 
         if z > 17 { return Err(HecateError::new(404, String::from("Tile Not Found"), None)); }
 
@@ -473,7 +473,7 @@ fn mvt_meta(
     path: web::Path<(u8, u32, u32)>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
-        auth_rules.0.allows_mvt_meta(&mut auth, auth::RW::Read)?;
+        auth::check(&auth_rules.0.mvt.meta, auth::RW::Read, &auth)?;
 
         let z = path.0;
         let x = path.1;
@@ -494,7 +494,7 @@ fn mvt_wipe(
     auth_rules: web::Data<auth::AuthContainer>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
-        auth_rules.0.allows_mvt_delete(&mut auth, auth::RW::Full)?;
+        auth::check(&auth_rules.0.mvt.delete, auth::RW::Full, &auth)?;
 
         Ok(mvt::wipe(&*conn.get()?)?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
@@ -511,7 +511,7 @@ fn mvt_regen(
     path: web::Path<(u8, u32, u32)>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
-        auth_rules.0.allows_mvt_regen(&mut auth, auth::RW::Full)?;
+        auth::check(&auth_rules.0.mvt.regen, auth::RW::Full, &auth)?;
 
         let z = path.0;
         let x = path.1;
@@ -1160,7 +1160,7 @@ fn bounds_stats(
     bound: web::Path<String>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
-        auth_rules.0.allows_stats_bounds(&mut auth, auth::RW::Read)?;
+        auth::check(&auth_rules.0.stats.get, auth::RW::Read, &auth)?;
 
         Ok(bounds::stats_json(&*conn.get()?, bound.into_inner())?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
@@ -1191,7 +1191,7 @@ fn clone_query(
     auth_rules: web::Data<auth::AuthContainer>,
     cquery: web::Query<CloneQuery>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_clone_query(&mut auth, auth::RW::Read)?;
+    auth::check(&auth_rules.0.clone.query, auth::RW::Read, &auth)?;
 
     let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
     Ok(resp.streaming(clone::query(sandbox_conn.get()?, &cquery.query, &cquery.limit)?))
@@ -1202,7 +1202,7 @@ fn clone_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<HttpResponse, HecateError> {
-    auth_rules.0.allows_clone_get(&mut auth, auth::RW::Read)?;
+    auth::check(&auth_rules.0.clone.get, auth::RW::Read, &auth)?;
 
     let mut resp = HttpResponse::build(actix_web::http::StatusCode::OK);
     Ok(resp.streaming(clone::get(conn.get()?)?))
@@ -1259,7 +1259,7 @@ fn schema_get(
     auth_rules: web::Data<auth::AuthContainer>,
     schema: web::Data<Option<serde_json::value::Value>>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_schema_get(&mut auth, auth::RW::Read)?;
+    auth::check(&auth_rules.0.schema.get, auth::RW::Read, &auth)?;
 
     match schema.get_ref() {
         Some(s) => Ok(Json(json!(s))),
@@ -1271,7 +1271,7 @@ fn auth_get(
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth_rules.0.allows_auth_get(&mut auth, auth::RW::Read)?;
+    auth::check(&auth_rules.0.auth.get, auth::RW::Read, &auth)?;
 
     Ok(Json(auth_rules.0.to_json()))
 }
@@ -1282,7 +1282,7 @@ fn stats_get(
     auth_rules: web::Data<auth::AuthContainer>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
-        auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
+        auth::check(&auth_rules.0.stats.get, auth::RW::Read, &auth)?;
 
         Ok(stats::get_json(&*conn.get()?)?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
@@ -1297,7 +1297,7 @@ fn stats_regen(
     auth_rules: web::Data<auth::AuthContainer>
 ) -> impl Future<Item = HttpResponse, Error = HecateError> {
     web::block(move || {
-        auth_rules.0.allows_stats_get(&mut auth, auth::RW::Read)?;
+        auth::check(&auth_rules.0.stats.get, auth::RW::Read, &auth)?;
 
         Ok(json!(stats::regen(&*conn.get()?)?))
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
