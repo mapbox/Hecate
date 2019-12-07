@@ -15,17 +15,12 @@ pub struct AuthContainer(pub CustomAuth);
 /// This category makes up the majority of endpoints in hecate and is the most
 /// flexible
 ///
-fn is_all(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
-    match scope {
-        &None => Ok(true),
-        &Some(ref scope_str) => {
-            match scope_str as &str {
-                "public" => Ok(true),
-                "admin" => Ok(true),
-                "user" => Ok(true),
-                _ => Err(format!("Auth Config Error: '{}' must be one of 'public', 'admin', 'user', or null", scope_type)),
-            }
-        }
+fn is_all(scope_type: &str, scope: &String) -> Result<bool, String> {
+    match scope.as_ref() {
+        "public" => Ok(true),
+        "admin" => Ok(true),
+        "user" => Ok(true),
+        _ => Err(format!("Auth Config Error: '{}' must be one of 'public', 'admin', 'user', or null", scope_type)),
     }
 }
 
@@ -36,16 +31,11 @@ fn is_all(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
 /// not only must the user be logged in but the user can only update their own
 /// data
 ///
-fn is_self(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
-    match scope {
-        &None => Ok(true),
-        &Some(ref scope_str) => {
-            match scope_str as &str {
-                "self" => Ok(true),
-                "admin" => Ok(true),
-                _ => Err(format!("Auth Config Error: '{}' must be one of 'self', 'admin', or null", scope_type)),
-            }
-        }
+fn is_self(scope_type: &str, scope: &String) -> Result<bool, String> {
+    match scope.as_ref() {
+        "self" => Ok(true),
+        "admin" => Ok(true),
+        _ => Err(format!("Auth Config Error: '{}' must be one of 'self', 'admin', or null", scope_type)),
     }
 }
 
@@ -56,16 +46,11 @@ fn is_self(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
 /// logged in but can make changes to any feature, including features created
 /// by another user
 ///
-fn is_auth(scope_type: &str, scope: &Option<String>) -> Result<bool, String> {
-    match scope {
-        &None => Ok(true),
-        &Some(ref scope_str) => {
-            match scope_str as &str {
-                "user" => Ok(true),
-                "admin" => Ok(true),
-                _ => Err(format!("Auth Config Error: '{}' must be one of 'user', 'admin', or null", scope_type)),
-            }
-        }
+fn is_auth(scope_type: &str, scope: &String) -> Result<bool, String> {
+    match scope.as_ref() {
+        "user" => Ok(true),
+        "admin" => Ok(true),
+        _ => Err(format!("Auth Config Error: '{}' must be one of 'user', 'admin', or null", scope_type)),
     }
 }
 
@@ -90,8 +75,8 @@ impl AuthWebhooks {
 
 impl ValidAuth for AuthWebhooks {
     fn is_valid(&self) -> Result<bool, String> {
-        is_auth("webhooks::get", &Some(self.get.clone()))?;
-        is_auth("webhooks::set", &Some(self.set.clone()))?;
+        is_auth("webhooks::get", &self.get)?;
+        is_auth("webhooks::set", &self.set)?;
 
         Ok(true)
     }
@@ -114,8 +99,8 @@ impl AuthMeta {
 
 impl ValidAuth for AuthMeta {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("meta::get", &Some(self.get.clone()))?;
-        is_auth("meta::set", &Some(self.set.clone()))?;
+        is_all("meta::get", &self.get)?;
+        is_auth("meta::set", &self.set)?;
 
         Ok(true)
     }
@@ -138,8 +123,8 @@ impl AuthClone {
 
 impl ValidAuth for AuthClone {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("clone::get", &Some(self.get.clone()))?;
-        is_all("clone::query", &Some(self.query.clone()))?;
+        is_all("clone::get", &self.get)?;
+        is_all("clone::query", &self.query)?;
 
         Ok(true)
     }
@@ -160,7 +145,7 @@ impl AuthSchema {
 
 impl ValidAuth for AuthSchema {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("schema::get", &Some(self.get.clone()))?;
+        is_all("schema::get", &self.get)?;
 
         Ok(true)
     }
@@ -181,7 +166,7 @@ impl AuthStats {
 
 impl ValidAuth for AuthStats {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("stats::get", &Some(self.get.clone()))?;
+        is_all("stats::get", &self.get)?;
 
         Ok(true)
     }
@@ -202,7 +187,7 @@ impl AuthAuth {
 
 impl ValidAuth for AuthAuth {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("auth::get", &Some(self.get.clone()))?;
+        is_all("auth::get", &self.get)?;
 
         Ok(true)
     }
@@ -229,10 +214,10 @@ impl AuthMVT {
 
 impl ValidAuth for AuthMVT {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("mvt::get", &Some(self.get.clone()))?;
-        is_all("mvt::regen", &Some(self.regen.clone()))?;
-        is_all("mvt::delete", &Some(self.regen.clone()))?;
-        is_all("mvt::meta", &Some(self.meta.clone()))?;
+        is_all("mvt::get", &self.get)?;
+        is_all("mvt::regen", &self.regen)?;
+        is_all("mvt::delete", &self.regen)?;
+        is_all("mvt::meta", &self.meta)?;
 
         Ok(true)
     }
@@ -240,19 +225,19 @@ impl ValidAuth for AuthMVT {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthUser {
-    pub info: Option<String>,
-    pub list: Option<String>,
-    pub create: Option<String>,
-    pub create_session: Option<String>
+    pub info: String,
+    pub list: String,
+    pub create: String,
+    pub create_session: String
 }
 
 impl AuthUser {
     fn new() -> Self {
         AuthUser {
-            info: Some(String::from("self")),
-            list: Some(String::from("user")),
-            create: Some(String::from("public")),
-            create_session: Some(String::from("self"))
+            info: String::from("self"),
+            list: String::from("user"),
+            create: String::from("public"),
+            create_session: String::from("self")
         }
     }
 }
@@ -271,25 +256,25 @@ impl ValidAuth for AuthUser {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthStyle {
-    pub create: Option<String>,
-    pub patch: Option<String>,
-    pub set_public: Option<String>,
-    pub set_private: Option<String>,
-    pub delete: Option<String>,
-    pub get: Option<String>,
-    pub list: Option<String>
+    pub create: String,
+    pub patch: String,
+    pub set_public: String,
+    pub set_private: String,
+    pub delete: String,
+    pub get: String,
+    pub list: String
 }
 
 impl AuthStyle {
     fn new() -> Self {
         AuthStyle {
-            create: Some(String::from("self")),
-            patch: Some(String::from("self")),
-            set_public: Some(String::from("self")),
-            set_private: Some(String::from("self")),
-            delete: Some(String::from("self")),
-            get: Some(String::from("public")),
-            list: Some(String::from("public"))
+            create: String::from("self"),
+            patch: String::from("self"),
+            set_public: String::from("self"),
+            set_private: String::from("self"),
+            delete: String::from("self"),
+            get: String::from("public"),
+            list: String::from("public")
         }
     }
 }
@@ -310,15 +295,15 @@ impl ValidAuth for AuthStyle {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthDelta {
-    pub get: Option<String>,
-    pub list: Option<String>,
+    pub get: String,
+    pub list: String,
 }
 
 impl AuthDelta {
     fn new() -> Self {
         AuthDelta {
-            get: Some(String::from("public")),
-            list: Some(String::from("public"))
+            get: String::from("public"),
+            list: String::from("public")
         }
     }
 }
@@ -334,19 +319,19 @@ impl ValidAuth for AuthDelta {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthFeature {
-    pub force: Option<String>,
-    pub create: Option<String>,
-    pub get: Option<String>,
-    pub history: Option<String>
+    pub force: String,
+    pub create: String,
+    pub get: String,
+    pub history: String
 }
 
 impl AuthFeature {
     fn new() -> Self {
         AuthFeature {
-            force: Some(String::from("none")),
-            create: Some(String::from("user")),
-            get: Some(String::from("public")),
-            history: Some(String::from("public"))
+            force: String::from("none"),
+            create: String::from("user"),
+            get: String::from("public"),
+            history: String::from("public")
         }
     }
 }
@@ -364,19 +349,19 @@ impl ValidAuth for AuthFeature {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthBounds {
-    pub list: Option<String>,
-    pub create: Option<String>,
-    pub delete: Option<String>,
-    pub get: Option<String>
+    pub list: String,
+    pub create: String,
+    pub delete: String,
+    pub get: String
 }
 
 impl AuthBounds {
     fn new() -> Self {
         AuthBounds {
-            list: Some(String::from("public")),
-            create: Some(String::from("admin")),
-            delete: Some(String::from("admin")),
-            get: Some(String::from("public"))
+            list: String::from("public"),
+            create: String::from("admin"),
+            delete: String::from("admin"),
+            get: String::from("public")
         }
     }
 }
@@ -394,15 +379,15 @@ impl ValidAuth for AuthBounds {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthOSM {
-    pub get: Option<String>,
-    pub create: Option<String>
+    pub get: String,
+    pub create: String
 }
 
 impl AuthOSM {
     fn new() -> Self {
         AuthOSM {
-            get: Some(String::from("public")),
-            create: Some(String::from("user"))
+            get: String::from("public"),
+            create: String::from("user")
         }
     }
 }
@@ -426,54 +411,30 @@ pub struct CustomAuth {
     pub mvt: AuthMVT,
     pub schema: AuthSchema,
     pub auth: AuthAuth,
-    pub user: Option<AuthUser>,
-    pub feature: Option<AuthFeature>,
-    pub style: Option<AuthStyle>,
-    pub delta: Option<AuthDelta>,
-    pub bounds: Option<AuthBounds>,
+    pub user: AuthUser,
+    pub feature: AuthFeature,
+    pub style: AuthStyle,
+    pub delta: AuthDelta,
+    pub bounds: AuthBounds,
     pub clone: AuthClone,
-    pub osm: Option<AuthOSM>
+    pub osm: AuthOSM
 }
 
 impl ValidAuth for CustomAuth {
     fn is_valid(&self) -> Result<bool, String> {
-        is_all("server", &Some(self.server.clone()))?;
+        is_all("server", &self.server)?;
 
         &self.meta.is_valid()?;
         &self.mvt.is_valid()?;
         &self.stats.is_valid()?;
         &self.clone.is_valid()?;
         &self.schema.is_valid()?;
-
-        match &self.user {
-            None => (),
-            Some(ref user) => { user.is_valid()?; }
-        };
-
-        match &self.feature {
-            None => (),
-            Some(ref feature) => { feature.is_valid()?; }
-        };
-
-        match &self.style {
-            None => (),
-            Some(ref style) => { style.is_valid()?; }
-        };
-
-        match &self.delta {
-            None => (),
-            Some(ref delta) => { delta.is_valid()?; }
-        };
-
-        match &self.bounds {
-            None => (),
-            Some(ref bounds) => { bounds.is_valid()?; }
-        };
-
-        match &self.osm {
-            None => (),
-            Some(ref osm) => { osm.is_valid()?; }
-        };
+        &self.user.is_valid()?;
+        &self.feature.is_valid()?;
+        &self.style.is_valid()?;
+        &self.delta.is_valid()?;
+        &self.bounds.is_valid()?;
+        &self.osm.is_valid()?;
 
         Ok(true)
     }
@@ -491,7 +452,7 @@ pub fn rw_met(rw: RW, auth: &Auth) -> Result<(), HecateError> {
 /// Determines whether the current auth state meets or exceeds the
 /// requirements of an endpoint
 ///
-fn auth_met(required: &Option<String>, auth: &mut Auth) -> Result<bool, HecateError> {
+fn auth_met(required: &Option<String>, auth: &Auth) -> Result<bool, HecateError> {
     match required {
         None => Err(not_authed()),
         Some(req) => match req.as_ref() {
@@ -539,13 +500,13 @@ impl CustomAuth {
             schema: AuthSchema::new(),
             auth: AuthAuth::new(),
             mvt: AuthMVT::new(),
-            user: Some(AuthUser::new()),
-            feature: Some(AuthFeature::new()),
-            style: Some(AuthStyle::new()),
-            delta: Some(AuthDelta::new()),
-            bounds: Some(AuthBounds::new()),
+            user: AuthUser::new(),
+            feature: AuthFeature::new(),
+            style: AuthStyle::new(),
+            delta: AuthDelta::new(),
+            bounds: AuthBounds::new(),
             clone: AuthClone::new(),
-            osm: Some(AuthOSM::new())
+            osm: AuthOSM::new()
         }
     }
 
@@ -556,214 +517,7 @@ impl CustomAuth {
     }
 
 
-    pub fn is_admin(&self, auth: &mut Auth) -> Result<bool, HecateError> {
+    pub fn is_admin(&self, auth: &Auth) -> Result<bool, HecateError> {
         auth_met(&Some(String::from("admin")), auth)
-    }
-
-    pub fn allows_user_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.user {
-            None => Err(not_authed()),
-            Some(user) => auth_met(&user.list, auth)
-        }
-    }
-
-    pub fn allows_user_create(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.user {
-            None => Err(not_authed()),
-            Some(user) => auth_met(&user.create, auth)
-        }
-    }
-
-    pub fn allows_user_info(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.user {
-            None => Err(not_authed()),
-            Some(user) => auth_met(&user.info, auth)
-        }
-    }
-
-    pub fn allows_user_create_session(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.user {
-            None => Err(not_authed()),
-            Some(user) => auth_met(&user.create_session, auth)
-        }
-    }
-
-    pub fn allows_style_create(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.style {
-            None => Err(not_authed()),
-            Some(style) => auth_met(&style.create, auth)
-        }
-    }
-
-    pub fn allows_style_patch(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.style {
-            None => Err(not_authed()),
-            Some(style) => auth_met(&style.patch, auth)
-        }
-    }
-
-    pub fn allows_style_set_public(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.style {
-            None => Err(not_authed()),
-            Some(style) => auth_met(&style.set_public, auth)
-        }
-    }
-
-    pub fn allows_style_set_private(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.style {
-            None => Err(not_authed()),
-            Some(style) => auth_met(&style.set_private, auth)
-        }
-    }
-
-    pub fn allows_style_delete(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.style {
-            None => Err(not_authed()),
-            Some(style) => auth_met(&style.delete, auth)
-        }
-    }
-
-    pub fn allows_style_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.style {
-            None => Err(not_authed()),
-            Some(style) => auth_met(&style.get, auth)
-        }
-    }
-
-    pub fn allows_style_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.style {
-            None => Err(not_authed()),
-            Some(style) => auth_met(&style.list, auth)
-        }
-    }
-
-    pub fn allows_delta_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.delta {
-            None => Err(not_authed()),
-            Some(delta) => auth_met(&delta.get, auth)
-        }
-    }
-
-    pub fn allows_delta_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.delta {
-            None => Err(not_authed()),
-            Some(delta) => auth_met(&delta.list, auth)
-        }
-    }
-
-    pub fn allows_bounds_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.bounds {
-            None => Err(not_authed()),
-            Some(bounds) => auth_met(&bounds.get, auth)
-        }
-    }
-
-    pub fn allows_bounds_create(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.bounds {
-            None => Err(not_authed()),
-            Some(bounds) => auth_met(&bounds.create, auth)
-        }
-    }
-
-    pub fn allows_bounds_delete(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.bounds {
-            None => Err(not_authed()),
-            Some(bounds) => auth_met(&bounds.delete, auth)
-        }
-    }
-
-    pub fn allows_bounds_list(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.bounds {
-            None => Err(not_authed()),
-            Some(bounds) => auth_met(&bounds.list, auth)
-        }
-    }
-
-    pub fn allows_feature_create(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.feature {
-            None => Err(not_authed()),
-            Some(feature) => auth_met(&feature.create, auth)
-        }
-    }
-
-    pub fn allows_feature_force(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.feature {
-            None => Err(not_authed()),
-            Some(feature) => auth_met(&feature.force, auth)
-        }
-    }
-
-    pub fn allows_feature_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.feature {
-            None => Err(not_authed()),
-            Some(feature) => auth_met(&feature.get, auth)
-        }
-    }
-
-    pub fn allows_feature_history(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.feature {
-            None => Err(not_authed()),
-            Some(feature) => auth_met(&feature.history, auth)
-        }
-    }
-
-    pub fn allows_osm_get(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.osm {
-            None => Err(not_authed()),
-            Some(osm) => auth_met(&osm.get, auth)
-        }
-    }
-
-    pub fn allows_osm_create(&self, auth: &mut Auth, rw: RW) -> Result<bool, HecateError> {
-        rw_met(rw, &auth)?;
-
-        match &self.osm {
-            None => Err(not_authed()),
-            Some(osm) => auth_met(&osm.create, auth)
-        }
     }
 }
