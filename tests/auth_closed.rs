@@ -149,13 +149,11 @@ mod test {
                 "default": "public",
                 "server": "public",
                 "webhooks": {
-                    "list": "user",
-                    "update": "user",
-                    "delete": "user"
+                    "get": "user",
+                    "set": "user"
                 },
                 "meta": {
                     "get": "user",
-                    "list": "user",
                     "set": "user"
                 },
                 "schema": {
