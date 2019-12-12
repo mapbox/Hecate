@@ -36,7 +36,7 @@ use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, midd
 use futures::{Future, Stream, future::Either};
 use geojson::GeoJson;
 use crate::{
-    auth::ValidAuth,
+    auth::SubAuth,
     err::HecateError,
     db::*
 };
@@ -52,7 +52,7 @@ pub fn start(
     auth: Option<auth::CustomAuth>
 ) {
     let auth_rules: auth::CustomAuth = match auth {
-        None => auth::CustomAuth::new(),
+        None => auth::CustomAuth::default(),
         Some(auth) => {
             match auth.is_valid() {
                 Err(err_msg) => {

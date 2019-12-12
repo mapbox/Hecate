@@ -20,7 +20,8 @@ fn is_all(scope_type: &str, scope: &String) -> Result<bool, String> {
         "public" => Ok(true),
         "admin" => Ok(true),
         "user" => Ok(true),
-        _ => Err(format!("Auth Config Error: '{}' must be one of 'public', 'admin', 'user', or null", scope_type)),
+        "disabled" => Ok(true),
+        _ => Err(format!("Auth Config Error: '{}' must be one of 'public', 'admin', 'user', or 'disabled'", scope_type)),
     }
 }
 
@@ -35,7 +36,8 @@ fn is_self(scope_type: &str, scope: &String) -> Result<bool, String> {
     match scope.as_ref() {
         "self" => Ok(true),
         "admin" => Ok(true),
-        _ => Err(format!("Auth Config Error: '{}' must be one of 'self', 'admin', or null", scope_type)),
+        "disabled" => Ok(true),
+        _ => Err(format!("Auth Config Error: '{}' must be one of 'self', 'admin', or 'disabled'", scope_type)),
     }
 }
 
@@ -50,11 +52,14 @@ fn is_auth(scope_type: &str, scope: &String) -> Result<bool, String> {
     match scope.as_ref() {
         "user" => Ok(true),
         "admin" => Ok(true),
-        _ => Err(format!("Auth Config Error: '{}' must be one of 'user', 'admin', or null", scope_type)),
+        "disabled" => Ok(true),
+        _ => Err(format!("Auth Config Error: '{}' must be one of 'user', 'admin', or 'disabled'", scope_type)),
     }
 }
 
-pub trait ValidAuth {
+pub trait SubAuth {
+    fn default() -> Self;
+    fn parse(value: &Option<serde_json::Value>) -> Self;
     fn is_valid(&self) -> Result<bool, String>;
 }
 
@@ -64,16 +69,21 @@ pub struct AuthWebhooks {
     pub set: String
 }
 
-impl AuthWebhooks {
-    fn new() -> Self {
+impl SubAuth for AuthWebhooks {
+    fn default() -> Self {
         AuthWebhooks {
             get: String::from("admin"),
             set: String::from("admin")
         }
     }
-}
 
-impl ValidAuth for AuthWebhooks {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthWebhooks {
+            get: String::from("admin"),
+            set: String::from("admin")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_auth("webhooks::get", &self.get)?;
         is_auth("webhooks::set", &self.set)?;
@@ -88,16 +98,21 @@ pub struct AuthMeta {
     pub set: String
 }
 
-impl AuthMeta {
-    fn new() -> Self {
+impl SubAuth for AuthMeta {
+    fn default() -> Self {
         AuthMeta {
             get: String::from("public"),
             set: String::from("admin")
         }
     }
-}
 
-impl ValidAuth for AuthMeta {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthMeta {
+            get: String::from("public"),
+            set: String::from("admin")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("meta::get", &self.get)?;
         is_auth("meta::set", &self.set)?;
@@ -112,16 +127,21 @@ pub struct AuthClone {
     pub query: String
 }
 
-impl AuthClone {
-    fn new() -> Self {
+impl SubAuth for AuthClone {
+    fn default() -> Self {
         AuthClone {
             get: String::from("user"),
             query: String::from("user")
         }
     }
-}
 
-impl ValidAuth for AuthClone {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthClone {
+            get: String::from("user"),
+            query: String::from("user")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("clone::get", &self.get)?;
         is_all("clone::query", &self.query)?;
@@ -135,15 +155,19 @@ pub struct AuthSchema {
     pub get: String
 }
 
-impl AuthSchema {
-    fn new() -> Self {
+impl SubAuth for AuthSchema {
+    fn default() -> Self {
         AuthSchema {
             get: String::from("public")
         }
     }
-}
 
-impl ValidAuth for AuthSchema {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthSchema {
+            get: String::from("public")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("schema::get", &self.get)?;
 
@@ -156,15 +180,19 @@ pub struct AuthStats {
     pub get: String
 }
 
-impl AuthStats {
-    fn new() -> Self {
+impl SubAuth for AuthStats {
+    fn default() -> Self {
         AuthStats {
             get: String::from("public"),
         }
     }
-}
 
-impl ValidAuth for AuthStats {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthStats {
+            get: String::from("public"),
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("stats::get", &self.get)?;
 
@@ -177,15 +205,19 @@ pub struct AuthAuth {
     pub get: String
 }
 
-impl AuthAuth {
-    fn new() -> Self {
+impl SubAuth for AuthAuth {
+    fn default() -> Self {
         AuthAuth {
             get: String::from("public")
         }
     }
-}
 
-impl ValidAuth for AuthAuth {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthAuth {
+            get: String::from("public")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("auth::get", &self.get)?;
 
@@ -201,8 +233,8 @@ pub struct AuthMVT {
     pub meta: String
 }
 
-impl AuthMVT {
-    fn new() -> Self {
+impl SubAuth for AuthMVT {
+    fn default() -> Self {
         AuthMVT {
             get: String::from("public"),
             delete: String::from("admin"),
@@ -210,9 +242,16 @@ impl AuthMVT {
             meta: String::from("public")
         }
     }
-}
 
-impl ValidAuth for AuthMVT {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthMVT {
+            get: String::from("public"),
+            delete: String::from("admin"),
+            regen: String::from("user"),
+            meta: String::from("public")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("mvt::get", &self.get)?;
         is_all("mvt::regen", &self.regen)?;
@@ -231,8 +270,8 @@ pub struct AuthUser {
     pub create_session: String
 }
 
-impl AuthUser {
-    fn new() -> Self {
+impl SubAuth for AuthUser {
+    fn default() -> Self {
         AuthUser {
             info: String::from("self"),
             list: String::from("user"),
@@ -240,9 +279,16 @@ impl AuthUser {
             create_session: String::from("self")
         }
     }
-}
 
-impl ValidAuth for AuthUser {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthUser {
+            info: String::from("self"),
+            list: String::from("user"),
+            create: String::from("public"),
+            create_session: String::from("self")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("user::create", &self.create)?;
         is_all("user::list", &self.list)?;
@@ -265,8 +311,8 @@ pub struct AuthStyle {
     pub list: String
 }
 
-impl AuthStyle {
-    fn new() -> Self {
+impl SubAuth for AuthStyle {
+    fn default() -> Self {
         AuthStyle {
             create: String::from("self"),
             patch: String::from("self"),
@@ -277,9 +323,19 @@ impl AuthStyle {
             list: String::from("public")
         }
     }
-}
 
-impl ValidAuth for AuthStyle {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthStyle {
+            create: String::from("self"),
+            patch: String::from("self"),
+            set_public: String::from("self"),
+            set_private: String::from("self"),
+            delete: String::from("self"),
+            get: String::from("public"),
+            list: String::from("public")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_self("style::create", &self.create)?;
         is_self("style::patch", &self.patch)?;
@@ -299,16 +355,21 @@ pub struct AuthDelta {
     pub list: String,
 }
 
-impl AuthDelta {
-    fn new() -> Self {
+impl SubAuth for AuthDelta {
+    fn default() -> Self {
         AuthDelta {
             get: String::from("public"),
             list: String::from("public")
         }
     }
-}
 
-impl ValidAuth for AuthDelta {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthDelta {
+            get: String::from("public"),
+            list: String::from("public")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("delta::get", &self.get)?;
         is_all("delta::list", &self.list)?;
@@ -325,8 +386,8 @@ pub struct AuthFeature {
     pub history: String
 }
 
-impl AuthFeature {
-    fn new() -> Self {
+impl SubAuth for AuthFeature {
+    fn default() -> Self {
         AuthFeature {
             force: String::from("none"),
             create: String::from("user"),
@@ -334,9 +395,16 @@ impl AuthFeature {
             history: String::from("public")
         }
     }
-}
 
-impl ValidAuth for AuthFeature {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthFeature {
+            force: String::from("none"),
+            create: String::from("user"),
+            get: String::from("public"),
+            history: String::from("public")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_auth("feature::create", &self.create)?;
         is_auth("feature::force", &self.force)?;
@@ -355,8 +423,8 @@ pub struct AuthBounds {
     pub get: String
 }
 
-impl AuthBounds {
-    fn new() -> Self {
+impl SubAuth for AuthBounds {
+    fn default() -> Self {
         AuthBounds {
             list: String::from("public"),
             create: String::from("admin"),
@@ -364,9 +432,16 @@ impl AuthBounds {
             get: String::from("public")
         }
     }
-}
 
-impl ValidAuth for AuthBounds {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthBounds {
+            list: String::from("public"),
+            create: String::from("admin"),
+            delete: String::from("admin"),
+            get: String::from("public")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("bounds::list", &self.list)?;
         is_all("bounds::create", &self.create)?;
@@ -383,16 +458,21 @@ pub struct AuthOSM {
     pub create: String
 }
 
-impl AuthOSM {
-    fn new() -> Self {
+impl SubAuth for AuthOSM {
+    fn default() -> Self {
         AuthOSM {
             get: String::from("public"),
             create: String::from("user")
         }
     }
-}
 
-impl ValidAuth for AuthOSM {
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        AuthOSM {
+            get: String::from("public"),
+            create: String::from("user")
+        }
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("osm::get", &self.get)?;
         is_auth("osm::create", &self.create)?;
@@ -420,7 +500,48 @@ pub struct CustomAuth {
     pub osm: AuthOSM
 }
 
-impl ValidAuth for CustomAuth {
+impl SubAuth for CustomAuth {
+    fn default() -> Self {
+        CustomAuth {
+            default: Some(String::from("public")),
+            server: String::from("public"),
+            webhooks: AuthWebhooks::default(),
+            meta: AuthMeta::default(),
+            stats: AuthStats::default(),
+            schema: AuthSchema::default(),
+            auth: AuthAuth::default(),
+            mvt: AuthMVT::default(),
+            user: AuthUser::default(),
+            feature: AuthFeature::default(),
+            style: AuthStyle::default(),
+            delta: AuthDelta::default(),
+            bounds: AuthBounds::default(),
+            clone: AuthClone::default(),
+            osm: AuthOSM::default()
+        }
+    }
+
+    fn parse(value: &Option<serde_json::Value>) -> Self {
+        CustomAuth {
+            default: Some(String::from("public")),
+            server: String::from("public"),
+            webhooks: AuthWebhooks::parse(&value),
+            meta: AuthMeta::parse(&value),
+            stats: AuthStats::parse(&value),
+            schema: AuthSchema::parse(&value),
+            auth: AuthAuth::parse(&value),
+            mvt: AuthMVT::parse(&value),
+            user: AuthUser::parse(&value),
+            feature: AuthFeature::parse(&value),
+            style: AuthStyle::parse(&value),
+            delta: AuthDelta::parse(&value),
+            bounds: AuthBounds::parse(&value),
+            clone: AuthClone::parse(&value),
+            osm: AuthOSM::parse(&value)
+        }
+
+    }
+
     fn is_valid(&self) -> Result<bool, String> {
         is_all("server", &self.server)?;
 
@@ -437,6 +558,19 @@ impl ValidAuth for CustomAuth {
         &self.osm.is_valid()?;
 
         Ok(true)
+    }
+}
+
+impl CustomAuth {
+    pub fn to_json(&self) -> serde_json::value::Value {
+        let json_auth = serde_json::from_str(serde_json::to_string(&self).unwrap().as_str()).unwrap();
+
+        json_auth
+    }
+
+
+    pub fn is_admin(&self, auth: &Auth) -> Result<bool, HecateError> {
+        auth_met(&Some(String::from("admin")), auth)
     }
 }
 
@@ -486,38 +620,5 @@ fn auth_met(required: &Option<String>, auth: &Auth) -> Result<bool, HecateError>
             },
             _ => Err(not_authed())
         }
-    }
-}
-
-impl CustomAuth {
-    pub fn new() -> Self {
-        CustomAuth {
-            default: Some(String::from("public")),
-            server: String::from("public"),
-            webhooks: AuthWebhooks::new(),
-            meta: AuthMeta::new(),
-            stats: AuthStats::new(),
-            schema: AuthSchema::new(),
-            auth: AuthAuth::new(),
-            mvt: AuthMVT::new(),
-            user: AuthUser::new(),
-            feature: AuthFeature::new(),
-            style: AuthStyle::new(),
-            delta: AuthDelta::new(),
-            bounds: AuthBounds::new(),
-            clone: AuthClone::new(),
-            osm: AuthOSM::new()
-        }
-    }
-
-    pub fn to_json(&self) -> serde_json::value::Value {
-        let json_auth = serde_json::from_str(serde_json::to_string(&self).unwrap().as_str()).unwrap();
-
-        json_auth
-    }
-
-
-    pub fn is_admin(&self, auth: &Auth) -> Result<bool, HecateError> {
-        auth_met(&Some(String::from("admin")), auth)
     }
 }
