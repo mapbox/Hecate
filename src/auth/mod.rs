@@ -5,7 +5,7 @@ use actix_web::http::header::{HeaderName, HeaderValue};
 pub mod config;
 pub mod middleware;
 pub use config::AuthContainer;
-pub use config::SubAuth;
+pub use config::AuthModule;
 pub use config::CustomAuth;
 pub use config::RW;
 use crate::user::token::Scope;

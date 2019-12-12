@@ -57,7 +57,7 @@ fn is_auth(scope_type: &str, scope: &String) -> Result<bool, String> {
     }
 }
 
-pub trait SubAuth {
+pub trait AuthModule {
     fn default() -> Self;
     fn parse(value: &Option<serde_json::Value>) -> Self;
     fn is_valid(&self) -> Result<bool, String>;
@@ -69,7 +69,7 @@ pub struct AuthWebhooks {
     pub set: String
 }
 
-impl SubAuth for AuthWebhooks {
+impl AuthModule for AuthWebhooks {
     fn default() -> Self {
         AuthWebhooks {
             get: String::from("admin"),
@@ -78,9 +78,19 @@ impl SubAuth for AuthWebhooks {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthWebhooks {
-            get: String::from("admin"),
-            set: String::from("admin")
+        match value {
+            Some(_) => {
+                AuthWebhooks {
+                    get: String::from("admin"),
+                    set: String::from("admin")
+                }
+            },
+            None => {
+                AuthWebhooks {
+                    get: String::from("disabled"),
+                    set: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -98,7 +108,7 @@ pub struct AuthMeta {
     pub set: String
 }
 
-impl SubAuth for AuthMeta {
+impl AuthModule for AuthMeta {
     fn default() -> Self {
         AuthMeta {
             get: String::from("public"),
@@ -107,9 +117,19 @@ impl SubAuth for AuthMeta {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthMeta {
-            get: String::from("public"),
-            set: String::from("admin")
+        match value {
+            Some(_) => {
+                AuthMeta {
+                    get: String::from("public"),
+                    set: String::from("admin")
+                }
+            },
+            None => {
+                AuthMeta {
+                    get: String::from("disabled"),
+                    set: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -127,7 +147,7 @@ pub struct AuthClone {
     pub query: String
 }
 
-impl SubAuth for AuthClone {
+impl AuthModule for AuthClone {
     fn default() -> Self {
         AuthClone {
             get: String::from("user"),
@@ -136,9 +156,19 @@ impl SubAuth for AuthClone {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthClone {
-            get: String::from("user"),
-            query: String::from("user")
+        match value {
+            Some(_) => {
+                AuthClone {
+                    get: String::from("user"),
+                    query: String::from("user")
+                }
+            },
+            None => {
+                AuthClone {
+                    get: String::from("disabled"),
+                    query: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -155,7 +185,7 @@ pub struct AuthSchema {
     pub get: String
 }
 
-impl SubAuth for AuthSchema {
+impl AuthModule for AuthSchema {
     fn default() -> Self {
         AuthSchema {
             get: String::from("public")
@@ -163,8 +193,17 @@ impl SubAuth for AuthSchema {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthSchema {
-            get: String::from("public")
+        match value {
+            Some(_) => {
+                AuthSchema {
+                    get: String::from("public")
+                }
+            },
+            None => {
+                AuthSchema {
+                    get: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -180,7 +219,7 @@ pub struct AuthStats {
     pub get: String
 }
 
-impl SubAuth for AuthStats {
+impl AuthModule for AuthStats {
     fn default() -> Self {
         AuthStats {
             get: String::from("public"),
@@ -188,8 +227,17 @@ impl SubAuth for AuthStats {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthStats {
-            get: String::from("public"),
+        match value {
+            Some(_) => {
+                AuthStats {
+                    get: String::from("public"),
+                }
+            },
+            None => {
+                AuthStats {
+                    get: String::from("disabled"),
+                }
+            }
         }
     }
 
@@ -205,7 +253,7 @@ pub struct AuthAuth {
     pub get: String
 }
 
-impl SubAuth for AuthAuth {
+impl AuthModule for AuthAuth {
     fn default() -> Self {
         AuthAuth {
             get: String::from("public")
@@ -213,8 +261,17 @@ impl SubAuth for AuthAuth {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthAuth {
-            get: String::from("public")
+        match value {
+            Some(_) => {
+                AuthAuth {
+                    get: String::from("public")
+                }
+            },
+            None => {
+                AuthAuth {
+                    get: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -233,7 +290,7 @@ pub struct AuthMVT {
     pub meta: String
 }
 
-impl SubAuth for AuthMVT {
+impl AuthModule for AuthMVT {
     fn default() -> Self {
         AuthMVT {
             get: String::from("public"),
@@ -244,11 +301,23 @@ impl SubAuth for AuthMVT {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthMVT {
-            get: String::from("public"),
-            delete: String::from("admin"),
-            regen: String::from("user"),
-            meta: String::from("public")
+        match value {
+            Some(_) => {
+                AuthMVT {
+                    get: String::from("public"),
+                    delete: String::from("admin"),
+                    regen: String::from("user"),
+                    meta: String::from("public")
+                }
+            },
+            None => {
+                AuthMVT {
+                    get: String::from("disabled"),
+                    delete: String::from("disabled"),
+                    regen: String::from("disabled"),
+                    meta: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -270,7 +339,7 @@ pub struct AuthUser {
     pub create_session: String
 }
 
-impl SubAuth for AuthUser {
+impl AuthModule for AuthUser {
     fn default() -> Self {
         AuthUser {
             info: String::from("self"),
@@ -281,11 +350,23 @@ impl SubAuth for AuthUser {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthUser {
-            info: String::from("self"),
-            list: String::from("user"),
-            create: String::from("public"),
-            create_session: String::from("self")
+        match value {
+            Some(_) => {
+                AuthUser {
+                    info: String::from("self"),
+                    list: String::from("user"),
+                    create: String::from("public"),
+                    create_session: String::from("self")
+                }
+            },
+            None => {
+                AuthUser {
+                    info: String::from("disabled"),
+                    list: String::from("disabled"),
+                    create: String::from("disabled"),
+                    create_session: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -311,7 +392,7 @@ pub struct AuthStyle {
     pub list: String
 }
 
-impl SubAuth for AuthStyle {
+impl AuthModule for AuthStyle {
     fn default() -> Self {
         AuthStyle {
             create: String::from("self"),
@@ -325,14 +406,29 @@ impl SubAuth for AuthStyle {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthStyle {
-            create: String::from("self"),
-            patch: String::from("self"),
-            set_public: String::from("self"),
-            set_private: String::from("self"),
-            delete: String::from("self"),
-            get: String::from("public"),
-            list: String::from("public")
+        match value {
+            Some(_) => {
+                AuthStyle {
+                    create: String::from("self"),
+                    patch: String::from("self"),
+                    set_public: String::from("self"),
+                    set_private: String::from("self"),
+                    delete: String::from("self"),
+                    get: String::from("public"),
+                    list: String::from("public")
+                }
+            },
+            None => {
+                AuthStyle {
+                    create: String::from("self"),
+                    patch: String::from("self"),
+                    set_public: String::from("self"),
+                    set_private: String::from("self"),
+                    delete: String::from("self"),
+                    get: String::from("public"),
+                    list: String::from("public")
+                }
+            }
         }
     }
 
@@ -355,7 +451,7 @@ pub struct AuthDelta {
     pub list: String,
 }
 
-impl SubAuth for AuthDelta {
+impl AuthModule for AuthDelta {
     fn default() -> Self {
         AuthDelta {
             get: String::from("public"),
@@ -364,9 +460,19 @@ impl SubAuth for AuthDelta {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthDelta {
-            get: String::from("public"),
-            list: String::from("public")
+        match value {
+            Some(_) => {
+                AuthDelta {
+                    get: String::from("public"),
+                    list: String::from("public")
+                }
+            },
+            None => {
+                AuthDelta {
+                    get: String::from("disabled"),
+                    list: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -386,7 +492,7 @@ pub struct AuthFeature {
     pub history: String
 }
 
-impl SubAuth for AuthFeature {
+impl AuthModule for AuthFeature {
     fn default() -> Self {
         AuthFeature {
             force: String::from("none"),
@@ -397,11 +503,23 @@ impl SubAuth for AuthFeature {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthFeature {
-            force: String::from("none"),
-            create: String::from("user"),
-            get: String::from("public"),
-            history: String::from("public")
+        match value {
+            Some(_) => {
+                AuthFeature {
+                    force: String::from("none"),
+                    create: String::from("user"),
+                    get: String::from("public"),
+                    history: String::from("public")
+                }
+            },
+            None => {
+                AuthFeature {
+                    force: String::from("disabled"),
+                    create: String::from("disabled"),
+                    get: String::from("disabled"),
+                    history: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -423,7 +541,7 @@ pub struct AuthBounds {
     pub get: String
 }
 
-impl SubAuth for AuthBounds {
+impl AuthModule for AuthBounds {
     fn default() -> Self {
         AuthBounds {
             list: String::from("public"),
@@ -434,11 +552,23 @@ impl SubAuth for AuthBounds {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthBounds {
-            list: String::from("public"),
-            create: String::from("admin"),
-            delete: String::from("admin"),
-            get: String::from("public")
+        match value {
+            Some(_) => {
+                AuthBounds {
+                    list: String::from("public"),
+                    create: String::from("admin"),
+                    delete: String::from("admin"),
+                    get: String::from("public")
+                }
+            },
+            None => {
+                AuthBounds {
+                    list: String::from("disabled"),
+                    create: String::from("disabled"),
+                    delete: String::from("disabled"),
+                    get: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -458,7 +588,7 @@ pub struct AuthOSM {
     pub create: String
 }
 
-impl SubAuth for AuthOSM {
+impl AuthModule for AuthOSM {
     fn default() -> Self {
         AuthOSM {
             get: String::from("public"),
@@ -467,9 +597,19 @@ impl SubAuth for AuthOSM {
     }
 
     fn parse(value: &Option<serde_json::Value>) -> Self {
-        AuthOSM {
-            get: String::from("public"),
-            create: String::from("user")
+        match value {
+            Some(_) => {
+                AuthOSM {
+                    get: String::from("public"),
+                    create: String::from("user")
+                }
+            },
+            None => {
+                AuthOSM {
+                    get: String::from("disabled"),
+                    create: String::from("disabled")
+                }
+            }
         }
     }
 
@@ -500,7 +640,7 @@ pub struct CustomAuth {
     pub osm: AuthOSM
 }
 
-impl SubAuth for CustomAuth {
+impl AuthModule for CustomAuth {
     fn default() -> Self {
         CustomAuth {
             default: Some(String::from("public")),

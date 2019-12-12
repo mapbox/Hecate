@@ -36,7 +36,7 @@ use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, midd
 use futures::{Future, Stream, future::Either};
 use geojson::GeoJson;
 use crate::{
-    auth::SubAuth,
+    auth::AuthModule,
     err::HecateError,
     db::*
 };
