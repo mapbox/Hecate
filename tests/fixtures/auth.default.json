@@ -13,8 +13,7 @@
         "get": "public"
     },
     "stats": {
-        "get": "public",
-        "bounds": "public"
+        "get": "public"
     },
     "mvt": {
         "get": "public",
