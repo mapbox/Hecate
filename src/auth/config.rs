@@ -57,8 +57,8 @@ fn is_auth(scope_type: &str, scope: &String) -> Result<bool, String> {
     }
 }
 
-fn get_kv(scope: &str, key: &str, value: &serde_json::Value) -> Result<String, HecateError> {
-    match value.get(key) {
+fn get_kv(scope: &str, key: &str, kv: &serde_json::Value) -> Result<String, HecateError> {
+    match kv.get(key) {
         None => Err(HecateError::new(400, format!("{}::{} has no value", scope, key), None)),
         Some(value) => match value.as_str() {
             None => Err(HecateError::new(400, format!("{}::{} value must be string", scope, key), None)),
