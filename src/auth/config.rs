@@ -57,11 +57,11 @@ fn is_auth(scope_type: &str, scope: &String) -> Result<bool, String> {
     }
 }
 
-fn get_kv(key: &str, value: &serde_json::Value) -> Result<String, HecateError> {
+fn get_kv(scope: &str, key: &str, value: &serde_json::Value) -> Result<String, HecateError> {
     match value.get(key) {
-        None => Err(HecateError::new(400, format!(""), None)),
+        None => Err(HecateError::new(400, format!("{}::{} has no value", scope, key), None)),
         Some(value) => match value.as_str() {
-            None => Err(HecateError::new(400, format!("{} value must be string", key), None)),
+            None => Err(HecateError::new(400, format!("{}::{} value must be string", scope, key), None)),
             Some(value) => Ok(String::from(value))
         }
     }
@@ -69,7 +69,7 @@ fn get_kv(key: &str, value: &serde_json::Value) -> Result<String, HecateError> {
 
 pub trait AuthModule {
     fn default() -> Self;
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError>;
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError>;
     fn is_valid(&self) -> Result<bool, String>;
 }
 
@@ -87,12 +87,12 @@ impl AuthModule for AuthWebhooks {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthWebhooks {
-                    get: get_kv("get", value)?,
-                    set: get_kv("set", value)?
+                    get: get_kv("webhooks", "get", value)?,
+                    set: get_kv("webhooks", "set", value)?
                 }))
             },
             None => {
@@ -126,12 +126,12 @@ impl AuthModule for AuthMeta {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthMeta {
-                    get: get_kv("get", value)?,
-                    set: get_kv("set", value)?
+                    get: get_kv("meta", "get", value)?,
+                    set: get_kv("meta", "set", value)?
                 }))
             },
             None => {
@@ -165,12 +165,12 @@ impl AuthModule for AuthClone {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthClone {
-                    get: get_kv("get", value)?,
-                    query: get_kv("query", value)?
+                    get: get_kv("clone", "get", value)?,
+                    query: get_kv("clone", "query", value)?
                 }))
             },
             None => {
@@ -202,11 +202,11 @@ impl AuthModule for AuthSchema {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthSchema {
-                    get: get_kv("get", value)?
+                    get: get_kv("schema", "get", value)?
                 }))
             },
             None => {
@@ -236,11 +236,11 @@ impl AuthModule for AuthStats {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthStats {
-                    get: get_kv("get", value)?
+                    get: get_kv("stats", "get", value)?
                 }))
             },
             None => {
@@ -270,11 +270,11 @@ impl AuthModule for AuthAuth {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthAuth {
-                    get: get_kv("get", value)?
+                    get: get_kv("auth", "get", value)?
                 }))
             },
             None => {
@@ -310,14 +310,14 @@ impl AuthModule for AuthMVT {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthMVT {
-                    get: get_kv("get", value)?,
-                    delete: get_kv("delete", value)?,
-                    regen: get_kv("regen", value)?,
-                    meta: get_kv("meta", value)?
+                    get: get_kv("mvt", "get", value)?,
+                    delete: get_kv("mvt", "delete", value)?,
+                    regen: get_kv("mvt", "regen", value)?,
+                    meta: get_kv("mvt", "meta", value)?
                 }))
             },
             None => {
@@ -359,14 +359,14 @@ impl AuthModule for AuthUser {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthUser {
-                    info: get_kv("info", value)?,
-                    list: get_kv("list", value)?,
-                    create: get_kv("create", value)?,
-                    create_session: get_kv("create_session", value)?
+                    info: get_kv("user", "info", value)?,
+                    list: get_kv("user", "list", value)?,
+                    create: get_kv("user", "create", value)?,
+                    create_session: get_kv("user", "create_session", value)?
                 }))
             },
             None => {
@@ -415,17 +415,17 @@ impl AuthModule for AuthStyle {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthStyle {
-                    create: get_kv("create", value)?,
-                    patch: get_kv("patch", value)?,
-                    set_public: get_kv("set_public", value)?,
-                    set_private: get_kv("set_private", value)?,
-                    delete: get_kv("delete", value)?,
-                    get: get_kv("get", value)?,
-                    list: get_kv("list", value)?
+                    create: get_kv("style", "create", value)?,
+                    patch: get_kv("style", "patch", value)?,
+                    set_public: get_kv("style", "set_public", value)?,
+                    set_private: get_kv("style", "set_private", value)?,
+                    delete: get_kv("style", "delete", value)?,
+                    get: get_kv("style", "get", value)?,
+                    list: get_kv("style", "list", value)?
                 }))
             },
             None => {
@@ -469,12 +469,12 @@ impl AuthModule for AuthDelta {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthDelta {
-                    get: get_kv("get", value)?,
-                    list: get_kv("list", value)?
+                    get: get_kv("delta", "get", value)?,
+                    list: get_kv("delta", "list", value)?
                 }))
             },
             None => {
@@ -512,14 +512,14 @@ impl AuthModule for AuthFeature {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthFeature {
-                    force: get_kv("force", value)?,
-                    create: get_kv("create", value)?,
-                    get: get_kv("get", value)?,
-                    history: get_kv("history", value)?
+                    force: get_kv("feature", "force", value)?,
+                    create: get_kv("feature", "create", value)?,
+                    get: get_kv("feature", "get", value)?,
+                    history: get_kv("feature", "history", value)?
                 }))
             },
             None => {
@@ -561,14 +561,14 @@ impl AuthModule for AuthBounds {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthBounds {
-                    list: get_kv("list", value)?,
-                    create: get_kv("create", value)?,
-                    delete: get_kv("delete", value)?,
-                    get: get_kv("get", value)?
+                    list: get_kv("bounds", "list", value)?,
+                    create: get_kv("bounds", "create", value)?,
+                    delete: get_kv("bounds", "delete", value)?,
+                    get: get_kv("bounds", "get", value)?
                 }))
             },
             None => {
@@ -606,12 +606,12 @@ impl AuthModule for AuthOSM {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             Some(ref value) => {
                 Ok(Box::new(AuthOSM {
-                    get: get_kv("get", value)?,
-                    create: get_kv("create", value)?
+                    get: get_kv("osm", "get", value)?,
+                    create: get_kv("osm", "create", value)?
                 }))
             },
             None => {
@@ -671,24 +671,27 @@ impl AuthModule for CustomAuth {
         }
     }
 
-    fn parse(value: &Option<serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        Ok(Box::new(CustomAuth {
-            default: Some(String::from("public")),
-            server: String::from("public"),
-            webhooks: *AuthWebhooks::parse(&value)?,
-            meta: *AuthMeta::parse(&value)?,
-            stats: *AuthStats::parse(&value)?,
-            schema: *AuthSchema::parse(&value)?,
-            auth: *AuthAuth::parse(&value)?,
-            mvt: *AuthMVT::parse(&value)?,
-            user: *AuthUser::parse(&value)?,
-            feature: *AuthFeature::parse(&value)?,
-            style: *AuthStyle::parse(&value)?,
-            delta: *AuthDelta::parse(&value)?,
-            bounds: *AuthBounds::parse(&value)?,
-            clone: *AuthClone::parse(&value)?,
-            osm: *AuthOSM::parse(&value)?
-        }))
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
+        match value {
+            None => Ok(Box::new(CustomAuth::default())),
+            Some(value) => Ok(Box::new(CustomAuth {
+                default: Some(String::from("public")),
+                server: String::from("public"),
+                webhooks: *AuthWebhooks::parse(value.get("webhooks"))?,
+                meta: *AuthMeta::parse(value.get("meta"))?,
+                stats: *AuthStats::parse(value.get("stats"))?,
+                schema: *AuthSchema::parse(value.get("schema"))?,
+                auth: *AuthAuth::parse(value.get("auth"))?,
+                mvt: *AuthMVT::parse(value.get("mvt"))?,
+                user: *AuthUser::parse(value.get("mvt"))?,
+                feature: *AuthFeature::parse(value.get("feature"))?,
+                style: *AuthStyle::parse(value.get("style"))?,
+                delta: *AuthDelta::parse(value.get("delta"))?,
+                bounds: *AuthBounds::parse(value.get("bounds"))?,
+                clone: *AuthClone::parse(value.get("clone"))?,
+                osm: *AuthOSM::parse(value.get("osm"))?
+            }))
+        }
 
     }
 
