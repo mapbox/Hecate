@@ -77,11 +77,11 @@ pub fn start(
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let default = match auth_rules.0.default {
-        String::from("public")  => auth::AuthDefault::Public,
-        String::from("user") => auth::AuthDefault::User,
-        String::from("admin") =>  auth::AuthDefault::Admin,
-        _ => > panic!("Invalid 'domain' value in custom auth")
+    let default = match &*auth_rules.0.default {
+        "public"  => auth::AuthDefault::Public,
+        "user" => auth::AuthDefault::User,
+        "admin" => auth::AuthDefault::Admin,
+        _ => panic!("Invalid 'domain' value in custom auth")
     };
 
     HttpServer::new(move || {

@@ -430,13 +430,13 @@ impl AuthModule for AuthStyle {
             },
             None => {
                 Ok(Box::new(AuthStyle {
-                    create: String::from("self"),
-                    patch: String::from("self"),
-                    set_public: String::from("self"),
-                    set_private: String::from("self"),
-                    delete: String::from("self"),
-                    get: String::from("public"),
-                    list: String::from("public")
+                    create: String::from("disabled"),
+                    patch: String::from("disabled"),
+                    set_public: String::from("disabled"),
+                    set_private: String::from("disabled"),
+                    delete: String::from("disabled"),
+                    get: String::from("disabled"),
+                    list: String::from("disabled")
                 }))
             }
         }
