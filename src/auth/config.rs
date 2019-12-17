@@ -683,7 +683,7 @@ impl AuthModule for CustomAuth {
                 schema: *AuthSchema::parse(value.get("schema"))?,
                 auth: *AuthAuth::parse(value.get("auth"))?,
                 mvt: *AuthMVT::parse(value.get("mvt"))?,
-                user: *AuthUser::parse(value.get("mvt"))?,
+                user: *AuthUser::parse(value.get("user"))?,
                 feature: *AuthFeature::parse(value.get("feature"))?,
                 style: *AuthStyle::parse(value.get("style"))?,
                 delta: *AuthDelta::parse(value.get("delta"))?,
