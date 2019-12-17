@@ -633,7 +633,7 @@ impl AuthModule for AuthOSM {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct CustomAuth {
-    pub default: Option<String>,
+    pub default: String,
     pub server: String,
     pub meta: AuthMeta,
     pub webhooks: AuthWebhooks,
@@ -653,7 +653,7 @@ pub struct CustomAuth {
 impl AuthModule for CustomAuth {
     fn default() -> Self {
         CustomAuth {
-            default: Some(String::from("public")),
+            default: String::from("public"),
             server: String::from("public"),
             webhooks: AuthWebhooks::default(),
             meta: AuthMeta::default(),
@@ -675,8 +675,8 @@ impl AuthModule for CustomAuth {
         match value {
             None => Ok(Box::new(CustomAuth::default())),
             Some(value) => Ok(Box::new(CustomAuth {
-                default: Some(String::from("public")),
-                server: String::from("public"),
+                default: get_kv("", "default", value)?,
+                server: get_kv("", "server", value)?,
                 webhooks: *AuthWebhooks::parse(value.get("webhooks"))?,
                 meta: *AuthMeta::parse(value.get("meta"))?,
                 stats: *AuthStats::parse(value.get("stats"))?,
