@@ -702,10 +702,11 @@ impl AuthModule for CustomAuth {
 }
 
 impl CustomAuth {
-    pub fn to_json(&self) -> serde_json::value::Value {
-        let json_auth = serde_json::from_str(serde_json::to_string(&self).unwrap().as_str()).unwrap();
-
-        json_auth
+    pub fn to_json(&self) -> Result<serde_json::value::Value, HecateError> {
+        match serde_json::to_value(&self) {
+            Ok(value) => Ok(value),
+            Err(err) => Err(HecateError::new(500, String::from("Could not create Auth JSON"), Some(err.to_string())))
+        }
     }
 
 

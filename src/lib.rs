@@ -1273,7 +1273,7 @@ fn auth_get(
 ) -> Result<Json<serde_json::Value>, HecateError> {
     auth::check(&auth_rules.0.auth.get, auth::RW::Read, &auth)?;
 
-    Ok(Json(auth_rules.0.to_json()))
+    Ok(Json(auth_rules.0.to_json()?))
 }
 
 fn stats_get(
