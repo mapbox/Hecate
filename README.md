@@ -511,7 +511,6 @@ have a map containing the auth for each subkey.
 | ------------------------------------- | ------------------------- | :-----------: | ------------------------- | :---: |
 | `GET /api`                            | `server`                  | `public`      | All                       |       |
 | **Server Meta**                       | `meta`                    |               | `null`                    | 2     |
-| `GET /api/meta`                       | `meta::list`              | `public`      | All                       |       |
 | `GET /api/meta/<key>`                 | `meta::get`               | `public`      | All                       |       |
 | `POST /api/meta/<key>`                | `meta::set`               | `admin`       | `user`, `admin`, `null`   |       |
 | **JSON Schema**                       | `schema`                  |               | `null`                    | 2     |
@@ -540,13 +539,10 @@ have a map containing the auth for each subkey.
 | `GET /api/delta/<id>`                 | `delta::get`              | `public`      | All                       |       |
 | `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
 | **Webhooks**                          | `webhooks`                |               | `null`                    | 2     |
-| `GET /api/webhooks`                   | `webhooks::list`          | `admin`       | All                       |       |
-| `GET /api/webhooks/<id>`              | `webhooks::list`          | `admin`       | All                       |       |
-| `GET /api/webhooks/<id>`              | `webhooks::delete`        | `admin`       | All                       |       |
-| `POST /api/webhooks/<id>`             | `webhooks::update`        | `admin`       | All                       |       |
+| `GET /api/webhooks/<id>`              | `webhooks::get`           | `admin`       | All                       |       |
+| `POST /api/webhooks/<id>`             | `webhooks::set`           | `admin`       | All                       |       |
 | **Data Stats**                        | `stats`                   | `public`      | All                       |       |
 | `GET /api/data/stats`                 | `stats::get`              | `public`      | All                       |       |
-| `GET /api/data/bounds/<id>/stats`     | `stats::bounds`           | `public`      | All                       |       |
 | **Features**                          | `feature`                 |               | `null`                    | 2     |
 | `POST /api/data/feature(s)`           | `feature::create`         | `user`        | `user`, `admin`, `null`   |       |
 | `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |

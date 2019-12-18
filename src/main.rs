@@ -7,6 +7,7 @@ use std::path::Path;
 use std::fs::File;
 use std::io::Read;
 use hecate::auth::CustomAuth;
+use hecate::auth::AuthModule;
 use std::error::Error;
 use clap::App;
 
@@ -26,7 +27,7 @@ fn main() {
         Some(db_read) => db_read.map(|db| String::from(db)).collect()
     };
 
-    let schema: Option<serde_json::value::Value> = match matched.value_of("schema") {
+    let schema: Option<serde_json::Value> = match matched.value_of("schema") {
         Some(schema_path) => {
             let mut schema_file = match File::open(&Path::new(schema_path)) {
                 Ok(file) => file,
@@ -37,7 +38,7 @@ fn main() {
 
             schema_file.read_to_string(&mut schema_str).unwrap();
 
-            let schema_json: serde_json::value::Value = serde_json::from_str(&schema_str).unwrap();
+            let schema_json: serde_json::Value = serde_json::from_str(&schema_str).unwrap();
 
             Some(schema_json)
         },
@@ -51,11 +52,24 @@ fn main() {
                 Err(_) => panic!("Failed to open auth file at: {}", auth_path)
             };
 
-            let mut auth_str = String::new();
+            let mut auth = String::new();
 
-            auth_file.read_to_string(&mut auth_str).unwrap();
+            match auth_file.read_to_string(&mut auth) {
+                Err(err) => panic!("Could not read auth file: {}", err.to_string()),
+                _ => ()
+            };
 
-            Some(serde_json::from_str(&*auth_str).unwrap())
+            let auth: serde_json::Value = match serde_json::from_str(&*auth) {
+                Ok(auth) => auth,
+                Err(err) => panic!("Auth file is not valid JSON: {}", err.to_string())
+            };
+
+            let auth = match CustomAuth::parse(Some(&auth)) {
+                Ok(auth) => auth,
+                Err(err) => panic!("{}", err.as_log())
+            };
+
+            Some(*auth)
         },
         None => None
     };

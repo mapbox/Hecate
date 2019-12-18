@@ -149,21 +149,18 @@ mod test {
                 "default": "public",
                 "server": "public",
                 "webhooks": {
-                    "list": "user",
-                    "update": "user",
-                    "delete": "user"
+                    "get": "user",
+                    "set": "user"
                 },
                 "meta": {
                     "get": "user",
-                    "list": "user",
                     "set": "user"
                 },
                 "schema": {
                     "get": "user"
                 },
                 "stats": {
-                    "get": "user",
-                    "bounds": "user"
+                    "get": "user"
                 },
                 "mvt": {
                     "get": "user",
