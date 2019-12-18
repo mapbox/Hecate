@@ -958,8 +958,6 @@ Return a JSON object containing a list of all webhooks maintained by the server
 curl -X GET 'http://localhost:8000/api/webhooks'
 ```
 
-</details>
-
 ---
 
 #### `GET` `/api/webhooks/<id>`
