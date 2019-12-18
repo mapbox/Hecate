@@ -10,6 +10,16 @@
 
 # Version History
 
+## v0.81.0
+
+- :tada: Add `disabled` type for custom auth
+- :rocket: Rewrite Auth struct to remove boilerplate `allows_*`  methods and allow direct auth checks
+- :rocket: Simplify webhook permissions to `get/set`
+- :rocket: Simplify meta permission to `get/set`
+- :rocket: Simplify stats permission to `get`
+- :rocket: Create JSON -> Struct trait for each section for manual JSON parsing and better error messages
+- :rocket Ensure `disabled` type is respected
+
 ## v0.80.0
 
 - :rocket: Create new `geo_history` table to retrieve feature history
