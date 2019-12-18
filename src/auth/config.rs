@@ -742,6 +742,12 @@ pub fn rw_met(rw: RW, auth: &Auth) -> Result<(), HecateError> {
 /// requirements of an endpoint
 ///
 fn auth_met(required: &Option<String>, auth: &Auth) -> Result<bool, HecateError> {
+    // If an account is disabled, all endpoints fail,
+    // regardless of whether they are public or user/admin
+    if auth.access == AuthAccess::Disabled {
+        return Err(not_authed());
+    }
+
     match required {
         None => Err(not_authed()),
         Some(req) => match req.as_ref() {
