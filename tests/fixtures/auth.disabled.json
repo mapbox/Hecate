@@ -1,0 +1,7 @@
+{
+    "default": "public",
+    "server": "disabled",
+    "auth": {
+        "get": "public"
+    }
+}

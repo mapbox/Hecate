@@ -1,13 +1,11 @@
 {
     "server": "user",
     "webhooks": {
-        "list": "user",
-        "delete": "user",
-        "modify": "user"
+        "set": "user",
+        "get": "user"
     },
     "meta": {
         "get": "user",
-        "list": "user",
         "set": "user"
     },
     "schema": {
