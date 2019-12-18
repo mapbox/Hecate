@@ -497,68 +497,68 @@ have a map containing the auth for each subkey.
 
 #### Behavior Types
 
-| Type      | Description |
-| --------- | ----------- |
-| `"public"`  | Allow any authenticated or unauthenticated user access |
-| `"admin"`   | Allow only users with the `access: 'admin'` property on their user accounts access |
-| `"user"`    | Allow any user access to the endpoint |
-| `"self"`    | Only the specific user or an admin can edit their own metadata |
-| `"null"`    | Disable all access to the endpoint (Must be explicitly `null` |
+| Type          | Description |
+| ------------- | ----------- |
+| `"public"`    | Allow any authenticated or unauthenticated user access |
+| `"admin"`     | Allow only users with the `access: 'admin'` property on their user accounts access |
+| `"user"`      | Allow any user access to the endpoint |
+| `"self"`      | Only the specific user or an admin can edit their own metadata |
+| `"disabled"`  | Disable all access to the endpoint |
 
 #### Endpoint Lookup
 
-| Example Endpoint                      | Config Name               | Default       | Supported Behaviors       | Notes |
-| ------------------------------------- | ------------------------- | :-----------: | ------------------------- | :---: |
-| `GET /api`                            | `server`                  | `public`      | All                       |       |
-| **Server Meta**                       | `meta`                    |               | `null`                    | 2     |
-| `GET /api/meta/<key>`                 | `meta::get`               | `public`      | All                       |       |
-| `POST /api/meta/<key>`                | `meta::set`               | `admin`       | `user`, `admin`, `null`   |       |
-| **JSON Schema**                       | `schema`                  |               | `null`                    | 2     |
-| `GET /api/schema`                     | `schema::get`             | `public`      | All                       |       |
-| **Custom Auth JSON**                  | `auth`                    |               | `null`                    | 2     |
-| `GET /api/auth`                       | `auth::get`               | `public`      | All                       |       |
-| **Mapbox Vector Tiles**               | `mvt`                     |               | `null`                    | 2     |
-| `DELETE /api/tiles`                   | `mvt::delete`             | `admin`       | All                       |       |
-| `GET /api/tiles/<z>/<x>/<y>`          | `mvt::get`                | `public`      | All                       |       |
-| `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt::regen`              | `user`        | All                       |       |
-| `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt::meta`               | `public`      | All                       |       |
-| **Users**                             | `user`                    |               | `null`                    | 2     |
-| `GET /api/users`                      | `user::list`              | `user`        | All                       |       |
-| `GET /api/user/info`                  | `user::info`              | `self`        | `self`, `admin`, `null`   |       |
-| `GET /api/create`                     | `user::create`            | `public`      | All                       |       |
-| `GET /api/create/session`             | `user::create_session`    | `self`        | `self`, `admin`, `null`   |       |
-| **Mapbox GL Styles**                  | `style`                   |               | `null`                    | 2     |
-| `POST /api/style`                     | `style::create`           | `self`        | `self`, `admin`, `null`   |       |
-| `PATCH /api/style`                    | `style::patch`            | `self`        | `self`, `admin`, `null`   |       |
-| `POST /api/style/<id>/public`         | `style::set_public`       | `self`        | All                       |       |
-| `POST /api/style/<id>/private`        | `style::set_private`      | `self`        | `self`, `admin`, `null`   |       |
-| `DELETE /api/style/<id>`              | `style::delete`           | `self`        | `self`, `admin`, `null`   |       |
-| `GET /api/style/<id>`                 | `style::get`              | `public`      | All                       | 1     |
-| `GET /api/styles`                     | `style::list`             | `public`      | All                       | 1     |
-| **Deltas**                            | `delta`                   |               | `null`                    | 2     |
-| `GET /api/delta/<id>`                 | `delta::get`              | `public`      | All                       |       |
-| `GET /api/deltas`                     | `delta::list`             | `public`      | All                       |       |
-| **Webhooks**                          | `webhooks`                |               | `null`                    | 2     |
-| `GET /api/webhooks/<id>`              | `webhooks::get`           | `admin`       | All                       |       |
-| `POST /api/webhooks/<id>`             | `webhooks::set`           | `admin`       | All                       |       |
-| **Data Stats**                        | `stats`                   | `public`      | All                       |       |
-| `GET /api/data/stats`                 | `stats::get`              | `public`      | All                       |       |
-| **Features**                          | `feature`                 |               | `null`                    | 2     |
-| `POST /api/data/feature(s)`           | `feature::create`         | `user`        | `user`, `admin`, `null`   |       |
-| `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                       |       |
-| `GET /api/data/feature/<id>/history`  | `feature::history`        | `public`      | All                       |       |
-| `POST /api/data/feature(s) w/ `force` | `feature::force`          | `admin`       | `user`, `admin`, `null`   |       |
-| **Clone**                             | `clone`                   |               | `null`                    | 2     |
-| `GET /api/data/clone`                 | `clone::get`              | `user`        | All                       |       |
-| `GET /api/data/query`                 | `clone::query`            | `user`        | All                       |       |
-| **Bounds**                            | `bounds`                  |               | `null`                    | 2     |
-| `GET /api/bounds`                     | `bounds::list`            | `public`      | All                       |       |
-| `GET /api/bounds/<id>`                | `bounds::get`             | `public`      | All                       |       |
-| `POST /api/bounds/<id>`               | `bounds::create`          | `admin`       | All                       |       |
-| `DELETE /api/bounds/<id>`             | `bounds:delete`           | `admin`       | All                       |       |
-| **OpenStreetMap Shim**                | `osm`                     |               | `null`                    | 2     |
-| `GET /api/0.6/map`                    | `osm::get`                | `public`      | All                       | 3     |
-| `PUT /api/0.6/changeset/<id>/upload`  | `osm::create`             | `user`        | `user`, `admin`, `null`   | 3     |
+| Example Endpoint                      | Config Name               | Default       | Supported Behaviors           | Notes |
+| ------------------------------------- | ------------------------- | :-----------: | ----------------------------- | :---: |
+| `GET /api`                            | `server`                  | `public`      | All                           |       |
+| **Server Meta**                       | `meta`                    |               | `null`                        | 2     |
+| `GET /api/meta/<key>`                 | `meta::get`               | `public`      | All                           |       |
+| `POST /api/meta/<key>`                | `meta::set`               | `admin`       | `user`, `admin`, `disabled`   |       |
+| **JSON Schema**                       | `schema`                  |               | `null`                        | 2     |
+| `GET /api/schema`                     | `schema::get`             | `public`      | All                           |       |
+| **Custom Auth JSON**                  | `auth`                    |               | `null`                        | 2     |
+| `GET /api/auth`                       | `auth::get`               | `public`      | All                           |       |
+| **Mapbox Vector Tiles**               | `mvt`                     |               | `null`                        | 2     |
+| `DELETE /api/tiles`                   | `mvt::delete`             | `admin`       | All                           |       |
+| `GET /api/tiles/<z>/<x>/<y>`          | `mvt::get`                | `public`      | All                           |       |
+| `GET /api/tiles/<z>/<x>/<y>/regen`    | `mvt::regen`              | `user`        | All                           |       |
+| `GET /api/tiles/<z>/<x>/<y>/meta`     | `mvt::meta`               | `public`      | All                           |       |
+| **Users**                             | `user`                    |               | `null`                        | 2     |
+| `GET /api/users`                      | `user::list`              | `user`        | All                           |       |
+| `GET /api/user/info`                  | `user::info`              | `self`        | `self`, `admin`, `disabled`   |       |
+| `GET /api/create`                     | `user::create`            | `public`      | All                           |       |
+| `GET /api/create/session`             | `user::create_session`    | `self`        | `self`, `admin`, `disabled`   |       |
+| **Mapbox GL Styles**                  | `style`                   |               | `null`                        | 2     |
+| `POST /api/style`                     | `style::create`           | `self`        | `self`, `admin`, `disabled`   |       |
+| `PATCH /api/style`                    | `style::patch`            | `self`        | `self`, `admin`, `disabled`   |       |
+| `POST /api/style/<id>/public`         | `style::set_public`       | `self`        | All                           |       |
+| `POST /api/style/<id>/private`        | `style::set_private`      | `self`        | `self`, `admin`, `disabled`   |       |
+| `DELETE /api/style/<id>`              | `style::delete`           | `self`        | `self`, `admin`, `disabled`   |       |
+| `GET /api/style/<id>`                 | `style::get`              | `public`      | All                           | 1     |
+| `GET /api/styles`                     | `style::list`             | `public`      | All                           | 1     |
+| **Deltas**                            | `delta`                   |               | `null`                        | 2     |
+| `GET /api/delta/<id>`                 | `delta::get`              | `public`      | All                           |       |
+| `GET /api/deltas`                     | `delta::list`             | `public`      | All                           |       |
+| **Webhooks**                          | `webhooks`                |               | `null`                        | 2     |
+| `GET /api/webhooks/<id>`              | `webhooks::get`           | `admin`       | All                           |       |
+| `POST /api/webhooks/<id>`             | `webhooks::set`           | `admin`       | All                           |       |
+| **Data Stats**                        | `stats`                   | `public`      | All                           |       |
+| `GET /api/data/stats`                 | `stats::get`              | `public`      | All                           |       |
+| **Features**                          | `feature`                 |               | `null`                        | 2     |
+| `POST /api/data/feature(s)`           | `feature::create`         | `user`        | `user`, `admin`, `disabled`   |       |
+| `GET /api/data/feature/<id>`          | `feature::get`            | `public`      | All                           |       |
+| `GET /api/data/feature/<id>/history`  | `feature::history`        | `public`      | All                           |       |
+| `POST /api/data/feature(s) w/ `force` | `feature::force`          | `admin`       | `user`, `admin`, `disabled`   |       |
+| **Clone**                             | `clone`                   |               | `null`                        | 2     |
+| `GET /api/data/clone`                 | `clone::get`              | `user`        | All                           |       |
+| `GET /api/data/query`                 | `clone::query`            | `user`        | All                           |       |
+| **Bounds**                            | `bounds`                  |               | `null`                        | 2     |
+| `GET /api/bounds`                     | `bounds::list`            | `public`      | All                           |       |
+| `GET /api/bounds/<id>`                | `bounds::get`             | `public`      | All                           |       |
+| `POST /api/bounds/<id>`               | `bounds::create`          | `admin`       | All                           |       |
+| `DELETE /api/bounds/<id>`             | `bounds:delete`           | `admin`       | All                           |       |
+| **OpenStreetMap Shim**                | `osm`                     |               | `null`                        | 2     |
+| `GET /api/0.6/map`                    | `osm::get`                | `public`      | All                           | 3     |
+| `PUT /api/0.6/changeset/<id>/upload`  | `osm::create`             | `user`        | `user`, `admin`, `disabled`   | 3     |
 
 *Notes*
 
