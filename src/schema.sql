@@ -39,7 +39,7 @@ CREATE INDEX bounds_idx ON bounds(name);
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id          BIGSERIAL PRIMARY KEY,
-    access      TEXT,
+    access      TEXT NOT NULL,
     username    TEXT UNIQUE NOT NULL,
     password    TEXT NOT NULL,
     email       TEXT UNIQUE NOT NULL,

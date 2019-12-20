@@ -1,6 +1,7 @@
 use crate::err::HecateError;
 use super::Auth;
 pub use crate::user::token::Scope as RW;
+use super::AuthAccess;
 
 pub fn not_authed() -> HecateError {
     HecateError::new(401, String::from("You must be logged in to access this resource"), None)
@@ -741,14 +742,18 @@ pub fn rw_met(rw: RW, auth: &Auth) -> Result<(), HecateError> {
 /// requirements of an endpoint
 ///
 fn auth_met(required: &Option<String>, auth: &Auth) -> Result<bool, HecateError> {
+    // If an account is disabled, all endpoints fail,
+    // regardless of whether they are public or user/admin
+    if auth.access == AuthAccess::Disabled {
+        return Err(not_authed());
+    }
+
     match required {
         None => Err(not_authed()),
         Some(req) => match req.as_ref() {
             "public" => Ok(true),
             "admin" => {
-                if auth.uid.is_none() || auth.access.is_none() {
-                    return Err(not_authed());
-                } else if auth.access == Some(String::from("admin")) {
+                if auth.uid.is_some() && auth.access == AuthAccess::Admin {
                     return Ok(true);
                 } else {
                     return Err(not_authed());

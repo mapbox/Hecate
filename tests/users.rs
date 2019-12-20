@@ -162,19 +162,19 @@ mod test {
 
             assert_eq!(json_body, json!([{
                 "id": 4,
-                "access": null,
+                "access": "default",
                 "username": "filter",
             },{
                 "id": 1,
-                "access": null,
+                "access": "default",
                 "username": "ingalls",
             },{
                 "id": 2,
-                "access": null,
+                "access": "default",
                 "username": "ingalls2",
             },{
                 "id": 3,
-                "access": null,
+                "access": "default",
                 "username": "ingalls3",
             }]));
         }
@@ -192,7 +192,7 @@ mod test {
 
             assert_eq!(json_body, json!([{
                 "id": 4,
-                "access": null,
+                "access": "default",
                 "username": "filter",
             }]));
         }
@@ -210,15 +210,15 @@ mod test {
 
             assert_eq!(json_body, json!([{
                 "id": 1,
-                "access": null,
+                "access": "default",
                 "username": "ingalls",
             },{
                 "id": 2,
-                "access": null,
+                "access": "default",
                 "username": "ingalls2",
             },{
                 "id": 3,
-                "access": null,
+                "access": "default",
                 "username": "ingalls3",
             }]));
         }
@@ -236,11 +236,11 @@ mod test {
 
             assert_eq!(json_body, json!([{
                 "id": 1,
-                "access": null,
+                "access": "default",
                 "username": "ingalls",
             },{
                 "id": 2,
-                "access": null,
+                "access": "default",
                 "username": "ingalls2",
             }]));
         }
@@ -258,7 +258,7 @@ mod test {
 
             assert_eq!(json_body, json!([{
                 "id": 2,
-                "access": null,
+                "access": "default",
                 "username": "ingalls2",
             }]));
         }
@@ -290,7 +290,7 @@ mod test {
 
             assert_eq!(json_body, json!({
                 "id": 1,
-                "access": null,
+                "access": "default",
                 "username": "ingalls",
                 "email": "ingalls@protonmail.com",
                 "meta": {}
@@ -354,7 +354,7 @@ mod test {
 
             assert_eq!(json_body, json!({
                 "id": 6,
-                "access": null,
+                "access": "default",
                 "username": "future_admin",
                 "email": "fake@example.com",
                 "meta": {}

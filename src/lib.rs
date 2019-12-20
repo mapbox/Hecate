@@ -78,10 +78,10 @@ pub fn start(
     env_logger::init();
 
     let default = match &*auth_rules.0.default {
-        "public"  => auth::AuthDefault::Public,
-        "user" => auth::AuthDefault::User,
-        "admin" => auth::AuthDefault::Admin,
-        _ => panic!("Invalid 'domain' value in custom auth")
+        "public"  => auth::ServerAuthDefault::Public,
+        "user" => auth::ServerAuthDefault::User,
+        "admin" => auth::ServerAuthDefault::Admin,
+        _ => panic!("Invalid 'default' value in custom auth")
     };
 
     HttpServer::new(move || {
@@ -226,6 +226,7 @@ pub fn start(
                     )
                     .service(web::resource("{uid}")
                         .route(web::get().to(user_info))
+                        .route(web::post().to_async(user_modify_info))
                     )
                     .service(web::resource("{uid}/admin")
                         .route(web::put().to(user_set_admin))
@@ -568,6 +569,41 @@ fn user_info(
     Ok(Json(user))
 }
 
+fn user_modify_info(
+    conn: web::Data<DbReplica>,
+    mut auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>,
+    uid: web::Path<i64>,
+    body: web::Payload
+) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
+    match auth_rules.0.is_admin(&mut auth) {
+        Err(err) => { return Either::A(futures::future::err(err)); },
+        _ => ()
+    };
+
+    Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
+        body.extend_from_slice(&chunk);
+        Ok::<_, HecateError>(body)
+    }).and_then(move |body| {
+        let body = match String::from_utf8(body.to_vec()) {
+            Ok(body) => body,
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
+        };
+
+        let mut user: user::User = match serde_json::from_str(&*body) {
+            Ok(user) => match serde_json::from_value(user) {
+                Ok(user) => user,
+                Err(err) => { return Err(HecateError::new(500, String::from("Failed to deserialize user"), Some(err.to_string()))); }
+            },
+            Err(err) => { return Err(HecateError::new(400, String::from("Invalid JSON"), Some(err.to_string()))); }
+        };
+
+        user.id = Some(*uid);
+
+        Ok(Json(json!(user.set(&*conn.get()?)?)))
+    }))
+}
+
 fn user_set_admin(
     conn: web::Data<DbReadWrite>,
     auth: auth::Auth,
@@ -658,7 +694,6 @@ fn user_create_session(
 
         let uid = auth.uid.unwrap();
 
-        // max age of user session
         Ok(user::Token::create(&*conn.get()?, "Session Token", &uid, &HOURS, user::token::Scope::Full)?)
     }).then(|res: Result<user::Token, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(token) => {
@@ -1036,14 +1071,14 @@ fn bounds_set(
     bounds: web::Path<String>,
     body: web::Payload
 ) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
-    let conn = match conn.get() {
-        Ok(conn) => conn,
-        Err(err) => { return Either::A(futures::future::err(err)); }
-    };
-
     match auth::check(&auth_rules.0.bounds.create, auth::RW::Full, &auth) {
         Err(err) => { return Either::A(futures::future::err(err)); },
         _ => ()
+    };
+
+    let conn = match conn.get() {
+        Ok(conn) => conn,
+        Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
     Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
