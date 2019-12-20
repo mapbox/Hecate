@@ -2,6 +2,7 @@ use crate::err::HecateError;
 use super::Auth;
 pub use crate::user::token::Scope as RW;
 use super::AuthAccess;
+use hecate_derive::*;
 
 pub fn not_authed() -> HecateError {
     HecateError::new(401, String::from("You must be logged in to access this resource"), None)
@@ -58,7 +59,7 @@ fn is_auth(scope_type: &str, scope: &String) -> Result<bool, String> {
     }
 }
 
-fn get_kv(scope: &str, key: &str, kv: &serde_json::Value) -> Result<String, HecateError> {
+pub fn get_kv(scope: &str, key: &str, kv: &serde_json::Value) -> Result<String, HecateError> {
     match kv.get(key) {
         None => Err(HecateError::new(400, format!("{}::{} has no value", scope, key), None)),
         Some(value) => match value.as_str() {
@@ -70,7 +71,6 @@ fn get_kv(scope: &str, key: &str, kv: &serde_json::Value) -> Result<String, Heca
 
 pub trait AuthModule {
     fn default() -> Self;
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError>;
     fn is_valid(&self) -> Result<bool, String>;
 }
 
@@ -78,7 +78,7 @@ pub trait AuthParse {
     fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError>;
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthWebhooks {
     pub get: String,
     pub set: String
@@ -92,23 +92,6 @@ impl AuthModule for AuthWebhooks {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthWebhooks {
-                    get: get_kv("webhooks", "get", value)?,
-                    set: get_kv("webhooks", "set", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthWebhooks {
-                    get: String::from("disabled"),
-                    set: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_auth("webhooks::get", &self.get)?;
         is_auth("webhooks::set", &self.set)?;
@@ -117,7 +100,7 @@ impl AuthModule for AuthWebhooks {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthMeta {
     pub get: String,
     pub set: String
@@ -131,23 +114,6 @@ impl AuthModule for AuthMeta {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthMeta {
-                    get: get_kv("meta", "get", value)?,
-                    set: get_kv("meta", "set", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthMeta {
-                    get: String::from("disabled"),
-                    set: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_all("meta::get", &self.get)?;
         is_auth("meta::set", &self.set)?;
@@ -156,7 +122,7 @@ impl AuthModule for AuthMeta {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthClone {
     pub get: String,
     pub query: String
@@ -170,23 +136,6 @@ impl AuthModule for AuthClone {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthClone {
-                    get: get_kv("clone", "get", value)?,
-                    query: get_kv("clone", "query", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthClone {
-                    get: String::from("disabled"),
-                    query: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_all("clone::get", &self.get)?;
         is_all("clone::query", &self.query)?;
@@ -195,7 +144,7 @@ impl AuthModule for AuthClone {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthSchema {
     pub get: String
 }
@@ -207,21 +156,6 @@ impl AuthModule for AuthSchema {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthSchema {
-                    get: get_kv("schema", "get", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthSchema {
-                    get: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_all("schema::get", &self.get)?;
 
@@ -229,7 +163,7 @@ impl AuthModule for AuthSchema {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthStats {
     pub get: String
 }
@@ -241,21 +175,6 @@ impl AuthModule for AuthStats {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthStats {
-                    get: get_kv("stats", "get", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthStats {
-                    get: String::from("disabled"),
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_all("stats::get", &self.get)?;
 
@@ -263,7 +182,7 @@ impl AuthModule for AuthStats {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthAuth {
     pub get: String
 }
@@ -275,21 +194,6 @@ impl AuthModule for AuthAuth {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthAuth {
-                    get: get_kv("auth", "get", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthAuth {
-                    get: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_all("auth::get", &self.get)?;
 
@@ -297,7 +201,7 @@ impl AuthModule for AuthAuth {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthMVT {
     pub get: String,
     pub delete: String,
@@ -315,27 +219,6 @@ impl AuthModule for AuthMVT {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthMVT {
-                    get: get_kv("mvt", "get", value)?,
-                    delete: get_kv("mvt", "delete", value)?,
-                    regen: get_kv("mvt", "regen", value)?,
-                    meta: get_kv("mvt", "meta", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthMVT {
-                    get: String::from("disabled"),
-                    delete: String::from("disabled"),
-                    regen: String::from("disabled"),
-                    meta: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_all("mvt::get", &self.get)?;
         is_all("mvt::regen", &self.regen)?;
@@ -346,7 +229,7 @@ impl AuthModule for AuthMVT {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthUser {
     pub info: String,
     pub list: String,
@@ -364,27 +247,6 @@ impl AuthModule for AuthUser {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthUser {
-                    info: get_kv("user", "info", value)?,
-                    list: get_kv("user", "list", value)?,
-                    create: get_kv("user", "create", value)?,
-                    create_session: get_kv("user", "create_session", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthUser {
-                    info: String::from("disabled"),
-                    list: String::from("disabled"),
-                    create: String::from("disabled"),
-                    create_session: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_all("user::create", &self.create)?;
         is_all("user::list", &self.list)?;
@@ -396,7 +258,7 @@ impl AuthModule for AuthUser {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthStyle {
     pub create: String,
     pub patch: String,
@@ -420,33 +282,6 @@ impl AuthModule for AuthStyle {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthStyle {
-                    create: get_kv("style", "create", value)?,
-                    patch: get_kv("style", "patch", value)?,
-                    set_public: get_kv("style", "set_public", value)?,
-                    set_private: get_kv("style", "set_private", value)?,
-                    delete: get_kv("style", "delete", value)?,
-                    get: get_kv("style", "get", value)?,
-                    list: get_kv("style", "list", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthStyle {
-                    create: String::from("disabled"),
-                    patch: String::from("disabled"),
-                    set_public: String::from("disabled"),
-                    set_private: String::from("disabled"),
-                    delete: String::from("disabled"),
-                    get: String::from("disabled"),
-                    list: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_self("style::create", &self.create)?;
         is_self("style::patch", &self.patch)?;
@@ -460,7 +295,7 @@ impl AuthModule for AuthStyle {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthDelta {
     pub get: String,
     pub list: String,
@@ -474,23 +309,6 @@ impl AuthModule for AuthDelta {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthDelta {
-                    get: get_kv("delta", "get", value)?,
-                    list: get_kv("delta", "list", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthDelta {
-                    get: String::from("disabled"),
-                    list: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_all("delta::get", &self.get)?;
         is_all("delta::list", &self.list)?;
@@ -499,7 +317,7 @@ impl AuthModule for AuthDelta {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthFeature {
     pub force: String,
     pub create: String,
@@ -517,27 +335,6 @@ impl AuthModule for AuthFeature {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthFeature {
-                    force: get_kv("feature", "force", value)?,
-                    create: get_kv("feature", "create", value)?,
-                    get: get_kv("feature", "get", value)?,
-                    history: get_kv("feature", "history", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthFeature {
-                    force: String::from("disabled"),
-                    create: String::from("disabled"),
-                    get: String::from("disabled"),
-                    history: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_auth("feature::create", &self.create)?;
         is_auth("feature::force", &self.force)?;
@@ -548,7 +345,7 @@ impl AuthModule for AuthFeature {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthBounds {
     pub list: String,
     pub create: String,
@@ -566,27 +363,6 @@ impl AuthModule for AuthBounds {
         }
     }
 
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthBounds {
-                    list: get_kv("bounds", "list", value)?,
-                    create: get_kv("bounds", "create", value)?,
-                    delete: get_kv("bounds", "delete", value)?,
-                    get: get_kv("bounds", "get", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthBounds {
-                    list: String::from("disabled"),
-                    create: String::from("disabled"),
-                    delete: String::from("disabled"),
-                    get: String::from("disabled")
-                }))
-            }
-        }
-    }
-
     fn is_valid(&self) -> Result<bool, String> {
         is_all("bounds::list", &self.list)?;
         is_all("bounds::create", &self.create)?;
@@ -597,7 +373,7 @@ impl AuthModule for AuthBounds {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthOSM {
     pub get: String,
     pub create: String
@@ -608,23 +384,6 @@ impl AuthModule for AuthOSM {
         AuthOSM {
             get: String::from("public"),
             create: String::from("user")
-        }
-    }
-
-    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
-        match value {
-            Some(ref value) => {
-                Ok(Box::new(AuthOSM {
-                    get: get_kv("osm", "get", value)?,
-                    create: get_kv("osm", "create", value)?
-                }))
-            },
-            None => {
-                Ok(Box::new(AuthOSM {
-                    get: String::from("disabled"),
-                    create: String::from("disabled")
-                }))
-            }
         }
     }
 
@@ -676,6 +435,26 @@ impl AuthModule for CustomAuth {
         }
     }
 
+    fn is_valid(&self) -> Result<bool, String> {
+        is_all("server", &self.server)?;
+
+        &self.meta.is_valid()?;
+        &self.mvt.is_valid()?;
+        &self.stats.is_valid()?;
+        &self.clone.is_valid()?;
+        &self.schema.is_valid()?;
+        &self.user.is_valid()?;
+        &self.feature.is_valid()?;
+        &self.style.is_valid()?;
+        &self.delta.is_valid()?;
+        &self.bounds.is_valid()?;
+        &self.osm.is_valid()?;
+
+        Ok(true)
+    }
+}
+
+impl AuthParse for CustomAuth {
     fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             None => Ok(Box::new(CustomAuth::default())),
@@ -697,25 +476,6 @@ impl AuthModule for CustomAuth {
                 osm: *AuthOSM::parse(value.get("osm"))?
             }))
         }
-
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("server", &self.server)?;
-
-        &self.meta.is_valid()?;
-        &self.mvt.is_valid()?;
-        &self.stats.is_valid()?;
-        &self.clone.is_valid()?;
-        &self.schema.is_valid()?;
-        &self.user.is_valid()?;
-        &self.feature.is_valid()?;
-        &self.style.is_valid()?;
-        &self.delta.is_valid()?;
-        &self.bounds.is_valid()?;
-        &self.osm.is_valid()?;
-
-        Ok(true)
     }
 }
 

@@ -7,7 +7,7 @@ use std::path::Path;
 use std::fs::File;
 use std::io::Read;
 use hecate::auth::CustomAuth;
-use hecate::auth::AuthModule;
+use hecate::auth::AuthParse;
 use std::error::Error;
 use clap::App;
 
