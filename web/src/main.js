@@ -8,6 +8,20 @@ window.onload = () => {
     });
 }
 
+/**
+ * Format non-200 status codes as errors
+ * and call the callback
+ *
+ * @param {Object} response fetch response
+ * @param {function} cb Callback function
+ */
+function res2err(response, cb) {
+    let err = new Error(response.status + ':' + response.statusText);
+    err.status = response.status;
+
+    return cb(err);
+}
+
 window.hecate = {
     auth: {
         get: function(cb) {
@@ -15,7 +29,8 @@ window.hecate = {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
+
                 return response.json();
             }).then((response) => {
                 return cb(null, response);
@@ -31,7 +46,7 @@ window.hecate = {
                 credentials: 'same-origin'
             }).then((response) => {
                 if (response.status === 404) return cb(null, false);
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return response.json();
             }).then((response) => {
                 return cb(null, response);
@@ -49,7 +64,7 @@ window.hecate = {
                 credentials: 'same-origin'
             }).then((response) => {
                 if (response.status === 404) return cb(null, false);
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return response.json();
             }).then((response) => {
                 return cb(null, response);
@@ -65,7 +80,7 @@ window.hecate = {
                 credentials: 'same-origin'
             }).then((response) => {
                 if (response.status === 404) return cb(null, false);
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return response.json();
             }).then((response) => {
                 return cb(null, response);
@@ -82,7 +97,7 @@ window.hecate = {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return response.text();
             }).then((response) => {
                 response = response.split('\n');
@@ -108,7 +123,7 @@ window.hecate = {
                 method: 'DELETE',
                 credentials: 'same-origin'
             }).then((response) => {
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return cb();
             }).catch((err) => {
                 return cb(err);
@@ -138,10 +153,40 @@ window.hecate = {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return response.json();
             }).then((users) => {
                 return cb(null, users);
+            }).catch((err) => {
+                return cb(err);
+            });
+        },
+        get: function(user_id, cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/${user_id}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                return response.json();
+            }).then((user) => {
+                return cb(null, user);
+            }).catch((err) => {
+                return cb(err);
+            });
+        },
+        update: function(user, cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/${user.id}`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: new Headers({
+                    'Content-Type': 'application/json'
+                }),
+                body: JSON.stringify(user)
+            }).then((response) => {
+                if (response.status !== 200) return res2err(response, cb);
+                return response.json();
+            }).then((user) => {
+                return cb(null, user);
             }).catch((err) => {
                 return cb(err);
             });
@@ -153,7 +198,7 @@ window.hecate = {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return response.json();
             }).then((hooks) => {
                 return cb(null, hooks);
@@ -168,7 +213,7 @@ window.hecate = {
                 method: 'GET',
                 credentials: 'same-origin'
             }).then((response) => {
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return response.json();
             }).then((hook) => {
                 return cb(null, hook);
@@ -183,7 +228,7 @@ window.hecate = {
                 method: 'DELETE',
                 credentials: 'same-origin'
             }).then((response) => {
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return response.json();
             }).then((hook) => {
                 return cb(null, hook);
@@ -202,7 +247,7 @@ window.hecate = {
                 }),
                 body: JSON.stringify(webhook)
             }).then((response) => {
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return response.json();
             }).then((hook) => {
                 return cb(null, hook);
@@ -222,7 +267,7 @@ window.hecate = {
                 }),
                 body: JSON.stringify(webhook)
             }).then((response) => {
-                if (response.status !== 200) return cb(new Error(response.status + ':' + response.statusText));
+                if (response.status !== 200) return res2err(response, cb);
                 return response.json();
             }).then((hook) => {
                 return cb(null, hook);

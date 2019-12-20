@@ -52,8 +52,8 @@ mod test {
         { // Create User
             let conn = Connection::connect("postgres://postgres@localhost:5432/hecate", TlsMode::None).unwrap();
             conn.execute("
-                INSERT INTO users (username, password, email)
-                    VALUES ('ingalls', crypt('yeahehyeah', gen_salt('bf', 10)), 'ingalls@protonmail.com')
+                INSERT INTO users (username, password, email, access)
+                    VALUES ('ingalls', crypt('yeahehyeah', gen_salt('bf', 10)), 'ingalls@protonmail.com', 'default')
             ", &[]).unwrap();
         }
 

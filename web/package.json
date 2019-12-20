@@ -11,14 +11,14 @@
     "dev": "NODE_ENV=development parcel index.html login/index.html --public-url='/admin/'"
   },
   "dependencies": {
-    "@mapbox/assembly": "^0.23.0",
+    "@mapbox/assembly": "^0.24.0",
     "@mapbox/mapbox-gl-geocoder": "^4.1.2",
     "@turf/turf": "^5.1.6",
     "moment": "^2.22.2",
     "vue": "^2.5.16"
   },
   "devDependencies": {
-    "@vue/component-compiler-utils": "3.0.0",
+    "@vue/component-compiler-utils": "3.1.0",
     "babel-core": "^6.26.3",
     "babel-preset-env": "^1.7.0",
     "parcel-bundler": "^1.8.1",
