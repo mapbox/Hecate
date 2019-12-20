@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.82.1
+
+- :bug: `user_modify_info` function requires write DB access
+
 ## v0.82.0
 
 - :tada: [UI] Add ability for admin to make changes to user accounts
