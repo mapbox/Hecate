@@ -10,6 +10,14 @@
 
 # Version History
 
+## v0.82.0
+
+- :tada: [UI] Add ability for admin to make changes to user accounts
+- :tada: Add `user_modify_info` endpoint
+- :tada: Add new `disabled` user access type
+- :rocket: Switch Auth access value to Enum
+- :rocket: [UI] Add `insufficient permission` warnings to parts of the UI
+
 ## v0.81.0
 
 - :tada: Add `disabled` type for custom auth
