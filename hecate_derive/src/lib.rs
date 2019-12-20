@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Data, Fields};
 
-#[proc_macro_derive(AuthParse)]
+#[proc_macro_derive(AuthParse, attributes(default))]
 pub fn auth_parse(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 

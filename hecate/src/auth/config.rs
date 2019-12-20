@@ -80,7 +80,10 @@ pub trait AuthParse {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthWebhooks {
+    #[default = "admin"]
     pub get: String,
+
+    #[default = "admin"]
     pub set: String
 }
 
@@ -102,7 +105,10 @@ impl AuthModule for AuthWebhooks {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthMeta {
+    #[default = "public"]
     pub get: String,
+
+    #[default = "admin"]
     pub set: String
 }
 
@@ -124,7 +130,10 @@ impl AuthModule for AuthMeta {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthClone {
+    #[default = "user"]
     pub get: String,
+
+    #[default = "user"]
     pub query: String
 }
 
@@ -146,6 +155,7 @@ impl AuthModule for AuthClone {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthSchema {
+    #[default = "public"]
     pub get: String
 }
 
@@ -165,6 +175,7 @@ impl AuthModule for AuthSchema {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthStats {
+    #[default = "public"]
     pub get: String
 }
 
@@ -184,6 +195,7 @@ impl AuthModule for AuthStats {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthAuth {
+    #[default = "public"]
     pub get: String
 }
 
@@ -203,9 +215,16 @@ impl AuthModule for AuthAuth {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthMVT {
+    #[default = "public"]
     pub get: String,
+
+    #[default = "admin"]
     pub delete: String,
+
+    #[default = "user"]
     pub regen: String,
+
+    #[default = "public"]
     pub meta: String
 }
 
@@ -231,9 +250,16 @@ impl AuthModule for AuthMVT {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthUser {
+    #[default = "self"]
     pub info: String,
+
+    #[default = "user"]
     pub list: String,
+
+    #[default = "public"]
     pub create: String,
+
+    #[default = "self"]
     pub create_session: String
 }
 
@@ -260,12 +286,25 @@ impl AuthModule for AuthUser {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthStyle {
+    #[default = "self"]
     pub create: String,
+
+    #[default = "self"]
     pub patch: String,
+
+    #[default = "self"]
     pub set_public: String,
+
+    #[default = "self"]
     pub set_private: String,
+
+    #[default = "self"]
     pub delete: String,
+
+    #[default = "public"]
     pub get: String,
+
+    #[default = "public"]
     pub list: String
 }
 
@@ -297,7 +336,10 @@ impl AuthModule for AuthStyle {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthDelta {
+    #[default = "public"]
     pub get: String,
+
+    #[default = "public"]
     pub list: String,
 }
 
@@ -319,9 +361,16 @@ impl AuthModule for AuthDelta {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthFeature {
+    #[default = "none"]
     pub force: String,
+
+    #[default = "user"]
     pub create: String,
+
+    #[default = "public"]
     pub get: String,
+
+    #[default = "public"]
     pub history: String
 }
 
@@ -347,9 +396,16 @@ impl AuthModule for AuthFeature {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthBounds {
+    #[default = "public"]
     pub list: String,
+
+    #[default = "admin"]
     pub create: String,
+
+    #[default = "admin"]
     pub delete: String,
+
+    #[default = "public"]
     pub get: String
 }
 
@@ -366,7 +422,7 @@ impl AuthModule for AuthBounds {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("bounds::list", &self.list)?;
         is_all("bounds::create", &self.create)?;
-        is_all("bounds::delete", &self.create)?;
+        is_all("bounds::delete", &self.delete)?;
         is_all("bounds::get", &self.get)?;
 
         Ok(true)
@@ -375,7 +431,10 @@ impl AuthModule for AuthBounds {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
 pub struct AuthOSM {
+    #[default = "public"]
     pub get: String,
+
+    #[default = "user"]
     pub create: String
 }
 
