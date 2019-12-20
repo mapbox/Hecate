@@ -1,0 +1,15 @@
+[package]
+name = "hecate_derive"
+version = "0.1.0"
+edition = "2018"
+authors = ["ingalls <ingalls@protonmail.com>"]
+license = "MIT"
+description = "Custom Derivable traits used in Hecate Server"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = "1.0"
