@@ -99,7 +99,7 @@ pub fn start(
             //TODO HANDLE GENERIC 404
             .route("/", web::get().to(index))
             .service(
-                actix_files::Files::new("/admin", "./web/dist/")
+                actix_files::Files::new("/admin", "../hecate_ui/dist/")
                     .index_file("index.html")
             )
             .service(web::scope("api")

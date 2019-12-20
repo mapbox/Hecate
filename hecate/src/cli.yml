@@ -3,6 +3,13 @@ author: Nicholas Ingalls <ingalls@protonmail.com>
 about: Data Storage Backend Focused on Speed and GeoJSON Interchange
 version: 0.82.1
 args:
+    - ui:
+        short: ui
+        long: ui
+        value_name: UI
+        help: Specify the folder containing a built version of the Hecate UI
+        takes_value: true
+
     - database:
         short: d
         long: database
