@@ -2,21 +2,18 @@
     "default": "user",
     "server": "public",
     "webhooks": {
-        "list": "public",
-        "delete": "public",
-        "update": "public"
+        "set": "public",
+        "get": "public"
     },
     "meta": {
         "get": "public",
-        "list": "public",
         "set": "user"
     },
     "schema": {
         "get": "public"
     },
     "stats": {
-        "get": "public",
-        "bounds": "public"
+        "get": "public"
     },
     "mvt": {
         "get": "public",

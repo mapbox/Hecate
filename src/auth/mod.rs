@@ -5,32 +5,79 @@ use actix_web::http::header::{HeaderName, HeaderValue};
 pub mod config;
 pub mod middleware;
 pub use config::AuthContainer;
-pub use config::ValidAuth;
+pub use config::AuthModule;
 pub use config::CustomAuth;
 pub use config::RW;
 use crate::user::token::Scope;
 
+///
+/// The server's default auth stragegy for all endpoints
+///
+/// Setting to User/Admin will enable auth for all UI/API
+/// endpoints, regardless of indivudual auth settings
+///
 #[derive(Debug, PartialEq, Clone)]
-pub enum AuthDefault {
+pub enum ServerAuthDefault {
     Public,
     User,
     Admin
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum AuthAccess {
+    Disabled,
+    Default,
+    Admin
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct Auth {
     pub uid: Option<i64>,
-    pub access: Option<String>,
+    pub access: AuthAccess,
     pub token: Option<String>,
     pub basic: Option<(String, String)>,
     pub scope: Scope
+}
+
+pub fn check(rule: &String, rw: config::RW, auth: &Auth) -> Result<(), HecateError> {
+    config::rw_met(rw, &auth)?;
+
+    match rule.as_ref() {
+        "public" => Ok(()),
+        "admin" => {
+            if auth.access == AuthAccess::Admin && auth.uid.is_some() {
+                return Ok(());
+            } else {
+                return Err(config::not_authed());
+            }
+        },
+        "user" => {
+            if auth.uid.is_some() {
+                return Ok(());
+            } else {
+                return Err(config::not_authed());
+            }
+        },
+        "self" => {
+            //Note: This ensures the user is validated,
+            //it is up to the parent caller to ensure
+            //the UID of 'self' matches the requested resource
+
+            if auth.uid.is_some() {
+                return Ok(());
+            } else {
+                return Err(config::not_authed());
+            }
+        },
+        _ => Err(config::not_authed())
+    }
 }
 
 impl Auth {
     pub fn new() -> Self {
         Auth {
             uid: None,
-            access: None,
+            access: AuthAccess::Default,
             token: None,
             basic: None,
             scope: Scope::Read
@@ -52,17 +99,16 @@ impl Auth {
             }
         };
 
-        match self.access {
-            Some(access) => {
-                headers.insert(
-                    HeaderName::from_static("hecate_access"),
-                    HeaderValue::from_str(access.as_str()).unwrap_or(HeaderValue::from_static(""))
-                );
-            },
-            None => {
-                headers.remove("hecate_access");
-            }
+        let access = match self.access {
+            AuthAccess::Admin => "admin",
+            AuthAccess::Default => "default",
+            AuthAccess::Disabled => "disabled"
         };
+
+        headers.insert(
+            HeaderName::from_static("hecate_access"),
+            HeaderValue::from_str(access).unwrap()
+        );
 
         match self.token {
             Some(token) => {
@@ -130,10 +176,18 @@ impl Auth {
                 }
             },
             access: match headers.get("hecate_access") {
-                None => None,
+                None => AuthAccess::Default,
                 Some(access) => match access.to_str() {
                     Ok(access) => {
-                        Some(access.to_string())
+                        if access == "default" {
+                            AuthAccess::Default
+                        } else if access == "admin" {
+                            AuthAccess::Admin
+                        } else if access == "disabled" {
+                            AuthAccess::Disabled
+                        } else {
+                            return Err(HecateError::new(500, String::from("Authentication Error"), None));
+                        }
                     },
                     Err(err) => {
                         return Err(HecateError::new(500, String::from("Authentication Error"), Some(err.to_string())));
@@ -295,14 +349,15 @@ impl Auth {
     /// Used as a generic function by validate to ensure future
     /// authentication methods are cleared with each validate
     ///
-    pub fn secure(&mut self, user: Option<(i64, Option<String>)>) {
+    pub fn secure(&mut self, user: Option<(i64, AuthAccess)>) {
         match user {
             Some(user) => {
                 self.uid = Some(user.0);
                 self.access = user.1;
             }
             _ => ()
-        }
+        };
+
         self.token = None;
         self.basic = None;
     }
@@ -334,6 +389,19 @@ impl Auth {
                     let uid: i64 = res.get(0).get(0);
                     let access: Option<String> = res.get(0).get(1);
 
+                    let access = match access {
+                        Some(access) => {
+                            if access == "admin" {
+                                AuthAccess::Admin
+                            } else if access == "disabled" {
+                                AuthAccess::Disabled
+                            } else {
+                                AuthAccess::Default
+                            }
+                        },
+                        None => AuthAccess::Default
+                    };
+
                     self.secure(Some((uid, access)));
 
                     return Ok(true);
@@ -362,6 +430,19 @@ impl Auth {
 
                     let uid: i64 = res.get(0).get(0);
                     let access: Option<String> = res.get(0).get(1);
+
+                    let access = match access {
+                        Some(access) => {
+                            if access == "admin" {
+                                AuthAccess::Admin
+                            } else if access == "disabled" {
+                                AuthAccess::Disabled
+                            } else {
+                                AuthAccess::Default
+                            }
+                        },
+                        None => AuthAccess::Default
+                    };
 
                     self.secure(Some((uid, access)));
 

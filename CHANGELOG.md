@@ -10,6 +10,40 @@
 
 # Version History
 
+## v0.82.0
+
+- :tada: [UI] Add ability for admin to make changes to user accounts
+- :tada: Add `user_modify_info` endpoint
+- :tada: Add new `disabled` user access type
+- :rocket: Switch Auth access value to Enum
+- :rocket: [UI] Add `insufficient permission` warnings to parts of the UI
+
+## v0.81.0
+
+- :tada: Add `disabled` type for custom auth
+- :rocket: Rewrite Auth struct to remove boilerplate `allows_*`  methods and allow direct auth checks
+- :rocket: Simplify webhook permissions to `get/set`
+- :rocket: Simplify meta permission to `get/set`
+- :rocket: Simplify stats permission to `get`
+- :rocket: Create JSON -> Struct trait for each section for manual JSON parsing and better error messages
+- :rocket Ensure `disabled` type is respected
+
+## v0.80.0
+
+- :rocket: Create new `geo_history` table to retrieve feature history
+- :rocket: Remove `features` column from the `deltas` table; features are now stored in `geo_history`
+- :bug: Make responses from the deltas and feature history API consistent
+- :rocket: Add `features/history` streaming endpoint
+- :rocket: Add `migrations` directory to track database migrations
+
+## v0.79.0
+
+- :rocket: Even more uses of `web::block` to make more calls async in nature
+
+## v0.78.0
+
+- :rocket: Use `web::block` to make a number of calls async in nature
+
 ## v0.77.3
 
 - :bug: Revert v0.77.2 due to timeout issues

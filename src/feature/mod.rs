@@ -228,7 +228,7 @@ pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<s
         Action::Create => create(&trans, &schema, &feat, &delta)?,
         Action::Modify => modify(&trans, &schema, &feat, &delta)?,
         Action::Restore => restore(&trans, &schema, &feat, &delta)?,
-        Action::Delete => delete(&trans, &feat)?
+        Action::Delete => delete(&trans, &feat, &delta)?
     };
 
     Ok(res)
@@ -281,18 +281,42 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
                         geom = ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
                         props = $2::TEXT::JSON,
                         deltas = array_append(geo.deltas, COALESCE($3, currval('deltas_id_seq')::BIGINT))
-                RETURNING id;
+                RETURNING id, version;
         ", &[&geom_str, &props_str, &delta, &key]) {
-            Ok(res) => Ok(Response {
-                old: id,
-                new: Some(res.get(0).get(0)),
-                version: Some(1)
-            }),
+            Ok(res) => {
+                let new: i64 = res.get(0).get(0);
+                let version: i64 = res.get(0).get(1);
+
+                match trans.query("
+                    INSERT INTO geo_history (action, geom, props, delta, key, id, version)
+                        VALUES (
+                            'create',
+                            ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                            $2::TEXT::JSON,
+                            COALESCE($3, currval('deltas_id_seq')::BIGINT),
+                            $4,
+                            $5,
+                            $6
+                        )
+                ", &[&geom_str, &props_str, &delta, &key, &new, &version]) {
+                    Err(err) => {
+                        match err.as_db() {
+                            Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
+                            _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
+                        }
+                    },
+                    Ok(_) => {
+                        Ok(Response {
+                            old: id,
+                            new: Some(new),
+                            version: Some(version)
+                        })
+                    }
+                }
+            },
             Err(err) => {
                 match err.as_db() {
-                    Some(e) => {
-                        Err(import_error(&feat, e.message.as_str(), None))
-                    },
+                    Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
                     _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
                 }
             }
@@ -306,13 +330,39 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
                     $2::TEXT::JSON,
                     array[COALESCE($3, currval('deltas_id_seq')::BIGINT)],
                     $4
-                ) RETURNING id;
+                ) RETURNING id, version;
         ", &[&geom_str, &props_str, &delta, &key]) {
-            Ok(res) => Ok(Response {
-                old: id,
-                new: Some(res.get(0).get(0)),
-                version: Some(1)
-            }),
+            Ok(res) => {
+                let new: i64 = res.get(0).get(0);
+                let version: i64 = res.get(0).get(1);
+
+                match trans.query("
+                    INSERT INTO geo_history (action, geom, props, delta, key, id, version)
+                        VALUES (
+                            'create',
+                            ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                            $2::TEXT::JSON,
+                            COALESCE($3, currval('deltas_id_seq')::BIGINT),
+                            $4,
+                            $5,
+                            $6
+                        ) RETURNING version;
+                ", &[&geom_str, &props_str, &delta, &key, &new, &version]) {
+                    Err(err) => {
+                        match err.as_db() {
+                            Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
+                            _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
+                        }
+                    },
+                    Ok(_) => {
+                        Ok(Response {
+                            old: id,
+                            new: Some(new),
+                            version: Some(version)
+                        })
+                    }
+                }
+            },
             Err(err) => {
                 match err.as_db() {
                     Some(e) => {
@@ -353,12 +403,44 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
         Err(err) => { return Err(import_error(&feat, "Failed to stringify properties", Some(err.to_string()))) }
     };
 
-    match trans.query("SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4, $6);", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
-        Ok(_) => Ok(Response {
-            old: Some(id),
-            new: Some(id),
-            version: Some(version + 1)
-        }),
+    match trans.query("
+            SELECT modify_geo($1, $2, COALESCE($5, currval('deltas_id_seq')::BIGINT), $3, $4, $6);
+        ", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
+        Ok(_) => {
+            match trans.query("
+                INSERT INTO geo_history (geom, props, id, version, delta, key, action)
+                    VALUES (
+                        ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                        $2::TEXT::JSON,
+                        $3,
+                        $4::BIGINT + 1,
+                        COALESCE($5, currval('deltas_id_seq')::BIGINT),
+                        $6,
+                        'modify'
+                    ) RETURNING version;
+            ", &[&geom_str, &props_str, &id, &version, &delta, &key]) {
+                Ok(res) => {
+                    let new_version: i64 = res.get(0).get(0);
+                    Ok(Response {
+                        old: Some(id),
+                        new: Some(id),
+                        version: Some(new_version)
+                    })
+                },
+                Err(err) => {
+                    match err.as_db() {
+                        Some(e) => {
+                            if e.message == "MODIFY: ID or VERSION Mismatch" {
+                                Err(import_error(&feat, "Modify Version Mismatch", None))
+                            } else {
+                                Err(import_error(&feat, e.message.as_str(), None))
+                            }
+                        },
+                        _ => Err(import_error(&feat, "Generic Error", None))
+                    }
+                }
+            }
+        },
         Err(err) => {
             match err.as_db() {
                 Some(e) => {
@@ -376,16 +458,44 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
     }
 }
 
-pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Feature) -> Result<Response, HecateError> {
+pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Feature, delta: &Option<i64>) -> Result<Response, HecateError> {
     let id = get_id(&feat)?;
     let version = get_version(&feat)?;
+    let key = get_key(&feat)?;
 
     match trans.query("SELECT delete_geo($1, $2);", &[&id, &version]) {
-        Ok(_) => Ok(Response {
-            old: Some(id),
-            new: None,
-            version: None
-        }),
+        Ok(_) => {
+            match trans.query("
+                INSERT INTO geo_history (id, version, delta, key, action)
+                    VALUES (
+                        $1,
+                        $2::BIGINT + 1,
+                        COALESCE($3, currval('deltas_id_seq')::BIGINT),
+                        $4,
+                        'delete'
+                    );
+            ", &[&id, &version, &delta, &key]) {
+                Ok(_) => {
+                    Ok(Response {
+                        old: Some(id),
+                        new: None,
+                        version: None
+                    })
+                },
+                Err(err) => {
+                    match err.as_db() {
+                        Some(e) => {
+                            if e.message == "DELETE: ID or VERSION Mismatch" {
+                                Err(import_error(&feat, "Delete Version Mismatch", None))
+                            } else {
+                                Err(import_error(&feat, e.message.as_str(), None))
+                            }
+                        },
+                        _ => Err(import_error(&feat, "Generic Error", None))
+                    }
+                }
+            }
+        },
         Err(err) => {
             match err.as_db() {
                 Some(e) => {
@@ -525,46 +635,41 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
         Err(_) => { return Err(import_error(&feat, "Failed to stringify properties", None)) }
     };
 
-    //Get the previous version of a given feature
+    //Get the previous version, action, and all deltas of a given feature
     match trans.query("
+    SELECT
+        ARRAY_AGG(delta ORDER BY delta) as delta_ids,
+        MAX(version) as max_version,
+        (ARRAY_AGG(action ORDER BY version DESC))[1] as action
+    FROM (
         SELECT
-            ARRAY_AGG(id ORDER BY id) AS delta_ids,
-            MAX(feat->>'version')::BIGINT + 1 AS max_version
-        FROM (
-            SELECT
-                deltas.id,
-                JSON_Array_Elements((deltas.features -> 'features')::JSON) AS feat
-            FROM
-                deltas
-            WHERE
-                affected @> ARRAY[$1]::BIGINT[]
-            ORDER BY id DESC
-        ) f
+            delta,
+            version,
+            action
+        FROM
+            geo_history
         WHERE
-            (feat->>'id')::BIGINT = $1
-        GROUP BY feat->>'id'
+            id=$1
+    ) t
     ", &[&id]) {
-        Ok(history) => {
-
-            if history.len() != 1 {
-                return Err(import_error(&feat, "Feature Not Found", None));
-            }
-
-            //Version will be None if the feature was created but has never been modified since the
-            //original create does not need a version
-            let prev_version: Option<i64> = history.get(0).get(1);
-            match prev_version {
-                None => {
-                    return Err(import_error(&feat, "Feature Not In Deleted State", None));
-                },
-                Some(prev_version) => {
-                    if prev_version != version {
-                        return Err(import_error(&feat, "Restore Version Mismatch", None));
-                    }
-                }
+        Ok(res) => {
+            // Agg function returns row of NULLs if inner query doesn't return results
+            let affected: Option<Vec<i64>> = res.get(0).get(0);
+            let affected = match affected {
+                None => return Err(import_error(&feat, "Feature Not Found", None)),
+                Some(deltas) => deltas
             };
 
-            let affected: Vec<i64> = history.get(0).get(0);
+            let prev_version: i64 = res.get(0).get(1);
+            // previous version of a feature must match version passed in request
+            if prev_version != version {
+                return Err(import_error(&feat, "Restore Version Mismatch", None));
+            }
+
+            let prev_action: String = res.get(0).get(2);
+            if prev_action != String::from("delete") {
+                return Err(import_error(&feat, "Feature Not In Deleted State", None));
+            }
 
             //Create Delta History Array
             match trans.query("
@@ -576,13 +681,37 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                         $4::TEXT::JSON,
                         array_append($5::BIGINT[], COALESCE($6, currval('deltas_id_seq')::BIGINT)),
                         $7
-                    );
+                    ) RETURNING version;
             ", &[&id, &prev_version, &geom_str, &props_str, &affected, &delta, &key]) {
-                Ok(_) => Ok(Response {
-                    old: Some(id),
-                    new: Some(id),
-                    version: Some(version + 1)
-                }),
+                Ok(res) => {
+                    let new_version: i64 = res.get(0).get(0);
+                    match trans.query("
+                        INSERT INTO geo_history (geom, props, id, version, delta, key, action)
+                            VALUES (
+                                ST_SetSRID(ST_GeomFromGeoJSON($1), 4326),
+                                $2::TEXT::JSON,
+                                $3,
+                                $4,
+                                COALESCE($5, currval('deltas_id_seq')::BIGINT),
+                                $6,
+                                'restore'
+                            );
+                    ", &[&geom_str, &props_str, &id, &new_version, &delta, &key]) {
+                        Ok(_) => {
+                            Ok(Response {
+                                old: Some(id),
+                                new: Some(id),
+                                version: Some(new_version)
+                            })
+                        },
+                        Err(err) => {
+                            match err.as_db() {
+                                Some(e) => Err(import_error(&feat, e.message.as_str(), None)),
+                                _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
+                            }
+                        }
+                    }
+                },
                 Err(err) => {
                     match err.as_db() {
                         Some(e) => {
@@ -591,7 +720,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
                             } else if e.message == "duplicate key value violates unique constraint \"geo_key_key\"" {
                                 Err(import_error(&feat, "Duplicate Key Value", None))
                             } else {
-                                Err(import_error(&feat, "Generic Error", Some(err.to_string())))
+                                Err(import_error(&feat, e.message.as_str(), None))
                             }
                         }
                         _ => Err(import_error(&feat, "Generic Error", Some(err.to_string())))
@@ -696,4 +825,96 @@ pub fn get_bbox(conn: &impl postgres::GenericConnection, bbox: Vec<f64>) -> Resu
         },
         Err(err) => Err(HecateError::from_db(err))
     }
+}
+
+///Get the history of a particular feature
+pub fn history(conn: &impl postgres::GenericConnection, feat_id: &i64) -> Result<serde_json::Value, HecateError> {
+    match conn.query("
+        SELECT json_agg (
+            JSON_Build_Object(
+                'id', deltas.id,
+                'uid', deltas.uid,
+                'feat', JSON_Build_Object(
+                    'id', geo_history.id,
+                    'action', geo_history.action,
+                    'key', geo_history.key,
+                    'type', 'Feature',
+                    'version', geo_history.version,
+                    'geometry', ST_AsGeoJSON(geom)::JSON,
+                    'properties', geo_history.props
+                ),
+                'username', users.username
+            )
+            ORDER BY geo_history.version DESC
+        )
+        FROM
+            geo_history,
+            deltas,
+            users
+        WHERE
+            geo_history.id = $1 AND
+            geo_history.delta = deltas.id AND
+            deltas.uid = users.id;
+    ", &[&feat_id]) {
+        Ok(res) => {
+            if res.len() == 0 {
+                return Err(HecateError::new(400, String::from("Could not find history for given id"), None))
+            }
+            let history: serde_json::Value = res.get(0).get(0);
+
+            Ok(history)
+        },
+        Err(err) => Err(HecateError::from_db(err))
+    }
+}
+
+pub fn get_point_history_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<PGStream, HecateError> {
+    let (lng, lat) = validate::point(point)?;
+
+    Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
+        DECLARE next_features CURSOR FOR
+            SELECT
+                row_to_json(f)::TEXT AS feature
+            FROM (
+                SELECT
+                    id,
+                    action,
+                    key,
+                    delta,
+                    'Feature' AS type,
+                    version,
+                    ST_AsGeoJSON(geom)::JSON AS geometry,
+                    props AS properties
+                FROM geo_history
+                WHERE
+                    ST_DWithin(ST_SetSRID(ST_MakePoint($1, $2), 4326), geom, 0.00005)
+                ORDER BY
+                    ST_Distance(ST_SetSRID(ST_MakePoint($1, $2), 4326), geom) DESC
+            ) f;
+    "#), &[&lng, &lat])?)
+}
+
+pub fn get_bbox_history_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: &Vec<f64>) -> Result<PGStream, HecateError> {
+    validate::bbox(bbox)?;
+
+    Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
+        DECLARE next_features CURSOR FOR
+            SELECT
+                row_to_json(f)::TEXT AS feature
+            FROM (
+                SELECT
+                    id,
+                    action,
+                    key,
+                    delta,
+                    'Feature' AS type,
+                    version,
+                    ST_AsGeoJSON(geom)::JSON AS geometry,
+                    props AS properties
+                FROM geo_history
+                WHERE
+                    ST_Intersects(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
+                    OR ST_Within(geom, ST_MakeEnvelope($1, $2, $3, $4, 4326))
+            ) f;
+    "#), &[&bbox[0], &bbox[1], &bbox[2], &bbox[3]])?)
 }

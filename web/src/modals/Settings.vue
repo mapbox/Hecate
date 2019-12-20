@@ -60,9 +60,76 @@
                         </div>
                     </div>
                 </template>
+                <template v-else-if='mode === "userDisable"'>
+                    <div class='col col--12 txt-m txt-bold py6'>
+                        Disable User Account
+                    </div>
+
+                    <div class='col col--12'>
+                        Warning: disabling a user will do the following once you click "save"
+
+                        <div class='pl12 py3'>
+                            - Permanently destroy all user sessions &amp; API Tokens
+                        </div>
+                        <div class='pl12 py3'>
+                            - Randomize the user's password
+                        </div>
+
+                        Although a user can be re-enabled, past API tokens and the previous
+                        password cannot be recovered.
+                    </div>
+
+                    <button @click='mode = "user"' class='btn round fr'>Got It!</button>
+                </template>
+                <template v-else-if='mode === "user"'>
+                    <div class='col col--12 txt-m txt-bold py6'>
+                        User Account Settings
+                        <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
+                    </div>
+
+                    <div class='grid grid--gut12'>
+                        <div class='col col--6 pb12'>
+                            <label>Username</label>
+                            <input v-model='userData.username' class='input' placeholder='Username'/>
+                        </div>
+                        <div class='col col--6 pb12'>
+                            <label>Email</label>
+                            <input v-model='userData.email' class='input' placeholder='Email'/>
+                        </div>
+
+                        <div class='col col--6'>
+                            <label >Account Type</label>
+                            <div class='select-container w-full'>
+                                <select v-model='userData.access' class='select'>
+                                    <option>default</option>
+                                    <option>admin</option>
+                                </select>
+                                <div class='select-arrow'></div>
+                            </div>
+                        </div>
+                        <div class='col col--6'>
+                            <label class='switch-container fr pt30'>
+                                <template v-if='userData.enabled'>
+                                    Account Enabled
+                                </template>
+                                <template v-else>
+                                    Account Disabled
+                                </template>
+                                <input v-model='userData.enabled' type='checkbox' />
+                                <div class='switch ml6'></div>
+                            </label>
+                        </div>
+
+                        <div class='col col--6 pt30'>
+                            <button @click='modifyUser()' class='btn round w-full'>Save</button>
+                        </div>
+                        <div class='col col--6 pt30'>
+                            <button @click='close' class='btn btn--red round w-full'>Cancel</button>
+                        </div>
+                    </div>
+                </template>
                 <template v-else-if='mode === "addHook"'>
                     <div class='grid w-full col'>
-
                         <template v-if='webhookData.error'>
                             <div class='col--12 color-white px12 bg-red round align-center'>
                                 <h3 class='w-full py6 txt-m txt-bold' v-text='webhookData.error'></h3>
@@ -294,28 +361,38 @@
                                 <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </div>
 
-                            <div class='py6 col col--12 border--gray-light border-b mb12'>
-                                <span class='txt-m'>Users</span>
-                            </div>
+                            <template v-if='allowed.users'>
+                                <div class='py6 col col--12 border--gray-light border-b mb12'>
+                                    <span class='txt-m'>Users</span>
+                                </div>
 
-                            <div class='relative mb12'>
-                                <div class='absolute flex-parent flex-parent--center-cross flex-parent--center-main w36 h36'><svg class='icon'><use href='#icon-search'></use></svg></div>
-                                <input v-model='userFilter' class='input pl36' placeholder='Filter Users'>
-                            </div>
+                                <div class='relative mb12'>
+                                    <div class='absolute flex-parent flex-parent--center-cross flex-parent--center-main w36 h36'><svg class='icon'><use href='#icon-search'></use></svg></div>
+                                    <input v-model='userFilter' class='input pl36' placeholder='Filter Users'>
+                                </div>
 
-                            <div class='col col--12 h240 scroll-auto'>
-                                <template v-for='(user, user_idx) of users'>
-                                    <div class='col col--12'>
-                                       <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
-                                            <div class='col--2'>
-                                                <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 mx3 txt-xs txt-bold round' v-text="user.id"></span>
+                                <div class='col col--12 h240 scroll-auto'>
+                                    <template v-for='(user, user_idx) of users'>
+                                        <div class='col col--12'>
+                                           <div @click='userSelect(user)' class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
+                                                <div class='col--2'>
+                                                    <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 mx3 txt-xs txt-bold round' v-text="user.id"></span>
+                                                </div>
+                                                <div class='col--8' v-text='user.username'></div>
+                                                <div class='col--2' v-text='user.access'></div>
                                             </div>
-                                            <div class='col--8' v-text='user.username'></div>
-                                            <div class='col--2' v-text='user.access'></div>
                                         </div>
-                                    </div>
-                                </template>
-                            </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div class='col col--12 pt60'>
+                                    <svg class='icon w60 h60 mx-auto'><use href='#icon-alert'/></svg>
+                                </div>
+                                <div class='align-center'>
+                                    Insufficient Permissions
+                                </div>
+                            </template>
                         </template>
                         <template v-if='submode === "meta"'>
                             <div class='col col--12 txt-m txt-bold'>
@@ -351,30 +428,40 @@
                                 <button @click='close' class='fr btn round bg-white color-black bg-darken25-on-hover'><svg class='icon'><use href='#icon-close'/></svg></button>
                             </div>
 
-                            <div class='py6 col col--12 border--gray-light border-b mb12'>
-                                <span class='txt-m'>Webhooks</span>
-                                <button @click="addHookClick" class='btn round h24 fr'>
-                                    <svg class='icon h-full'><use href='#icon-plus'/></svg>
-                                </button>
-                            </div>
-
-                            <template v-if="hooks.length">
-                                <div class='col col--12 h240 scroll-auto'>
-                                    <template v-for='(hook, hook_idx) of hooks'>
-                                        <div class='col col--12'>
-                                           <div @click="getHook(hook.id)" class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
-                                                <span class="mx6" v-text='hook.name'></span>
-                                                <template v-for='hook_action of hook.actions'>
-                                                    <span class='bg-blue-faint color-blue px6 py3 my3 mx3 txt-xs txt-bold round' v-text="hook_action"></span>
-                                                </template>
-                                           </div>
-                                        </div>
-                                    </template>
+                            <template v-if='allowed.hooks'>
+                                <div class='py6 col col--12 border--gray-light border-b mb12'>
+                                    <span class='txt-m'>Webhooks</span>
+                                    <button @click="addHookClick" class='btn round h24 fr'>
+                                        <svg class='icon h-full'><use href='#icon-plus'/></svg>
+                                    </button>
                                 </div>
+
+                                <template v-if="hooks.length">
+                                    <div class='col col--12 h240 scroll-auto'>
+                                        <template v-for='(hook, hook_idx) of hooks'>
+                                            <div class='col col--12'>
+                                               <div @click="getHook(hook.id)" class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
+                                                    <span class="mx6" v-text='hook.name'></span>
+                                                    <template v-for='hook_action of hook.actions'>
+                                                        <span class='bg-blue-faint color-blue px6 py3 my3 mx3 txt-xs txt-bold round' v-text="hook_action"></span>
+                                                    </template>
+                                               </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <div class='col col--12 h240 scroll-auto'>
+                                        <div class="align-center">No Webhooks Yet!</div>
+                                    </div>
+                                </template>
                             </template>
                             <template v-else>
-                                <div class='col col--12 h240 scroll-auto'>
-                                    <div class="align-center">No Webhooks Yet!</div>
+                                <div class='col col--12 pt60'>
+                                    <svg class='icon w60 h60 mx-auto'><use href='#icon-alert'/></svg>
+                                </div>
+                                <div class='align-center'>
+                                    Insufficient Permissions
                                 </div>
                             </template>
                         </template>
@@ -402,6 +489,11 @@ export default {
             layers: [],
             users: [],
             userFilter: '',
+            allowed: {
+                // If the fetcher gets a 401, add a nice "you don't have perms message"
+                users: true,
+                hooks: true
+            },
             delLayerData: {
                 idx: false,
                 name: '',
@@ -416,6 +508,14 @@ export default {
                 provider: {
 
                 }
+            },
+            userData: {
+                id: false,
+                access: 'default',
+                enabled: false,
+                username: '',
+                email: '',
+                meta: {}
             },
             layerData: {
                 id: false,
@@ -453,6 +553,11 @@ export default {
         this.getHooks();
     },
     watch: {
+        'userData.enabled': function() {
+            if (this.userData.enabled) return;
+
+            this.mode = 'userDisable';
+        },
         userFilter: function() {
             this.getUsers();
         }
@@ -466,6 +571,40 @@ export default {
             } else {
                 this.$emit('close');
             }
+        },
+        userSelect: function(user) {
+            window.hecate.users.get(user.id, (err, user) => {
+                if (err) return this.$emit('error', err);
+
+                this.userData.id = user.id;
+                this.userData.username = user.username;
+                this.userData.email = user.email;
+                this.userData.meta = user.meta;
+
+                if (user.access === 'disabled') {
+                    this.userData.enabled = false;
+                    this.userData.access = 'default';
+                } else {
+                    this.userData.enabled = true;
+                    this.userData.access = user.access;
+                }
+
+                this.mode = 'user';
+            });
+        },
+        modifyUser: function() {
+            window.hecate.users.update({
+                id: this.userData.id,
+                username: this.userData.username,
+                email: this.userData.email,
+                access: this.userData.enabled ? this.userData.access : 'disabled',
+                meta: this.userData.meta
+            }, (err) => {
+                if (err) return this.$emit('error', err);
+
+                this.getUsers();
+                this.close();
+            });
         },
         clearCache: function() {
             window.hecate.tiles.clear((err) => {
@@ -499,14 +638,23 @@ export default {
         },
         getUsers: function() {
             window.hecate.users.list(this.userFilter, (err, users) => {
-                if (err) return this.$emit('error', err);
+                if (err && err.status === 401) {
+                    this.allowed.users = false;
+                } else if (err) {
+                    return this.$emit('error', err);
+                }
 
                 this.users = users;
             });
         },
         getHooks: function() {
             window.hecate.webhooks.list((err, hooks) => {
-                if (err) return this.$emit('error', err);
+                if (err && err.status === 401) {
+                    this.allowed.hooks = false;
+                } else if (err) {
+                    return this.$emit('error', err);
+                }
+
                 this.hooks = hooks;
             });
         },

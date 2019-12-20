@@ -19,17 +19,22 @@ impl User {
             password: password,
             email: email,
             meta: meta,
-            access: None
+            access: Some(String::from("default"))
         }
     }
 
     pub fn to_value(self) -> serde_json::Value {
+        let access = match self.access {
+            Some(access) => access,
+            None => String::from("default")
+        };
+
         json!({
             "id": self.id,
             "username": self.username,
             "email": self.email,
             "meta": self.meta,
-            "access": self.access
+            "access": access
         })
     }
 
@@ -72,7 +77,7 @@ impl User {
     pub fn admin(&mut self, admin: bool) {
         match admin {
             true => self.access = Some(String::from("admin")),
-            false => self.access = None
+            false => self.access = Some(String::from("default"))
         };
     }
 
@@ -81,17 +86,45 @@ impl User {
             match conn.query("
                 UPDATE users
                     SET
-                        username = $1,
-                        email = $2,
-                        meta = $3,
-                        access = $4
+                        username = COALESCE($1, username),
+                        email = COALESCE($2, email),
+                        meta = COALESCE($3, meta),
+                        access = COALESCE($4, access)
                     WHERE
                         id = $5
             ", &[ &self.username, &self.email, &self.meta, &self.access, &self.id ]) {
-                Ok(_) => Ok(true),
-                Err(err) => Err(HecateError::from_db(err))
+                Ok(_) => (),
+                Err(err) => { return Err(HecateError::from_db(err)); }
+            };
+
+            if self.access != Some(String::from("disabled")) {
+                return Ok(true);
             }
 
+            // Once the user is disable, cycle the password to prevent
+            // accidental enablement
+            match conn.query("
+                UPDATE users
+                    SET
+                        password = crypt(random()::TEXT, gen_salt('bf', 10))
+                    WHERE
+                        id = $1
+            ", &[ &self.id ]) {
+                Ok(_) => (),
+                Err(err) => { return Err(HecateError::from_db(err)); }
+            };
+
+            // Destroy all tokens associated with a disabled user
+            match conn.query("
+                DELETE FROM users_tokens
+                    WHERE
+                        uid = $1
+            ", &[ &self.id ]) {
+                Ok(_) => (),
+                Err(err) => { return Err(HecateError::from_db(err)); }
+            };
+
+            Ok(true)
         } else {
             let password = match self.password {
                 Some(ref password) => {
@@ -105,7 +138,7 @@ impl User {
             match conn.query("
                 INSERT INTO users (username, password, email, meta, access)
                     VALUES ($1, crypt($2, gen_salt('bf', 10)), $3, $4, $5);
-            ", &[ &self.username, &password, &self.email, &self.meta, &self.access ]) {
+            ", &[ &self.username, &password, &self.email, &self.meta, &self.access.as_ref().unwrap_or(&String::from("default")) ]) {
                 Ok(_) => Ok(true),
                 Err(err) => {
                     if err.as_db().is_some() && err.as_db().unwrap().code.code() == "23505" {
