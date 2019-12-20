@@ -74,6 +74,10 @@ pub trait AuthModule {
     fn is_valid(&self) -> Result<bool, String>;
 }
 
+pub trait AuthParse {
+    fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError>;
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct AuthWebhooks {
     pub get: String,

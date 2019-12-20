@@ -13,6 +13,9 @@ readme = "README.md"
 
 categories = ["database"]
 
+[lib]
+proc-macro = true
+
 [dependencies]
 reqwest = "0.9.20"
 tilecover = "1.1.1"
@@ -40,6 +43,8 @@ env_logger = "0.7"
 hmac = "0.7"
 url = "2.1"
 sha2 = "0.8.0"
+syn = "1.0"
+quote = "1.0"
 
 [dependencies.geo]
 version = "0.12"

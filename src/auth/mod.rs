@@ -2,6 +2,7 @@ use crate::err::HecateError;
 use actix_http::httpmessage::HttpMessage;
 use actix_web::http::header::{HeaderName, HeaderValue};
 
+pub mod derive;
 pub mod config;
 pub mod middleware;
 pub use config::AuthContainer;
