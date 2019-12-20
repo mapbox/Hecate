@@ -10,7 +10,7 @@ ets-wfs20/
 /target/
 **/*.rs.bk
 node_modules/
-web/dist/
+hecate_ui/dist/
 
 .env
 .cache

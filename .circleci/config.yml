@@ -46,12 +46,12 @@ jobs:
             - run:
                 name: "Build Frontend"
                 command: |
-                    cd web/ \
+                    cd hecate_ui/ \
                     && yarn install \
                     && yarn build
             - run:
                 name: "Run Hecate Tests"
-                command: ./hecate/tests/test.sh
+                command: ./test.sh
             - run:
                 name: "NPM Install"
                 command: cd ci && yarn install
