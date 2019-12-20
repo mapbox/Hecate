@@ -570,7 +570,7 @@ fn user_info(
 }
 
 fn user_modify_info(
-    conn: web::Data<DbReplica>,
+    conn: web::Data<DbReadWrite>,
     mut auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     uid: web::Path<i64>,
