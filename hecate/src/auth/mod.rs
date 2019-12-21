@@ -6,7 +6,6 @@ pub mod config;
 pub mod middleware;
 pub use config::AuthContainer;
 pub use config::AuthModule;
-pub use config::AuthParse;
 pub use config::CustomAuth;
 pub use config::RW;
 use crate::user::token::Scope;

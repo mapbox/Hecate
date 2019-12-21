@@ -72,386 +72,190 @@ pub fn get_kv(scope: &str, key: &str, kv: &serde_json::Value) -> Result<String, 
 pub trait AuthModule {
     fn default() -> Self;
     fn is_valid(&self) -> Result<bool, String>;
-}
-
-pub trait AuthParse {
     fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError>;
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthWebhooks {
     #[default = "admin"]
+    #[valid = "auth"]
     pub get: String,
 
     #[default = "admin"]
+    #[valid = "auth"]
     pub set: String
 }
 
-impl AuthModule for AuthWebhooks {
-    fn default() -> Self {
-        AuthWebhooks {
-            get: String::from("admin"),
-            set: String::from("admin")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_auth("webhooks::get", &self.get)?;
-        is_auth("webhooks::set", &self.set)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthMeta {
     #[default = "public"]
+    #[valid = "all"]
     pub get: String,
 
     #[default = "admin"]
+    #[valid = "auth"]
     pub set: String
 }
 
-impl AuthModule for AuthMeta {
-    fn default() -> Self {
-        AuthMeta {
-            get: String::from("public"),
-            set: String::from("admin")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("meta::get", &self.get)?;
-        is_auth("meta::set", &self.set)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthClone {
     #[default = "user"]
+    #[valid = "all"]
     pub get: String,
 
     #[default = "user"]
+    #[valid = "all"]
     pub query: String
 }
 
-impl AuthModule for AuthClone {
-    fn default() -> Self {
-        AuthClone {
-            get: String::from("user"),
-            query: String::from("user")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("clone::get", &self.get)?;
-        is_all("clone::query", &self.query)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthSchema {
     #[default = "public"]
+    #[valid = "all"]
     pub get: String
 }
 
-impl AuthModule for AuthSchema {
-    fn default() -> Self {
-        AuthSchema {
-            get: String::from("public")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("schema::get", &self.get)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthStats {
     #[default = "public"]
+    #[valid = "all"]
     pub get: String
 }
 
-impl AuthModule for AuthStats {
-    fn default() -> Self {
-        AuthStats {
-            get: String::from("public"),
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("stats::get", &self.get)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthAuth {
     #[default = "public"]
+    #[valid = "all"]
     pub get: String
 }
 
-impl AuthModule for AuthAuth {
-    fn default() -> Self {
-        AuthAuth {
-            get: String::from("public")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("auth::get", &self.get)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthMVT {
     #[default = "public"]
+    #[valid = "all"]
     pub get: String,
 
-    #[default = "admin"]
-    pub delete: String,
-
     #[default = "user"]
+    #[valid = "all"]
     pub regen: String,
 
+    #[default = "admin"]
+    #[valid = "all"]
+    pub delete: String,
+
     #[default = "public"]
+    #[valid = "all"]
     pub meta: String
 }
 
-impl AuthModule for AuthMVT {
-    fn default() -> Self {
-        AuthMVT {
-            get: String::from("public"),
-            delete: String::from("admin"),
-            regen: String::from("user"),
-            meta: String::from("public")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("mvt::get", &self.get)?;
-        is_all("mvt::regen", &self.regen)?;
-        is_all("mvt::delete", &self.regen)?;
-        is_all("mvt::meta", &self.meta)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthUser {
     #[default = "self"]
+    #[valid = "self"]
     pub info: String,
 
     #[default = "user"]
+    #[valid = "all"]
     pub list: String,
 
     #[default = "public"]
+    #[valid = "all"]
     pub create: String,
 
     #[default = "self"]
+    #[valid = "self"]
     pub create_session: String
 }
 
-impl AuthModule for AuthUser {
-    fn default() -> Self {
-        AuthUser {
-            info: String::from("self"),
-            list: String::from("user"),
-            create: String::from("public"),
-            create_session: String::from("self")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("user::create", &self.create)?;
-        is_all("user::list", &self.list)?;
-
-        is_self("user::create_session", &self.create_session)?;
-        is_self("user::info", &self.info)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthStyle {
     #[default = "self"]
+    #[valid = "self"]
     pub create: String,
 
     #[default = "self"]
+    #[valid = "self"]
     pub patch: String,
 
     #[default = "self"]
+    #[valid = "self"]
     pub set_public: String,
 
     #[default = "self"]
+    #[valid = "self"]
     pub set_private: String,
 
     #[default = "self"]
+    #[valid = "self"]
     pub delete: String,
 
     #[default = "public"]
+    #[valid = "all"]
     pub get: String,
 
     #[default = "public"]
+    #[valid = "all"]
     pub list: String
 }
 
-impl AuthModule for AuthStyle {
-    fn default() -> Self {
-        AuthStyle {
-            create: String::from("self"),
-            patch: String::from("self"),
-            set_public: String::from("self"),
-            set_private: String::from("self"),
-            delete: String::from("self"),
-            get: String::from("public"),
-            list: String::from("public")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_self("style::create", &self.create)?;
-        is_self("style::patch", &self.patch)?;
-        is_self("style::set_public", &self.set_public)?;
-        is_self("style::set_private", &self.set_private)?;
-        is_self("style::delete", &self.delete)?;
-        is_all("style::get", &self.get)?;
-        is_all("style::list", &self.list)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthDelta {
     #[default = "public"]
+    #[valid = "all"]
     pub get: String,
 
     #[default = "public"]
+    #[valid = "all"]
     pub list: String,
 }
 
-impl AuthModule for AuthDelta {
-    fn default() -> Self {
-        AuthDelta {
-            get: String::from("public"),
-            list: String::from("public")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("delta::get", &self.get)?;
-        is_all("delta::list", &self.list)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthFeature {
-    #[default = "none"]
+    #[default = "disabled"]
+    #[valid = "auth"]
     pub force: String,
 
     #[default = "user"]
+    #[valid = "auth"]
     pub create: String,
 
     #[default = "public"]
+    #[valid = "all"]
     pub get: String,
 
     #[default = "public"]
+    #[valid = "all"]
     pub history: String
 }
 
-impl AuthModule for AuthFeature {
-    fn default() -> Self {
-        AuthFeature {
-            force: String::from("none"),
-            create: String::from("user"),
-            get: String::from("public"),
-            history: String::from("public")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_auth("feature::create", &self.create)?;
-        is_auth("feature::force", &self.force)?;
-        is_all("feature::get", &self.get)?;
-        is_all("feature::history", &self.history)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthBounds {
     #[default = "public"]
+    #[valid = "all"]
     pub list: String,
 
     #[default = "admin"]
+    #[valid = "all"]
     pub create: String,
 
     #[default = "admin"]
+    #[valid = "all"]
     pub delete: String,
 
     #[default = "public"]
+    #[valid = "all"]
     pub get: String
 }
 
-impl AuthModule for AuthBounds {
-    fn default() -> Self {
-        AuthBounds {
-            list: String::from("public"),
-            create: String::from("admin"),
-            delete: String::from("admin"),
-            get: String::from("public")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("bounds::list", &self.list)?;
-        is_all("bounds::create", &self.create)?;
-        is_all("bounds::delete", &self.delete)?;
-        is_all("bounds::get", &self.get)?;
-
-        Ok(true)
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthParse)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, AuthModule)]
 pub struct AuthOSM {
     #[default = "public"]
+    #[valid = "all"]
     pub get: String,
 
     #[default = "user"]
+    #[valid = "auth"]
     pub create: String
-}
-
-impl AuthModule for AuthOSM {
-    fn default() -> Self {
-        AuthOSM {
-            get: String::from("public"),
-            create: String::from("user")
-        }
-    }
-
-    fn is_valid(&self) -> Result<bool, String> {
-        is_all("osm::get", &self.get)?;
-        is_auth("osm::create", &self.create)?;
-
-        Ok(true)
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
@@ -511,9 +315,7 @@ impl AuthModule for CustomAuth {
 
         Ok(true)
     }
-}
 
-impl AuthParse for CustomAuth {
     fn parse(value: Option<&serde_json::Value>) -> Result<Box<Self>, HecateError> {
         match value {
             None => Ok(Box::new(CustomAuth::default())),
