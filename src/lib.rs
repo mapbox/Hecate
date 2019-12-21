@@ -564,7 +564,7 @@ fn user_info(
 ) -> Result<Json<serde_json::Value>, HecateError> {
     auth_rules.0.is_admin(&auth)?;
 
-    let user = user::User::get(&*conn.get()?, &uid)?.to_value();
+    let user = user::User::get(&*conn.get()?, *uid)?.to_value();
 
     Ok(Json(user))
 }
@@ -614,7 +614,7 @@ fn user_set_admin(
 
     let conn = conn.get()?;
 
-    let mut user = user::User::get(&*conn, &uid)?;
+    let mut user = user::User::get(&*conn, *uid)?;
 
     if user.is_admin() {
         return Err(HecateError::new(400, format!("{} is already an admin", user.username), None));
@@ -636,7 +636,7 @@ fn user_delete_admin(
 
     let conn = conn.get()?;
 
-    let mut user = user::User::get(&*conn, &uid)?;
+    let mut user = user::User::get(&*conn, *uid)?;
 
     if !user.is_admin() {
         return Err(HecateError::new(400, format!("{} is not an admin", user.username), None));
@@ -660,7 +660,7 @@ fn user_self(
         None => { return Err(HecateError::generic(401)); }
     };
 
-    let user = user::User::get(&*conn.get()?, &uid)?.to_value();
+    let user = user::User::get(&*conn.get()?, uid)?.to_value();
 
     Ok(Json(user))
 
@@ -678,7 +678,7 @@ fn user_pwreset(
         None => { return Err(HecateError::generic(401)); }
     };
 
-    user::User::reset(&*conn.get()?, &uid, &reset.current, &reset.update)?;
+    user::User::reset(&*conn.get()?, uid, &reset.current, &reset.update)?;
 
     Ok(Json(json!(true)))
 

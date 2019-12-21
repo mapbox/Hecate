@@ -153,10 +153,8 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
             if let Some(diffid) = ids.get(&n.id.unwrap()) {
                 diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, n.id.unwrap(), n.id.unwrap(), diffid.version.unwrap()));
             }
-        } else if n.action == Some(Action::Delete) {
-            if let Some(_) = ids.get(&n.id.unwrap()) {
-                diffres.push_str(&*format!(r#"<node old_id="{}"/>"#, n.id.unwrap()));
-            }
+        } else if n.action == Some(Action::Delete) && ids.get(&n.id.unwrap()).is_some() {
+            diffres.push_str(&*format!(r#"<node old_id="{}"/>"#, n.id.unwrap()));
         }
     }
 
@@ -169,10 +167,8 @@ pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Res
             if let Some(diffid) = ids.get(&w.id.unwrap()) {
                 diffres.push_str(&*format!(r#"<way old_id="{}" new_id="{}" new_version="{}"/>"#, w.id.unwrap(), w.id.unwrap(), diffid.version.unwrap()));
             }
-        } else if w.action == Some(Action::Delete) {
-            if let Some(_) = ids.get(&w.id.unwrap()) {
-                diffres.push_str(&*format!(r#"<way old_id="{}"/>"#, w.id.unwrap()));
-            }
+        } else if w.action == Some(Action::Delete) && ids.get(&w.id.unwrap()).is_some() {
+            diffres.push_str(&*format!(r#"<way old_id="{}"/>"#, w.id.unwrap()));
         }
     }
 
@@ -199,7 +195,7 @@ pub fn to_delta_tag(xml_node: &quick_xml::events::BytesStart, map: &mut HashMap<
     map.insert(kv.0.unwrap(), kv.1);
 }
 
-pub fn to_delta(body: &String) -> Result<HashMap<String, Option<String>>, XMLError> {
+pub fn to_delta(body: &str) -> Result<HashMap<String, Option<String>>, XMLError> {
     let mut reader = Reader::from_str(body);
     let mut buf = Vec::new();
 
@@ -208,15 +204,13 @@ pub fn to_delta(body: &String) -> Result<HashMap<String, Option<String>>, XMLErr
      loop {
         match reader.read_event(&mut buf) {
             Ok(XMLEvents::Event::Start(ref e)) => {
-                match e.name() {
-                    b"tag" => { to_delta_tag(&e, &mut map) },
-                    _ => (),
+                if let b"tag" = e.name() {
+                    to_delta_tag(&e, &mut map)
                 }
             },
             Ok(XMLEvents::Event::Empty(ref e)) => {
-                match e.name() {
-                    b"tag" => { to_delta_tag(&e, &mut map) },
-                    _ => (),
+                if let b"tag" = e.name() {
+                    to_delta_tag(&e, &mut map)
                 }
             },
             Ok(XMLEvents::Event::Eof) => { break; },
@@ -810,7 +804,7 @@ pub fn json2str(v: &serde_json::value::Value) -> String {
             true => String::from("yes"),
             false => String::from("no")
         },
-        serde_json::value::Value::Number(ref json_num) => String::from(format!("{}", json_num)),
+        serde_json::value::Value::Number(ref json_num) => format!("{}", json_num),
         serde_json::value::Value::String(ref json_str) => json_str.to_string(),
         _ => v.to_string()
     }
@@ -821,7 +815,7 @@ pub fn add_way(coords: &geojson::LineStringType, osm: &mut OSMTypes) -> Result<i
 
     let mut xml_way = XMLEvents::BytesStart::owned(b"way".to_vec(), 3);
 
-    osm.way_it = osm.way_it + 1;
+    osm.way_it += 1;
     let id = osm.way_it;
 
     xml_way.push_attribute(("id", &*id.to_string()));
@@ -867,7 +861,7 @@ pub fn add_node(coords: &geojson::PointType, osm: &mut OSMTypes) -> Result<i64, 
 
     let mut xml_node = XMLEvents::BytesStart::owned(b"node".to_vec(), 4);
 
-    osm.node_it = osm.node_it + 1;
+    osm.node_it +=  1;
     let id = osm.node_it;
 
     xml_node.push_attribute(("id", &*id.to_string()));
@@ -967,9 +961,8 @@ pub fn parse_nd(xml_node: &XMLEvents::BytesStart) -> Result<i64, XMLError> {
     for attr in xml_node.attributes() {
         let attr = attr?;
 
-        match attr.key {
-            b"ref" => ndref = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?),
-            _ => ()
+        if let b"ref" = attr.key {
+            ndref = Some(String::from_utf8(attr.value.into_owned()).unwrap().parse()?)
         }
     }
 
