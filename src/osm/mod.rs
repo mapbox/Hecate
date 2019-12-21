@@ -132,8 +132,8 @@ pub struct OSMTypes {
 impl OSMTypes {
     pub fn new() -> OSMTypes {
         OSMTypes {
-            node_it: 7000000000000000000,
-            way_it: 8000000000000000000,
+            node_it: 7_000_000_000_000_000_000,
+            way_it: 8_000_000_000_000_000_000,
             nodes: String::from(""),
             ways: String::from(""),
             rels: String::from("")
@@ -272,9 +272,9 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
     let mut tree: OSMTree = OSMTree::new();
 
     let mut opening_osm = false;
-    let mut n: Node = Node::new();
-    let mut w: Way = Way::new();
-    let mut r: Rel = Rel::new();
+    let mut node: Node = Node::new();
+    let mut way: Way = Way::new();
+    let mut rel: Rel = Rel::new();
 
     let mut current_value = Value::None;
     let mut current_action = Action::None;
@@ -306,11 +306,11 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         if current_action == Action::None { return Err(XMLError::InternalError(String::from("node must be in Action"))); }
                         if current_value != Value::None { return Err(XMLError::InternalError(String::from("node cannot be within another value"))); }
 
-                        n = parse_node(e)?;
-                        n.action = Some(current_action.clone());
+                        node = parse_node(e)?;
+                        node.action = Some(current_action.clone());
 
-                        if n.action == Some(Action::Create) {
-                            n.version = Some(1);
+                        if node.action == Some(Action::Create) {
+                            node.version = Some(1);
                         }
 
                         current_value = Value::Node;
@@ -319,11 +319,11 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         if current_action == Action::None { return Err(XMLError::InternalError(String::from("way must be in Action"))); }
                         if current_value != Value::None { return Err(XMLError::InternalError(String::from("way cannot be within another value"))); }
 
-                        w = parse_way(e)?;
-                        w.action = Some(current_action.clone());
+                        way = parse_way(e)?;
+                        way.action = Some(current_action.clone());
 
-                        if w.action == Some(Action::Create) {
-                            w.version = Some(1);
+                        if way.action == Some(Action::Create) {
+                            way.version = Some(1);
                         }
 
                         current_value = Value::Way;
@@ -332,11 +332,11 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         if current_action == Action::None { return Err(XMLError::InternalError(String::from("rel must be in Action"))); }
                         if current_value != Value::None { return Err(XMLError::InternalError(String::from("rel cannot be within another value"))); }
 
-                        r = parse_rel(e)?;
-                        r.action = Some(current_action.clone());
+                        rel = parse_rel(e)?;
+                        rel.action = Some(current_action.clone());
 
-                        if r.action == Some(Action::Create) {
-                            r.version = Some(1);
+                        if rel.action == Some(Action::Create) {
+                            rel.version = Some(1);
                         }
 
                         current_value = Value::Rel;
@@ -347,13 +347,13 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         match current_value {
                             Value::None => { return Err(XMLError::InternalError(String::from("tags must be in value"))); },
                             Value::Node => {
-                                n.set_tag(k, v);
+                                node.set_tag(k, v);
                             },
                             Value::Way => {
-                                w.set_tag(k, v);
+                                way.set_tag(k, v);
                             },
                             Value::Rel => {
-                                r.set_tag(k, v);
+                                rel.set_tag(k, v);
                             }
                         };
 
@@ -367,16 +367,16 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         if current_action == Action::None { return Err(XMLError::InternalError(String::from("node must be in Action"))); }
                         if current_value != Value::None { return Err(XMLError::InternalError(String::from("node cannot be within another value"))); }
 
-                        n = parse_node(&e)?;
-                        n.action = Some(current_action.clone());
+                        node = parse_node(&e)?;
+                        node.action = Some(current_action.clone());
 
-                        if n.action == Some(Action::Create) {
-                            n.version = Some(1);
+                        if node.action == Some(Action::Create) {
+                            node.version = Some(1);
                         }
 
-                        tree.add_node(n)?;
+                        tree.add_node(node)?;
 
-                        n = Node::new();
+                        node = Node::new();
                     },
                     b"way" => {
                         return Err(XMLError::InternalError(String::from("ways cannot be self closing")));
@@ -388,7 +388,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         if current_value != Value::Way { return Err(XMLError::InternalError(String::from("nd must be in way"))); }
 
                         let ndref = parse_nd(&e)?;
-                        w.nodes.push(ndref);
+                        way.nodes.push(ndref);
                     },
                     b"tag" => {
                         let (k, v) = parse_tag(&e)?;
@@ -396,13 +396,13 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                         match current_value {
                             Value::None => { return Err(XMLError::InternalError(String::from("tags must be in value"))); },
                             Value::Node => {
-                                n.set_tag(k, v);
+                                node.set_tag(k, v);
                             },
                             Value::Way => {
-                                w.set_tag(k, v);
+                                way.set_tag(k, v);
                             },
                             Value::Rel => {
-                                r.set_tag(k, v);
+                                rel.set_tag(k, v);
                             }
                         };
                     },
@@ -411,7 +411,7 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
 
                         match current_value {
                             Value::Rel => {
-                                r.set_member(rtype, rref, rrole);
+                                rel.set_member(rtype, rref, rrole);
                             },
                             _ => { return Err(XMLError::InternalError(String::from("member must be in rel"))); }
                         };
@@ -424,20 +424,20 @@ pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
                 match e.name() {
                     b"node" => {
                         if current_value != Value::Node { return Err(XMLError::InternalError(String::from("node close outside of node"))); }
-                        tree.add_node(n)?;
-                        n = Node::new();
+                        tree.add_node(node)?;
+                        node = Node::new();
                         current_value = Value::None;
                     },
                     b"way" => {
                         if current_value != Value::Way { return Err(XMLError::InternalError(String::from("way close outside of node"))); }
-                        tree.add_way(w)?;
-                        w = Way::new();
+                        tree.add_way(way)?;
+                        way = Way::new();
                         current_value = Value::None;
                     },
                     b"relation" => {
                         if current_value != Value::Rel { return Err(XMLError::InternalError(String::from("rel close outside of node"))); }
-                        tree.add_rel(r)?;
-                        r = Rel::new();
+                        tree.add_rel(rel)?;
+                        rel = Rel::new();
                         current_value = Value::None;
                     },
                     b"create" => {
@@ -523,7 +523,7 @@ pub fn point(feat: &geojson::Feature, coords: &geojson::PointType, osm: &mut OSM
 
     writer.write_event(XMLEvents::Event::Start(xml_node)).unwrap();
 
-    match *&feat.properties {
+    match feat.properties {
         Some(ref props) => {
             for (k, v) in props.iter() {
                 let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
@@ -553,7 +553,7 @@ pub fn multipoint(feat: &geojson::Feature, coords: &Vec<geojson::PointType>, osm
 
     writer.write_event(XMLEvents::Event::Start(xml_rel)).unwrap();
 
-    match *&feat.properties {
+    match feat.properties {
         Some(ref props) => {
             for (k, v) in props.iter() {
                 let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
@@ -625,7 +625,7 @@ pub fn linestring(feat: &geojson::Feature, coords: &geojson::LineStringType, osm
         writer.write_event(XMLEvents::Event::Empty(xml_nd)).unwrap();
     }
 
-    match *&feat.properties {
+    match feat.properties {
         Some(ref props) => {
             for (k, v) in props.iter() {
                 let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
@@ -654,7 +654,7 @@ pub fn multilinestring(feat: &geojson::Feature, coords: &Vec<geojson::LineString
 
     writer.write_event(XMLEvents::Event::Start(xml_rel)).unwrap();
 
-    match *&feat.properties {
+    match feat.properties {
         Some(ref props) => {
             for (k, v) in props.iter() {
                 let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
@@ -709,7 +709,7 @@ pub fn polygon(feat: &geojson::Feature, coords: &geojson::PolygonType, osm: &mut
 
     writer.write_event(XMLEvents::Event::Start(xml_rel)).unwrap();
 
-    match *&feat.properties {
+    match feat.properties {
         Some(ref props) => {
             for (k, v) in props.iter() {
                 let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
@@ -762,7 +762,7 @@ pub fn multipolygon(feat: &geojson::Feature, coords: &Vec<geojson::PolygonType>,
 
     writer.write_event(XMLEvents::Event::Start(xml_rel)).unwrap();
 
-    match *&feat.properties {
+    match feat.properties {
         Some(ref props) => {
             for (k, v) in props.iter() {
                 let mut xml_tag = XMLEvents::BytesStart::owned(b"tag".to_vec(), 3);
@@ -908,7 +908,7 @@ pub fn parse_osm(xml_node: &XMLEvents::BytesStart, meta: &mut HashMap<String, St
 
     if v != 0.6 { return Err(XMLError::InternalError(String::from("api only supports 0.6"))); }
 
-    return Ok(true);
+    Ok(true)
 }
 
 pub fn parse_node(xml_node: &XMLEvents::BytesStart) -> Result<Node, XMLError> {
@@ -928,7 +928,7 @@ pub fn parse_node(xml_node: &XMLEvents::BytesStart) -> Result<Node, XMLError> {
         }
     }
 
-    return Ok(node);
+    Ok(node)
 }
 
 pub fn parse_way(xml_node: &XMLEvents::BytesStart) -> Result<Way, XMLError> {
@@ -946,7 +946,7 @@ pub fn parse_way(xml_node: &XMLEvents::BytesStart) -> Result<Way, XMLError> {
         }
     }
 
-    return Ok(way);
+    Ok(way)
 }
 
 pub fn parse_rel(xml_node: &XMLEvents::BytesStart) -> Result<Rel, XMLError> {
@@ -964,7 +964,7 @@ pub fn parse_rel(xml_node: &XMLEvents::BytesStart) -> Result<Rel, XMLError> {
         }
     }
 
-    return Ok(rel);
+    Ok(rel)
 }
 
 pub fn parse_nd(xml_node: &XMLEvents::BytesStart) -> Result<i64, XMLError> {
@@ -999,13 +999,13 @@ pub fn parse_tag(xml_node: &XMLEvents::BytesStart) -> Result<(String, String), X
         }
     }
 
-    return Ok((match k {
+    Ok((match k {
         Some(key) => key,
         None => { return Err(XMLError::InternalError(String::from("unable to parse key"))) }
     }, match v {
         Some(val) => val,
         None => { return Err(XMLError::InternalError(String::from("unable to parse value"))) }
-    }));
+    }))
 }
 
 pub fn parse_member(xml_node: &XMLEvents::BytesStart) -> Result<(Option<Value>, Option<i64>, Option<String>), XMLError> {
@@ -1029,5 +1029,5 @@ pub fn parse_member(xml_node: &XMLEvents::BytesStart) -> Result<(Option<Value>, 
         }
     }
 
-    return Ok((rtype, rref, rrole))
+    Ok((rtype, rref, rrole))
 }

@@ -27,10 +27,10 @@ impl WebHook {
     pub fn new(id: i64, name: String, actions: Vec<String>, url: String, secret: Option<String>) -> Self {
         WebHook {
             id: Some(id),
-            name: name,
-            actions: actions,
-            url: url,
-            secret: secret
+            name,
+            actions,
+            url,
+            secret
         }
     }
 
@@ -257,7 +257,6 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
         {
             Ok(res) => {
                 println!("Successfully sent webhook {}: {:#?}", hook.url, res);
-                ()
             },
             Err(err) => {
                 println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err);

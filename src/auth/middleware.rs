@@ -15,8 +15,8 @@ pub struct EnforceAuth {
 impl EnforceAuth {
     pub fn new(db: DbReplica, auth: super::ServerAuthDefault) -> EnforceAuth {
         EnforceAuth {
-            db: db,
-            auth: auth
+            db,
+            auth
         }
     }
 }
@@ -81,7 +81,7 @@ where
                 return false;
             }
 
-            return true;
+            true
         }).collect();
 
         let mut auth = match Auth::from_sreq(&mut req, &*db) {

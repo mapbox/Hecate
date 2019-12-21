@@ -15,10 +15,10 @@ impl User {
     pub fn new(username: String, password: Option<String>, email: String, meta: Option<serde_json::Value>) -> Self {
         User {
             id: None,
-            username: username,
-            password: password,
-            email: email,
-            meta: meta,
+            username,
+            password,
+            email,
+            meta,
             access: Some(String::from("default"))
         }
     }
@@ -186,10 +186,10 @@ impl User {
 
 }
 
-pub fn list(conn: &impl postgres::GenericConnection, limit: &Option<i16>) -> Result<serde_json::Value, HecateError> {
+pub fn list(conn: &impl postgres::GenericConnection, limit: Option<i16>) -> Result<serde_json::Value, HecateError> {
     let limit: i16 = match limit {
         None => 100,
-        Some(limit) => if *limit > 100 { 100 } else { *limit }
+        Some(limit) => if limit > 100 { 100 } else { limit }
     };
 
     match conn.query("
@@ -212,10 +212,10 @@ pub fn list(conn: &impl postgres::GenericConnection, limit: &Option<i16>) -> Res
     }
 }
 
-pub fn filter(conn: &impl postgres::GenericConnection, filter: &String, limit: &Option<i16>) -> Result<serde_json::Value, HecateError> {
+pub fn filter(conn: &impl postgres::GenericConnection, filter: &str, limit: Option<i16>) -> Result<serde_json::Value, HecateError> {
     let limit: i16 = match limit {
         None => 100,
-        Some(limit) => if *limit > 100 { 100 } else { *limit }
+        Some(limit) => if limit > 100 { 100 } else { limit }
     };
 
     match conn.query("

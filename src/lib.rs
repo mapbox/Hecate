@@ -1,4 +1,5 @@
-pub static VERSION: &'static str = "0.82.1";
+
+pub static VERSION: &str = "0.82.1";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
 pub static HOURS: i64 = 24;
@@ -7,7 +8,7 @@ pub static HOURS: i64 = 24;
 /// The Maximum number of bytes allowed in
 /// a request body
 ///
-pub static MAX_BODY: u64 = 20971520;
+pub static MAX_BODY: u64 = 20_971_520;
 
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
@@ -551,8 +552,8 @@ fn users(
     let filter = filter.into_inner();
 
     match &filter.filter {
-        Some(search) => Ok(Json(json!(user::user::filter(&*conn.get()?, &search, &filter.limit)?))),
-        None => Ok(Json(user::user::list(&*conn.get()?, &filter.limit)?))
+        Some(search) => Ok(Json(json!(user::filter(&*conn.get()?, &search, filter.limit)?))),
+        None => Ok(Json(user::list(&*conn.get()?, filter.limit)?))
     }
 }
 
@@ -981,7 +982,7 @@ fn delta_list(
         if opts.offset.is_none() && opts.limit.is_none() && opts.start.is_none() && opts.end.is_none() {
             Ok(delta::list_by_offset(&*conn.get()?, None, None)?)
         } else if opts.offset.is_some() && (opts.start.is_some() || opts.end.is_some()) {
-            return Err(HecateError::new(400, String::from("Offset cannot be used with start or end"), None));
+            Err(HecateError::new(400, String::from("Offset cannot be used with start or end"), None))
         } else if opts.start.is_some() || opts.end.is_some() {
             let start: Option<chrono::NaiveDateTime> = match &opts.start {
                 None => None,
@@ -1007,7 +1008,7 @@ fn delta_list(
         } else if opts.offset.is_some() || opts.limit.is_some() {
             Ok(delta::list_by_offset(&*conn.get()?, opts.offset, opts.limit)?)
         } else {
-            return Err(HecateError::new(400, String::from("Invalid Query Params"), None));
+            Err(HecateError::new(400, String::from("Invalid Query Params"), None))
         }
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(list) => Ok(actix_web::HttpResponse::Ok().json(list)),
@@ -1043,8 +1044,8 @@ fn bounds(
 
         let filter = filter.into_inner();
         match filter.filter {
-            Some(search) => Ok(json!(bounds::filter(&*conn.get()?, &search, &filter.limit)?)),
-            None => Ok(json!(bounds::list(&*conn.get()?, &filter.limit)?))
+            Some(search) => Ok(json!(bounds::filter(&*conn.get()?, &search, filter.limit)?)),
+            None => Ok(json!(bounds::list(&*conn.get()?, filter.limit)?))
         }
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(bounds) => Ok(actix_web::HttpResponse::Ok().json(bounds)),
@@ -1161,7 +1162,7 @@ fn webhooks_create(
 
     match serde_json::to_value(webhooks::create(&*conn.get()?, webhook.into_inner())?) {
         Ok(webhook) => Ok(Json(webhook)),
-        Err(_) => { return Err(HecateError::new(500, String::from("Failed to create webhook"), None)); }
+        Err(err) => Err(HecateError::new(500, String::from("Failed to create webhook"), Some(err.to_string())))
     }
 }
 
@@ -1390,7 +1391,7 @@ fn features_action(
         let mut map: HashMap<String, Option<String>> = HashMap::new();
         map.insert(String::from("message"), Some(delta_message));
 
-        let delta_id = match delta::open(&trans, &map, &uid) {
+        let delta_id = match delta::open(&trans, &map, uid) {
             Ok(id) => id,
             Err(err) => {
                 trans.set_rollback();
@@ -1510,7 +1511,7 @@ fn osm_changeset_create(
             Err(err) => { return Err(HecateError::new(500, String::from("Failed to open transaction"), Some(err.to_string()))); }
         };
 
-        let delta_id = match delta::open(&trans, &map, &uid) {
+        let delta_id = match delta::open(&trans, &map, uid) {
             Ok(id) => id,
             Err(err) => {
                 trans.set_rollback();
@@ -1727,9 +1728,9 @@ fn osm_changeset_upload(
 
                 worker.queue(worker::Task::new(worker::TaskType::Delta(delta_id)));
 
-                return Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
+                Ok(HttpResponse::build(actix_web::http::StatusCode::OK)
                     .content_length(diffres.len() as u64)
-                    .body(diffres));
+                    .body(diffres))
             },
             Err(_) => {
                 trans.set_rollback();
@@ -1839,7 +1840,7 @@ fn feature_action(
 
         let mut map: HashMap<String, Option<String>> = HashMap::new();
         map.insert(String::from("message"), Some(delta_message));
-        let delta_id = match delta::open(&trans, &map, &uid) { // add non feature info to deltas table, get next delta id
+        let delta_id = match delta::open(&trans, &map, uid) { // add non feature info to deltas table, get next delta id
             Ok(id) => id,
             Err(err) => {
                 trans.set_rollback();
@@ -1905,7 +1906,7 @@ fn feature_get(
     web::block(move || {
         auth::check(&auth_rules.0.feature.get, auth::RW::Read, &auth)?;
 
-        match feature::get(&*conn.get()?, &id.into_inner()) {
+        match feature::get(&*conn.get()?, id.into_inner()) {
             Ok(feature) => Ok(geojson::GeoJson::from(feature).to_string()),
             Err(err) => Err(err)
         }

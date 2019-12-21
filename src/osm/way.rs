@@ -96,7 +96,7 @@ impl Generic for Way {
                 geometry: Some(geojson::Geometry::new(
                     geojson::Value::Polygon(polycoords)
                 )),
-                id: id,
+                id,
                 properties: Some(self.tags.clone()),
                 foreign_members: Some(foreign)
             })
@@ -113,7 +113,7 @@ impl Generic for Way {
                 geometry: Some(geojson::Geometry::new(
                     geojson::Value::LineString(linecoords)
                 )),
-                id: id,
+                id,
                 properties: Some(self.tags.clone()),
                 foreign_members: Some(foreign)
             })
@@ -134,7 +134,7 @@ impl Generic for Way {
             return Err(String::from("Node references cannot be empty"));
         }
 
-        return Ok(true);
+        Ok(true)
     }
 }
 

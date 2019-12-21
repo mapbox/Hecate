@@ -3,8 +3,8 @@ use crate::err::HecateError;
 ///
 /// Validate a password against hecate's basic password rules
 ///
-pub fn password(pw: &String) -> Result<(), HecateError> {
-    if pw.len() == 0 {
+pub fn password(pw: &str) -> Result<(), HecateError> {
+    if pw.is_empty() {
         Err(HecateError::new(400, String::from("Password cannot be empty"), None))
     } else if pw.len() < 8 {
         Err(HecateError::new(400, String::from("Password must be at least 8 characters"), None))
@@ -16,8 +16,8 @@ pub fn password(pw: &String) -> Result<(), HecateError> {
 ///
 /// Validate a single EPSG:4326 Coordinate
 ///
-pub fn point(point: &String) -> Result<(f64, f64), HecateError> {
-    let lnglat = point.split(",").collect::<Vec<&str>>();
+pub fn point(point: &str) -> Result<(f64, f64), HecateError> {
+    let lnglat = point.split(',').collect::<Vec<&str>>();
 
     if lnglat.len() != 2 {
         return Err(HecateError::new(400, String::from("Point must be Lng,Lat"), None));
@@ -44,7 +44,7 @@ pub fn point(point: &String) -> Result<(f64, f64), HecateError> {
 ///
 /// Validate a BBOX of EPSG:4326 Min/Max corners
 ///
-pub fn bbox(bbox: &Vec<f64>) -> Result<(), HecateError> {
+pub fn bbox(bbox: &[f64]) -> Result<(), HecateError> {
     if bbox.len() != 4 {
         return Err(HecateError::new(400, String::from("Invalid BBOX"), None));
     }

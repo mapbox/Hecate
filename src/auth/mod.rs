@@ -46,16 +46,16 @@ pub fn check(rule: &String, rw: config::RW, auth: &Auth) -> Result<(), HecateErr
         "public" => Ok(()),
         "admin" => {
             if auth.access == AuthAccess::Admin && auth.uid.is_some() {
-                return Ok(());
+                Ok(())
             } else {
-                return Err(config::not_authed());
+                Err(config::not_authed())
             }
         },
         "user" => {
             if auth.uid.is_some() {
-                return Ok(());
+                Ok(())
             } else {
-                return Err(config::not_authed());
+                Err(config::not_authed())
             }
         },
         "self" => {
@@ -64,9 +64,9 @@ pub fn check(rule: &String, rw: config::RW, auth: &Auth) -> Result<(), HecateErr
             //the UID of 'self' matches the requested resource
 
             if auth.uid.is_some() {
-                return Ok(());
+                Ok(())
             } else {
-                return Err(config::not_authed());
+                Err(config::not_authed())
             }
         },
         _ => Err(config::not_authed())
@@ -259,7 +259,7 @@ impl Auth {
                 return false;
             }
 
-            return true;
+            true
         }).collect();
 
         if
@@ -295,8 +295,6 @@ impl Auth {
                         Ok(_) => Ok(auth)
                     };
                 }
-
-                ()
             },
             None => ()
         };

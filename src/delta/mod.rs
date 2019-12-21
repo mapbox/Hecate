@@ -18,9 +18,9 @@ impl Delta {
     pub fn new(uid: i64, props: HashMap<String, Option<String>>, features: HashMap<i64, Value>) -> Self {
         Delta {
             id: None,
-            uid: uid,
-            props: props,
-            features: features
+            uid,
+            props,
+            features
         }
     }
 
@@ -37,7 +37,7 @@ impl Delta {
     }
 }
 
-pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, HecateError> {
+pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
     match trans.query("
         INSERT INTO deltas (id, created, props, uid) VALUES (
             nextval('deltas_id_seq'),
@@ -52,7 +52,7 @@ pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, 
 
 }
 
-pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, HecateError> {
+pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
     match trans.query("
         INSERT INTO deltas (id, created, uid, props, affected) VALUES (
             nextval('deltas_id_seq'),
@@ -170,7 +170,7 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64, min_zoom: u8, ma
     ", &[&id]) {
         Err(err) => Err(HecateError::from_db(err)),
         Ok(results) => {
-            if results.len() == 0 {
+            if results.is_empty() {
                 return Ok(Vec::new());
             }
 
@@ -326,5 +326,5 @@ pub fn affected(fc: &geojson::FeatureCollection) -> Vec<i64> {
         }
     }
 
-    return affected;
+    affected
 }

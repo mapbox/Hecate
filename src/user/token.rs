@@ -18,11 +18,11 @@ pub struct Token {
 impl Token {
     pub fn new(name: String, uid: i64, token: String, expiry: String, scope: Scope) -> Self {
         Token {
-            name: name,
-            uid: uid,
-            token: token,
-            expiry: expiry,
-            scope: scope
+            name,
+            uid,
+            token,
+            expiry,
+            scope
         }
     }
 

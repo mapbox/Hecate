@@ -1,4 +1,3 @@
-#[cfg_attr(rustfmt, rustfmt_skip)]
 pub mod grid;
 
 use crate::err::HecateError;

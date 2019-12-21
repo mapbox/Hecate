@@ -67,14 +67,14 @@ impl Generic for Node {
 
         foreign.insert(String::from("version"), json!(self.version));
 
-        let mut geom: Option<geojson::Geometry> = None;
+        let mut geometry: Option<geojson::Geometry> = None;
 
         if self.action != Some(Action::Delete) {
             let mut coords: Vec<f64> = Vec::new();
             coords.push(self.lon.unwrap() as f64);
             coords.push(self.lat.unwrap() as f64);
 
-            geom = Some(geojson::Geometry::new(
+            geometry = Some(geojson::Geometry::new(
                 geojson::Value::Point(coords)
             ));
         }
@@ -86,8 +86,8 @@ impl Generic for Node {
 
         Ok(geojson::Feature {
             bbox: None,
-            geometry: geom,
-            id: id,
+            geometry,
+            id,
             properties: Some(self.tags.clone()),
             foreign_members: Some(foreign)
         })
@@ -112,7 +112,7 @@ impl Generic for Node {
             return Err(String::from("Missing version"));
         }
 
-        return Ok(true);
+        Ok(true)
     }
 }
 

@@ -70,15 +70,15 @@ pub fn del_version(feat: &mut geojson::Feature) {
 
 pub fn get_version(feat: &geojson::Feature) -> Result<i64, HecateError> {
     match feat.foreign_members {
-        None => { return Err(import_error(&feat, "Version Required", None)); },
+        None => Err(import_error(&feat, "Version Required", None)),
         Some(ref members) => match members.get("version") {
             Some(version) => {
                 match version.as_i64() {
                     Some(version) => Ok(version),
-                    None => { return Err(import_error(&feat, "Version Required", None)); },
+                    None => Err(import_error(&feat, "Version Required", None))
                 }
             },
-            None => { return Err(import_error(&feat, "Version Required", None)); },
+            None => Err(import_error(&feat, "Version Required", None))
         }
     }
 }
@@ -98,13 +98,13 @@ pub fn get_geom_str(feat: &geojson::Feature) -> Result<String, HecateError> {
         let lat = pt[1];
 
         if lon < -180.0 {
-            return Err(import_error(&feat, "longitude < -180", None));
+            Err(import_error(&feat, "longitude < -180", None))
         } else if lon > 180.0 {
-            return Err(import_error(&feat, "longitude > 180", None));
+            Err(import_error(&feat, "longitude > 180", None))
         } else if lat < -90.0 {
-            return Err(import_error(&feat, "latitude < -90", None));
+            Err(import_error(&feat, "latitude < -90", None))
         } else if lat > 90.0 {
-            return Err(import_error(&feat, "latitude > 90", None));
+            Err(import_error(&feat, "latitude > 90", None))
         } else {
             Ok(true)
         }
@@ -159,23 +159,23 @@ pub fn get_geom_str(feat: &geojson::Feature) -> Result<String, HecateError> {
 
 pub fn get_id(feat: &geojson::Feature) -> Result<i64, HecateError> {
     match feat.id {
-        None => { return Err(import_error(&feat, "ID Required", None)); },
+        None => Err(import_error(&feat, "ID Required", None)),
         Some(ref id) => match id {
             geojson::feature::Id::Number(id) => {
                 if id.is_i64() {
                     Ok(id.as_i64().unwrap())
                 } else {
-                    return Err(import_error(&feat, "Integer ID Required", None));
+                    Err(import_error(&feat, "Integer ID Required", None))
                 }
             },
-            _ => { return Err(import_error(&feat, "Integer ID Required", None)); },
+            _ => Err(import_error(&feat, "Integer ID Required", None))
         }
     }
 }
 
 pub fn get_action(feat: &geojson::Feature) -> Result<Action, HecateError> {
     match feat.foreign_members {
-        None => { return Err(import_error(&feat, "Action Required", None)); },
+        None => Err(import_error(&feat, "Action Required", None)),
         Some(ref members) => match members.get("action") {
             Some(action) => {
                 match action.as_str() {
@@ -183,10 +183,10 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, HecateError> {
                     Some("modify") => Ok(Action::Modify),
                     Some("delete") => Ok(Action::Delete),
                     Some("restore") => Ok(Action::Restore),
-                    _ => { return Err(import_error(&feat, "Action Required", None)); },
+                    _ => Err(import_error(&feat, "Action Required", None))
                 }
             },
-            None => { return Err(import_error(&feat, "Action Required", None)); },
+            None => Err(import_error(&feat, "Action Required", None))
         }
     }
 }
@@ -559,7 +559,7 @@ pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -
         ) f
     ", &[&lng, &lat]) {
         Ok(results) => {
-            if results.len() == 0 {
+            if results.is_empty() {
                 return Err(HecateError::new(404, String::from("Feature not found"), None));
             }
 
@@ -576,7 +576,7 @@ pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -
     }
 }
 
-pub fn get(conn: &impl postgres::GenericConnection, id: &i64) -> Result<geojson::Feature, HecateError> {
+pub fn get(conn: &impl postgres::GenericConnection, id: i64) -> Result<geojson::Feature, HecateError> {
     match conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature

@@ -15,9 +15,9 @@ pub struct Database {
 impl Database {
     pub fn new(main: String, replica: Vec<String>, sandbox: Vec<String>) -> Self {
         Database {
-            main: main,
-            replica: replica,
-            sandbox: sandbox
+            main,
+            replica,
+            sandbox
         }
     }
 }
