@@ -1,4 +1,3 @@
-
 pub static VERSION: &str = "0.82.1";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
@@ -73,7 +72,7 @@ pub fn start(
     let db_sandbox = DbSandbox::new(Some(database.sandbox.iter().map(|db| db::init_pool(&db)).collect()));
     let db_main = DbReadWrite::new(init_pool(&database.main));
 
-    let worker = worker::Worker::new(database.main.clone());
+    let worker = worker::Worker::new(database.main);
 
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
@@ -834,7 +833,7 @@ fn style_create(
             Err(err) => { return Err(HecateError::new(400, String::from("Invalid UTF8 Body"), Some(err.to_string()))); }
         };
 
-        let style_id = style::create(&*conn, &uid, &body)?;
+        let style_id = style::create(&*conn, uid, &body)?;
         worker.queue(worker::Task::new(worker::TaskType::Style(style_id)));
 
         Ok(Json(json!(style_id)))
@@ -852,7 +851,7 @@ fn style_public(
 
     let style_id = style_id.into_inner();
 
-    Ok(Json(json!(style::access(&*conn.get()?, &uid, &style_id, true)?)))
+    Ok(Json(json!(style::access(&*conn.get()?, uid, style_id, true)?)))
 }
 
 fn style_private(
@@ -866,7 +865,7 @@ fn style_private(
 
     let style_id = style_id.into_inner();
 
-    Ok(Json(json!(style::access(&*conn.get()?, &uid, &style_id, false)?)))
+    Ok(Json(json!(style::access(&*conn.get()?, uid, style_id, false)?)))
 }
 
 fn style_patch(
@@ -902,7 +901,7 @@ fn style_patch(
 
         worker.queue(worker::Task::new(worker::TaskType::Style(style_id)));
 
-        Ok(Json(json!(style::update(&*conn, &uid, &style_id, &body)?)))
+        Ok(Json(json!(style::update(&*conn, uid, style_id, &body)?)))
     }))
 }
 
@@ -919,7 +918,7 @@ fn style_delete(
     let style_id = style_id.into_inner();
     worker.queue(worker::Task::new(worker::TaskType::Style(style_id)));
 
-    Ok(Json(json!(style::delete(&*conn.get()?, &uid, &style_id)?)))
+    Ok(Json(json!(style::delete(&*conn.get()?, uid, style_id)?)))
 }
 
 
@@ -933,7 +932,7 @@ fn style_get(
 
     let style_id = style_id.into_inner();
 
-    Ok(Json(json!(style::get(&*conn.get()?, &auth.uid, &style_id)?)))
+    Ok(Json(json!(style::get(&*conn.get()?, &auth.uid, style_id)?)))
 }
 
 fn style_list_public(
@@ -959,13 +958,13 @@ fn style_list_user(
     match auth.uid {
         Some(uid) => {
             if uid == user_id {
-                Ok(Json(json!(style::list_user(&*conn.get()?, &user_id)?)))
+                Ok(Json(json!(style::list_user(&*conn.get()?, user_id)?)))
             } else {
-                Ok(Json(json!(style::list_user_public(&*conn.get()?, &user_id)?)))
+                Ok(Json(json!(style::list_user_public(&*conn.get()?, user_id)?)))
             }
         },
         _ => {
-            Ok(Json(json!(style::list_user_public(&*conn.get()?, &user_id)?)))
+            Ok(Json(json!(style::list_user_public(&*conn.get()?, user_id)?)))
         }
     }
 }
@@ -1025,7 +1024,7 @@ fn delta(
     web::block(move || {
         auth::check(&auth_rules.0.delta.get, auth::RW::Read, &auth)?;
 
-        Ok(delta::get_json(&*conn.get()?, &id.into_inner())?)
+        Ok(delta::get_json(&*conn.get()?, id.into_inner())?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(delta) => Ok(actix_web::HttpResponse::Ok().json(delta)),
         Err(err) => Ok(HecateError::from(err).error_response())
@@ -1426,7 +1425,7 @@ fn features_action(
             };
         }
 
-        match delta::modify(&delta_id, &trans, &fc, &uid) {
+        match delta::modify(delta_id, &trans, &fc, uid) {
             Err(err) => {
                 trans.set_rollback();
                 trans.finish().unwrap();
@@ -1435,7 +1434,7 @@ fn features_action(
             _ => ()
         };
 
-        match delta::finalize(&delta_id, &trans) {
+        match delta::finalize(delta_id, &trans) {
             Ok(_) => {
                 if trans.commit().is_err() {
                     return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
@@ -1573,7 +1572,7 @@ fn osm_changeset_modify(
 
         let delta_id = delta_id.into_inner();
 
-        match delta::is_open(&delta_id, &trans) {
+        match delta::is_open(delta_id, &trans) {
             Ok(true) => (),
             _ => {
                 trans.set_rollback();
@@ -1597,7 +1596,7 @@ fn osm_changeset_modify(
             }
         };
 
-        let delta_id = match delta::modify_props(&delta_id, &trans, &map, &uid) {
+        let delta_id = match delta::modify_props(delta_id, &trans, &map, uid) {
             Ok(id) => id,
             Err(err) => {
                 trans.set_rollback();
@@ -1653,7 +1652,7 @@ fn osm_changeset_upload(
         };
 
         let delta_id = delta_id.into_inner();
-        match delta::is_open(&delta_id, &trans) {
+        match delta::is_open(delta_id, &trans) {
             Ok(true) => (),
             _ => {
                 trans.set_rollback();
@@ -1675,13 +1674,10 @@ fn osm_changeset_upload(
         let mut ids: HashMap<i64, feature::Response> = HashMap::new();
 
         for feat in &mut fc.features {
-            match feature::get_action(&feat) {
-                Ok(action) => {
-                    if action == feature::Action::Create {
-                        feature::del_version(feat);
-                    }
-                },
-                _ => ()
+            if let Ok(action) = feature::get_action(&feat) {
+                if action == feature::Action::Create {
+                    feature::del_version(feat);
+                }
             }
 
             let feat_res = match feature::action(&trans, &schema, &feat, &Some(delta_id)) {
@@ -1711,7 +1707,7 @@ fn osm_changeset_upload(
             Ok(diffres) => diffres
         };
 
-        match delta::modify(&delta_id, &trans, &fc, &uid) {
+        match delta::modify(delta_id, &trans, &fc, uid) {
             Ok (_) => (),
             Err(_) => {
                 trans.set_rollback();
@@ -1720,7 +1716,7 @@ fn osm_changeset_upload(
             }
         }
 
-        match delta::finalize(&delta_id, &trans) {
+        match delta::finalize(delta_id, &trans) {
             Ok (_) => {
                 if trans.commit().is_err() {
                     return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
@@ -1794,10 +1790,9 @@ fn feature_action(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth::check(&auth_rules.0.feature.create, auth::RW::Full, &auth) {
-        Err(err) => { return Either::A(futures::future::err(err)); },
-        _ => ()
-    };
+    if let Err(err) = auth::check(&auth_rules.0.feature.create, auth::RW::Full, &auth) {
+        return Either::A(futures::future::err(err));
+    }
 
     let uid = auth.uid.unwrap();
 
@@ -1869,16 +1864,13 @@ fn feature_action(
             foreign_members: None,
         };
         // modifies the delta entry to include the features json blob
-        match delta::modify(&delta_id, &trans, &fc, &uid) {
-            Err(err) => {
-                trans.set_rollback();
-                trans.finish().unwrap();
-                return Err(err);
-            },
-            _ => ()
+        if let Err(err) = delta::modify(delta_id, &trans, &fc, uid) {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Err(err);
         }
 
-        match delta::finalize(&delta_id, &trans) {
+        match delta::finalize(delta_id, &trans) {
             Ok(_) => {
                 if trans.commit().is_err() {
                     return Err(HecateError::new(500, String::from("Failed to commit transaction"), None));
@@ -1930,7 +1922,7 @@ fn feature_get_history(
     web::block(move || {
         auth::check(&auth_rules.0.feature.history, auth::RW::Read, &auth)?;
 
-        Ok(feature::history(&*conn.get()?, &id.into_inner())?)
+        Ok(feature::history(&*conn.get()?, id.into_inner())?)
     }).then(|res: Result<serde_json::Value, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(history) => Ok(actix_web::HttpResponse::Ok().json(history)),
         Err(err) => Ok(HecateError::from(err).error_response())

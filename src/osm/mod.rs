@@ -144,45 +144,39 @@ impl OSMTypes {
 pub fn to_diffresult(ids: HashMap<i64, feature::Response>, tree: OSMTree) -> Result<String, XMLError> {
     let mut diffres = String::from(r#"<diffResult generator="Hecate Server" version="0.6">"#);
 
-    for (_i, n) in tree.get_nodes() {
+    for n in tree.get_nodes().values() {
         if n.action == Some(Action::Create) {
-            match ids.get(&n.id.unwrap()) {
-                Some(diffid) => { diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old.unwrap(), diffid.new.unwrap(), diffid.version.unwrap())); },
-                _ => ()
+            if let Some(diffid) = ids.get(&n.id.unwrap()) {
+                diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old.unwrap(), diffid.new.unwrap(), diffid.version.unwrap()));
             }
         } else if n.action == Some(Action::Modify) {
-            match ids.get(&n.id.unwrap()) {
-                Some(diffid) => { diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, n.id.unwrap(), n.id.unwrap(), diffid.version.unwrap())); },
-                _ => ()
+            if let Some(diffid) = ids.get(&n.id.unwrap()) {
+                diffres.push_str(&*format!(r#"<node old_id="{}" new_id="{}" new_version="{}"/>"#, n.id.unwrap(), n.id.unwrap(), diffid.version.unwrap()));
             }
         } else if n.action == Some(Action::Delete) {
-            match ids.get(&n.id.unwrap()) {
-                Some(_) => { diffres.push_str(&*format!(r#"<node old_id="{}"/>"#, n.id.unwrap())); },
-                _ => ()
+            if let Some(_) = ids.get(&n.id.unwrap()) {
+                diffres.push_str(&*format!(r#"<node old_id="{}"/>"#, n.id.unwrap()));
             }
         }
     }
 
-    for (_i, w) in tree.get_ways() {
+    for w in tree.get_ways().values() {
         if w.action == Some(Action::Create) {
-            match ids.get(&w.id.unwrap()) {
-                Some(diffid) => { diffres.push_str(&*format!(r#"<way old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old.unwrap(), diffid.new.unwrap(), diffid.version.unwrap())); },
-                _ => ()
+            if let Some(diffid) = ids.get(&w.id.unwrap()) {
+                diffres.push_str(&*format!(r#"<way old_id="{}" new_id="{}" new_version="{}"/>"#, diffid.old.unwrap(), diffid.new.unwrap(), diffid.version.unwrap()));
             }
         } else if w.action == Some(Action::Modify) {
-            match ids.get(&w.id.unwrap()) {
-                Some(diffid) => { diffres.push_str(&*format!(r#"<way old_id="{}" new_id="{}" new_version="{}"/>"#, w.id.unwrap(), w.id.unwrap(), diffid.version.unwrap())); },
-                _ => ()
+            if let Some(diffid) = ids.get(&w.id.unwrap()) {
+                diffres.push_str(&*format!(r#"<way old_id="{}" new_id="{}" new_version="{}"/>"#, w.id.unwrap(), w.id.unwrap(), diffid.version.unwrap()));
             }
         } else if w.action == Some(Action::Delete) {
-            match ids.get(&w.id.unwrap()) {
-                Some(_) => { diffres.push_str(&*format!(r#"<way old_id="{}"/>"#, w.id.unwrap())); },
-                _ => ()
+            if let Some(_) = ids.get(&w.id.unwrap()) {
+                diffres.push_str(&*format!(r#"<way old_id="{}"/>"#, w.id.unwrap()));
             }
         }
     }
 
-    for (_i, _r) in tree.get_rels() {
+    for _ in tree.get_rels().values() {
 
     }
 
@@ -236,7 +230,7 @@ pub fn to_delta(body: &String) -> Result<HashMap<String, Option<String>>, XMLErr
     Ok(map)
 }
 
-pub fn to_features(body: &String) -> Result<(geojson::FeatureCollection, OSMTree), XMLError> {
+pub fn to_features(body: &str) -> Result<(geojson::FeatureCollection, OSMTree), XMLError> {
     let tree = tree_parser(&body)?;
 
     let mut fc = geojson::FeatureCollection {
@@ -245,19 +239,19 @@ pub fn to_features(body: &String) -> Result<(geojson::FeatureCollection, OSMTree
         foreign_members: None
     };
 
-    for (_i, rel) in tree.get_rels() {
+    for rel in tree.get_rels().values() {
         if rel.action != Some(Action::Delete) && !rel.has_tags() { continue; }
 
         fc.features.push(rel.to_feat(&tree)?);
     }
 
-    for (_i, way) in tree.get_ways() {
+    for way in tree.get_ways().values() {
         if way.action != Some(Action::Delete) && !way.has_tags() { continue; }
 
         fc.features.push(way.to_feat(&tree)?);
     }
 
-    for (_i, node) in tree.get_nodes() {
+    for node in tree.get_nodes().values() {
         if node.action != Some(Action::Delete) && !node.has_tags() { continue; }
 
         let n = node.to_feat(&tree)?;
@@ -268,8 +262,8 @@ pub fn to_features(body: &String) -> Result<(geojson::FeatureCollection, OSMTree
     Ok((fc, tree))
 }
 
-pub fn tree_parser(body: &String) -> Result<OSMTree, XMLError> {
-    let mut tree: OSMTree = OSMTree::new();
+pub fn tree_parser(body: &str) -> Result<OSMTree, XMLError> {
+    let mut tree: OSMTree = OSMTree::default();
 
     let mut opening_osm = false;
     let mut node: Node = Node::new();

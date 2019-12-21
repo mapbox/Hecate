@@ -53,9 +53,8 @@ impl Generic for Node {
     fn to_feat(&self, _tree: &OSMTree) -> Result<geojson::Feature, XMLError> {
         let mut foreign = serde_json::Map::new();
 
-        match self.is_valid() {
-            Err(err) => { return Err(XMLError::InvalidNode(err)); },
-            _ => ()
+        if let Err(err) = self.is_valid() {
+            return Err(XMLError::InvalidNode(err));
         }
 
         foreign.insert(String::from("action"), serde_json::Value::String(match self.action {
@@ -81,7 +80,7 @@ impl Generic for Node {
 
         let id: Option<geojson::feature::Id> = match self.id {
             None => None,
-            Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(id.clone())))
+            Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(*id)))
         };
 
         Ok(geojson::Feature {

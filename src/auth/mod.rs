@@ -159,7 +159,7 @@ impl Auth {
                 None => None,
                 Some(uid) => match uid.to_str() {
                     Ok(uid) => {
-                        if uid.len() == 0 {
+                        if uid.is_empty() {
                             None
                         } else {
                             match uid.parse() {
@@ -255,7 +255,7 @@ impl Auth {
         let path: Vec<String> = req.path().split("/").map(|p| {
             p.to_string()
         }).filter(|p| {
-            if p.len() == 0 {
+            if p.is_empty() {
                 return false;
             }
 
@@ -281,62 +281,56 @@ impl Auth {
             auth.validate(conn)?;
         }
 
-        match req.cookie("session") {
-            Some(token) => {
-                let token = String::from(token.value());
+        if let Some(token) = req.cookie("session") {
+            let token = String::from(token.value());
 
-                if token.len() > 0 {
-                    auth.token = Some(token);
-                    auth.scope = Scope::Full;
-                    return match auth.validate(conn) {
-                        Err(err) => {
-                            return Err(err.set_invalidate(true));
-                        },
-                        Ok(_) => Ok(auth)
-                    };
-                }
-            },
-            None => ()
-        };
-
-        match req.headers().get("Authorization") {
-            Some(key) => {
-                if key.len() < 7 {
-                    return Ok(auth);
-                }
-
-                let mut authtype = match key.to_str() {
-                    Ok(key) => key.to_string(),
-                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+            if !token.is_empty() {
+                auth.token = Some(token);
+                auth.scope = Scope::Full;
+                return match auth.validate(conn) {
+                    Err(err) => {
+                        return Err(err.set_invalidate(true));
+                    },
+                    Ok(_) => Ok(auth)
                 };
-                let auth_str = authtype.split_off(6);
+            }
+        }
 
-                if authtype != "Basic " {
-                    return Ok(auth);
-                }
+        if let Some(key) = req.headers().get("Authorization") {
+            if key.len() < 7 {
+                return Ok(auth);
+            }
 
-                match base64::decode(&auth_str) {
-                    Ok(decoded) => match String::from_utf8(decoded) {
-                        Ok(decoded_str) => {
+            let mut authtype = match key.to_str() {
+                Ok(key) => key.to_string(),
+                Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+            };
+            let auth_str = authtype.split_off(6);
 
-                            let split = decoded_str.split(":").collect::<Vec<&str>>();
+            if authtype != "Basic " {
+                return Ok(auth);
+            }
 
-                            if split.len() != 2 { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+            match base64::decode(&auth_str) {
+                Ok(decoded) => match String::from_utf8(decoded) {
+                    Ok(decoded_str) => {
 
-                            auth.basic = Some((String::from(split[0]), String::from(split[1])));
-                            auth.scope = Scope::Full;
+                        let split = decoded_str.split(':').collect::<Vec<&str>>();
 
-                            auth.validate(conn)?;
+                        if split.len() != 2 { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
 
-                            return Ok(auth);
-                        },
-                        Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                        auth.basic = Some((String::from(split[0]), String::from(split[1])));
+                        auth.scope = Scope::Full;
+
+                        auth.validate(conn)?;
+
+                        return Ok(auth);
                     },
                     Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
-                }
-            },
-            None => ()
-        };
+                },
+                Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+            }
+        }
 
         Ok(auth)
     }
@@ -422,7 +416,7 @@ impl Auth {
                     AND users_tokens.uid = users.id
             ", &[ &self.token.as_ref().unwrap() ]) {
                 Ok(res) => {
-                    if res.len() == 0 {
+                    if res.is_empty() {
                         return Err(config::not_authed());
                     }
 

@@ -34,7 +34,7 @@ impl WebHook {
         }
     }
 
-    pub fn to_value(self) -> serde_json::Value {
+    pub fn to_value(&self) -> serde_json::Value {
         json!({
             "id": self.id,
             "name": self.name,
@@ -100,7 +100,7 @@ pub fn get(conn: &impl postgres::GenericConnection, id: i64) -> Result<WebHook, 
             id = $1
     ", &[&id]) {
         Ok(results) => {
-            if results.len() == 0 {
+            if results.is_empty() {
                 return Err(HecateError::new(404, String::from("Webhook Not Found"), None));
             }
 
@@ -185,7 +185,7 @@ pub fn update(conn: &impl postgres::GenericConnection, webhook: WebHook) -> Resu
     }
 }
 
-pub fn is_valid_action(actions: &Vec<String>) -> bool {
+pub fn is_valid_action(actions: &[String]) -> bool {
     for action in actions {
         if
             action != "delta"
