@@ -200,7 +200,7 @@ mod tests {
     #[test]
     fn to_feat() {
         let mut w = Way::new();
-        let mut tree = OSMTree::new();
+        let mut tree = OSMTree::default();
         assert_eq!(w.to_feat(&tree).err(), Some(XMLError::InvalidWay(String::from("Missing id"))));
 
         w.id = Some(1);

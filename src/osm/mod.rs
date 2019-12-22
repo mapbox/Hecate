@@ -800,9 +800,12 @@ pub fn multipolygon(feat: &geojson::Feature, coords: &Vec<geojson::PolygonType>,
 pub fn json2str(v: &serde_json::value::Value) -> String {
     match *v {
         serde_json::value::Value::Null => String::from(""),
-        serde_json::value::Value::Bool(ref json_bool) => match *json_bool {
-            true => String::from("yes"),
-            false => String::from("no")
+        serde_json::value::Value::Bool(ref json_bool) => {
+            if *json_bool {
+                String::from("yes")
+            } else {
+                String::from("no")
+            }
         },
         serde_json::value::Value::Number(ref json_num) => format!("{}", json_num),
         serde_json::value::Value::String(ref json_str) => json_str.to_string(),

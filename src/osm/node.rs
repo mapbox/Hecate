@@ -181,7 +181,7 @@ mod tests {
     #[test]
     fn to_feat() {
         let mut n = Node::new();
-        let tree = OSMTree::new();
+        let tree = OSMTree::default();
         assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing id"))), "missing id errors");
 
         n.id = Some(1);

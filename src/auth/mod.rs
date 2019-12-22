@@ -1,6 +1,7 @@
 use crate::err::HecateError;
 use actix_http::httpmessage::HttpMessage;
 use actix_web::http::header::{HeaderName, HeaderValue};
+use std::default::Default;
 
 pub mod config;
 pub mod middleware;
@@ -73,6 +74,12 @@ pub fn check(rule: &String, rw: config::RW, auth: &Auth) -> Result<(), HecateErr
     }
 }
 
+impl Default for Auth {
+    fn default() -> Self {
+        Auth::new()
+    }
+}
+
 impl Auth {
     pub fn new() -> Self {
         Auth {
@@ -84,14 +91,14 @@ impl Auth {
         }
     }
 
-    pub fn as_headers(self, req: &mut actix_web::dev::ServiceRequest) {
+    pub fn as_headers(&self, req: &mut actix_web::dev::ServiceRequest) {
         let headers = req.headers_mut();
 
         match self.uid {
             Some(uid) => {
                 headers.insert(
                     HeaderName::from_static("hecate_uid"),
-                    HeaderValue::from_str(uid.to_string().as_str()).unwrap_or(HeaderValue::from_static(""))
+                    HeaderValue::from_str(uid.to_string().as_str()).unwrap_or_else(|_| HeaderValue::from_static(""))
                 );
             },
             None => {
@@ -110,11 +117,11 @@ impl Auth {
             HeaderValue::from_str(access).unwrap()
         );
 
-        match self.token {
+        match &self.token {
             Some(token) => {
                 headers.insert(
                     HeaderName::from_static("hecate_token"),
-                    HeaderValue::from_str(token.as_str()).unwrap_or(HeaderValue::from_static(""))
+                    HeaderValue::from_str(token.as_str()).unwrap_or_else(|_| HeaderValue::from_static(""))
                 );
             },
             None => {
@@ -138,11 +145,11 @@ impl Auth {
             }
         };
 
-        match self.basic {
+        match &self.basic {
             Some(basic) => {
                 headers.insert(
                     HeaderName::from_static("hecate_basic"),
-                    HeaderValue::from_str(format!("{}:{}", basic.0, basic.1).as_str()).unwrap_or(HeaderValue::from_static(""))
+                    HeaderValue::from_str(format!("{}:{}", basic.0, basic.1).as_str()).unwrap_or_else(|_| HeaderValue::from_static(""))
                 );
             },
             None => {
@@ -221,7 +228,7 @@ impl Auth {
                 None => None,
                 Some(basic) => match basic.to_str() {
                     Ok(basic) => {
-                        let mut basic: Vec<String> = basic.splitn(2, ":").map(|ele| {
+                        let mut basic: Vec<String> = basic.splitn(2, ':').map(|ele| {
                             ele.to_string()
                         }).collect();
 
@@ -252,7 +259,7 @@ impl Auth {
     pub fn from_sreq(req: &mut actix_web::dev::ServiceRequest, conn: &impl postgres::GenericConnection) -> Result<Self, HecateError> {
         let mut auth = Auth::new();
 
-        let path: Vec<String> = req.path().split("/").map(|p| {
+        let path: Vec<String> = req.path().split('/').map(|p| {
             p.to_string()
         }).filter(|p| {
             if p.is_empty() {
@@ -264,15 +271,15 @@ impl Auth {
 
         if
             path.len() > 2
-            && path[0] == String::from("token")
+            && path[0] == "token"
         {
             auth.token = Some(path[1].to_string());
 
             let curr_path = req.match_info_mut();
 
             let mut new_path = String::from("");
-            for i in 2..path.len() {
-                new_path = format!("{}/{}", new_path, path[i].to_string());
+            for item in path.iter().skip(2) {
+                new_path = format!("{}/{}", new_path, item.to_string());
             }
 
             let new_url =  actix_web::dev::Url::new(new_path.parse::<actix_web::http::Uri>().unwrap());
@@ -342,13 +349,9 @@ impl Auth {
     /// authentication methods are cleared with each validate
     ///
     pub fn secure(&mut self, user: Option<(i64, AuthAccess)>) {
-        match user {
-            Some(user) => {
-                self.uid = Some(user.0);
-                self.access = user.1;
-            }
-            _ => ()
-        };
+        if let Some(user) = user {
+            self.uid = Some(user.0);
+        }
 
         self.token = None;
         self.basic = None;

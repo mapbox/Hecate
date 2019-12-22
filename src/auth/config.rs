@@ -16,7 +16,7 @@ pub struct AuthContainer(pub CustomAuth);
 /// This category makes up the majority of endpoints in hecate and is the most
 /// flexible
 ///
-fn is_all(scope_type: &str, scope: &String) -> Result<bool, String> {
+fn is_all(scope_type: &str, scope: &str) -> Result<bool, String> {
     match scope.as_ref() {
         "public" => Ok(true),
         "admin" => Ok(true),
@@ -33,7 +33,7 @@ fn is_all(scope_type: &str, scope: &String) -> Result<bool, String> {
 /// not only must the user be logged in but the user can only update their own
 /// data
 ///
-fn is_self(scope_type: &str, scope: &String) -> Result<bool, String> {
+fn is_self(scope_type: &str, scope: &str) -> Result<bool, String> {
     match scope.as_ref() {
         "self" => Ok(true),
         "admin" => Ok(true),
@@ -49,7 +49,7 @@ fn is_self(scope_type: &str, scope: &String) -> Result<bool, String> {
 /// logged in but can make changes to any feature, including features created
 /// by another user
 ///
-fn is_auth(scope_type: &str, scope: &String) -> Result<bool, String> {
+fn is_auth(scope_type: &str, scope: &str) -> Result<bool, String> {
     match scope.as_ref() {
         "user" => Ok(true),
         "admin" => Ok(true),
@@ -699,17 +699,17 @@ impl AuthModule for CustomAuth {
     fn is_valid(&self) -> Result<bool, String> {
         is_all("server", &self.server)?;
 
-        &self.meta.is_valid()?;
-        &self.mvt.is_valid()?;
-        &self.stats.is_valid()?;
-        &self.clone.is_valid()?;
-        &self.schema.is_valid()?;
-        &self.user.is_valid()?;
-        &self.feature.is_valid()?;
-        &self.style.is_valid()?;
-        &self.delta.is_valid()?;
-        &self.bounds.is_valid()?;
-        &self.osm.is_valid()?;
+        self.meta.is_valid()?;
+        self.mvt.is_valid()?;
+        self.stats.is_valid()?;
+        self.clone.is_valid()?;
+        self.schema.is_valid()?;
+        self.user.is_valid()?;
+        self.feature.is_valid()?;
+        self.style.is_valid()?;
+        self.delta.is_valid()?;
+        self.bounds.is_valid()?;
+        self.osm.is_valid()?;
 
         Ok(true)
     }

@@ -54,13 +54,10 @@ pub fn start(
     let auth_rules: auth::CustomAuth = match auth {
         None => auth::CustomAuth::default(),
         Some(auth) => {
-            match auth.is_valid() {
-                Err(err_msg) => {
-                    println!("ERROR: {}", err_msg);
-                    std::process::exit(1);
-                },
-                Ok(_) => ()
-            };
+            if let Err(err) = auth.is_valid() {
+                println!("ERROR: {}", err);
+                std::process::exit(1);
+            }
 
             auth
         }
@@ -571,15 +568,14 @@ fn user_info(
 
 fn user_modify_info(
     conn: web::Data<DbReadWrite>,
-    mut auth: auth::Auth,
+    auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
     uid: web::Path<i64>,
     body: web::Payload
 ) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
-    match auth_rules.0.is_admin(&mut auth) {
-        Err(err) => { return Either::A(futures::future::err(err)); },
-        _ => ()
-    };
+    if let Err(err) = auth_rules.0.is_admin(&auth) {
+        return Either::A(futures::future::err(err));
+    }
 
     Either::B(body.map_err(HecateError::from).fold(bytes::BytesMut::new(), move |mut body, chunk| {
         body.extend_from_slice(&chunk);
@@ -694,7 +690,7 @@ fn user_create_session(
 
         let uid = auth.uid.unwrap();
 
-        Ok(user::Token::create(&*conn.get()?, "Session Token", &uid, &HOURS, user::token::Scope::Full)?)
+        Ok(user::Token::create(&*conn.get()?, "Session Token", uid, HOURS, user::token::Scope::Full)?)
     }).then(|res: Result<user::Token, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(token) => {
 
@@ -728,7 +724,7 @@ fn user_delete_session(
         // always be able to de-authenticate to prevent errors
         match token {
             Some(token) => match auth.uid {
-                Some(uid) => match user::token::destroy(&*conn.get()?, &uid, &token) {
+                Some(uid) => match user::token::destroy(&*conn.get()?, uid, &token) {
                     _ => Ok(true)
                 },
                 None => Ok(true)
@@ -776,9 +772,9 @@ fn user_create_token(
 
     let token = user::Token::create(
         &*conn.get()?,
-        token.name.unwrap_or(String::from("Access Token")),
-        &uid,
-        &token.hours.unwrap_or(16),
+        token.name.unwrap_or_else(|| String::from("Access Token")),
+        uid,
+        token.hours.unwrap_or(16),
         scope
     )?;
 
@@ -800,7 +796,7 @@ fn user_delete_token(
 
     let token = token.into_inner();
 
-    user::token::destroy(&*conn.get()?, &uid, &token)?;
+    user::token::destroy(&*conn.get()?, uid, &token)?;
 
     Ok(Json(json!(true)))
 }
@@ -817,10 +813,9 @@ fn style_create(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth::check(&auth_rules.0.style.create, auth::RW::Full, &auth) {
-        Err(err) => { return Either::A(futures::future::err(err)); },
-        _ => ()
-    };
+    if let Err(err) = auth::check(&auth_rules.0.style.create, auth::RW::Full, &auth) {
+        return Either::A(futures::future::err(err));
+    }
 
     let uid = auth.uid.unwrap();
 
@@ -883,9 +878,8 @@ fn style_patch(
 
     let style_id = style_id.into_inner();
 
-    match auth::check(&auth_rules.0.style.patch, auth::RW::Full, &auth) {
-        Err(err) => { return Either::A(futures::future::err(err)); },
-        _ => ()
+    if let Err(err) =  auth::check(&auth_rules.0.style.patch, auth::RW::Full, &auth) {
+        return Either::A(futures::future::err(err));
     };
 
     let uid = auth.uid.unwrap();
@@ -1071,9 +1065,8 @@ fn bounds_set(
     bounds: web::Path<String>,
     body: web::Payload
 ) -> impl Future<Item = Json<serde_json::Value>, Error = HecateError> {
-    match auth::check(&auth_rules.0.bounds.create, auth::RW::Full, &auth) {
-        Err(err) => { return Either::A(futures::future::err(err)); },
-        _ => ()
+    if let Err(err) = auth::check(&auth_rules.0.bounds.create, auth::RW::Full, &auth) {
+        return Either::A(futures::future::err(err));
     };
 
     let conn = match conn.get() {
@@ -1346,10 +1339,9 @@ fn features_action(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth::check(&auth_rules.0.feature.create, auth::RW::Full, &auth) {
-        Err(err) => { return Either::A(futures::future::err(err)); },
-        _ => ()
-    };
+    if let Err(err) = auth::check(&auth_rules.0.feature.create, auth::RW::Full, &auth) {
+        return Either::A(futures::future::err(err));
+    }
 
     let uid = auth.uid.unwrap();
 
@@ -1425,14 +1417,11 @@ fn features_action(
             };
         }
 
-        match delta::modify(delta_id, &trans, &fc, uid) {
-            Err(err) => {
-                trans.set_rollback();
-                trans.finish().unwrap();
-                return Err(err);
-            },
-            _ => ()
-        };
+        if let Err(err) = delta::modify(delta_id, &trans, &fc, uid) {
+            trans.set_rollback();
+            trans.finish().unwrap();
+            return Err(err);
+        }
 
         match delta::finalize(delta_id, &trans) {
             Ok(_) => {
@@ -1484,9 +1473,8 @@ fn osm_changeset_create(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth::check(&auth_rules.0.osm.create, auth::RW::Full, &auth) {
-        Err(err) => { return Either::A(futures::future::err(err)); },
-        _ => ()
+    if let Err(err) = auth::check(&auth_rules.0.osm.create, auth::RW::Full, &auth) {
+        return Either::A(futures::future::err(err));
     };
 
     let uid = auth.uid.unwrap();
@@ -1549,10 +1537,9 @@ fn osm_changeset_modify(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth::check(&auth_rules.0.osm.create, auth::RW::Full, &auth) {
-        Err(err) => { return Either::A(futures::future::err(err)); },
-        _ => ()
-    };
+    if let Err(err) = auth::check(&auth_rules.0.osm.create, auth::RW::Full, &auth) {
+        return Either::A(futures::future::err(err));
+    }
 
     let uid = auth.uid.unwrap();
 
@@ -1630,10 +1617,9 @@ fn osm_changeset_upload(
         Err(err) => { return Either::A(futures::future::err(err)); }
     };
 
-    match auth::check(&auth_rules.0.osm.create, auth::RW::Full, &auth) {
-        Err(err) => { return Either::A(futures::future::err(err)); },
-        _ => ()
-    };
+    if let Err(err) = auth::check(&auth_rules.0.osm.create, auth::RW::Full, &auth) {
+        return Either::A(futures::future::err(err));
+    }
 
     let uid = auth.uid.unwrap();
 
