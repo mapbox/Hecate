@@ -285,10 +285,7 @@ impl Auth {
             let new_url =  actix_web::dev::Url::new(new_path.parse::<actix_web::http::Uri>().unwrap());
             curr_path.set(new_url);
 
-            auth.validate(conn)?;
-        }
-
-        if let Some(token) = req.cookie("session") {
+        } else if let Some(token) = req.cookie("session") {
             let token = String::from(token.value());
 
             if !token.is_empty() {
@@ -301,9 +298,7 @@ impl Auth {
                     Ok(_) => Ok(auth)
                 };
             }
-        }
-
-        if let Some(key) = req.headers().get("Authorization") {
+        } else if let Some(key) = req.headers().get("Authorization") {
             if key.len() < 7 {
                 return Ok(auth);
             }
@@ -328,16 +323,14 @@ impl Auth {
 
                         auth.basic = Some((String::from(split[0]), String::from(split[1])));
                         auth.scope = Scope::Full;
-
-                        auth.validate(conn)?;
-
-                        return Ok(auth);
                     },
-                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                    Err(_err) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
                 },
-                Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                Err(_err) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
             }
         }
+
+        auth.validate(conn)?;
 
         Ok(auth)
     }
@@ -351,6 +344,7 @@ impl Auth {
     pub fn secure(&mut self, user: Option<(i64, AuthAccess)>) {
         if let Some(user) = user {
             self.uid = Some(user.0);
+            self.access = user.1;
         }
 
         self.token = None;
