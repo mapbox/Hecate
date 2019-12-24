@@ -27,7 +27,7 @@ impl futures::stream::Stream for PGStream {
             Err(err) => { return Err(HecateError::new(500, err.to_string(), None)); }
         };
 
-        if rows.len() == 0 {
+        if rows.is_empty() {
             if self.eot {
                 // The Stream is complete
                 return Ok(Async::Ready(None));
@@ -71,7 +71,7 @@ impl std::io::Read for PGStream {
                     }
                 };
 
-                if rows.len() != 0 {
+                if !rows.is_empty() {
                     for row_it in 0..rows.len() {
                         let feat: String = rows.get(row_it).get(0);
                         write.append(&mut feat.into_bytes().to_vec());
@@ -80,12 +80,12 @@ impl std::io::Read for PGStream {
                 }
             }
 
-            if write.len() == 0 && !self.eot {
+            if write.is_empty() && !self.eot {
                 write.push(0x04); //Write EOT Character To Stream
                 self.eot = true;
             }
 
-            if write.len() == 0 && self.eot {
+            if write.is_empty() && self.eot {
                 //No more data to fetch, close up shop
                 break;
             } else if current + write.len() > buf.len() {
@@ -99,7 +99,7 @@ impl std::io::Read for PGStream {
                 let pending = write[buf.len() - current..write.len()].to_vec();
                 self.pending = Some(pending);
 
-                current = current + (buf.len() - current);
+                current += buf.len() - current;
 
                 break;
             } else {
@@ -110,7 +110,7 @@ impl std::io::Read for PGStream {
                     buf[current + it] = write[it];
                 }
 
-                current = current + write.len();
+                current += write.len();
             }
         }
 
@@ -119,21 +119,21 @@ impl std::io::Read for PGStream {
 }
 
 impl PGStream {
-    pub fn new(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&dyn ToSql]) -> Result<Self, HecateError> {
-        let pg_conn = Box::new(conn);
+    pub fn new(pg_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&dyn ToSql]) -> Result<Self, HecateError> {
+        let conn = Box::new(pg_conn);
 
         let trans: postgres::transaction::Transaction = unsafe {
-            mem::transmute(pg_conn.transaction().unwrap())
+            mem::transmute(conn.transaction().unwrap())
         };
 
         match trans.execute(&*query, params) {
             Ok(_) => {
                 Ok(PGStream {
                     eot: false,
-                    cursor: cursor,
+                    cursor,
                     pending: None,
-                    trans: trans,
-                    conn: pg_conn
+                    trans,
+                    conn
                 })
             },
             Err(err) => Err(HecateError::from_db(err))

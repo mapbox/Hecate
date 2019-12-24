@@ -15,11 +15,11 @@ impl HecateError {
         };
 
         HecateError {
-            code: code,
+            code,
             invalidate: false,
             custom_json: None,
-            safe_error: safe_error,
-            full_error: full_error
+            safe_error,
+            full_error
         }
     }
 
@@ -39,7 +39,7 @@ impl HecateError {
         let reason = status.canonical_reason().unwrap_or("Generic Error").to_string();
 
         HecateError {
-            code: code,
+            code,
             invalidate: false,
             custom_json: None,
             safe_error: reason.clone(),

@@ -53,9 +53,8 @@ impl Generic for Node {
     fn to_feat(&self, _tree: &OSMTree) -> Result<geojson::Feature, XMLError> {
         let mut foreign = serde_json::Map::new();
 
-        match self.is_valid() {
-            Err(err) => { return Err(XMLError::InvalidNode(err)); },
-            _ => ()
+        if let Err(err) = self.is_valid() {
+            return Err(XMLError::InvalidNode(err));
         }
 
         foreign.insert(String::from("action"), serde_json::Value::String(match self.action {
@@ -67,27 +66,27 @@ impl Generic for Node {
 
         foreign.insert(String::from("version"), json!(self.version));
 
-        let mut geom: Option<geojson::Geometry> = None;
+        let mut geometry: Option<geojson::Geometry> = None;
 
         if self.action != Some(Action::Delete) {
             let mut coords: Vec<f64> = Vec::new();
             coords.push(self.lon.unwrap() as f64);
             coords.push(self.lat.unwrap() as f64);
 
-            geom = Some(geojson::Geometry::new(
+            geometry = Some(geojson::Geometry::new(
                 geojson::Value::Point(coords)
             ));
         }
 
         let id: Option<geojson::feature::Id> = match self.id {
             None => None,
-            Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(id.clone())))
+            Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(*id)))
         };
 
         Ok(geojson::Feature {
             bbox: None,
-            geometry: geom,
-            id: id,
+            geometry,
+            id,
             properties: Some(self.tags.clone()),
             foreign_members: Some(foreign)
         })
@@ -112,7 +111,7 @@ impl Generic for Node {
             return Err(String::from("Missing version"));
         }
 
-        return Ok(true);
+        Ok(true)
     }
 }
 
@@ -182,7 +181,7 @@ mod tests {
     #[test]
     fn to_feat() {
         let mut n = Node::new();
-        let tree = OSMTree::new();
+        let tree = OSMTree::default();
         assert_eq!(n.to_feat(&tree).err(), Some(XMLError::InvalidNode(String::from("Missing id"))), "missing id errors");
 
         n.id = Some(1);

@@ -1,6 +1,7 @@
 use crate::err::HecateError;
 use actix_http::httpmessage::HttpMessage;
 use actix_web::http::header::{HeaderName, HeaderValue};
+use std::default::Default;
 
 pub mod config;
 pub mod middleware;
@@ -46,16 +47,16 @@ pub fn check(rule: &String, rw: config::RW, auth: &Auth) -> Result<(), HecateErr
         "public" => Ok(()),
         "admin" => {
             if auth.access == AuthAccess::Admin && auth.uid.is_some() {
-                return Ok(());
+                Ok(())
             } else {
-                return Err(config::not_authed());
+                Err(config::not_authed())
             }
         },
         "user" => {
             if auth.uid.is_some() {
-                return Ok(());
+                Ok(())
             } else {
-                return Err(config::not_authed());
+                Err(config::not_authed())
             }
         },
         "self" => {
@@ -64,12 +65,18 @@ pub fn check(rule: &String, rw: config::RW, auth: &Auth) -> Result<(), HecateErr
             //the UID of 'self' matches the requested resource
 
             if auth.uid.is_some() {
-                return Ok(());
+                Ok(())
             } else {
-                return Err(config::not_authed());
+                Err(config::not_authed())
             }
         },
         _ => Err(config::not_authed())
+    }
+}
+
+impl Default for Auth {
+    fn default() -> Self {
+        Auth::new()
     }
 }
 
@@ -84,14 +91,14 @@ impl Auth {
         }
     }
 
-    pub fn as_headers(self, req: &mut actix_web::dev::ServiceRequest) {
+    pub fn as_headers(&self, req: &mut actix_web::dev::ServiceRequest) {
         let headers = req.headers_mut();
 
         match self.uid {
             Some(uid) => {
                 headers.insert(
                     HeaderName::from_static("hecate_uid"),
-                    HeaderValue::from_str(uid.to_string().as_str()).unwrap_or(HeaderValue::from_static(""))
+                    HeaderValue::from_str(uid.to_string().as_str()).unwrap_or_else(|_| HeaderValue::from_static(""))
                 );
             },
             None => {
@@ -110,11 +117,11 @@ impl Auth {
             HeaderValue::from_str(access).unwrap()
         );
 
-        match self.token {
+        match &self.token {
             Some(token) => {
                 headers.insert(
                     HeaderName::from_static("hecate_token"),
-                    HeaderValue::from_str(token.as_str()).unwrap_or(HeaderValue::from_static(""))
+                    HeaderValue::from_str(token.as_str()).unwrap_or_else(|_| HeaderValue::from_static(""))
                 );
             },
             None => {
@@ -138,11 +145,11 @@ impl Auth {
             }
         };
 
-        match self.basic {
+        match &self.basic {
             Some(basic) => {
                 headers.insert(
                     HeaderName::from_static("hecate_basic"),
-                    HeaderValue::from_str(format!("{}:{}", basic.0, basic.1).as_str()).unwrap_or(HeaderValue::from_static(""))
+                    HeaderValue::from_str(format!("{}:{}", basic.0, basic.1).as_str()).unwrap_or_else(|_| HeaderValue::from_static(""))
                 );
             },
             None => {
@@ -159,7 +166,7 @@ impl Auth {
                 None => None,
                 Some(uid) => match uid.to_str() {
                     Ok(uid) => {
-                        if uid.len() == 0 {
+                        if uid.is_empty() {
                             None
                         } else {
                             match uid.parse() {
@@ -221,7 +228,7 @@ impl Auth {
                 None => None,
                 Some(basic) => match basic.to_str() {
                     Ok(basic) => {
-                        let mut basic: Vec<String> = basic.splitn(2, ":").map(|ele| {
+                        let mut basic: Vec<String> = basic.splitn(2, ':').map(|ele| {
                             ele.to_string()
                         }).collect();
 
@@ -252,93 +259,82 @@ impl Auth {
     pub fn from_sreq(req: &mut actix_web::dev::ServiceRequest, conn: &impl postgres::GenericConnection) -> Result<Self, HecateError> {
         let mut auth = Auth::new();
 
-        let path: Vec<String> = req.path().split("/").map(|p| {
+        let path: Vec<String> = req.path().split('/').map(|p| {
             p.to_string()
         }).filter(|p| {
-            if p.len() == 0 {
+            if p.is_empty() {
                 return false;
             }
 
-            return true;
+            true
         }).collect();
 
         if
             path.len() > 2
-            && path[0] == String::from("token")
+            && path[0] == "token"
         {
             auth.token = Some(path[1].to_string());
 
             let curr_path = req.match_info_mut();
 
             let mut new_path = String::from("");
-            for i in 2..path.len() {
-                new_path = format!("{}/{}", new_path, path[i].to_string());
+            for item in path.iter().skip(2) {
+                new_path = format!("{}/{}", new_path, item.to_string());
             }
 
             let new_url =  actix_web::dev::Url::new(new_path.parse::<actix_web::http::Uri>().unwrap());
             curr_path.set(new_url);
 
-            auth.validate(conn)?;
+        } 
+        
+        if let Some(token) = req.cookie("session") {
+            let token = String::from(token.value());
+
+            if !token.is_empty() {
+                auth.token = Some(token);
+                auth.scope = Scope::Full;
+                return match auth.validate(conn) {
+                    Err(err) => {
+                        return Err(err.set_invalidate(true));
+                    },
+                    Ok(_) => Ok(auth)
+                };
+            }
         }
 
-        match req.cookie("session") {
-            Some(token) => {
-                let token = String::from(token.value());
+        if let Some(key) = req.headers().get("Authorization") {
+            if key.len() < 7 {
+                return Ok(auth);
+            }
 
-                if token.len() > 0 {
-                    auth.token = Some(token);
-                    auth.scope = Scope::Full;
-                    return match auth.validate(conn) {
-                        Err(err) => {
-                            return Err(err.set_invalidate(true));
-                        },
-                        Ok(_) => Ok(auth)
-                    };
-                }
+            let mut authtype = match key.to_str() {
+                Ok(key) => key.to_string(),
+                Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+            };
+            let auth_str = authtype.split_off(6);
 
-                ()
-            },
-            None => ()
-        };
+            if authtype != "Basic " {
+                return Ok(auth);
+            }
 
-        match req.headers().get("Authorization") {
-            Some(key) => {
-                if key.len() < 7 {
-                    return Ok(auth);
-                }
+            match base64::decode(&auth_str) {
+                Ok(decoded) => match String::from_utf8(decoded) {
+                    Ok(decoded_str) => {
 
-                let mut authtype = match key.to_str() {
-                    Ok(key) => key.to_string(),
-                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
-                };
-                let auth_str = authtype.split_off(6);
+                        let split = decoded_str.split(':').collect::<Vec<&str>>();
 
-                if authtype != "Basic " {
-                    return Ok(auth);
-                }
+                        if split.len() != 2 { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
 
-                match base64::decode(&auth_str) {
-                    Ok(decoded) => match String::from_utf8(decoded) {
-                        Ok(decoded_str) => {
-
-                            let split = decoded_str.split(":").collect::<Vec<&str>>();
-
-                            if split.len() != 2 { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
-
-                            auth.basic = Some((String::from(split[0]), String::from(split[1])));
-                            auth.scope = Scope::Full;
-
-                            auth.validate(conn)?;
-
-                            return Ok(auth);
-                        },
-                        Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                        auth.basic = Some((String::from(split[0]), String::from(split[1])));
+                        auth.scope = Scope::Full;
                     },
-                    Err(_) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
-                }
-            },
-            None => ()
-        };
+                    Err(_err) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+                },
+                Err(_err) => { return Err(HecateError::new(401, String::from("Unauthorized"), None)); }
+            }
+        }
+
+        auth.validate(conn)?;
 
         Ok(auth)
     }
@@ -350,13 +346,10 @@ impl Auth {
     /// authentication methods are cleared with each validate
     ///
     pub fn secure(&mut self, user: Option<(i64, AuthAccess)>) {
-        match user {
-            Some(user) => {
-                self.uid = Some(user.0);
-                self.access = user.1;
-            }
-            _ => ()
-        };
+        if let Some(user) = user {
+            self.uid = Some(user.0);
+            self.access = user.1;
+        }
 
         self.token = None;
         self.basic = None;
@@ -424,7 +417,7 @@ impl Auth {
                     AND users_tokens.uid = users.id
             ", &[ &self.token.as_ref().unwrap() ]) {
                 Ok(res) => {
-                    if res.len() == 0 {
+                    if res.is_empty() {
                         return Err(config::not_authed());
                     }
 

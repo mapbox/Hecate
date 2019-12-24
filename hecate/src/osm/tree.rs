@@ -10,7 +10,7 @@ pub struct OSMTree {
 }
 
 impl OSMTree {
-    pub fn new() -> OSMTree {
+    pub fn default() -> OSMTree {
         OSMTree {
             meta: HashMap::new(),
             nodes: HashMap::new(),
@@ -20,9 +20,8 @@ impl OSMTree {
     }
 
     pub fn add_node(&mut self, node: Node) -> Result<bool, XMLError> {
-        match node.is_valid() {
-            Err(err) => { return Err(XMLError::InvalidNode(err)); }
-            _ => ()
+        if let Err(err) = node.is_valid() {
+            return Err(XMLError::InvalidNode(err));
         }
 
         self.nodes.insert(node.id.unwrap(), node);
@@ -37,14 +36,14 @@ impl OSMTree {
         &mut self.nodes
     }
 
-    pub fn get_node_mut(&mut self, id: &i64) -> Result<&mut Node, XMLError> {
+    pub fn get_node_mut(&mut self, id: i64) -> Result<&mut Node, XMLError> {
         match self.nodes.get_mut(&id) {
             Some(n) => Ok(n),
             None => Err(XMLError::NotFoundError)
         }
     }
 
-    pub fn get_node(&self, id: &i64) -> Result<&Node, XMLError> {
+    pub fn get_node(&self, id: i64) -> Result<&Node, XMLError> {
         match self.nodes.get(&id) {
             Some(n) => Ok(n),
             None => Err(XMLError::NotFoundError)
@@ -52,9 +51,8 @@ impl OSMTree {
     }
 
     pub fn add_way(&mut self, way: Way) -> Result<bool, XMLError> {
-        match way.is_valid() {
-            Err(err) => { return Err(XMLError::InvalidWay(err)); },
-            _ => ()
+        if let Err(err) = way.is_valid() {
+            return Err(XMLError::InvalidWay(err));
         }
 
         for nd in &way.nodes {
@@ -81,14 +79,14 @@ impl OSMTree {
         &mut self.ways
     }
 
-    pub fn get_way(&self, id: &i64) -> Result<&Way, XMLError> {
+    pub fn get_way(&self, id: i64) -> Result<&Way, XMLError> {
         match self.ways.get(&id) {
             Some(n) => Ok(n),
             None => Err(XMLError::NotFoundError)
         }
     }
 
-    pub fn get_way_mut(&mut self, id: &i64) -> Result<&mut Way, XMLError> {
+    pub fn get_way_mut(&mut self, id: i64) -> Result<&mut Way, XMLError> {
         match self.ways.get_mut(&id) {
             Some(n) => Ok(n),
             None => Err(XMLError::NotFoundError)
@@ -96,9 +94,8 @@ impl OSMTree {
     }
 
     pub fn add_rel(&mut self, rel: Rel) -> Result<bool, XMLError> {
-        match rel.is_valid() {
-            Err(err) => { return Err(XMLError::InvalidRel(err)); },
-            _ => ()
+        if let Err(err) = rel.is_valid() {
+            return Err(XMLError::InvalidRel(err));
         }
 
         self.rels.insert(rel.id.unwrap(), rel);
@@ -113,14 +110,14 @@ impl OSMTree {
         &mut self.rels
     }
 
-    pub fn get_rel(&self, id: &i64) -> Result<&Rel, XMLError> {
+    pub fn get_rel(&self, id: i64) -> Result<&Rel, XMLError> {
         match self.rels.get(&id) {
             Some(n) => Ok(n),
             None => Err(XMLError::NotFoundError)
         }
     }
 
-    pub fn get_rel_mut(&mut self, id: &i64) -> Result<&mut Rel, XMLError> {
+    pub fn get_rel_mut(&mut self, id: i64) -> Result<&mut Rel, XMLError> {
         match self.rels.get_mut(&id) {
             Some(n) => Ok(n),
             None => Err(XMLError::NotFoundError)

@@ -1,7 +1,7 @@
 use crate::err::HecateError;
 use crate::stream::PGStream;
 
-pub fn set(conn: &impl postgres::GenericConnection, name: &String, feat: &serde_json::Value) -> Result<bool, HecateError> {
+pub fn set(conn: &impl postgres::GenericConnection, name: &str, feat: &serde_json::Value) -> Result<bool, HecateError> {
     match conn.execute("
         INSERT INTO bounds (name, geom, props)
             VALUES (
@@ -19,7 +19,7 @@ pub fn set(conn: &impl postgres::GenericConnection, name: &String, feat: &serde_
     }
 }
 
-pub fn delete(conn: &impl postgres::GenericConnection, name: &String) -> Result<bool, HecateError> {
+pub fn delete(conn: &impl postgres::GenericConnection, name: &str) -> Result<bool, HecateError> {
     match conn.execute("
         DELETE FROM bounds WHERE name = $1
     ", &[ &name ]) {
@@ -28,10 +28,10 @@ pub fn delete(conn: &impl postgres::GenericConnection, name: &String) -> Result<
     }
 }
 
-pub fn filter(conn: &impl postgres::GenericConnection, prefix: &String, limit: &Option<i16>) -> Result<Vec<String>, HecateError> {
+pub fn filter(conn: &impl postgres::GenericConnection, prefix: &str, limit: Option<i16>) -> Result<Vec<String>, HecateError> {
     let limit: i16 = match limit {
         None => 100,
-        Some(limit) => if *limit > 100 { 100 } else { *limit }
+        Some(limit) => if limit > 100 { 100 } else { limit }
     };
 
     match conn.query("
@@ -54,7 +54,7 @@ pub fn filter(conn: &impl postgres::GenericConnection, prefix: &String, limit: &
     }
 }
 
-pub fn list(conn: &impl postgres::GenericConnection, limit: &Option<i16>) -> Result<Vec<String>, HecateError> {
+pub fn list(conn: &impl postgres::GenericConnection, limit: Option<i16>) -> Result<Vec<String>, HecateError> {
     match conn.query("
         SELECT name
         FROM bounds
