@@ -50,9 +50,8 @@ impl Generic for Way {
     fn to_feat(&self, tree: &OSMTree) -> Result<geojson::Feature, XMLError> {
         let mut foreign = serde_json::Map::new();
 
-        match self.is_valid() {
-            Err(err) => { return Err(XMLError::InvalidWay(err)); },
-            _ => ()
+        if let Err(err) = self.is_valid() {
+            return Err(XMLError::InvalidWay(err));
         }
 
         foreign.insert(String::from("action"), serde_json::Value::String(match self.action {
@@ -67,7 +66,7 @@ impl Generic for Way {
         let mut linecoords: Vec<geojson::Position> = Vec::new();
 
         for nid in &self.nodes {
-            let node = match tree.get_node(&nid) {
+            let node = match tree.get_node(*nid) {
                 Err(_) => { return Err(XMLError::InvalidWay(String::from("Node reference not found in tree"))); },
                 Ok(n) => n
             };
@@ -88,7 +87,7 @@ impl Generic for Way {
 
             let id: Option<geojson::feature::Id> = match self.id {
                 None => None,
-                Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(id.clone())))
+                Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(*id)))
             };
 
             Ok(geojson::Feature {
@@ -96,7 +95,7 @@ impl Generic for Way {
                 geometry: Some(geojson::Geometry::new(
                     geojson::Value::Polygon(polycoords)
                 )),
-                id: id,
+                id,
                 properties: Some(self.tags.clone()),
                 foreign_members: Some(foreign)
             })
@@ -105,7 +104,7 @@ impl Generic for Way {
 
             let id: Option<geojson::feature::Id> = match self.id {
                 None => None,
-                Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(id.clone())))
+                Some(ref id) => Some(geojson::feature::Id::Number(serde_json::Number::from(*id)))
             };
 
             Ok(geojson::Feature {
@@ -113,7 +112,7 @@ impl Generic for Way {
                 geometry: Some(geojson::Geometry::new(
                     geojson::Value::LineString(linecoords)
                 )),
-                id: id,
+                id,
                 properties: Some(self.tags.clone()),
                 foreign_members: Some(foreign)
             })
@@ -130,11 +129,11 @@ impl Generic for Way {
             Some(_) => ()
         }
 
-        if self.nodes.len() == 0 {
+        if self.nodes.is_empty(){
             return Err(String::from("Node references cannot be empty"));
         }
 
-        return Ok(true);
+        Ok(true)
     }
 }
 
@@ -201,7 +200,7 @@ mod tests {
     #[test]
     fn to_feat() {
         let mut w = Way::new();
-        let mut tree = OSMTree::new();
+        let mut tree = OSMTree::default();
         assert_eq!(w.to_feat(&tree).err(), Some(XMLError::InvalidWay(String::from("Missing id"))));
 
         w.id = Some(1);
@@ -243,9 +242,9 @@ mod tests {
         assert_eq!(tree.add_node(n2.clone()), Ok(true));
         assert_eq!(tree.add_node(n3.clone()), Ok(true));
 
-        assert_eq!(tree.get_node(&2), Ok(&n2));
-        assert_eq!(tree.get_node(&2), Ok(&n2));
-        assert_eq!(tree.get_node(&3), Ok(&n3));
+        assert_eq!(tree.get_node(2), Ok(&n2));
+        assert_eq!(tree.get_node(2), Ok(&n2));
+        assert_eq!(tree.get_node(3), Ok(&n3));
 
         let mut fmem = serde_json::Map::new();
         fmem.insert(String::from("action"), json!(String::from("create")));

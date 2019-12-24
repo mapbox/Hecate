@@ -27,14 +27,14 @@ impl WebHook {
     pub fn new(id: i64, name: String, actions: Vec<String>, url: String, secret: Option<String>) -> Self {
         WebHook {
             id: Some(id),
-            name: name,
-            actions: actions,
-            url: url,
-            secret: secret
+            name,
+            actions,
+            url,
+            secret
         }
     }
 
-    pub fn to_value(self) -> serde_json::Value {
+    pub fn to_value(&self) -> serde_json::Value {
         json!({
             "id": self.id,
             "name": self.name,
@@ -100,7 +100,7 @@ pub fn get(conn: &impl postgres::GenericConnection, id: i64) -> Result<WebHook, 
             id = $1
     ", &[&id]) {
         Ok(results) => {
-            if results.len() == 0 {
+            if results.is_empty() {
                 return Err(HecateError::new(404, String::from("Webhook Not Found"), None));
             }
 
@@ -185,7 +185,7 @@ pub fn update(conn: &impl postgres::GenericConnection, webhook: WebHook) -> Resu
     }
 }
 
-pub fn is_valid_action(actions: &Vec<String>) -> bool {
+pub fn is_valid_action(actions: &[String]) -> bool {
     for action in actions {
         if
             action != "delta"
@@ -257,7 +257,6 @@ pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) ->
         {
             Ok(res) => {
                 println!("Successfully sent webhook {}: {:#?}", hook.url, res);
-                ()
             },
             Err(err) => {
                 println!("WARN: Failed to post to webhook {}: {:?}", hook.url, err);

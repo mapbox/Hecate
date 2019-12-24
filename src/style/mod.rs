@@ -4,7 +4,7 @@ use crate::err::HecateError;
 /// Creates a new GL JS Style under a given user account
 ///
 /// By default styles are private and can only be accessed by a single user
-pub fn create(conn: &impl postgres::GenericConnection, uid: &i64, style: &String) -> Result<i64, HecateError> {
+pub fn create(conn: &impl postgres::GenericConnection, uid: i64, style: &str) -> Result<i64, HecateError> {
     match conn.query("
         INSERT INTO styles (name, style, uid, public)
             VALUES (
@@ -25,7 +25,7 @@ pub fn create(conn: &impl postgres::GenericConnection, uid: &i64, style: &String
 
 /// Get the style by id, if the style is public, the user need not be logged in,
 /// if the style is private ensure the owner is the requester
-pub fn get(conn: &impl postgres::GenericConnection, uid: &Option<i64>, style_id: &i64) -> Result<Value, HecateError> {
+pub fn get(conn: &impl postgres::GenericConnection, uid: &Option<i64>, style_id: i64) -> Result<Value, HecateError> {
     match conn.query("
         SELECT
             row_to_json(t) as style
@@ -62,7 +62,7 @@ pub fn get(conn: &impl postgres::GenericConnection, uid: &Option<i64>, style_id:
     }
 }
 
-pub fn update(conn: &impl postgres::GenericConnection, uid: &i64, style_id: &i64, style: &String) -> Result<bool, HecateError> {
+pub fn update(conn: &impl postgres::GenericConnection, uid: i64, style_id: i64, style: &str) -> Result<bool, HecateError> {
     match conn.execute("
         UPDATE styles
             SET
@@ -83,7 +83,7 @@ pub fn update(conn: &impl postgres::GenericConnection, uid: &i64, style_id: &i64
     }
 }
 
-pub fn access(conn: &impl postgres::GenericConnection, uid: &i64, style_id: &i64, access: bool) -> Result<bool, HecateError> {
+pub fn access(conn: &impl postgres::GenericConnection, uid: i64, style_id: i64, access: bool) -> Result<bool, HecateError> {
     match conn.execute("
         UPDATE styles
             SET
@@ -104,7 +104,7 @@ pub fn access(conn: &impl postgres::GenericConnection, uid: &i64, style_id: &i64
 }
 
 ///Allow the owner of a given style to delete it
-pub fn delete(conn: &impl postgres::GenericConnection, uid: &i64, style_id: &i64) -> Result<bool, HecateError> {
+pub fn delete(conn: &impl postgres::GenericConnection, uid: i64, style_id: i64) -> Result<bool, HecateError> {
     match conn.execute("
         DELETE
             FROM styles
@@ -124,7 +124,7 @@ pub fn delete(conn: &impl postgres::GenericConnection, uid: &i64, style_id: &i64
 }
 
 ///Return a list of all styles (public and private) for a given user
-pub fn list_user(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<Value, HecateError> {
+pub fn list_user(conn: &impl postgres::GenericConnection, uid: i64) -> Result<Value, HecateError> {
     match conn.query("
         SELECT
             COALESCE(JSON_Agg(row_to_json(t)), '[]'::JSON)
@@ -145,7 +145,7 @@ pub fn list_user(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<V
         ) t;
     ", &[&uid]) {
         Ok(rows) => {
-            if rows.len() == 0 {
+            if rows.is_empty() {
                 Err(HecateError::new(404, String::from("Style Not Found"), None))
             } else {
                 let list: Value = rows.get(0).get(0);
@@ -157,7 +157,7 @@ pub fn list_user(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<V
 }
 
 ///Return a list of public styles for a given user
-pub fn list_user_public(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<Value, HecateError> {
+pub fn list_user_public(conn: &impl postgres::GenericConnection, uid: i64) -> Result<Value, HecateError> {
     match conn.query("
         SELECT
             COALESCE(JSON_Agg(row_to_json(t)), '[]'::JSON)
@@ -179,7 +179,7 @@ pub fn list_user_public(conn: &impl postgres::GenericConnection, uid: &i64) -> R
         ) t;
     ", &[&uid]) {
         Ok(rows) => {
-            if rows.len() == 0 {
+            if rows.is_empty() {
                 Err(HecateError::new(404, String::from("Style Not Found"), None))
             } else {
                 let list: Value = rows.get(0).get(0);
@@ -211,7 +211,7 @@ pub fn list_public(conn: &impl postgres::GenericConnection) -> Result<Value, Hec
         ) t;
     ", &[]) {
         Ok(rows) => {
-            if rows.len() == 0 {
+            if rows.is_empty() {
                 Err(HecateError::new(404, String::from("Style Not Found"), None))
             } else {
                 let list: Value = rows.get(0).get(0);

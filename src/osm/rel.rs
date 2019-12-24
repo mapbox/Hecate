@@ -79,7 +79,7 @@ impl Generic for Rel {
             Some(_) => ()
         }
 
-        return Ok(true);
+        Ok(true)
     }
 }
 
@@ -92,9 +92,9 @@ impl fmt::Display for Rel {
 impl RelMem {
     pub fn new(rtype: Option<Value>, rref: Option<i64>, rrole: Option<String>) -> RelMem {
         RelMem {
-            rtype: rtype,
-            rref: rref,
-            rrole: rrole
+            rtype,
+            rref,
+            rrole
         }
     }
 }

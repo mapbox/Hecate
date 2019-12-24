@@ -1,4 +1,4 @@
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[allow(clippy::excessive_precision)]
 pub mod grid;
 
 use crate::err::HecateError;
@@ -13,7 +13,9 @@ pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<
             AND NOW() > created + INTERVAL '4 hours'
     ", &[&coord]) {
         Ok(rows) => {
-            if rows.len() == 0 { return Ok(None); }
+            if rows.is_empty() {
+                return Ok(None);
+            }
 
             let tile: Vec<u8> = rows.get(0).get(0);
 
@@ -23,14 +25,14 @@ pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<
     }
 }
 
-pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u32) -> Result<Vec<u8>, HecateError> {
+pub fn db_create(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> Result<Vec<u8>, HecateError> {
     let grid = Grid::web_mercator();
-    let bbox = grid.tile_extent(*z, *x, *y);
+    let bbox = grid.tile_extent(z, x, y);
 
     let mut limit: Option<i64> = None;
-    if *z < 10 {
+    if z < 10 {
         limit = Some(10)
-    } else if *z < 14 {
+    } else if z < 14 {
         limit = Some(100)
     }
 
@@ -57,7 +59,7 @@ pub fn db_create(conn: &impl postgres::GenericConnection, z: &u8, x: &u32, y: &u
 }
 
 
-pub fn db_cache(conn: &impl postgres::GenericConnection, coord: String, tile: &Vec<u8>) -> Result<(), HecateError> {
+pub fn db_cache(conn: &impl postgres::GenericConnection, coord: String, tile: &[u8]) -> Result<(), HecateError> {
     match conn.query("
         INSERT INTO tiles (ref, tile, created)
             VALUES ($1, $2, NOW())
@@ -89,7 +91,7 @@ pub fn meta(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> R
             WHERE
                 ref = $1
         ) t;
-    ", &[&format!("{}/{}/{}", &z, &x, &y)]) {
+    ", &[&format!("{}/{}/{}", z, x, y)]) {
         Ok(rows) => {
             if rows.len() != 1 {
                 Err(HecateError::new(404, String::from("Metadata Not Found"), None))
@@ -107,14 +109,14 @@ pub fn meta(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> R
 /// but no tile return, this function can be used to force a regen
 ///
 pub fn regen(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> Option<HecateError> {
-    let tile = match db_create(conn, &z, &x, &y) {
+    let tile = match db_create(conn, z, x, y) {
         Ok(tile) => tile,
         Err(err) => {
             return Some(err);
         }
     };
 
-    match db_cache(conn, format!("{}/{}/{}", &z, &x, &y), &tile) {
+    match db_cache(conn, format!("{}/{}/{}", z, x, y), &tile) {
         Ok(_) => None,
         Err(err) => Some(err)
     }
@@ -133,18 +135,17 @@ pub fn get(
     z: u8, x: u32, y: u32,
     regen: bool
 ) -> Result<Vec<u8>, HecateError> {
-    if regen == false {
-        match db_get(conn_read, format!("{}/{}/{}", &z, &x, &y))? {
-            Some(tile) => { return Ok(tile); }
-            _ => ()
-        };
+    if !regen {
+        if let Some(tile) = db_get(conn_read, format!("{}/{}/{}", z, x, y))? {
+            return Ok(tile);
+        }
     }
 
-    let tile = db_create(conn_read, &z, &x, &y)?;
+    let tile = db_create(conn_read, z, x, y)?;
 
     // A failing cache should be logged but not affect the returned response
     // since we have already generated a valid tile
-    match db_cache(conn_write, format!("{}/{}/{}", &z, &x, &y), &tile) {
+    match db_cache(conn_write, format!("{}/{}/{}", z, x, y), &tile) {
         Ok(_) => Ok(tile),
         Err(err) => {
             println!("{}", err.as_log());

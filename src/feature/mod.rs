@@ -70,15 +70,15 @@ pub fn del_version(feat: &mut geojson::Feature) {
 
 pub fn get_version(feat: &geojson::Feature) -> Result<i64, HecateError> {
     match feat.foreign_members {
-        None => { return Err(import_error(&feat, "Version Required", None)); },
+        None => Err(import_error(&feat, "Version Required", None)),
         Some(ref members) => match members.get("version") {
             Some(version) => {
                 match version.as_i64() {
                     Some(version) => Ok(version),
-                    None => { return Err(import_error(&feat, "Version Required", None)); },
+                    None => Err(import_error(&feat, "Version Required", None))
                 }
             },
-            None => { return Err(import_error(&feat, "Version Required", None)); },
+            None => Err(import_error(&feat, "Version Required", None))
         }
     }
 }
@@ -98,13 +98,13 @@ pub fn get_geom_str(feat: &geojson::Feature) -> Result<String, HecateError> {
         let lat = pt[1];
 
         if lon < -180.0 {
-            return Err(import_error(&feat, "longitude < -180", None));
+            Err(import_error(&feat, "longitude < -180", None))
         } else if lon > 180.0 {
-            return Err(import_error(&feat, "longitude > 180", None));
+            Err(import_error(&feat, "longitude > 180", None))
         } else if lat < -90.0 {
-            return Err(import_error(&feat, "latitude < -90", None));
+            Err(import_error(&feat, "latitude < -90", None))
         } else if lat > 90.0 {
-            return Err(import_error(&feat, "latitude > 90", None));
+            Err(import_error(&feat, "latitude > 90", None))
         } else {
             Ok(true)
         }
@@ -159,23 +159,23 @@ pub fn get_geom_str(feat: &geojson::Feature) -> Result<String, HecateError> {
 
 pub fn get_id(feat: &geojson::Feature) -> Result<i64, HecateError> {
     match feat.id {
-        None => { return Err(import_error(&feat, "ID Required", None)); },
+        None => Err(import_error(&feat, "ID Required", None)),
         Some(ref id) => match id {
             geojson::feature::Id::Number(id) => {
                 if id.is_i64() {
                     Ok(id.as_i64().unwrap())
                 } else {
-                    return Err(import_error(&feat, "Integer ID Required", None));
+                    Err(import_error(&feat, "Integer ID Required", None))
                 }
             },
-            _ => { return Err(import_error(&feat, "Integer ID Required", None)); },
+            _ => Err(import_error(&feat, "Integer ID Required", None))
         }
     }
 }
 
 pub fn get_action(feat: &geojson::Feature) -> Result<Action, HecateError> {
     match feat.foreign_members {
-        None => { return Err(import_error(&feat, "Action Required", None)); },
+        None => Err(import_error(&feat, "Action Required", None)),
         Some(ref members) => match members.get("action") {
             Some(action) => {
                 match action.as_str() {
@@ -183,10 +183,10 @@ pub fn get_action(feat: &geojson::Feature) -> Result<Action, HecateError> {
                     Some("modify") => Ok(Action::Modify),
                     Some("delete") => Ok(Action::Delete),
                     Some("restore") => Ok(Action::Restore),
-                    _ => { return Err(import_error(&feat, "Action Required", None)); },
+                    _ => Err(import_error(&feat, "Action Required", None))
                 }
             },
-            None => { return Err(import_error(&feat, "Action Required", None)); },
+            None => Err(import_error(&feat, "Action Required", None))
         }
     }
 }
@@ -214,14 +214,14 @@ pub fn action(trans: &postgres::transaction::Transaction, schema_json: &Option<s
     let action = get_action(&feat)?;
 
     let mut scope = valico::json_schema::Scope::new();
-    let schema = match schema_json {
-        &Some(ref schema) => {
+    let schema = match *schema_json {
+        Some(ref schema) => {
             match scope.compile_and_return(schema.clone(), false) {
                 Ok(schema) => Some(schema),
                 Err(_) => { return Err(HecateError::new(400, String::from("Schema Error"), None)); }
             }
         },
-        &None => None
+        None => None
     };
 
     let res = match action {
@@ -244,9 +244,9 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
         Some(ref props) => props
     };
 
-    let valid = match schema {
-        &Some(ref schema) => schema.validate(&json!(props)).is_valid(),
-        &None => true
+    let valid = match *schema {
+        Some(ref schema) => schema.validate(&json!(props)).is_valid(),
+        None => true
     };
 
     if !valid { return Err(import_error(&feat, "Failed to Match Schema", None)) };
@@ -265,7 +265,7 @@ pub fn create(trans: &postgres::transaction::Transaction, schema: &Option<valico
         Ok(id) => Some(id)
     };
 
-    if is_force(&feat)? == true {
+    if is_force(&feat)? {
         match trans.query("
             INSERT INTO geo (version, geom, props, deltas, key)
                 VALUES (
@@ -385,9 +385,9 @@ pub fn modify(trans: &postgres::transaction::Transaction, schema: &Option<valico
         Some(ref props) => props
     };
 
-    let valid = match schema {
-        &Some(ref schema) => schema.validate(&json!(props)).is_valid(),
-        &None => true
+    let valid = match *schema {
+        Some(ref schema) => schema.validate(&json!(props)).is_valid(),
+        None => true
     };
 
     if !valid { return Err(import_error(&feat, "Failed to Match Schema", None)) };
@@ -511,7 +511,7 @@ pub fn delete(trans: &postgres::transaction::Transaction, feat: &geojson::Featur
     }
 }
 
-pub fn query_by_key(conn: &impl postgres::GenericConnection, key: &String) -> Result<serde_json::value::Value, HecateError> {
+pub fn query_by_key(conn: &impl postgres::GenericConnection, key: &str) -> Result<serde_json::value::Value, HecateError> {
     match conn.query("
         SELECT
             row_to_json(f)::JSON AS feature
@@ -537,7 +537,7 @@ pub fn query_by_key(conn: &impl postgres::GenericConnection, key: &String) -> Re
     }
 }
 
-pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -> Result<Vec<serde_json::value::Value>, HecateError> {
+pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &str) -> Result<Vec<serde_json::value::Value>, HecateError> {
     let (lng, lat) = validate::point(point)?;
 
     match conn.query("
@@ -559,7 +559,7 @@ pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -
         ) f
     ", &[&lng, &lat]) {
         Ok(results) => {
-            if results.len() == 0 {
+            if results.is_empty() {
                 return Err(HecateError::new(404, String::from("Feature not found"), None));
             }
 
@@ -576,7 +576,7 @@ pub fn query_by_point(conn: &impl postgres::GenericConnection, point: &String) -
     }
 }
 
-pub fn get(conn: &impl postgres::GenericConnection, id: &i64) -> Result<geojson::Feature, HecateError> {
+pub fn get(conn: &impl postgres::GenericConnection, id: i64) -> Result<geojson::Feature, HecateError> {
     match conn.query("
         SELECT
             row_to_json(f)::TEXT AS feature
@@ -617,9 +617,9 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
         Some(ref props) => props
     };
 
-    let valid = match schema {
-        &Some(ref schema) => schema.validate(&json!(props)).is_valid(),
-        &None => true
+    let valid = match *schema {
+        Some(ref schema) => schema.validate(&json!(props)).is_valid(),
+        None => true
     };
 
     if !valid { return Err(import_error(&feat, "Failed to Match Schema", None)) };
@@ -667,7 +667,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
             }
 
             let prev_action: String = res.get(0).get(2);
-            if prev_action != String::from("delete") {
+            if prev_action != "delete" {
                 return Err(import_error(&feat, "Feature Not In Deleted State", None));
             }
 
@@ -734,7 +734,7 @@ pub fn restore(trans: &postgres::transaction::Transaction, schema: &Option<valic
     }
 }
 
-pub fn get_point_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<PGStream, HecateError> {
+pub fn get_point_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &str) -> Result<PGStream, HecateError> {
     let (lng, lat) = validate::point(point)?;
 
     Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
@@ -758,7 +758,7 @@ pub fn get_point_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConn
     "#), &[&lng, &lat])?)
 }
 
-pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: &Vec<f64>) -> Result<PGStream, HecateError> {
+pub fn get_bbox_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: &[f64]) -> Result<PGStream, HecateError> {
     validate::bbox(bbox)?;
 
     Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
@@ -825,7 +825,7 @@ pub fn get_bbox(conn: &impl postgres::GenericConnection, bbox: Vec<f64>) -> Resu
 }
 
 ///Get the history of a particular feature
-pub fn history(conn: &impl postgres::GenericConnection, feat_id: &i64) -> Result<serde_json::Value, HecateError> {
+pub fn history(conn: &impl postgres::GenericConnection, feat_id: i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT json_agg (
             JSON_Build_Object(
@@ -854,7 +854,7 @@ pub fn history(conn: &impl postgres::GenericConnection, feat_id: &i64) -> Result
             deltas.uid = users.id;
     ", &[&feat_id]) {
         Ok(res) => {
-            if res.len() == 0 {
+            if res.is_empty() {
                 return Err(HecateError::new(400, String::from("Could not find history for given id"), None))
             }
             let history: serde_json::Value = res.get(0).get(0);
@@ -865,7 +865,7 @@ pub fn history(conn: &impl postgres::GenericConnection, feat_id: &i64) -> Result
     }
 }
 
-pub fn get_point_history_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &String) -> Result<PGStream, HecateError> {
+pub fn get_point_history_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, point: &str) -> Result<PGStream, HecateError> {
     let (lng, lat) = validate::point(point)?;
 
     Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"
@@ -891,7 +891,7 @@ pub fn get_point_history_stream(conn: r2d2::PooledConnection<r2d2_postgres::Post
     "#), &[&lng, &lat])?)
 }
 
-pub fn get_bbox_history_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: &Vec<f64>) -> Result<PGStream, HecateError> {
+pub fn get_bbox_history_stream(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bbox: &[f64]) -> Result<PGStream, HecateError> {
     validate::bbox(bbox)?;
 
     Ok(PGStream::new(conn, String::from("next_features"), String::from(r#"

@@ -10,8 +10,8 @@ pub struct Meta {
 impl Meta {
     pub fn new(key: String, value: Value) -> Self {
         Meta {
-            key: key,
-            value: value
+            key,
+            value
         }
     }
 
@@ -22,7 +22,7 @@ impl Meta {
             SELECT value::JSON FROM meta WHERE key = $1;
         ", &[&key]) {
             Ok(rows) => {
-                if rows.len() == 0 {
+                if rows.is_empty() {
                     Ok(Meta::new(key, json!(false)))
                 } else {
                     Ok(Meta::new(key, rows.get(0).get(0)))
@@ -64,7 +64,7 @@ pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<String>, Heca
     }
 }
 
-pub fn delete(conn: &impl postgres::GenericConnection, key: &String) -> Result<bool, HecateError> {
+pub fn delete(conn: &impl postgres::GenericConnection, key: &str) -> Result<bool, HecateError> {
     match conn.query("
         DELETE FROM meta WHERE key = $1
     ", &[ &key ]) {

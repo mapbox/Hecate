@@ -18,9 +18,9 @@ impl Delta {
     pub fn new(uid: i64, props: HashMap<String, Option<String>>, features: HashMap<i64, Value>) -> Self {
         Delta {
             id: None,
-            uid: uid,
-            props: props,
-            features: features
+            uid,
+            props,
+            features
         }
     }
 
@@ -37,7 +37,7 @@ impl Delta {
     }
 }
 
-pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, HecateError> {
+pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
     match trans.query("
         INSERT INTO deltas (id, created, props, uid) VALUES (
             nextval('deltas_id_seq'),
@@ -52,7 +52,7 @@ pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, 
 
 }
 
-pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, HecateError> {
+pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
     match trans.query("
         INSERT INTO deltas (id, created, uid, props, affected) VALUES (
             nextval('deltas_id_seq'),
@@ -159,7 +159,7 @@ pub fn list_by_offset(conn: &impl postgres::GenericConnection, offset: Option<i6
     }
 }
 
-pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64, min_zoom: u8, max_zoom: u8) -> Result<Vec<(i32, i32, u8)>, HecateError> {
+pub fn tiles(conn: &impl postgres::GenericConnection, id: i64, min_zoom: u8, max_zoom: u8) -> Result<Vec<(i32, i32, u8)>, HecateError> {
     match conn.query("
         SELECT
             geom
@@ -170,7 +170,7 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64, min_zoom: u8, ma
     ", &[&id]) {
         Err(err) => Err(HecateError::from_db(err)),
         Ok(results) => {
-            if results.len() == 0 {
+            if results.is_empty() {
                 return Ok(Vec::new());
             }
 
@@ -184,34 +184,29 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: &i64, min_zoom: u8, ma
                     None => continue
                 };
 
-                match geom {
-                    Some(geom) => {
-                        for zoom in min_zoom..max_zoom+1 {
-                            let geomtiles = match tilecover::tiles(&geom, zoom) {
-                                Ok(gt) => gt,
-                                Err(_err) => {
-                                    return Err(HecateError::new(500, String::from("Could not generate tilecover"), None));
-                                }
-                            };
-
-                            for geomtile in geomtiles {
-                                tiles.insert(geomtile, true);
+                if let Some(geom) = geom {
+                    for zoom in min_zoom..=max_zoom {
+                        let geomtiles = match tilecover::tiles(&geom, zoom) {
+                            Ok(gt) => gt,
+                            Err(_err) => {
+                                return Err(HecateError::new(500, String::from("Could not generate tilecover"), None));
                             }
+                        };
+
+                        for geomtile in geomtiles {
+                            tiles.insert(geomtile, true);
                         }
-                    },
-                    None => ()
-                };
+                    }
+                }
             }
 
-            Ok(tiles.keys().map(|key| {
-                key.clone()
-            }).collect())
+            Ok(tiles.keys().copied().collect())
         }
     }
 
 }
 
-pub fn get_json(conn: &impl postgres::GenericConnection, id: &i64) -> Result<serde_json::Value, HecateError> {
+pub fn get_json(conn: &impl postgres::GenericConnection, id: i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT COALESCE(row_to_json(t), 'false'::JSON)
         FROM (
@@ -261,7 +256,7 @@ pub fn get_json(conn: &impl postgres::GenericConnection, id: &i64) -> Result<ser
     }
 }
 
-pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: &i64) -> Result<i64, HecateError> {
+pub fn modify_props(id: i64, trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
     match trans.query("
         UPDATE deltas
             SET
@@ -272,11 +267,11 @@ pub fn modify_props(id: &i64, trans: &postgres::transaction::Transaction, props:
                 AND finalized = false;
     ", &[&id, &uid, &props]) {
         Err(err) => Err(HecateError::from_db(err)),
-        _ => { Ok(*id) }
+        _ => Ok(id)
     }
 }
 
-pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, uid: &i64) -> Result<i64, HecateError> {
+pub fn modify(id: i64, trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, uid: i64) -> Result<i64, HecateError> {
     match trans.query("
         UPDATE deltas
             SET
@@ -287,22 +282,22 @@ pub fn modify(id: &i64, trans: &postgres::transaction::Transaction, fc: &geojson
                 AND finalized = false;
     ", &[&id, &uid, &affected(&fc)]) {
         Err(err) => Err(HecateError::from_db(err)),
-        _ => { Ok(*id) }
+        _ => Ok(id)
     }
 }
 
-pub fn finalize(id: &i64, trans: &postgres::transaction::Transaction) -> Result<i64, HecateError> {
+pub fn finalize(id: i64, trans: &postgres::transaction::Transaction) -> Result<i64, HecateError> {
     match trans.query("
         UPDATE deltas
             SET finalized = true
             WHERE id = $1
     ", &[&id]) {
         Err(err) => Err(HecateError::from_db(err)),
-        _ => Ok(*id)
+        _ => Ok(id)
     }
 }
 
-pub fn is_open(id: &i64, trans: &postgres::transaction::Transaction) -> Result<bool, HecateError> {
+pub fn is_open(id: i64, trans: &postgres::transaction::Transaction) -> Result<bool, HecateError> {
     match trans.query("
         SELECT NOT finalized FROM deltas WHERE id = $1
     ", &[&id]) {
@@ -317,14 +312,13 @@ pub fn is_open(id: &i64, trans: &postgres::transaction::Transaction) -> Result<b
 pub fn affected(fc: &geojson::FeatureCollection) -> Vec<i64> {
     let mut affected: Vec<i64> = Vec::new();
     for feat in &fc.features {
-        match feat.id {
-            Some(ref id) => match id {
-                geojson::feature::Id::Number(num_id) => affected.push(num_id.as_i64().unwrap()),
-                _ => ()
-            },
-            None => ()
+
+        if let Some(ref id) = feat.id {
+            if let geojson::feature::Id::Number(num_id) = id {
+                affected.push(num_id.as_i64().unwrap())
+            }
         }
     }
 
-    return affected;
+    affected
 }

@@ -64,26 +64,22 @@ fn worker(rx: crossbeam::Receiver<Task>, database: String) {
             }
         };
 
-        match webhooks::send(&conn, &task.job) {
-            Err(err) => println!("HecateError: {:?}", &err.to_string()),
-            _ => ()
-        };
+        if let Err(err) = webhooks::send(&conn, &task.job) {
+            println!("HecateError: {:?}", &err.to_string());
+        }
 
-        match task.job {
-            TaskType::Delta(delta_id) => {
-                let tiles = delta::tiles(&conn, &delta_id, 14, 17).unwrap();
+        if let TaskType::Delta(delta_id) = task.job {
+            let tiles = delta::tiles(&conn, delta_id, 14, 17).unwrap();
 
-                if tiles.len() == 0 {
-                    continue;
+            if tiles.is_empty() {
+                continue;
+            }
+
+            for tile in tiles {
+                if mvt::regen(&conn, tile.2, tile.0 as u32, tile.1 as u32).is_some() {
+                    println!("Daemon: Failed to generate tile: {:?}", tile);
                 }
-
-                for tile in tiles {
-                    if mvt::regen(&conn, tile.2, tile.0 as u32, tile.1 as u32).is_some() {
-                        println!("Daemon: Failed to generate tile: {:?}", tile);
-                    }
-                }
-            },
-            _ => ()
+            }
         }
     }
 }

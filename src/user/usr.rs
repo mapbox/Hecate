@@ -15,17 +15,17 @@ impl User {
     pub fn new(username: String, password: Option<String>, email: String, meta: Option<serde_json::Value>) -> Self {
         User {
             id: None,
-            username: username,
-            password: password,
-            email: email,
-            meta: meta,
+            username,
+            password,
+            email,
+            meta,
             access: Some(String::from("default"))
         }
     }
 
-    pub fn to_value(self) -> serde_json::Value {
+    pub fn to_value(&self) -> serde_json::Value {
         let access = match self.access {
-            Some(access) => access,
+            Some(ref access) => access.clone(),
             None => String::from("default")
         };
 
@@ -38,7 +38,7 @@ impl User {
         })
     }
 
-    pub fn reset(conn: &impl postgres::GenericConnection, uid: &i64, current: &String, new: &String) -> Result<bool, HecateError> {
+    pub fn reset(conn: &impl postgres::GenericConnection, uid: i64, current: &str, new: &str) -> Result<bool, HecateError> {
         validate::password(&new)?;
 
         match conn.query("
@@ -52,7 +52,7 @@ impl User {
                     users
         ", &[ &uid, &current, &new ]) {
             Ok(users) => {
-                if users.len() == 0 {
+                if users.is_empty() {
                     Err(HecateError::new(400, String::from("Incorrect Current Password"), None))
                 } else {
                     Ok(true)
@@ -67,18 +67,15 @@ impl User {
     }
 
     pub fn is_admin(&self) -> bool {
-        if self.access == Some(String::from("admin")) {
-            true
-        } else {
-            false
-        }
+        self.access == Some(String::from("admin"))
     }
 
     pub fn admin(&mut self, admin: bool) {
-        match admin {
-            true => self.access = Some(String::from("admin")),
-            false => self.access = Some(String::from("default"))
-        };
+        if admin {
+            self.access = Some(String::from("admin"));
+        } else {
+            self.access = Some(String::from("default"));
+        }
     }
 
     pub fn set(&self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
@@ -151,7 +148,7 @@ impl User {
         }
     }
 
-    pub fn get(conn: &impl postgres::GenericConnection, uid: &i64) -> Result<Self, HecateError> {
+    pub fn get(conn: &impl postgres::GenericConnection, uid: i64) -> Result<Self, HecateError> {
         match conn.query("
             SELECT row_to_json(u)
             FROM (
@@ -186,10 +183,10 @@ impl User {
 
 }
 
-pub fn list(conn: &impl postgres::GenericConnection, limit: &Option<i16>) -> Result<serde_json::Value, HecateError> {
+pub fn list(conn: &impl postgres::GenericConnection, limit: Option<i16>) -> Result<serde_json::Value, HecateError> {
     let limit: i16 = match limit {
         None => 100,
-        Some(limit) => if *limit > 100 { 100 } else { *limit }
+        Some(limit) => if limit > 100 { 100 } else { limit }
     };
 
     match conn.query("
@@ -212,10 +209,10 @@ pub fn list(conn: &impl postgres::GenericConnection, limit: &Option<i16>) -> Res
     }
 }
 
-pub fn filter(conn: &impl postgres::GenericConnection, filter: &String, limit: &Option<i16>) -> Result<serde_json::Value, HecateError> {
+pub fn filter(conn: &impl postgres::GenericConnection, filter: &str, limit: Option<i16>) -> Result<serde_json::Value, HecateError> {
     let limit: i16 = match limit {
         None => 100,
-        Some(limit) => if *limit > 100 { 100 } else { *limit }
+        Some(limit) => if limit > 100 { 100 } else { limit }
     };
 
     match conn.query("
