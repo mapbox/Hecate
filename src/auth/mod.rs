@@ -285,7 +285,9 @@ impl Auth {
             let new_url =  actix_web::dev::Url::new(new_path.parse::<actix_web::http::Uri>().unwrap());
             curr_path.set(new_url);
 
-        } else if let Some(token) = req.cookie("session") {
+        } 
+        
+        if let Some(token) = req.cookie("session") {
             let token = String::from(token.value());
 
             if !token.is_empty() {
@@ -298,7 +300,9 @@ impl Auth {
                     Ok(_) => Ok(auth)
                 };
             }
-        } else if let Some(key) = req.headers().get("Authorization") {
+        }
+
+        if let Some(key) = req.headers().get("Authorization") {
             if key.len() < 7 {
                 return Ok(auth);
             }
