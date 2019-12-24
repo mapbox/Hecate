@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.82.2
+
+- :rocket: Huge number of rust clippy improvements
+
 ## v0.82.1
 
 - :bug: `user_modify_info` function requires write DB access
