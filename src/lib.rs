@@ -1,4 +1,4 @@
-pub static VERSION: &str = "0.82.1";
+pub static VERSION: &str = "0.82.2";
 pub static POSTGRES: f64 = 10.0;
 pub static POSTGIS: f64 = 2.4;
 pub static HOURS: i64 = 24;
