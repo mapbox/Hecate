@@ -9,14 +9,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Install NodeJS & Build Frontend
-      run: |
-        curl 'https://nodejs.org/dist/v10.15.3/node-v10.15.3-linux-x64.tar.gz' | tar -xzv \
-        && sudo cp ./node-v10.15.3-linux-x64/bin/node /usr/bin/ \
-        && ./node-v10.15.3-linux-x64/bin/npm install -g npm \
-        && npm install -g yarn \
-        cd web \
-        && yarn install \
-        && yarn build
+    - name: Docker Build
+      run: docker build -t test .
     - name: Run tests
-      run: ./test/test.sh
+      run: docker run test
