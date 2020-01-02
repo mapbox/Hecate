@@ -49,20 +49,20 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Get Schema in use
-            let mut resp = reqwest::get("http://localhost:8000/api/schema").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/schema").unwrap();
             assert_eq!(resp.text().unwrap(), "{\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"Validate addresses source\",\"properties\":{\"number\":{\"description\":\"Number of the building.\",\"type\":[\"string\",\"number\"]},\"source\":{\"description\":\"Name of the source where the data comes from\",\"type\":\"string\"},\"street\":{\"description\":\"Name Array of street names to which this address belongs\",\"items\":{\"properties\":{\"display\":{\"description\":\"Single name string of a potential road name\",\"type\":\"string\"},\"priority\":{\"description\":\"Used to determine the primary name of a feature\",\"type\":\"number\"}},\"required\":[\"display\"],\"type\":\"object\"},\"type\":\"array\"}},\"required\":[\"source\",\"number\",\"street\"],\"title\":\"Address source\",\"type\":\"object\"}");
             assert!(resp.status().is_success());
         }
 
         { //Create Point Failing Schema Validation
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -81,7 +81,7 @@ mod test {
 
         { //Create Point Almost Passing Schema Validation
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -104,7 +104,7 @@ mod test {
 
         { //Create Point Passing Schema Validation
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -127,7 +127,7 @@ mod test {
 
         { //XML Changeset Create (Node Create)
             let client = reqwest::Client::new();
-            let mut resp = client.put("http://localhost:8000/api/0.6/changeset/create")
+            let mut resp = client.put("http://0.0.0.0:8000/api/0.6/changeset/create")
                 .body(r#"<osm><changeset><tag k="created_by" v="Hecate Server"/><tag k="comment" v="Buncho Random Text"/></changeset></osm>"#)
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
@@ -138,7 +138,7 @@ mod test {
 
         { //XML Node Create Failure
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/0.6/changeset/4/upload")
+            let mut resp = client.post("http://0.0.0.0:8000/api/0.6/changeset/4/upload")
                 .body(r#"
                     <osmChange version="0.6" generator="Hecate Server">
                         <create>
@@ -159,7 +159,7 @@ mod test {
 
         { //XML Node Create Failure
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/0.6/changeset/4/upload")
+            let mut resp = client.post("http://0.0.0.0:8000/api/0.6/changeset/4/upload")
                 .body(r#"
                     <osmChange version="0.6" generator="Hecate Server">
                         <create>

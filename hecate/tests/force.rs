@@ -51,14 +51,14 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Point - Force - Action Required
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "force": true,
@@ -82,7 +82,7 @@ mod test {
 
         { //Create Point - Force - Action Create required
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "modify",
@@ -107,7 +107,7 @@ mod test {
 
         { //Create Point - Force - Must be used with key value
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -132,7 +132,7 @@ mod test {
 
         { //Create Point - Success
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "key": "1",
                     "type": "Feature",
@@ -158,7 +158,7 @@ mod test {
 
         {
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/data/feature/1")
+            let mut resp = client.get("http://0.0.0.0:8000/api/data/feature/1")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -184,7 +184,7 @@ mod test {
 
         { //Create Point - Force Success
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "key": "1",
                     "type": "Feature",
@@ -210,7 +210,7 @@ mod test {
 
         {
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/data/feature/1")
+            let mut resp = client.get("http://0.0.0.0:8000/api/data/feature/1")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -236,7 +236,7 @@ mod test {
 
         { //Create Point - Force Success FeatureCollection
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/features")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/features")
                 .body(r#"{
                     "type": "FeatureCollection",
                     "message": "Testing Force Option",
@@ -265,7 +265,7 @@ mod test {
 
         {
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/data/feature/1")
+            let mut resp = client.get("http://0.0.0.0:8000/api/data/feature/1")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -291,7 +291,7 @@ mod test {
         
         { //Create Point - Force Missing Key - FeatureCollection
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/features")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/features")
                 .body(r#"{
                     "type": "FeatureCollection",
                     "message": "Testing Force Option",

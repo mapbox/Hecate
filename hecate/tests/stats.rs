@@ -45,14 +45,14 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -71,7 +71,7 @@ mod test {
 
         { //Create MultiPoint
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -90,12 +90,12 @@ mod test {
 
         //ANALYZE must be run for up to date stats
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/stats/regen").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/stats/regen").unwrap();
             assert!(resp.status().is_success());
         }
 
         {
-            let mut resp = reqwest::get("http://localhost:8000/api/data/stats").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/stats").unwrap();
             assert!(resp.status().is_success());
 
             let json_body: serde_json::value::Value = resp.json().unwrap();

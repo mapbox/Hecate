@@ -46,14 +46,14 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Points
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/features")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/features")
                 .body(r#"{
                     "type": "FeatureCollection",
                     "message": "Basic Creation",
@@ -99,7 +99,7 @@ mod test {
         }
 
         { // Fetch delta 1
-            let mut resp = reqwest::get("http://localhost:8000/api/delta/1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/delta/1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -123,7 +123,7 @@ mod test {
 
         { //Modify Points
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/features")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/features")
                 .body(r#"{
                     "type": "FeatureCollection",
                     "message": "Basic Modify",
@@ -176,7 +176,7 @@ mod test {
         }
 
         { // Fetch delta 2
-            let mut resp = reqwest::get("http://localhost:8000/api/delta/2").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/delta/2").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -200,7 +200,7 @@ mod test {
 
         { //Create More Points
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/features")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/features")
                 .body(r#"{
                     "type": "FeatureCollection",
                     "message": "Basic Creation",
@@ -246,7 +246,7 @@ mod test {
         }
 
         {
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/deltas").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -260,7 +260,7 @@ mod test {
         }
 
         { //Test limit param
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas?limit=1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/deltas?limit=1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -272,7 +272,7 @@ mod test {
         }
 
         { //Test offset param
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas?offset=2").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/deltas?offset=2").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -283,7 +283,7 @@ mod test {
         }
 
         { //Test limit and offset param
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas?offset=2&limit=1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/deltas?offset=2&limit=1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -294,12 +294,12 @@ mod test {
         }
 
         { //Test Start Value
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/deltas").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             let start = String::from(json_body[0]["created"].as_str().unwrap());
 
-            let mut resp = reqwest::get(&*format!("http://localhost:8000/api/deltas?start={}", &start)).unwrap();
+            let mut resp = reqwest::get(&*format!("http://0.0.0.0:8000/api/deltas?start={}", &start)).unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body.as_array().unwrap().len(), 2);
@@ -310,12 +310,12 @@ mod test {
         }
 
         { //Test Start And Limit
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/deltas").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             let start = String::from(json_body[0]["created"].as_str().unwrap());
 
-            let mut resp = reqwest::get(&*format!("http://localhost:8000/api/deltas?start={}&limit=1", &start)).unwrap();
+            let mut resp = reqwest::get(&*format!("http://0.0.0.0:8000/api/deltas?start={}&limit=1", &start)).unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body.as_array().unwrap().len(), 1);
@@ -325,12 +325,12 @@ mod test {
         }
 
         { //Test End Value
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/deltas").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             let end = String::from(json_body[2]["created"].as_str().unwrap());
 
-            let mut resp = reqwest::get(&*format!("http://localhost:8000/api/deltas?end={}", &end)).unwrap();
+            let mut resp = reqwest::get(&*format!("http://0.0.0.0:8000/api/deltas?end={}", &end)).unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body.as_array().unwrap().len(), 2);
@@ -341,12 +341,12 @@ mod test {
         }
 
         { //Test End Value & Limit
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/deltas").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             let end = String::from(json_body[2]["created"].as_str().unwrap());
 
-            let mut resp = reqwest::get(&*format!("http://localhost:8000/api/deltas?end={}&limit=1", &end)).unwrap();
+            let mut resp = reqwest::get(&*format!("http://0.0.0.0:8000/api/deltas?end={}&limit=1", &end)).unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body.as_array().unwrap().len(), 1);
@@ -356,14 +356,14 @@ mod test {
         }
 
         { //Test Start & End
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/deltas").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             let start = String::from(json_body[0]["created"].as_str().unwrap());
             let end = String::from(json_body[2]["created"].as_str().unwrap());
 
-            println!("http://localhost:8000/api/deltas?start={}&end={}", &start, &end);
-            let mut resp = reqwest::get(&*format!("http://localhost:8000/api/deltas?start={}&end={}", &start, &end)).unwrap();
+            println!("http://0.0.0.0:8000/api/deltas?start={}&end={}", &start, &end);
+            let mut resp = reqwest::get(&*format!("http://0.0.0.0:8000/api/deltas?start={}&end={}", &start, &end)).unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body.as_array().unwrap().len(), 1);

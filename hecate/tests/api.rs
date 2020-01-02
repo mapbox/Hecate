@@ -40,7 +40,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //API Meta
-            let mut resp = reqwest::get("http://localhost:8000/api").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api").unwrap();
             assert!(resp.text().unwrap().contains("version"));
             assert!(resp.status().is_success());
         }

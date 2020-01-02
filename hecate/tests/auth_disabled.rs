@@ -52,7 +52,7 @@ mod test {
 
         {
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/auth").send().unwrap();
+            let mut resp = client.get("http://0.0.0.0:8000/api/auth").send().unwrap();
 
             let resp_value: Value = resp.json().unwrap();
 

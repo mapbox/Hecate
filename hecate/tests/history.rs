@@ -46,14 +46,14 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -71,7 +71,7 @@ mod test {
         }
 
         {
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1/history").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/1/history").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
             assert_eq!(json_body, json!([
                 {"feat":{"action":"create","geometry":{"coordinates":[0,0],"type":"Point"},"id":1,"key":null,"properties":{"number":"123"},"type":"Feature","version":1},"id":1,"uid":1,"username":"ingalls"}
@@ -81,7 +81,7 @@ mod test {
 
         { //Modify Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1,
                     "type": "Feature",
@@ -101,7 +101,7 @@ mod test {
         }
 
         {
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1/history").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/1/history").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
             assert_eq!(json_body, json!([
                 {"feat":{"action":"modify","geometry":{"coordinates":[1,1],"type":"Point"},"id":1,"key":null,"properties":{"number":"123","test":true},"type":"Feature","version":2},"id":2,"uid":1,"username":"ingalls"},
@@ -112,7 +112,7 @@ mod test {
 
         { //Delete Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1,
                     "type": "Feature",
@@ -132,7 +132,7 @@ mod test {
         }
 
         {
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1/history").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/1/history").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
             assert_eq!(json_body, json!([
                 {"feat":{"action":"delete","geometry":null,"id":1,"key":null,"properties":null,"type":"Feature","version":3},"id":3,"uid":1,"username":"ingalls"},
@@ -144,7 +144,7 @@ mod test {
 
         { //Restore Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1,
                     "type": "Feature",
@@ -164,7 +164,7 @@ mod test {
         }
 
         {
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1/history").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/1/history").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
             assert_eq!(json_body, json!([
                 {"feat":{"action":"restore","geometry":{"coordinates":[1,1],"type":"Point"},"id":1,"key":null,"properties":{"number":"123"},"type":"Feature","version":4},"id":4,"uid":1,"username":"ingalls"},

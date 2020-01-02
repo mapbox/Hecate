@@ -46,7 +46,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -61,7 +61,7 @@ mod test {
 
         { //Set DC Bounds
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/bounds/dc")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/bounds/dc")
                 .body(r#"{
                     "type": "Feature",
                     "properties": {},
@@ -78,7 +78,7 @@ mod test {
 
         { //Set alt Bounds
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/bounds/alt")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/bounds/alt")
                 .body(r#"{
                     "type": "Feature",
                     "properties": {},
@@ -95,7 +95,7 @@ mod test {
 
         { //Set alt2 Bounds
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/bounds/alt2")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/bounds/alt2")
                 .body(r#"{
                     "type": "Feature",
                     "properties": {},
@@ -112,7 +112,7 @@ mod test {
 
         { //Create Point Inside of Bounds
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -131,7 +131,7 @@ mod test {
 
         { //Create Point Outside of Bounds
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -149,7 +149,7 @@ mod test {
         }
 
         { //List Bounds
-            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/bounds").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
             assert_eq!(json_body, json!(["alt", "alt2", "dc"]));
@@ -158,7 +158,7 @@ mod test {
         }
 
         { //List Bounds w/ Limit
-            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds?limit=2").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/bounds?limit=2").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
             assert_eq!(json_body, json!(["alt", "alt2"]));
@@ -167,7 +167,7 @@ mod test {
         }
 
         { //List Bounds w/ Filter
-            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds?filter=alt").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/bounds?filter=alt").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
             assert_eq!(json_body, json!(["alt", "alt2"]));
@@ -176,7 +176,7 @@ mod test {
         }
 
         { //List Bounds w/ Filter & Limit
-            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds?filter=alt&limit=1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/bounds?filter=alt&limit=1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
             assert_eq!(json_body, json!(["alt"]));
@@ -185,7 +185,7 @@ mod test {
         }
 
         { //Get Bounds
-            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds/dc").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/bounds/dc").unwrap();
             let mut body_str = String::from(resp.text().unwrap());
             body_str.pop(); //Remove EOT Character
             body_str.pop(); //Remove newline
@@ -195,7 +195,7 @@ mod test {
 
         { //Delete first point inside of bounds
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1,
                     "type": "Feature",
@@ -216,7 +216,7 @@ mod test {
 
         { //Create Point Inside of Bounds with very large props (4k is the default read iterator)
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -234,7 +234,7 @@ mod test {
         }
 
         { //Get Bounds
-            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds/dc").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/bounds/dc").unwrap();
             let mut body_str = String::from(resp.text().unwrap());
             body_str.pop();
             body_str.pop();
@@ -243,7 +243,7 @@ mod test {
         }
 
         { //Get Meta Bounds
-            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds/dc/meta").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/bounds/dc/meta").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -260,7 +260,7 @@ mod test {
         }
 
         { //Get Boundary Stats
-            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds/dc/stats").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/bounds/dc/stats").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -270,7 +270,7 @@ mod test {
 
         { //Update Bounds
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/bounds/dc")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/bounds/dc")
                 .body(r#"{
                     "type": "Feature",
                     "properties": {},
@@ -288,7 +288,7 @@ mod test {
 
         { //Delete Bounds
             let client = reqwest::Client::new();
-            let mut resp = client.delete("http://localhost:8000/api/data/bounds/dc")
+            let mut resp = client.delete("http://0.0.0.0:8000/api/data/bounds/dc")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -299,7 +299,7 @@ mod test {
         }
 
         { //List Bounds
-            let mut resp = reqwest::get("http://localhost:8000/api/data/bounds").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/bounds").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
             assert_eq!(json_body, json!(["alt", "alt2"]));

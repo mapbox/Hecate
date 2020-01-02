@@ -44,4 +44,4 @@ RUN echo "local all all trust " > /etc/postgresql/10/main/pg_hba.conf \
 WORKDIR /usr/local/src/hecate
 ADD . /usr/local/src/hecate
 
-CMD ./tests/test.sh
+CMD ./test.sh
