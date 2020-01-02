@@ -41,7 +41,7 @@ jobs:
                   && ./node-v10.15.3-linux-x64/bin/npm install -g npm \
                   && npm install -g yarn \
                   && curl https://sh.rustup.rs -sSf > /tmp/rustup.sh \
-                  && sh /tmp/rustup.sh -y --default-toolchain 1.38.0 \
+                  && sh /tmp/rustup.sh -y --default-toolchain 1.40.0 \
                   && echo "export PATH=$HOME/.cargo/bin:$PATH" >> $BASH_ENV
             - run:
                 name: "Build Frontend"
