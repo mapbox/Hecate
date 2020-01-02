@@ -58,20 +58,20 @@ mod test {
         }
 
         { // Attempt to access default server
-            let mut resp = reqwest::get("http://localhost:8000/").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/").unwrap();
             assert_eq!(resp.status().as_u16(), 200);
             assert_eq!(resp.text().unwrap(), "Hello World!");
         }
 
         { // Attempt to access public APIs unauthenticated
-            let resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/deltas").unwrap();
 
             assert_eq!(resp.status().as_u16(), 401);
         }
 
         { // Attempt to access public APIs
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/deltas")
+            let mut resp = client.get("http://0.0.0.0:8000/api/deltas")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -83,13 +83,13 @@ mod test {
         }
 
         { // Admin UI
-            let resp = reqwest::get("http://localhost:8000/admin/").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/admin/").unwrap();
             assert_eq!(resp.status().as_u16(), 200);
         }
 
         { // Attempt to create another user
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls2&password=yeahehyeah&email=ingalls2@protonmail.com")
+            let mut resp = client.get("http://0.0.0.0:8000/api/user/create?username=ingalls2&password=yeahehyeah&email=ingalls2@protonmail.com")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -108,7 +108,7 @@ mod test {
 
         { // Create another user as admin
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/user/create?username=ingalls2&password=yeahehyeah&email=ingalls2@protonmail.com")
+            let mut resp = client.get("http://0.0.0.0:8000/api/user/create?username=ingalls2&password=yeahehyeah&email=ingalls2@protonmail.com")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();

@@ -60,7 +60,7 @@ mod test {
                 .build()
                 .unwrap();
 
-            let admin_resp = client.get("http://localhost:8000/admin/index.html")
+            let admin_resp = client.get("http://0.0.0.0:8000/admin/index.html")
                 .send()
                 .unwrap();
 
@@ -71,7 +71,7 @@ mod test {
         { // With redirects we should get a 200 with the login page
             let client = reqwest::Client::new();
 
-            let admin_resp = client.get("http://localhost:8000/admin/index.html")
+            let admin_resp = client.get("http://0.0.0.0:8000/admin/index.html")
                 .send()
                 .unwrap();
 
@@ -80,7 +80,7 @@ mod test {
 
         { // Create a new session given username & password
             let client = reqwest::Client::new();
-            let mut session_resp = client.get("http://localhost:8000/api/user/session")
+            let mut session_resp = client.get("http://0.0.0.0:8000/api/user/session")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -102,7 +102,7 @@ mod test {
                 .build()
                 .unwrap();
 
-            let admin_resp = client.get("http://localhost:8000/admin/index.html")
+            let admin_resp = client.get("http://0.0.0.0:8000/admin/index.html")
                 .header(reqwest::header::COOKIE, cookie.clone())
                 .send()
                 .unwrap();
@@ -112,7 +112,7 @@ mod test {
 
         { // Delete user session
             let client = reqwest::Client::new();
-            let mut delete_session_resp = client.delete("http://localhost:8000/api/user/session")
+            let mut delete_session_resp = client.delete("http://0.0.0.0:8000/api/user/session")
                 .header(reqwest::header::COOKIE, cookie.clone())
                 .send()
                 .unwrap();
@@ -127,7 +127,7 @@ mod test {
                 .build()
                 .unwrap();
 
-            let admin_resp = client.get("http://localhost:8000/admin/index.html")
+            let admin_resp = client.get("http://0.0.0.0:8000/admin/index.html")
                 .header(reqwest::header::COOKIE, cookie.clone())
                 .send()
                 .unwrap();
@@ -139,7 +139,7 @@ mod test {
         { // Attempt to access admin page with invalid cookie (should redirect to login)
             let client = reqwest::Client::new();
 
-            let admin_resp = client.get("http://localhost:8000/admin/index.html")
+            let admin_resp = client.get("http://0.0.0.0:8000/admin/index.html")
                 .header(reqwest::header::COOKIE, cookie.clone())
                 .send()
                 .unwrap();

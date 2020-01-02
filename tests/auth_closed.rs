@@ -51,20 +51,20 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success())
         }
 
         {
-            let mut resp = reqwest::get("http://localhost:8000/api/schema").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/schema").unwrap();
             assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 
         {
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/schema")
+            let mut resp = client.get("http://0.0.0.0:8000/api/schema")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -74,7 +74,7 @@ mod test {
 
         { //Create Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -92,14 +92,14 @@ mod test {
         }
 
         {
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/1").unwrap();
             assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 
         {
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/data/feature/1")
+            let resp = client.get("http://0.0.0.0:8000/api/data/feature/1")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -108,14 +108,14 @@ mod test {
         }
 
         {
-            let mut resp = reqwest::get("http://localhost:8000/api/deltas").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/deltas").unwrap();
             assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 
         {
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/deltas")
+            let resp = client.get("http://0.0.0.0:8000/api/deltas")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -124,14 +124,14 @@ mod test {
         }
 
         {
-            let mut resp = reqwest::get("http://localhost:8000/api/delta/1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/delta/1").unwrap();
             assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
         }
 
         {
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/delta/1")
+            let resp = client.get("http://0.0.0.0:8000/api/delta/1")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -141,7 +141,7 @@ mod test {
 
         {
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/auth").send().unwrap();
+            let mut resp = client.get("http://0.0.0.0:8000/api/auth").send().unwrap();
 
             let resp_value: Value = resp.json().unwrap();
 

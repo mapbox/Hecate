@@ -46,14 +46,14 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "key": "Q1233",
@@ -72,7 +72,7 @@ mod test {
         }
 
         { //Check Point 1
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -89,7 +89,7 @@ mod test {
         }
 
         { //Invalid Point Lng,Lat
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature?point=1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -102,7 +102,7 @@ mod test {
         }
 
         { //Invalid Point Lng,Lat - non numeric lng
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=hey%2C1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature?point=hey%2C1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -115,7 +115,7 @@ mod test {
         }
 
         { //Invalid Point Lng,Lat - non numeric lat
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=1%2Chey").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature?point=1%2Chey").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -128,7 +128,7 @@ mod test {
         }
 
         { //Invalid Point Lng,Lat - Lng out of bounds neg
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=-190%2C1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature?point=-190%2C1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -141,7 +141,7 @@ mod test {
         }
 
         { //Invalid Point Lng,Lat - Lng out of bounds pos
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=190%2C1").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature?point=190%2C1").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -154,7 +154,7 @@ mod test {
         }
 
         { //Invalid Point Lng,Lat - Lat out of bounds neg
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=1%2C-100").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature?point=1%2C-100").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -167,7 +167,7 @@ mod test {
         }
 
         { //Invalid Point Lng,Lat - Lat out of bounds pos
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=1%2C100").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature?point=1%2C100").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -180,7 +180,7 @@ mod test {
         }
 
         { //Check Point 1
-            let mut resp = reqwest::get("http://localhost:8000/api/data/feature?point=0.0%2C0.0").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/feature?point=0.0%2C0.0").unwrap();
 
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
@@ -197,7 +197,7 @@ mod test {
         }
 
         { // Check bbox - minX in bbox out of range
-            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-181.0,-30.600094,56.162109,46.377254").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/features?bbox=-181.0,-30.600094,56.162109,46.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body, json!({
@@ -209,7 +209,7 @@ mod test {
         }
 
         { // Check bbox - minY in bbox out of range
-            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-100.600094,56.162109,46.377254").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/features?bbox=-107.578125,-100.600094,56.162109,46.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body, json!({
@@ -221,7 +221,7 @@ mod test {
         }
 
         { // Check bbox - maxX in bbox out of range
-            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-30.600094,190.162109,46.377254").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/features?bbox=-107.578125,-30.600094,190.162109,46.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body, json!({
@@ -233,7 +233,7 @@ mod test {
         }
 
         { // Check bbox - maxY in bbox out of range
-            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-30.600094,56.162109,100.377254").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/features?bbox=-107.578125,-30.600094,56.162109,100.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body, json!({
@@ -245,7 +245,7 @@ mod test {
         }
 
         { // Check bbox - minX > maxX 
-            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=107.578125,-30.600094,56.162109,46.377254").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/features?bbox=107.578125,-30.600094,56.162109,46.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body, json!({
@@ -257,7 +257,7 @@ mod test {
         }
 
         { // Check bbox - minY > maxY
-            let mut resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,30.600094,56.162109,-46.377254").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/data/features?bbox=-107.578125,30.600094,56.162109,-46.377254").unwrap();
             let json_body: serde_json::value::Value = resp.json().unwrap();
 
             assert_eq!(json_body, json!({

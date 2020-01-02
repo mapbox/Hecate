@@ -45,7 +45,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -59,14 +59,14 @@ mod test {
         }
 
         { //Create Second User
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=future_admin&password=yeahehyeah&email=fake@example.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=future_admin&password=yeahehyeah&email=fake@example.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { // An admin can get user info about an arbitrary user
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/user/2")
+            let mut resp = client.get("http://0.0.0.0:8000/api/user/2")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -86,7 +86,7 @@ mod test {
 
         { // An admin can change user information
             let client = reqwest::Client::new();
-            let resp = client.post("http://localhost:8000/api/user/2")
+            let resp = client.post("http://0.0.0.0:8000/api/user/2")
                 .body(r#"{
                     "access": "default",
                     "username": "changed",
@@ -105,7 +105,7 @@ mod test {
 
         { // Ensure information was changed about the given user
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/user/2")
+            let mut resp = client.get("http://0.0.0.0:8000/api/user/2")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -131,7 +131,7 @@ mod test {
         // the user account is disabled
         {
             let client = reqwest::Client::new();
-            let mut session_resp = client.get("http://localhost:8000/api/user/session")
+            let mut session_resp = client.get("http://0.0.0.0:8000/api/user/session")
                 .basic_auth("changed", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -149,7 +149,7 @@ mod test {
 
         { // Access the style create (FULL scope) endpoint with cookie
             let client = reqwest::Client::new();
-            let mut create_style_resp = client.post("http://localhost:8000/api/style")
+            let mut create_style_resp = client.post("http://0.0.0.0:8000/api/style")
                 .body(r#"{
                     "name": "Awesome Style",
                     "style": "I am a style"
@@ -165,7 +165,7 @@ mod test {
 
         { // Disable user account
             let client = reqwest::Client::new();
-            let resp = client.post("http://localhost:8000/api/user/2")
+            let resp = client.post("http://0.0.0.0:8000/api/user/2")
                 .body(r#"{
                     "access": "disabled",
                     "username": "changed",
@@ -184,7 +184,7 @@ mod test {
 
         { // Ensure information was changed about the given user
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/user/2")
+            let mut resp = client.get("http://0.0.0.0:8000/api/user/2")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -208,7 +208,7 @@ mod test {
         // as when a user account is disabled, all sessions/tokens are destroyed
         {
             let client = reqwest::Client::new();
-            let create_style_resp = client.post("http://localhost:8000/api/style")
+            let create_style_resp = client.post("http://0.0.0.0:8000/api/style")
                 .body(r#"{
                     "name": "Awesome Style",
                     "style": "I am a style"
@@ -225,7 +225,7 @@ mod test {
         // disabled
         {
             let client = reqwest::Client::new();
-            let session_resp = client.get("http://localhost:8000/api/user/session")
+            let session_resp = client.get("http://0.0.0.0:8000/api/user/session")
                 .basic_auth("changed", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -248,7 +248,7 @@ mod test {
             ", &[]).unwrap();
 
             let client = reqwest::Client::new();
-            let session_resp = client.get("http://localhost:8000/api/user/session")
+            let session_resp = client.get("http://0.0.0.0:8000/api/user/session")
                 .basic_auth("changed", Some("yeahehyeah"))
                 .send()
                 .unwrap();

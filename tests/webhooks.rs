@@ -52,7 +52,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { // Create Username (ingalls)
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -60,7 +60,7 @@ mod test {
         {   // Make an empty get request
             let client = reqwest::Client::new();
 
-            let mut resp = client.get("http://localhost:8000/api/webhooks")
+            let mut resp = client.get("http://0.0.0.0:8000/api/webhooks")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -75,7 +75,7 @@ mod test {
         { // Create a new webhook and generate a secret
             let client = reqwest::Client::new();
 
-            let mut resp = client.post("http://localhost:8000/api/webhooks")
+            let mut resp = client.post("http://0.0.0.0:8000/api/webhooks")
                 .body(r#"{
                     "name": "webhook",
                     "url": "https://example.com",
@@ -101,7 +101,7 @@ mod test {
         { // Create a new webhook, passing in a custom secret
             let client = reqwest::Client::new();
 
-            let mut resp = client.post("http://localhost:8000/api/webhooks")
+            let mut resp = client.post("http://0.0.0.0:8000/api/webhooks")
                 .body(r#"{
                     "name": "webhook",
                     "url": "https://example.com",
@@ -128,7 +128,7 @@ mod test {
         { // Err, invalid action passed to create
             let client = reqwest::Client::new();
 
-            let mut resp = client.post("http://localhost:8000/api/webhooks")
+            let mut resp = client.post("http://0.0.0.0:8000/api/webhooks")
                 .body(r#"{
                     "name": "webhook",
                     "url": "https://example.com",
@@ -152,7 +152,7 @@ mod test {
         { // Err, invalid url passed to create
             let client = reqwest::Client::new();
 
-            let mut resp = client.post("http://localhost:8000/api/webhooks")
+            let mut resp = client.post("http://0.0.0.0:8000/api/webhooks")
                 .body(r#"{
                     "name": "webhook",
                     "url": "bad-url",
@@ -176,7 +176,7 @@ mod test {
         { // List webhooks
             let client = reqwest::Client::new();
 
-            let mut resp = client.get("http://localhost:8000/api/webhooks")
+            let mut resp = client.get("http://0.0.0.0:8000/api/webhooks")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -201,7 +201,7 @@ mod test {
         { // Get webhook
             let client = reqwest::Client::new();
 
-            let mut resp = client.get("http://localhost:8000/api/webhooks/1")
+            let mut resp = client.get("http://0.0.0.0:8000/api/webhooks/1")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -221,7 +221,7 @@ mod test {
         { // Err, invalid id passed to get webhook
             let client = reqwest::Client::new();
 
-            let mut resp = client.get("http://localhost:8000/api/webhooks/10")
+            let mut resp = client.get("http://0.0.0.0:8000/api/webhooks/10")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -238,7 +238,7 @@ mod test {
         { // Update webhooks
             let client = reqwest::Client::new();
 
-            let mut resp = client.post("http://localhost:8000/api/webhooks/1")
+            let mut resp = client.post("http://0.0.0.0:8000/api/webhooks/1")
                 .body(r#"{
                     "name": "webhook update",
                     "url": "https://example.com/modify",
@@ -263,7 +263,7 @@ mod test {
         { // Err, invalid action passed to update
             let client = reqwest::Client::new();
 
-            let mut resp = client.post("http://localhost:8000/api/webhooks/1")
+            let mut resp = client.post("http://0.0.0.0:8000/api/webhooks/1")
                 .body(r#"{
                     "name": "webhook update",
                     "url": "https://example.com/modify",
@@ -287,7 +287,7 @@ mod test {
         { // Err, invalid url passed to update
             let client = reqwest::Client::new();
 
-            let mut resp = client.post("http://localhost:8000/api/webhooks/1")
+            let mut resp = client.post("http://0.0.0.0:8000/api/webhooks/1")
                 .body(r#"{
                     "name": "webhook update",
                     "url": "bad-url",
@@ -311,7 +311,7 @@ mod test {
         {
             let client = reqwest::Client::new();
 
-            let resp = client.delete("http://localhost:8000/api/webhooks/1")
+            let resp = client.delete("http://0.0.0.0:8000/api/webhooks/1")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();

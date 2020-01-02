@@ -44,14 +44,14 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -70,7 +70,7 @@ mod test {
 
         { //Create Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -89,7 +89,7 @@ mod test {
 
         { //Create Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -108,7 +108,7 @@ mod test {
 
         { //Get Query - SELECT count(*) FROM geo
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/data/query?query=SELECT%20count(*)%20FROM%20geo")
+            let mut resp = client.get("http://0.0.0.0:8000/api/data/query?query=SELECT%20count(*)%20FROM%20geo")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -122,7 +122,7 @@ mod test {
 
         { //Get Query - SELECT props FROM geo &limit=1
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/data/query?limit=1&query=SELECT%20props%20FROM%20geo")
+            let mut resp = client.get("http://0.0.0.0:8000/api/data/query?limit=1&query=SELECT%20props%20FROM%20geo")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -136,7 +136,7 @@ mod test {
         
         { //Get Query - Failed Insert
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/data/query?limit=1&query=INSERT%20INTO%20geo(props)%20VALUES%20(%27%7B%7D%27%3A%3ATEXT%3A%3AJSON)")
+            let resp = client.get("http://0.0.0.0:8000/api/data/query?limit=1&query=INSERT%20INTO%20geo(props)%20VALUES%20(%27%7B%7D%27%3A%3ATEXT%3A%3AJSON)")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -146,7 +146,7 @@ mod test {
 
         { //Get Query - Failed Delete
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/data/query?limit=1&query=DELETE%20FROM%20geo")
+            let resp = client.get("http://0.0.0.0:8000/api/data/query?limit=1&query=DELETE%20FROM%20geo")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();

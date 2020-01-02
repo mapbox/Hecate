@@ -45,7 +45,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { // Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
@@ -56,7 +56,7 @@ mod test {
         let token: String;
 
         { // Create a new session given username & password
-            let mut session_resp = client.get("http://localhost:8000/api/user/session")
+            let mut session_resp = client.get("http://0.0.0.0:8000/api/user/session")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -73,7 +73,7 @@ mod test {
         }
 
         { // Create Token
-            let mut token_resp = client.post("http://localhost:8000/api/user/token")
+            let mut token_resp = client.post("http://0.0.0.0:8000/api/user/token")
                 .body(r#"{
                     "name": "JOSM Token",
                     "hours": 5
@@ -91,7 +91,7 @@ mod test {
         }
 
         { // Access the style create (FULL scope) endpoint with cookie
-            let mut create_style_resp = client.post("http://localhost:8000/api/style")
+            let mut create_style_resp = client.post("http://0.0.0.0:8000/api/style")
                 .body(r#"{
                     "name": "Awesome Style",
                     "style": "I am a style"
@@ -106,7 +106,7 @@ mod test {
         }
 
         { // Access the styles get (READ scope) endpoint with cookie
-            let mut get_style_resp = client.get("http://localhost:8000/api/style/1")
+            let mut get_style_resp = client.get("http://0.0.0.0:8000/api/style/1")
                 .header(reqwest::header::COOKIE, cookie.clone())
                 .send()
                 .unwrap();
@@ -116,7 +116,7 @@ mod test {
         }
 
         { // Access the styles get (READ scope) endpoint with cookie and token
-            let mut get_style_resp = client.get(format!("http://localhost:8000/token/{}/api/style/1", token).as_str())
+            let mut get_style_resp = client.get(format!("http://0.0.0.0:8000/token/{}/api/style/1", token).as_str())
                 .header(reqwest::header::COOKIE, cookie.clone())
                 .send()
                 .unwrap();
@@ -125,7 +125,7 @@ mod test {
         }
 
         { // Access the style delete (FULL scope) endpoint with token and session
-            let mut delete_style_resp = client.delete(format!("http://localhost:8000/token/{}/api/style/1", token).as_str())
+            let mut delete_style_resp = client.delete(format!("http://0.0.0.0:8000/token/{}/api/style/1", token).as_str())
                 .header(reqwest::header::COOKIE, cookie.clone())
                 .send()
                 .unwrap();
@@ -135,7 +135,7 @@ mod test {
 
         { // Delete user session
             let client = reqwest::Client::new();
-            let mut delete_session_resp = client.delete("http://localhost:8000/api/user/session")
+            let mut delete_session_resp = client.delete("http://0.0.0.0:8000/api/user/session")
                 .header(reqwest::header::COOKIE, cookie.clone())
                 .send()
                 .unwrap();
@@ -145,7 +145,7 @@ mod test {
         }
 
         { // Unable to Access the style create (FULL scope) endpoint with deleted cookie
-            let err_resp = client.post("http://localhost:8000/api/style")
+            let err_resp = client.post("http://0.0.0.0:8000/api/style")
                 .body(r#"{
                     "name": "Awesome Style",
                     "style": "I am a style"

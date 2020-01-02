@@ -45,38 +45,38 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls2&password=yeahehyeah&email=ingalls2@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls2&password=yeahehyeah&email=ingalls2@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls3&password=yeahehyeah&email=ingalls3@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls3&password=yeahehyeah&email=ingalls3@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=filter&password=yeahehyeah&email=ingalls4@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=filter&password=yeahehyeah&email=ingalls4@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Username Duplicate Error
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls3@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls3@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "{\"code\":400,\"reason\":\"User/Email Exists\",\"status\":\"Bad Request\"}");
             assert!(resp.status().is_client_error());
         }
 
         { //Feature Upload with no auth Fail
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "message": "Create Point",
@@ -94,7 +94,7 @@ mod test {
 
         { //Feature Upload with bad username
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "message": "Create Point",
@@ -113,7 +113,7 @@ mod test {
 
         { //Feature Upload with bad password
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "message": "Create Point",
@@ -132,7 +132,7 @@ mod test {
 
         { //Feature Upload with correct creds
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "message": "Create Point",
@@ -151,7 +151,7 @@ mod test {
 
         { //Test User Listing
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/users")
+            let mut resp = client.get("http://0.0.0.0:8000/api/users")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -181,7 +181,7 @@ mod test {
 
         { //Test User Listing w/ Limit
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/users?limit=1")
+            let mut resp = client.get("http://0.0.0.0:8000/api/users?limit=1")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -199,7 +199,7 @@ mod test {
 
         { //Test User Listing w/ Filtering
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/users?filter=in")
+            let mut resp = client.get("http://0.0.0.0:8000/api/users?filter=in")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -225,7 +225,7 @@ mod test {
 
         { //Test User Listing w/ Filtering & limit
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/users?filter=in&limit=2")
+            let mut resp = client.get("http://0.0.0.0:8000/api/users?filter=in&limit=2")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -247,7 +247,7 @@ mod test {
 
         { //Test User Listing w/ Filtering - complete name
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/users?filter=ingalls2")
+            let mut resp = client.get("http://0.0.0.0:8000/api/users?filter=ingalls2")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -265,7 +265,7 @@ mod test {
 
         { //Test User Listing w/ Filtering - no match
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/users?filter=kp")
+            let mut resp = client.get("http://0.0.0.0:8000/api/users?filter=kp")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -279,7 +279,7 @@ mod test {
 
         { // Get info about my own account
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/user/info")
+            let mut resp = client.get("http://0.0.0.0:8000/api/user/info")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -299,7 +299,7 @@ mod test {
 
         { // A non-admin cannot get user info about an arbitrary user
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/user/3")
+            let resp = client.get("http://0.0.0.0:8000/api/user/3")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -309,7 +309,7 @@ mod test {
 
         { // A non-admin cannot set an admin
             let client = reqwest::Client::new();
-            let resp = client.put("http://localhost:8000/api/user/1/admin")
+            let resp = client.put("http://0.0.0.0:8000/api/user/1/admin")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -319,7 +319,7 @@ mod test {
 
         { // A non-admin cannot unset an admin
             let client = reqwest::Client::new();
-            let resp = client.delete("http://localhost:8000/api/user/1/admin")
+            let resp = client.delete("http://0.0.0.0:8000/api/user/1/admin")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -336,14 +336,14 @@ mod test {
         }
 
         { //Create Second User
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=future_admin&password=yeahehyeah&email=fake@example.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=future_admin&password=yeahehyeah&email=fake@example.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { // An admin can get user info about an arbitrary user
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/user/6")
+            let mut resp = client.get("http://0.0.0.0:8000/api/user/6")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -363,7 +363,7 @@ mod test {
 
         { // An admin can set an admin
             let client = reqwest::Client::new();
-            let resp = client.put("http://localhost:8000/api/user/6/admin")
+            let resp = client.put("http://0.0.0.0:8000/api/user/6/admin")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -373,7 +373,7 @@ mod test {
 
         { // An admin can unset an admin
             let client = reqwest::Client::new();
-            let resp = client.delete("http://localhost:8000/api/user/1/admin")
+            let resp = client.delete("http://0.0.0.0:8000/api/user/1/admin")
                 .basic_auth("future_admin", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -383,7 +383,7 @@ mod test {
 
         { //Ensure admin was unset
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/user/6")
+            let resp = client.get("http://0.0.0.0:8000/api/user/6")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -393,7 +393,7 @@ mod test {
 
         { // Attempt to change the password (too short)
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/user/reset")
+            let mut resp = client.post("http://0.0.0.0:8000/api/user/reset")
                 .body(r#"{
                     "current": "yeahehyeah",
                     "update": "yeah"
@@ -415,7 +415,7 @@ mod test {
 
         { // Attempt to change the password (no password)
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/user/reset")
+            let mut resp = client.post("http://0.0.0.0:8000/api/user/reset")
                 .body(r#"{
                     "current": "yeahehyeah",
                     "update": ""
@@ -437,7 +437,7 @@ mod test {
 
         { // Change the password
             let client = reqwest::Client::new();
-            let resp = client.post("http://localhost:8000/api/user/reset")
+            let resp = client.post("http://0.0.0.0:8000/api/user/reset")
                 .body(r#"{
                     "current": "yeahehyeah",
                     "update": "yeahyeah"
@@ -452,7 +452,7 @@ mod test {
 
         { // Ensure password was changed
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/user/info")
+            let resp = client.get("http://0.0.0.0:8000/api/user/info")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -462,7 +462,7 @@ mod test {
 
         { // Ensure new password works
             let client = reqwest::Client::new();
-            let resp = client.get("http://localhost:8000/api/user/info")
+            let resp = client.get("http://0.0.0.0:8000/api/user/info")
                 .basic_auth("ingalls", Some("yeahyeah"))
                 .send()
                 .unwrap();

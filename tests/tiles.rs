@@ -40,14 +40,14 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -70,7 +70,7 @@ mod test {
 
         { //Request a tile via API
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0").send().unwrap();
+            let mut resp = client.get("http://0.0.0.0:8000/api/tiles/1/0/0").send().unwrap();
 
             let mut body: Vec<u8> = Vec::new();
             resp.read_to_end(&mut body).unwrap();
@@ -103,7 +103,7 @@ mod test {
 
         { //Request a tile via API
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0").send().unwrap();
+            let mut resp = client.get("http://0.0.0.0:8000/api/tiles/1/0/0").send().unwrap();
 
             let mut body: Vec<u8> = Vec::new();
             resp.read_to_end(&mut body).unwrap();
@@ -114,7 +114,7 @@ mod test {
 
         { //Request a tile regen - unauthenticated
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0/regen").send().unwrap();
+            let mut resp = client.get("http://0.0.0.0:8000/api/tiles/1/0/0/regen").send().unwrap();
 
             assert_eq!(resp.text().unwrap(), "{\"code\":401,\"reason\":\"You must be logged in to access this resource\",\"status\":\"Unauthorized\"}");
             assert!(resp.status().is_client_error());
@@ -122,7 +122,7 @@ mod test {
 
         { //Request a tile meta
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0/meta").send().unwrap();
+            let mut resp = client.get("http://0.0.0.0:8000/api/tiles/1/0/0/meta").send().unwrap();
 
             assert!(resp.text().unwrap().contains("created"));
             assert!(resp.status().is_success());
@@ -130,7 +130,7 @@ mod test {
 
         { //Request a tile regen - authenticated
             let client = reqwest::Client::new();
-            let mut resp = client.get("http://localhost:8000/api/tiles/1/0/0/regen")
+            let mut resp = client.get("http://0.0.0.0:8000/api/tiles/1/0/0/regen")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -152,7 +152,7 @@ mod test {
 
         { //Wipe Tile DB
             let client = reqwest::Client::new();
-            let resp = client.delete("http://localhost:8000/api/tiles")
+            let resp = client.delete("http://0.0.0.0:8000/api/tiles")
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();

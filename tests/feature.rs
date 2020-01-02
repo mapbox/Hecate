@@ -45,14 +45,14 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         { //Create Username
-            let mut resp = reqwest::get("http://localhost:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/api/user/create?username=ingalls&password=yeahehyeah&email=ingalls@protonmail.com").unwrap();
             assert_eq!(resp.text().unwrap(), "true");
             assert!(resp.status().is_success());
         }
 
         { //Create Point - No Props - No Geom
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                 }"#)
@@ -67,7 +67,7 @@ mod test {
 
         { //Create Point - No Geometry
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "properties": { "number": "1234" }
@@ -83,7 +83,7 @@ mod test {
 
         { //Create Point - No Props
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                 }"#)
@@ -98,7 +98,7 @@ mod test {
 
         { //Create Point - No Geom
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "geometry": { "type": "Point", "coordinates": [ 0, 0 ] }
@@ -114,7 +114,7 @@ mod test {
 
         { //Create Point - No Props - Geom
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "geometry": {
@@ -133,7 +133,7 @@ mod test {
 
         { //Create Point - No Message
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "properties": { },
@@ -150,7 +150,7 @@ mod test {
 
         { //Create Point - Invalid version on create
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "version": 15,
                     "type": "Feature",
@@ -170,7 +170,7 @@ mod test {
 
         { //Create Point - Missing Action
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "message": "Creating a Point",
@@ -188,7 +188,7 @@ mod test {
 
         { //Create Point - Invalid lon < 180
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -209,7 +209,7 @@ mod test {
 
         { //Create Point - Invalid lon > 180
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -230,7 +230,7 @@ mod test {
 
         { //Create Point - Invalid lat < 90
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -251,7 +251,7 @@ mod test {
 
         { //Create Point - Invalid lat > 90
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -272,7 +272,7 @@ mod test {
 
         { //Create Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -290,14 +290,14 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/1").unwrap();
             assert!(resp.status().is_success());
             // TODO Check body
         }
 
         { //Create MultiPoint
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -315,14 +315,14 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/2").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/2").unwrap();
             assert!(resp.status().is_success());
             //TODO check body
         }
 
         { //Create LineString
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -340,14 +340,14 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/3").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/3").unwrap();
             assert!(resp.status().is_success());
             //TODO check body
         }
 
         { //Create MultiLineString
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -365,20 +365,20 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/4").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/4").unwrap();
             assert!(resp.status().is_success());
             //TODO check body
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/features?bbox=-107.578125,-30.600094,56.162109,46.377254").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/features?bbox=-107.578125,-30.600094,56.162109,46.377254").unwrap();
             assert!(resp.status().is_success());
             //TODO check body
         }
 
         { //Restore Point - Feature Exists! (Should be right after create as there is a short circuit for newly created features that are attempted to be restored)
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1,
                     "type": "Feature",
@@ -399,7 +399,7 @@ mod test {
 
         { //Modify Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1,
                     "type": "Feature",
@@ -419,14 +419,14 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/1").unwrap();
             assert!(resp.status().is_success());
             //TODO check body
         }
 
         { //Restore Point - Feature Exists! (Should be right after a create & >= 1 Modify - fails due to unique id check)
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1,
                     "type": "Feature",
@@ -447,7 +447,7 @@ mod test {
 
         { //Modify MultiPoint
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 2,
                     "type": "Feature",
@@ -467,14 +467,14 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/2").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/2").unwrap();
             assert!(resp.status().is_success());
             //TODO check body
         }
 
         { //Modify LineString
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 3,
                     "type": "Feature",
@@ -494,14 +494,14 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/3").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/3").unwrap();
             assert!(resp.status().is_success());
             //TODO check body
         }
 
         { //Modify MultiLineString
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 4,
                     "type": "Feature",
@@ -521,14 +521,14 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/4").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/4").unwrap();
             assert!(resp.status().is_success());
             //TODO check body
         }
 
         { //Delete Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1,
                     "type": "Feature",
@@ -548,13 +548,13 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/1").unwrap();
             assert!(resp.status().is_client_error());
         }
 
         { //Delete MultiPoint
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 2,
                     "type": "Feature",
@@ -574,13 +574,13 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/2").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/2").unwrap();
             assert!(resp.status().is_client_error());
         }
 
         { //Delete LineString
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 3,
                     "type": "Feature",
@@ -600,13 +600,13 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/3").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/3").unwrap();
             assert!(resp.status().is_client_error());
         }
 
         { //Delete MultiLineString
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 4,
                     "type": "Feature",
@@ -626,13 +626,13 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/4").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/4").unwrap();
             assert!(resp.status().is_client_error());
         }
 
         { //Restore Point - Error Wrong Version
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1,
                     "type": "Feature",
@@ -653,7 +653,7 @@ mod test {
 
         { //Restore Point - Feature Doesn't Exist
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1000,
                     "type": "Feature",
@@ -675,7 +675,7 @@ mod test {
 
         { //Restore Point
             let client = reqwest::Client::new();
-            let mut resp = client.post("http://localhost:8000/api/data/feature")
+            let mut resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "id": 1,
                     "type": "Feature",
@@ -695,7 +695,7 @@ mod test {
         }
 
         {
-            let resp = reqwest::get("http://localhost:8000/api/data/feature/1").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/data/feature/1").unwrap();
             assert!(resp.status().is_success());
         }
 

@@ -58,7 +58,7 @@ mod test {
         }
 
         { // Attempt to access default server
-            let mut resp = reqwest::get("http://localhost:8000/").unwrap();
+            let mut resp = reqwest::get("http://0.0.0.0:8000/").unwrap();
             assert_eq!(resp.status().as_u16(), 200);
             assert_eq!(resp.text().unwrap(), "Hello World!");
         }
@@ -68,7 +68,7 @@ mod test {
         { // Create Token
             let client = reqwest::Client::new();
 
-            let mut resp = client.post("http://localhost:8000/api/user/token")
+            let mut resp = client.post("http://0.0.0.0:8000/api/user/token")
                 .body(r#"{
                     "name": "JOSM Token",
                     "hours": 5
@@ -89,18 +89,18 @@ mod test {
         }
 
         { // Access the capabilities (READ scope) endpoint without token
-            let resp = reqwest::get("http://localhost:8000/api/capabilities").unwrap();
+            let resp = reqwest::get("http://0.0.0.0:8000/api/capabilities").unwrap();
             assert_eq!(resp.status().as_u16(), 401);
         }
 
         { // Access the capabilities (READ scope) endpoint with token
-            let resp = reqwest::get(format!("http://localhost:8000/token/{}/api/capabilities", token).as_str()).unwrap();
+            let resp = reqwest::get(format!("http://0.0.0.0:8000/token/{}/api/capabilities", token).as_str()).unwrap();
             assert_eq!(resp.status().as_u16(), 200);
         }
 
         { // Access the feature create (FULL scope) endpoint without token
             let client = reqwest::Client::new();
-            let resp = client.post("http://localhost:8000/api/data/feature")
+            let resp = client.post("http://0.0.0.0:8000/api/data/feature")
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -117,7 +117,7 @@ mod test {
 
         { // Access the feature create (FULL scope) endpoint with token
             let client = reqwest::Client::new();
-            let resp = client.post(format!("http://localhost:8000/token/{}/api/data/feature", token).as_str())
+            let resp = client.post(format!("http://0.0.0.0:8000/token/{}/api/data/feature", token).as_str())
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -134,7 +134,7 @@ mod test {
 
         { // Access the feature create (FULL scope) endpoint with token and basic auth
             let client = reqwest::Client::new();
-            let resp = client.post(format!("http://localhost:8000/token/{}/api/data/feature", token).as_str())
+            let resp = client.post(format!("http://0.0.0.0:8000/token/{}/api/data/feature", token).as_str())
                 .body(r#"{
                     "type": "Feature",
                     "action": "create",
@@ -153,7 +153,7 @@ mod test {
         { // Delete Token
             let client = reqwest::Client::new();
 
-            let resp = client.delete(format!("http://localhost:8000/api/user/token/{}", token).as_str())
+            let resp = client.delete(format!("http://0.0.0.0:8000/api/user/token/{}", token).as_str())
                 .basic_auth("ingalls", Some("yeahehyeah"))
                 .send()
                 .unwrap();
@@ -162,7 +162,7 @@ mod test {
         }
 
         { // Access the capabilities endpoint with token
-            let resp = reqwest::get(format!("http://localhost:8000/token/{}/api/capabilities", token).as_str()).unwrap();
+            let resp = reqwest::get(format!("http://0.0.0.0:8000/token/{}/api/capabilities", token).as_str()).unwrap();
             assert_eq!(resp.status().as_u16(), 401);
         }
 
