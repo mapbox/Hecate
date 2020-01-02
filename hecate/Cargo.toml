@@ -1,0 +1,66 @@
+[package]
+name = "hecate"
+version = "0.82.2"
+edition = "2018"
+authors = ["ingalls <ingalls@protonmail.com>"]
+license = "MIT"
+description = "OpenStreetMap Inspired Data Storage Backend Focused on Performance and GeoJSON Interchange"
+
+homepage = "https://github.com/mapbox/Hecate"
+repository = "https://github.com/mapbox/Hecate"
+
+readme = "README.md"
+
+categories = ["database"]
+
+[dependencies]
+hecate_derive = { path = "../hecate_derive" }
+reqwest = "0.9.20"
+tilecover = "1.1.1"
+crossbeam = "0.7"
+valico = "3.1"
+rand = "0.7"
+postgis = "0.6.0"
+protobuf = "1.5"
+base64 = "0.11"
+futures = "0.1.29"
+bytes = "0.4"
+actix-threadpool = "0.1.2"
+actix-web = "1.0.8"
+actix-files = "0.1.7"
+actix-http = "0.2.11"
+actix-service = "0.4.2"
+geojson = "0.16.0"
+quick-xml = "0.17.0"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+r2d2 = "0.8.6"
+r2d2_postgres = "0.14.0"
+env_logger = "0.7"
+hmac = "0.7"
+url = "2.1"
+sha2 = "0.8.0"
+
+[dependencies.geo]
+version = "0.12"
+features = ["postgis-integration"]
+
+[dependencies.chrono]
+version = "0.4"
+features = ["serde"]
+
+[dependencies.postgres]
+version = "0.15.2"
+features = [
+    "with-serde_json",
+    "with-chrono"
+]
+
+[dependencies.clap]
+features = ["yaml"]
+version = "2.33.0"
+
+[[bin]]
+name = "hecate"
+doc = false

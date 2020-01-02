@@ -9,7 +9,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Build
-      run: cargo build --verbose
+    - name: Docker Build
+      run: docker build -t test .
     - name: Run tests
-      run: cargo test --verbose
+      run: docker run test
