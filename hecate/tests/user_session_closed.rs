@@ -40,7 +40,12 @@ mod test {
             file.read_to_string(&mut table_sql).unwrap();
             conn.batch_execute(&*table_sql).unwrap();
         }
-        let mut server = Command::new("cargo").args(&[ "run", "--", "--auth", env::current_dir().unwrap().join("tests/fixtures/auth.default.json").to_str().unwrap()]).spawn().unwrap();
+        let mut server = Command::new("cargo").args(&[
+            "run",
+            "--",
+            "--auth", env::current_dir().unwrap().join("tests/fixtures/auth.default.json").to_str().unwrap(),
+            "--ui", env::current_dir().unwrap().join("../hecate_ui/dist/").to_str().unwrap()
+        ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 
         { // Create User

@@ -45,7 +45,8 @@ mod test {
         let mut server = Command::new("cargo").args(&[
             "run",
             "--",
-            "--auth", env::current_dir().unwrap().join("tests/fixtures/auth.default.json").to_str().unwrap()
+            "--auth", env::current_dir().unwrap().join("tests/fixtures/auth.default.json").to_str().unwrap(),
+            "--ui", env::current_dir().unwrap().join("../hecate_ui/dist/").to_str().unwrap()
         ]).spawn().unwrap();
         thread::sleep(Duration::from_secs(1));
 

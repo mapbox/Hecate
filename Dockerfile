@@ -40,7 +40,6 @@ RUN curl 'https://nodejs.org/dist/v10.15.3/node-v10.15.3-linux-x64.tar.gz' | tar
     && ./node-v10.15.3-linux-x64/bin/npm install -g npm \
     && npm install -g yarn
 
-
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.40.0
 
 RUN echo "local all all trust " > /etc/postgresql/10/main/pg_hba.conf \
