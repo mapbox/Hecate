@@ -3,6 +3,7 @@ extern crate hecate;
 extern crate serde_json;
 extern crate postgres;
 
+use std::env;
 use std::path::Path;
 use std::fs::File;
 use std::io::Read;
@@ -90,6 +91,18 @@ fn main() {
         None => None
     };
 
+    let ui: Option<String> = match matched.value_of("ui") {
+        Some(ui) => match ui.parse::<String>() {
+            Ok(ui) => {
+                let path = Path::new(&env::current_dir().unwrap()).join(ui);
+                let path: String = path.to_str().unwrap().into();
+                Some(path)
+            },
+            _ => { panic!("web must be an path to the web folder") }
+        },
+        None => None
+    };
+
     database_check(&database, false);
 
     for db_replica in &database_replica {
@@ -105,7 +118,8 @@ fn main() {
         port,
         workers,
         schema,
-        auth
+        auth,
+        ui
     );
 }
 

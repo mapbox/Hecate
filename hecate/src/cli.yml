@@ -9,6 +9,7 @@ args:
         value_name: UI
         help: Specify the folder containing a built version of the Hecate UI
         takes_value: true
+        multiple: false
 
     - database:
         short: d

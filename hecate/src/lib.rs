@@ -49,7 +49,8 @@ pub fn start(
     port: Option<u16>,
     workers: Option<u16>,
     schema: Option<serde_json::value::Value>,
-    auth: Option<auth::CustomAuth>
+    auth: Option<auth::CustomAuth>,
+    ui: Option<String>
 ) {
     let auth_rules: auth::CustomAuth = match auth {
         None => auth::CustomAuth::default(),
@@ -96,7 +97,7 @@ pub fn start(
             //TODO HANDLE GENERIC 404
             .route("/", web::get().to(index))
             .service(
-                actix_files::Files::new("/admin", "../hecate_ui/dist/")
+                actix_files::Files::new("/admin", ui.clone().unwrap_or_else(|| String::from("./hecate_ui/dist/")))
                     .index_file("index.html")
             )
             .service(web::scope("api")
