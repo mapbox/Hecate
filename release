@@ -8,7 +8,7 @@ if [[ ! -f Cargo.toml ]]; then
     exit 1
 fi
 
-CVER=$(grep -E '^version' Cargo.toml | head -1 | sed -E 's/version\ =\ "(.+)"/\1/')
+CVER=$(grep -E '^version' hecate/Cargo.toml | head -1 | sed -E 's/version\ =\ "(.+)"/\1/')
 
 if [[ -z $1 ]]; then
     echo
