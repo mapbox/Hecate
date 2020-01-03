@@ -42,7 +42,7 @@ sed -i.bak "s/\"$CVER\"/\"$NVER\"/" ./hecate/Cargo.toml
 rm ./hecate/Cargo.toml.bak
 echo "ok - Updated hecate/Cargo.toml"
 
-if [[ ! $(git diff Cargo.toml | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
+if [[ ! $(git diff hecate/Cargo.toml | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
     echo "not ok - Failed to update hecate/Cargo.toml"
     exit 1
 fi
