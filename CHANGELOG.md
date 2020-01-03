@@ -10,6 +10,11 @@
 
 # Version History
 
+## v0.83.0
+
+- :rocket: Refactor project into cargo workspace
+- :rocket: Rewrite auth module to use Derivable traits for far better code security & readability
+
 ## v0.82.2
 
 - :rocket: Huge number of rust clippy improvements
