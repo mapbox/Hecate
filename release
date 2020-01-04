@@ -8,7 +8,7 @@ if [[ ! -f Cargo.toml ]]; then
     exit 1
 fi
 
-CVER=$(grep -E '^version' Cargo.toml | head -1 | sed -E 's/version\ =\ "(.+)"/\1/')
+CVER=$(grep -E '^version' hecate/Cargo.toml | head -1 | sed -E 's/version\ =\ "(.+)"/\1/')
 
 if [[ -z $1 ]]; then
     echo
@@ -38,30 +38,30 @@ if [[ ! $(grep "v${NVER}" CHANGELOG.md | wc -l | awk '{print $1}') -eq 1 ]]; the
     exit 1
 fi
 
-sed -i.bak "s/\"$CVER\"/\"$NVER\"/" ./Cargo.toml
-rm ./Cargo.toml.bak
-echo "ok - Updated Cargo.toml"
+sed -i.bak "s/\"$CVER\"/\"$NVER\"/" ./hecate/Cargo.toml
+rm ./hecate/Cargo.toml.bak
+echo "ok - Updated hecate/Cargo.toml"
 
-if [[ ! $(git diff Cargo.toml | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
-    echo "not ok - Failed to update Cargo.toml"
+if [[ ! $(git diff hecate/Cargo.toml | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
+    echo "not ok - Failed to update hecate/Cargo.toml"
     exit 1
 fi
 
-sed -i.bak "s/\"$CVER\"/\"$NVER\"/" ./src/lib.rs
-rm -f ./src/lib.rs.bak
-echo "ok - Updated src/lib.rs"
+sed -i.bak "s/\"$CVER\"/\"$NVER\"/" ./hecate/src/lib.rs
+rm -f ./hecate/src/lib.rs.bak
+echo "ok - Updated hecate/src/lib.rs"
 
-if [[ ! $(git diff ./src/lib.rs | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
-    echo "not ok - Failed to update src/lib.rs"
+if [[ ! $(git diff ./hecate/src/lib.rs | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
+    echo "not ok - Failed to update hecate/src/lib.rs"
     exit 1
 fi
 
-sed -i.bak "s/$CVER/$NVER/" ./src/cli.yml
-rm -f ./src/cli.yml.bak
-echo "ok - Updated src/cli.yml"
+sed -i.bak "s/$CVER/$NVER/" ./hecate/src/cli.yml
+rm -f ./hecate/src/cli.yml.bak
+echo "ok - Updated hecate/src/cli.yml"
 
-if [[ ! $(git diff ./src/cli.yml | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
-    echo "not ok - Failed to update src/cli.yml"
+if [[ ! $(git diff ./hecate/src/cli.yml | grep '^+' | wc -l | awk '{print $1}') -eq 2 ]]; then
+    echo "not ok - Failed to update hecate/src/cli.yml"
     exit 1
 fi
 

@@ -10,6 +10,15 @@
 
 # Version History
 
+## v0.83.0
+
+- :rocket: Refactor project into cargo workspace
+- :rocket: Rewrite auth module to use Derivable traits for far better code security & readability
+
+## v0.82.2
+
+- :rocket: Huge number of rust clippy improvements
+
 ## v0.82.1
 
 - :bug: `user_modify_info` function requires write DB access
