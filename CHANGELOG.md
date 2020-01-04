@@ -10,6 +10,10 @@
 
 # Version History
 
+## v0.84.0
+
+- :tada: Add properties to VT output
+
 ## v0.83.0
 
 - :rocket: Refactor project into cargo workspace
