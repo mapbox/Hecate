@@ -10,11 +10,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@master
-      - name: Get Changelog
-        run: |
-            export START=$(($(grep -Pon '## v\d+\.\d+\.\d+' CHANGELOG.md | sed 's/:.*//' | sed -n 1p) + 1)) \
-            && export END=$(($(grep -Pon '## v\d+\.\d+\.\d+' CHANGELOG.md | sed 's/:.*//' | sed -n 2p) -1)) \
-            && echo  "::set-env name=CHANGES=$(sed -n ${START},${END}p CHANGELOG.md)"
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -23,6 +18,5 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: ${{ env.CHANGES }}
           draft: false
           prerelease: false
