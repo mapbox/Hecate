@@ -42,6 +42,7 @@ pub fn db_create(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32)
         FROM (
             SELECT
                 id,
+                props,
                 ST_AsMVTGeom(geom, ST_Transform(ST_MakeEnvelope($1, $2, $3, $4, $5), 4326), 4096, 256, false) AS geom
             FROM
                 geo
