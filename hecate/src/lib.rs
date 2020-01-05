@@ -216,11 +216,14 @@ pub fn start(
                         .route(web::get().to_async(user_create_session))
                         .route(web::delete().to_async(user_delete_session))
                     )
+                    .service(web::resource("tokens")
+                        .route(web::get().to(user_tokens))
+                    )
                     .service(web::resource("token")
-                        .route(web::post().to(user_create_token))
+                        .route(web::post().to(user_token_create))
                     )
                     .service(web::resource("token/{token}")
-                        .route(web::delete().to(user_delete_token))
+                        .route(web::delete().to(user_token_delete))
                     )
                     .service(web::resource("{uid}")
                         .route(web::get().to(user_info))
@@ -691,7 +694,7 @@ fn user_create_session(
 
         let uid = auth.uid.unwrap();
 
-        Ok(user::Token::create(&*conn.get()?, "Session Token", uid, HOURS, user::token::Scope::Full)?)
+        Ok(user::Token::create(&*conn.get()?, "Session Token", uid, Some(HOURS), user::token::Scope::Full)?)
     }).then(|res: Result<user::Token, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(token) => {
 
@@ -748,7 +751,27 @@ fn user_delete_session(
     })
 }
 
-fn user_create_token(
+fn user_tokens(
+    conn: web::Data<DbReadWrite>,
+    auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>
+) -> Result<Json<serde_json::Value>, HecateError> {
+    auth::check(&auth_rules.0.user.info, auth::RW::Full, &auth)?;
+
+    let uid = match auth.uid {
+        Some(uid) => uid,
+        None => { return Err(HecateError::generic(401)); }
+    };
+
+    let tokens = user::token::list(&*conn.get()?, uid)?;
+
+    match serde_json::to_value(tokens) {
+        Ok(tokens) => Ok(Json(tokens)),
+        Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
+    }
+}
+
+fn user_token_create(
     conn: web::Data<DbReadWrite>,
     auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>,
@@ -775,7 +798,7 @@ fn user_create_token(
         &*conn.get()?,
         token.name.unwrap_or_else(|| String::from("Access Token")),
         uid,
-        token.hours.unwrap_or(16),
+        token.hours,
         scope
     )?;
 
@@ -785,7 +808,7 @@ fn user_create_token(
     }
 }
 
-fn user_delete_token(
+fn user_token_delete(
     conn: web::Data<DbReadWrite>,
     auth_rules: web::Data<auth::AuthContainer>,
     auth: auth::Auth,

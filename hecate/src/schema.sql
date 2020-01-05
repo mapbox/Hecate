@@ -49,7 +49,6 @@ CREATE TABLE users (
 DROP TABLE IF EXISTS users_tokens;
 CREATE TABLE users_tokens (
     name        TEXT NOT NULL,
-    type        TEXT NOT NULL,
     uid         BIGINT NOT NULL,
     token       TEXT PRIMARY KEY,
     expiry      TIMESTAMP,
