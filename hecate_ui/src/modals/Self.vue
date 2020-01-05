@@ -79,6 +79,12 @@
                         </template>
                         <template v-else-if='mode === "tokens"'>
                             <div class='grid grid--gut12 col col--12 pt12' style="max-height: 600px;">
+                                <div class='col col--12 grid pb6'>
+                                    <div class='col--2'>Scope</div>
+                                    <div class='col--5'>Token Name</div>
+                                    <div class='col--5'><span class='fr'>Expiry</span></div>
+                                </div>
+
                                 <div class='col col--12 h240 scroll-auto'>
                                     <template v-for='token of tokens'>
                                         <div class='col col--12'>
@@ -88,7 +94,7 @@
                                                 </div>
                                                 <div class='col--5' v-text='token.name'></div>
                                                 <div class='col--5'>
-                                                <span class='fr' v-text='token.expiry'></span>
+                                                    <span class='fr' v-text='token.expiry'></span>
                                                 </div>
                                             </div>
                                         </div>

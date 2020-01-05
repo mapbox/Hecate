@@ -698,7 +698,7 @@ fn user_create_session(
     }).then(|res: Result<user::Token, actix_threadpool::BlockingError<HecateError>>| match res {
         Ok(token) => {
 
-            let cookie = actix_http::http::Cookie::build("session", token.token)
+            let cookie = actix_http::http::Cookie::build("session", token.token()?)
                 .path("/")
                 .http_only(true)
                 .max_age(HOURS * 60 * 60)

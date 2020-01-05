@@ -19,19 +19,26 @@ impl ToString for Scope {
 pub struct Token {
     pub name: String,
     pub uid: i64,
-    pub token: String,
+    pub token: Option<String>,
     pub expiry: Option<String>,
     pub scope: Scope
 }
 
 impl Token {
-    pub fn new(name: String, uid: i64, token: String, expiry: Option<String>, scope: Scope) -> Self {
+    pub fn new(name: String, uid: i64, token: Option<String>, expiry: Option<String>, scope: Scope) -> Self {
         Token {
             name,
             uid,
             token,
             expiry,
             scope
+        }
+    }
+
+    pub fn token(&self) -> Result<String, HecateError> {
+        match &self.token {
+            None => Err(HecateError::new(500, String::from("Could not retrieve token"), None)),
+            Some(token) => Ok(token.to_string())
         }
     }
 
@@ -60,7 +67,7 @@ impl Token {
                     uid,
                     token,
                     expiry::TEXT
-        ", 
+        ",
             hours = hours_str
         ).as_str(), &[ &name.to_string(), &uid, &hours, &scope.to_string() ]) {
             Ok(res) => {
@@ -69,7 +76,7 @@ impl Token {
                 let token: String = res.get(0).get(2);
                 let expiry: Option<String> = res.get(0).get(3);
 
-                Ok(Token::new(name, uid, token, expiry, scope))
+                Ok(Token::new(name, uid, Some(token), expiry, scope))
             },
             Err(err) => Err(HecateError::from_db(err))
         }
@@ -102,7 +109,7 @@ impl Token {
                     _ => Scope::Read
                 };
 
-                Ok(Token::new(name, uid, token, expiry, scope))
+                Ok(Token::new(name, uid, Some(token), expiry, scope))
             },
             Err(err) => Err(HecateError::from_db(err))
         }
@@ -127,7 +134,6 @@ pub fn list(conn: &impl postgres::GenericConnection, uid: i64) -> Result<Vec<Tok
         SELECT
             name,
             uid,
-            token,
             expiry::TEXT,
             scope
         FROM
@@ -141,16 +147,15 @@ pub fn list(conn: &impl postgres::GenericConnection, uid: i64) -> Result<Vec<Tok
             for row in rows.iter() {
                 let name: String = row.get(0);
                 let uid: i64 = row.get(1);
-                let token: String = row.get(2);
-                let expiry: Option<String> = row.get(3);
-                let scope: String = row.get(4);
+                let expiry: Option<String> = row.get(2);
+                let scope: String = row.get(3);
 
                 let scope = match scope.as_str() {
                     "full" => Scope::Full,
                     _ => Scope::Read
                 };
 
-                tokens.push(Token::new(name, uid, token, expiry, scope))
+                tokens.push(Token::new(name, uid, None, expiry, scope))
             }
 
             Ok(tokens)
