@@ -48,11 +48,12 @@ CREATE TABLE users (
 
 DROP TABLE IF EXISTS users_tokens;
 CREATE TABLE users_tokens (
-    name        TEXT,
-    uid         BIGINT,
+    name        TEXT NOT NULL,
+    type        TEXT NOT NULL,
+    uid         BIGINT NOT NULL,
     token       TEXT PRIMARY KEY,
     expiry      TIMESTAMP,
-    scope       TEXT
+    scope       TEXT NOT NULL
 );
 
 DROP TABLE IF EXISTS geo;
