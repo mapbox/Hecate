@@ -28,11 +28,21 @@
                         </div>
 
                         <div class='py6 col col--12 border--gray-light border-b'>
-                            <button class='btn btn--s round' :class='mainbtn' @click='mode = "main"'>Personal Info</button>
-                            <button class='btn btn--s round' :class='securitybtn' @click='mode = "security"'>Account Security</button>
-                            <button class='btn btn--s round' :class='tokensbtn' @click='mode = "tokens"'>Access Tokens</button>
+                            <template v-if='mode === "token"'>
+                                <template v-if='token.new'>
+                                    <span>Create a Token</span>
+                                </template>
+                                <template v-else> 
+                                    <span>View a Token</span>
+                                </template>
+                            </template>
+                            <template v-else>
+                                <button class='btn btn--s round' :class='mainbtn' @click='mode = "main"'>Personal Info</button>
+                                <button class='btn btn--s round' :class='securitybtn' @click='mode = "security"'>Account Security</button>
+                                <button class='btn btn--s round' :class='tokensbtn' @click='mode = "tokens"'>Access Tokens</button>
 
-                            <button @click='token(false)' v-if='mode === "tokens"' class='btn btn--stroke fr round'><svg class='icon'><use href='#icon-plus'/></svg></button>
+                                <button @click='singleToken(false)' v-if='mode === "tokens"' class='btn btn--stroke fr round'><svg class='icon'><use href='#icon-plus'/></svg></button>
+                            </template>
                         </div>
 
                         <template v-if='mode === "main"'>
@@ -89,14 +99,19 @@
 
                                 <div class='col col--12 h240 scroll-auto'>
                                     <template v-for='token of tokens'>
-                                        <div class='col col--12'>
+                                        <div @click='singleToken(token)' class='col col--12'>
                                            <div class='grid col h30 bg-gray-faint-on-hover cursor-pointer round'>
                                                 <div class='col--2'>
                                                     <span class='ml6 bg-blue-faint color-blue inline-block px6 py3 my3 mx3 txt-xs txt-bold round' v-text="token.scope"></span>
                                                 </div>
                                                 <div class='col--5' v-text='token.name'></div>
                                                 <div class='col--5'>
-                                                    <span class='fr' v-text='token.expiry'></span>
+                                                    <template v-if='token.expiry'>
+                                                        <span class='fr' v-text='token.expiry'></span>
+                                                    </template>
+                                                    <template v-else>
+                                                        <span class='fr'>No Expiration</span>
+                                                    </template>
                                                 </div>
                                             </div>
                                         </div>
@@ -105,7 +120,65 @@
                             </div>
                         </template>
                         <template v-else-if='mode === "token"'>
-                            Create a New Access Token
+                            <div class='grid grid--gut12 col col--12 pt12' style="max-height: 600px;">
+                                <div class='col col--12 grid grid--gut12'>
+                                    <div class='col col--8'>
+                                        <label>Token Name</label>
+                                        <input class='input mb6' v-model='token.name' placeholder='Token Name' />
+                                    </div>
+
+                                    <div class='col col--4'>
+                                        <label>Scope</label>
+                                        <div class='w-full select-container'>
+                                            <select v-model='token.scope' class='select'>
+                                                <option>read</option>
+                                                <option>full</option>
+                                            </select>
+                                            <div class='select-arrow'></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <template v-if='token.new'>
+                                    <div class='col col--6'>
+                                        <label>Expiration</label>
+                                        <div class='w-full select-container'>
+                                            <select v-model='token.expiry' class='select'>
+                                                <option>none</option>
+                                                <option>expiration</option>
+                                            </select>
+                                            <div class='select-arrow'></div>
+                                        </div>
+                                    </div>
+
+                                    <div class='col col--6'>
+                                        <template v-if='token.new && token.expiry === "expiration"'>
+                                            <label>Hours to expiration</label>
+                                            <input class='input mb6' v-model='token.hours' placeholder='Hours' />
+                                        </template>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <div class='col col--6'>
+                                        <label>Expiration</label>
+                                        <input class='input mb6' v-model='token.expiry' placeholder='Expiration' />
+                                    </div>
+                                    <div class='col col--6'>
+                                    </div>
+                                </template>
+
+                                <div class='col col--6 py12'>
+                                    <button @click='mode = "tokens"' class='btn btn--stroke round'>Cancel</button>
+                                </div>
+                                <div class='col col--6 py12'>
+                                    <template v-if='token.new'>
+                                        <button @click='setToken' class='fr btn round mr12'>Create Token</button>
+                                    </template>
+                                    <template v-else>
+                                        <button @click='deleteToken' class='fr btn btn--red round mr12'>Delete Token</button>
+                                    </template>
+                                </div>
+                            </div>
                         </template>
                     </div>
                 </template>
@@ -130,6 +203,15 @@ export default {
                 current: '',
                 newPass: '',
                 newConf: ''
+            },
+            token: {
+                new: true,
+                name: '',
+                token: false,
+                scope: 'read',
+                expiry: 'none',
+                hours: 0
+
             }
         };
     },
@@ -164,9 +246,38 @@ export default {
         defaultJOSM: function() {
             return window.location.host + '/api';
         },
-        token: function(token) {
+        singleToken: function(token) {
             this.mode = 'token';
+            this.token.token = false;
 
+            if (token) {
+                this.token.new = false;
+                this.token.name = token.name;
+                this.token.scope = token.scope;
+                this.token.expiry = token.expiry;
+            } else {
+                this.token.new = true;
+                this.token.name = '';
+                this.token.scope = 'read';
+                this.token.expiry = 'none';
+                this.token.hours = 0;
+            }
+        },
+        setToken: function() {
+            if (!this.token.new) this.$emit('error', new Error('Cannot alter existing token'));
+
+            window.hecate.user.token.create(this.token, (err, token) => {
+                if (err) return this.$emit('error', err);
+
+                console.error(token);
+            });
+        },
+        deleteToken: function() {
+            // TODO
+            // Problem here- tokens need some sort of ID to identify them that is not the token
+            // Otherwise I can't delete them....
+
+            this.getTokens();
         },
         createUrl: function() {
             fetch(`${window.location.protocol}//${window.location.host}/api/user/token`, {
