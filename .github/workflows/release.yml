@@ -23,11 +23,11 @@ jobs:
       - name: Build Hecate
         run: cargo build --release
       - name: Upload Release
-        id: upload-release-asset
+        id: upload_release
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./target/release/hecate
           asset_name: hecate_linux
