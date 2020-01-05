@@ -29,7 +29,10 @@
 
                         <div class='py6 col col--12 border--gray-light border-b'>
                             <button class='btn btn--s round' :class='mainbtn' @click='mode = "main"'>Personal Info</button>
+                            <button class='btn btn--s round' :class='securitybtn' @click='mode = "security"'>Account Security</button>
                             <button class='btn btn--s round' :class='tokensbtn' @click='mode = "tokens"'>Access Tokens</button>
+
+                            <button @click='token(false)' v-if='mode === "tokens"' class='btn btn--stroke fr round'><svg class='icon'><use href='#icon-plus'/></svg></button>
                         </div>
 
                         <template v-if='mode === "main"'>
@@ -40,26 +43,6 @@
 
                                     <label>Email</label>
                                     <input disabled class='input mb6' v-model='user.email' placeholder='Email' />
-                                </div>
-
-                                <div class='py6 col col--12 border--gray-light border-b'>
-                                    <span class='txt-m'>Account Security</span>
-                                </div>
-
-                                <div class='col col--12 py12'>
-                                    <label>Current Password</label>
-                                    <input type=password v-model='pw.current' class='input mb6' placeholder='Current Password' />
-                                </div>
-                                <div class='col col--5'>
-                                    <label>New Password</label>
-                                    <input type=password v-model='pw.newPass' class='input mb6' placeholder='New Password' />
-                                </div>
-                                <div class='col col--5'>
-                                    <label>Confirm New Password</label>
-                                    <input type=password v-model='pw.newConf' class='input mb6' placeholder='New Password' />
-                                </div>
-                                <div class='col col--2'>
-                                    <button @click='setPassword' style='margin-top: 22px;' class='btn'>Update</button>
                                 </div>
 
                                 <div class='py6 col col--12 border--gray-light border-b'>
@@ -76,6 +59,25 @@
                                     </div>
                                 </template>
                             </div>
+                        </template>
+                        <template v-else-if='mode === "security"'>
+                            <div class='grid grid--gut12 col col--12'>
+                                <div class='col col--12 py12'>
+                                    <label>Current Password</label>
+                                    <input type=password v-model='pw.current' class='input mb6' placeholder='Current Password' />
+                                </div>
+                                <div class='col col--5'>
+                                    <label>New Password</label>
+                                    <input type=password v-model='pw.newPass' class='input mb6' placeholder='New Password' />
+                                </div>
+                                <div class='col col--5'>
+                                    <label>Confirm New Password</label>
+                                    <input type=password v-model='pw.newConf' class='input mb6' placeholder='New Password' />
+                                </div>
+                                <div class='col col--2'>
+                                    <button @click='setPassword' style='margin-top: 22px;' class='btn btn--stroke round'>Update</button>
+                                </div>
+                            <div>
                         </template>
                         <template v-else-if='mode === "tokens"'>
                             <div class='grid grid--gut12 col col--12 pt12' style="max-height: 600px;">
@@ -102,6 +104,11 @@
                                 </div>
                             </div>
                         </template>
+                        <template v-else-if='mode === "token"'>
+                            Create a New Access Token
+                        </template>
+                    </div>
+                </template>
                     </div>
                 </template>
             </div>
@@ -137,6 +144,12 @@ export default {
                 'btn--white': this.mode === 'main' ? false : true
             };
         },
+        securitybtn: function() {
+            return {
+                'color-blue': this.mode === 'security' ? false : true,
+                'btn--white': this.mode === 'security' ? false : true
+            };
+        },
         tokensbtn: function() {
             return {
                 'color-blue': this.mode === 'tokens' ? false : true,
@@ -150,6 +163,10 @@ export default {
         },
         defaultJOSM: function() {
             return window.location.host + '/api';
+        },
+        token: function(token) {
+            this.mode = 'token';
+
         },
         createUrl: function() {
             fetch(`${window.location.protocol}//${window.location.host}/api/user/token`, {
@@ -185,8 +202,6 @@ export default {
                 this.error = 'New Passwords Must Match!';
                 return;
             }
-
-            console.error(JSON.stringify(this.pw));
 
             fetch(`${window.location.protocol}//${window.location.host}/api/user/reset`, {
                 method: 'POST',
