@@ -94,7 +94,7 @@
             <user :auth='auth' :user='user_id' v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "self"'>
-            <self :auth='auth' v-on:close='modal = false' />
+            <self v-on:error='handler($event)' :auth='auth' v-on:close='modal = false' />
         </template>
         <template v-else-if='modal === "settings"'>
             <settings v-on:error='handler($event)' v-on:close='settings_close' :auth='auth'/>

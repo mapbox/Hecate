@@ -147,6 +147,37 @@ window.hecate = {
             });
         }
     },
+    user: {
+        info: function(cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/info`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) return res2err(response, cb);
+                return response.json();
+            }).then((users) => {
+                return cb(null, users);
+            }).catch((err) => {
+                return cb(err);
+            });
+        },
+        tokens: function(cb) {
+            fetch(`${window.location.protocol}//${window.location.host}/api/user/tokens`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then((response) => {
+                if (response.status !== 200) return res2err(response, cb);
+                return response.json();
+            }).then((tokens) => {
+                return cb(null, tokens.map((token) => {
+                    token.expiry = token.expiry.replace(/\..*$/, '');
+                    return token;
+                }));
+            }).catch((err) => {
+                return cb(err);
+            });
+        }
+    },
     users: {
         list: function(filter, cb) {
             fetch(`${window.location.protocol}//${window.location.host}/api/users?filter=${filter}`, {
