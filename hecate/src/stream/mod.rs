@@ -12,9 +12,9 @@ pub struct PGStream {
     eot: bool, //End of Tranmission has been sent
     cursor: String,
     pending: Option<Vec<u8>>,
-    trans: postgres::transaction::Transaction<'static>,
+    trans: postgres::Transaction<'static>,
     #[allow(dead_code)]
-    conn: Box<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>>
+    conn: Box<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager<postgres::Client>>>
 }
 
 impl futures::stream::Stream for PGStream {
@@ -119,10 +119,10 @@ impl std::io::Read for PGStream {
 }
 
 impl PGStream {
-    pub fn new(pg_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&dyn ToSql]) -> Result<Self, HecateError> {
+    pub fn new(pg_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager<postgres::Client>>, cursor: String, query: String, params: &[&dyn ToSql]) -> Result<Self, HecateError> {
         let conn = Box::new(pg_conn);
 
-        let trans: postgres::transaction::Transaction = unsafe {
+        let trans: postgres::Transaction = unsafe {
             mem::transmute(conn.transaction().unwrap())
         };
 

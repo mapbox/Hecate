@@ -4,7 +4,7 @@ pub mod grid;
 use crate::err::HecateError;
 pub use self::grid::{Grid};
 
-pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<Option<Vec<u8>>, HecateError> {
+pub fn db_get(conn: &postgres::Client, coord: String) -> Result<Option<Vec<u8>>, HecateError> {
     match conn.query("
         SELECT tile
         FROM tiles
@@ -25,7 +25,7 @@ pub fn db_get(conn: &impl postgres::GenericConnection, coord: String) -> Result<
     }
 }
 
-pub fn db_create(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> Result<Vec<u8>, HecateError> {
+pub fn db_create(conn: &postgres::Client, z: u8, x: u32, y: u32) -> Result<Vec<u8>, HecateError> {
     let grid = Grid::web_mercator();
     let bbox = grid.tile_extent(z, x, y);
 
@@ -60,7 +60,7 @@ pub fn db_create(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32)
 }
 
 
-pub fn db_cache(conn: &impl postgres::GenericConnection, coord: String, tile: &[u8]) -> Result<(), HecateError> {
+pub fn db_cache(conn: &postgres::Client, coord: String, tile: &[u8]) -> Result<(), HecateError> {
     match conn.query("
         INSERT INTO tiles (ref, tile, created)
             VALUES ($1, $2, NOW())
@@ -71,7 +71,7 @@ pub fn db_cache(conn: &impl postgres::GenericConnection, coord: String, tile: &[
     }
 }
 
-pub fn wipe(conn: &impl postgres::GenericConnection) -> Result<serde_json::Value, HecateError> {
+pub fn wipe(conn: &postgres::Client) -> Result<serde_json::Value, HecateError> {
     match conn.execute("
         DELETE FROM tiles;
     ", &[]) {
@@ -80,7 +80,7 @@ pub fn wipe(conn: &impl postgres::GenericConnection) -> Result<serde_json::Value
     }
 }
 
-pub fn meta(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> Result<serde_json::Value, HecateError> {
+pub fn meta(conn: &postgres::Client, z: u8, x: u32, y: u32) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT
             COALESCE(row_to_json(t), '{}'::JSON)
@@ -109,7 +109,7 @@ pub fn meta(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> R
 /// If you only have a single database connection and want a tile regen
 /// but no tile return, this function can be used to force a regen
 ///
-pub fn regen(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> Option<HecateError> {
+pub fn regen(conn: &postgres::Client, z: u8, x: u32, y: u32) -> Option<HecateError> {
     let tile = match db_create(conn, z, x, y) {
         Ok(tile) => tile,
         Err(err) => {
@@ -131,8 +131,8 @@ pub fn regen(conn: &impl postgres::GenericConnection, z: u8, x: u32, y: u32) -> 
 /// to the master as neede to cache a tile
 ///
 pub fn get(
-    conn_read: &impl postgres::GenericConnection,
-    conn_write: &impl postgres::GenericConnection,
+    conn_read: &postgres::Client,
+    conn_write: &postgres::Client,
     z: u8, x: u32, y: u32,
     regen: bool
 ) -> Result<Vec<u8>, HecateError> {

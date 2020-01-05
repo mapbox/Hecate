@@ -1,7 +1,7 @@
 use crate::err::HecateError;
 use crate::stream::PGStream;
 
-pub fn set(conn: &impl postgres::GenericConnection, name: &str, feat: &serde_json::Value) -> Result<bool, HecateError> {
+pub fn set(conn: &postgres::Client, name: &str, feat: &serde_json::Value) -> Result<bool, HecateError> {
     match conn.execute("
         INSERT INTO bounds (name, geom, props)
             VALUES (
@@ -19,7 +19,7 @@ pub fn set(conn: &impl postgres::GenericConnection, name: &str, feat: &serde_jso
     }
 }
 
-pub fn delete(conn: &impl postgres::GenericConnection, name: &str) -> Result<bool, HecateError> {
+pub fn delete(conn: &postgres::Client, name: &str) -> Result<bool, HecateError> {
     match conn.execute("
         DELETE FROM bounds WHERE name = $1
     ", &[ &name ]) {
@@ -28,7 +28,7 @@ pub fn delete(conn: &impl postgres::GenericConnection, name: &str) -> Result<boo
     }
 }
 
-pub fn filter(conn: &impl postgres::GenericConnection, prefix: &str, limit: Option<i16>) -> Result<Vec<String>, HecateError> {
+pub fn filter(conn: &postgres::Client, prefix: &str, limit: Option<i16>) -> Result<Vec<String>, HecateError> {
     let limit: i16 = match limit {
         None => 100,
         Some(limit) => if limit > 100 { 100 } else { limit }
@@ -54,7 +54,7 @@ pub fn filter(conn: &impl postgres::GenericConnection, prefix: &str, limit: Opti
     }
 }
 
-pub fn list(conn: &impl postgres::GenericConnection, limit: Option<i16>) -> Result<Vec<String>, HecateError> {
+pub fn list(conn: &postgres::Client, limit: Option<i16>) -> Result<Vec<String>, HecateError> {
     match conn.query("
         SELECT name
         FROM bounds
@@ -74,7 +74,7 @@ pub fn list(conn: &impl postgres::GenericConnection, limit: Option<i16>) -> Resu
     }
 }
 
-pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, bounds: String) -> Result<PGStream, HecateError> {
+pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager<postgres::Client>>, bounds: String) -> Result<PGStream, HecateError> {
     match PGStream::new(conn, String::from("next_bounds"), String::from(r#"
         DECLARE next_bounds CURSOR FOR
             SELECT
@@ -106,7 +106,7 @@ pub fn get(conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager
     }
 }
 
-pub fn meta(conn: &impl postgres::GenericConnection, name: String) -> Result<serde_json::Value, HecateError> {
+pub fn meta(conn: &postgres::Client, name: String) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT
             JSON_Build_Object(
@@ -133,7 +133,7 @@ pub fn meta(conn: &impl postgres::GenericConnection, name: String) -> Result<ser
     }
 }
 
-pub fn stats_json(conn: &impl postgres::GenericConnection, bounds: String) -> Result<serde_json::Value, HecateError> {
+pub fn stats_json(conn: &postgres::Client, bounds: String) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT
             row_to_json(t)

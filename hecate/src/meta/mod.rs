@@ -15,7 +15,7 @@ impl Meta {
         }
     }
 
-    pub fn get(conn: &impl postgres::GenericConnection, key: impl ToString) -> Result<Self, HecateError> {
+    pub fn get(conn: &postgres::Client, key: impl ToString) -> Result<Self, HecateError> {
         let key = key.to_string();
 
         match conn.query("
@@ -32,7 +32,7 @@ impl Meta {
         }
     }
 
-    pub fn set(&self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn set(&self, conn: &postgres::Client) -> Result<bool, HecateError> {
         match conn.query("
             INSERT INTO meta (key, value) VALUES ($1, $2)
                 ON CONFLICT (key) DO
@@ -47,7 +47,7 @@ impl Meta {
 
 }
 
-pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<String>, HecateError> {
+pub fn list(conn: &postgres::Client) -> Result<Vec<String>, HecateError> {
     match conn.query("
         SELECT key FROM meta ORDER BY key
     ", &[]) {
@@ -64,7 +64,7 @@ pub fn list(conn: &impl postgres::GenericConnection) -> Result<Vec<String>, Heca
     }
 }
 
-pub fn delete(conn: &impl postgres::GenericConnection, key: &str) -> Result<bool, HecateError> {
+pub fn delete(conn: &postgres::Client, key: &str) -> Result<bool, HecateError> {
     match conn.query("
         DELETE FROM meta WHERE key = $1
     ", &[ &key ]) {

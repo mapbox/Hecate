@@ -256,7 +256,7 @@ impl Auth {
         })
     }
 
-    pub fn from_sreq(req: &mut actix_web::dev::ServiceRequest, conn: &impl postgres::GenericConnection) -> Result<Self, HecateError> {
+    pub fn from_sreq(req: &mut actix_web::dev::ServiceRequest, conn: &postgres::Client) -> Result<Self, HecateError> {
         let mut auth = Auth::new();
 
         let path: Vec<String> = req.path().split('/').map(|p| {
@@ -363,7 +363,7 @@ impl Auth {
     ///
     /// Note: Once validated the token/basic auth used to validate the user will be set to null
     ///
-    pub fn validate(&mut self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn validate(&mut self, conn: &postgres::Client) -> Result<bool, HecateError> {
         if self.basic.is_some() {
             match conn.query("
                 SELECT

@@ -27,7 +27,7 @@ impl Delta {
     ///
     /// Load and return a delta from the database given a connection and delta id
     ///
-    pub fn load(_conn: &impl postgres::GenericConnection, delta_id: i64) -> Self {
+    pub fn load(_conn: &postgres::Client, delta_id: i64) -> Self {
         Delta {
             id: Some(delta_id),
             uid: 1,
@@ -37,7 +37,7 @@ impl Delta {
     }
 }
 
-pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
+pub fn open(trans: &postgres::Transaction, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
     match trans.query("
         INSERT INTO deltas (id, created, props, uid) VALUES (
             nextval('deltas_id_seq'),
@@ -52,7 +52,7 @@ pub fn open(trans: &postgres::transaction::Transaction, props: &HashMap<String, 
 
 }
 
-pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
+pub fn create(trans: &postgres::Transaction, fc: &geojson::FeatureCollection, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
     match trans.query("
         INSERT INTO deltas (id, created, uid, props, affected) VALUES (
             nextval('deltas_id_seq'),
@@ -68,7 +68,7 @@ pub fn create(trans: &postgres::transaction::Transaction, fc: &geojson::FeatureC
     }
 }
 
-pub fn list_by_date(conn: &impl postgres::GenericConnection, start: Option<chrono::NaiveDateTime>, end: Option<chrono::NaiveDateTime>, limit: Option<i64>) -> Result<serde_json::Value, HecateError> {
+pub fn list_by_date(conn: &postgres::Client, start: Option<chrono::NaiveDateTime>, end: Option<chrono::NaiveDateTime>, limit: Option<i64>) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT COALESCE(array_to_json(Array_Agg(djson.delta)), '[]')::JSON
         FROM (
@@ -112,7 +112,7 @@ pub fn list_by_date(conn: &impl postgres::GenericConnection, start: Option<chron
     }
 }
 
-pub fn list_by_offset(conn: &impl postgres::GenericConnection, offset: Option<i64>, limit: Option<i64>) -> Result<serde_json::Value, HecateError> {
+pub fn list_by_offset(conn: &postgres::Client, offset: Option<i64>, limit: Option<i64>) -> Result<serde_json::Value, HecateError> {
     let offset = match offset {
         None => String::from("Infinity"),
         Some(offset) => offset.to_string()
@@ -159,7 +159,7 @@ pub fn list_by_offset(conn: &impl postgres::GenericConnection, offset: Option<i6
     }
 }
 
-pub fn tiles(conn: &impl postgres::GenericConnection, id: i64, min_zoom: u8, max_zoom: u8) -> Result<Vec<(i32, i32, u8)>, HecateError> {
+pub fn tiles(conn: &postgres::Client, id: i64, min_zoom: u8, max_zoom: u8) -> Result<Vec<(i32, i32, u8)>, HecateError> {
     match conn.query("
         SELECT
             geom
@@ -206,7 +206,7 @@ pub fn tiles(conn: &impl postgres::GenericConnection, id: i64, min_zoom: u8, max
 
 }
 
-pub fn get_json(conn: &impl postgres::GenericConnection, id: i64) -> Result<serde_json::Value, HecateError> {
+pub fn get_json(conn: &postgres::Client, id: i64) -> Result<serde_json::Value, HecateError> {
     match conn.query("
         SELECT COALESCE(row_to_json(t), 'false'::JSON)
         FROM (
@@ -256,7 +256,7 @@ pub fn get_json(conn: &impl postgres::GenericConnection, id: i64) -> Result<serd
     }
 }
 
-pub fn modify_props(id: i64, trans: &postgres::transaction::Transaction, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
+pub fn modify_props(id: i64, trans: &postgres::Transaction, props: &HashMap<String, Option<String>>, uid: i64) -> Result<i64, HecateError> {
     match trans.query("
         UPDATE deltas
             SET
@@ -271,7 +271,7 @@ pub fn modify_props(id: i64, trans: &postgres::transaction::Transaction, props: 
     }
 }
 
-pub fn modify(id: i64, trans: &postgres::transaction::Transaction, fc: &geojson::FeatureCollection, uid: i64) -> Result<i64, HecateError> {
+pub fn modify(id: i64, trans: &postgres::Transaction, fc: &geojson::FeatureCollection, uid: i64) -> Result<i64, HecateError> {
     match trans.query("
         UPDATE deltas
             SET
@@ -286,7 +286,7 @@ pub fn modify(id: i64, trans: &postgres::transaction::Transaction, fc: &geojson:
     }
 }
 
-pub fn finalize(id: i64, trans: &postgres::transaction::Transaction) -> Result<i64, HecateError> {
+pub fn finalize(id: i64, trans: &postgres::Transaction) -> Result<i64, HecateError> {
     match trans.query("
         UPDATE deltas
             SET finalized = true
@@ -297,7 +297,7 @@ pub fn finalize(id: i64, trans: &postgres::transaction::Transaction) -> Result<i
     }
 }
 
-pub fn is_open(id: i64, trans: &postgres::transaction::Transaction) -> Result<bool, HecateError> {
+pub fn is_open(id: i64, trans: &postgres::Transaction) -> Result<bool, HecateError> {
     match trans.query("
         SELECT NOT finalized FROM deltas WHERE id = $1
     ", &[&id]) {

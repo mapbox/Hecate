@@ -35,8 +35,8 @@ quick-xml = "0.17.0"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-r2d2 = "0.8.6"
-r2d2_postgres = "0.14.0"
+r2d2 = "0.8.8"
+r2d2_postgres = "0.16.0"
 env_logger = "0.7"
 hmac = "0.7"
 url = "2.1"
@@ -46,16 +46,16 @@ sha2 = "0.8.0"
 version = "0.12"
 features = ["postgis-integration"]
 
+[dependencies.postgres]
+version = "0.17.0"
+features = [
+    "with-chrono-0_4",
+    "with-serde_json-1"
+]
+
 [dependencies.chrono]
 version = "0.4"
 features = ["serde"]
-
-[dependencies.postgres]
-version = "0.15.2"
-features = [
-    "with-serde_json",
-    "with-chrono"
-]
 
 [dependencies.clap]
 features = ["yaml"]

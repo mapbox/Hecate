@@ -53,7 +53,7 @@ pub enum Action {
     Style
 }
 
-pub fn list(conn: &impl postgres::GenericConnection, action: Action) -> Result<Vec<WebHook>, HecateError> {
+pub fn list(conn: &postgres::Client, action: Action) -> Result<Vec<WebHook>, HecateError> {
     let action = match action {
         Action::All => "",
         Action::User => "WHERE actions @>ARRAY['user']",
@@ -86,7 +86,7 @@ pub fn list(conn: &impl postgres::GenericConnection, action: Action) -> Result<V
     }
 }
 
-pub fn get(conn: &impl postgres::GenericConnection, id: i64) -> Result<WebHook, HecateError> {
+pub fn get(conn: &postgres::Client, id: i64) -> Result<WebHook, HecateError> {
     match conn.query("
         SELECT
             id,
@@ -111,7 +111,7 @@ pub fn get(conn: &impl postgres::GenericConnection, id: i64) -> Result<WebHook, 
     }
 }
 
-pub fn delete(conn: &impl postgres::GenericConnection, id: i64) -> Result<bool, HecateError> {
+pub fn delete(conn: &postgres::Client, id: i64) -> Result<bool, HecateError> {
     match conn.execute("
         DELETE FROM webhooks
         WHERE id = $1
@@ -121,7 +121,7 @@ pub fn delete(conn: &impl postgres::GenericConnection, id: i64) -> Result<bool, 
     }
 }
 
-pub fn create(conn: &impl postgres::GenericConnection, mut webhook: WebHook) -> Result<WebHook, HecateError> {
+pub fn create(conn: &postgres::Client, mut webhook: WebHook) -> Result<WebHook, HecateError> {
     if !is_valid_action(&webhook.actions) {
         return Err(HecateError::new(400, String::from("Invalid Action"), None));
     }
@@ -163,7 +163,7 @@ pub fn create(conn: &impl postgres::GenericConnection, mut webhook: WebHook) -> 
     }
 }
 
-pub fn update(conn: &impl postgres::GenericConnection, webhook: WebHook) -> Result<WebHook, HecateError> {
+pub fn update(conn: &postgres::Client, webhook: WebHook) -> Result<WebHook, HecateError> {
     if !is_valid_action(&webhook.actions) {
         return Err(HecateError::new(400, String::from("Invalid Action"), None));
     }
@@ -200,7 +200,7 @@ pub fn is_valid_action(actions: &[String]) -> bool {
     true
 }
 
-pub fn send(conn: &impl postgres::GenericConnection, task: &worker::TaskType) -> Result<(), HecateError> {
+pub fn send(conn: &postgres::Client, task: &worker::TaskType) -> Result<(), HecateError> {
     let action = match task {
         worker::TaskType::Delta(_) => Action::Delta,
         worker::TaskType::User(_) => Action::User,

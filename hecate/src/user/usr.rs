@@ -38,7 +38,7 @@ impl User {
         })
     }
 
-    pub fn reset(conn: &impl postgres::GenericConnection, uid: i64, current: &String, new: &String) -> Result<bool, HecateError> {
+    pub fn reset(conn: &postgres::Client, uid: i64, current: &String, new: &String) -> Result<bool, HecateError> {
         validate::password(&new)?;
 
         match conn.query("
@@ -81,7 +81,7 @@ impl User {
         };
     }
 
-    pub fn set(&self, conn: &impl postgres::GenericConnection) -> Result<bool, HecateError> {
+    pub fn set(&self, conn: &postgres::Client) -> Result<bool, HecateError> {
         if self.id.is_some() {
             match conn.query("
                 UPDATE users
@@ -151,7 +151,7 @@ impl User {
         }
     }
 
-    pub fn get(conn: &impl postgres::GenericConnection, uid: i64) -> Result<Self, HecateError> {
+    pub fn get(conn: &postgres::Client, uid: i64) -> Result<Self, HecateError> {
         match conn.query("
             SELECT row_to_json(u)
             FROM (
@@ -186,7 +186,7 @@ impl User {
 
 }
 
-pub fn list(conn: &impl postgres::GenericConnection, limit: Option<i16>) -> Result<serde_json::Value, HecateError> {
+pub fn list(conn: &postgres::Client, limit: Option<i16>) -> Result<serde_json::Value, HecateError> {
     let limit: i16 = match limit {
         None => 100,
         Some(limit) => if limit > 100 { 100 } else { limit }
@@ -212,7 +212,7 @@ pub fn list(conn: &impl postgres::GenericConnection, limit: Option<i16>) -> Resu
     }
 }
 
-pub fn filter(conn: &impl postgres::GenericConnection, filter: &str, limit: Option<i16>) -> Result<serde_json::Value, HecateError> {
+pub fn filter(conn: &postgres::Client, filter: &str, limit: Option<i16>) -> Result<serde_json::Value, HecateError> {
     let limit: i16 = match limit {
         None => 100,
         Some(limit) => if limit > 100 { 100 } else { limit }

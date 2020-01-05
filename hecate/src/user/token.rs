@@ -26,7 +26,7 @@ impl Token {
         }
     }
 
-    pub fn create(conn: &impl postgres::GenericConnection, name: impl ToString, uid: i64, hours: i64, scope: Scope) -> Result<Self, HecateError> {
+    pub fn create(conn: &postgres::Client, name: impl ToString, uid: i64, hours: i64, scope: Scope) -> Result<Self, HecateError> {
         if hours > 336 {
             return Err(HecateError::new(400, String::from("Token Expiry Cannot Exceed 2 weeks (336 hours)"), None));
         }
@@ -66,7 +66,7 @@ impl Token {
 
     }
 
-    pub fn get(conn: &impl postgres::GenericConnection, uid: i64, token: &str) -> Result<Self, HecateError> {
+    pub fn get(conn: &postgres::Client, uid: i64, token: &str) -> Result<Self, HecateError> {
         match conn.query("
             SELECT
                 name,
@@ -100,7 +100,7 @@ impl Token {
     }
 }
 
-pub fn destroy(conn: &impl postgres::GenericConnection, uid: i64, token: &str) -> Result<bool, HecateError> {
+pub fn destroy(conn: &postgres::Client, uid: i64, token: &str) -> Result<bool, HecateError> {
     match conn.query("
         DELETE FROM users_tokens
             WHERE
