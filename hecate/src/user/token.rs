@@ -41,16 +41,18 @@ impl Token {
             Some(hours) => Some(format!("{} hours", hours))
         };
 
-        match conn.query("
+        let hours_str = match hours {
+            None => "$3,",
+            Some(_) => "now() + ($3::TEXT)::INTERVAL,"
+        };
+
+        match conn.query(format!("
             INSERT INTO users_tokens (name, uid, token, expiry, scope)
                 VALUES (
                     $1,
                     $2,
                     md5(random()::TEXT),
-                    CASE
-                        WHEN $3 IS NULL THEN NULL
-                        ELSE now() + ($3::TEXT)::INTERVAL
-                    END,
+                    {hours}
                     $4
                 )
                 RETURNING
@@ -58,7 +60,9 @@ impl Token {
                     uid,
                     token,
                     expiry::TEXT
-        ", &[ &name.to_string(), &uid, &hours, &scope.to_string() ]) {
+        ", 
+            hours = hours_str
+        ).as_str(), &[ &name.to_string(), &uid, &hours, &scope.to_string() ]) {
             Ok(res) => {
                 let name: String = res.get(0).get(0);
                 let uid: i64 = res.get(0).get(1);
