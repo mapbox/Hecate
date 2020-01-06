@@ -29,10 +29,10 @@
 
                         <div class='py6 col col--12 border--gray-light border-b'>
                             <template v-if='mode === "token"'>
-                                <template v-if='token.new'>
+                                <template v-if='token.id'>
                                     <span>Create a Token</span>
                                 </template>
-                                <template v-else> 
+                                <template v-else>
                                     <span>View a Token</span>
                                 </template>
                             </template>
@@ -139,7 +139,7 @@
                                     </div>
                                 </div>
 
-                                <template v-if='token.new'>
+                                <template v-if='!token.id'>
                                     <div class='col col--6'>
                                         <label>Expiration</label>
                                         <div class='w-full select-container'>
@@ -152,7 +152,7 @@
                                     </div>
 
                                     <div class='col col--6'>
-                                        <template v-if='token.new && token.expiry === "expiration"'>
+                                        <template v-if='!token.id && token.expiry === "expiration"'>
                                             <label>Hours to expiration</label>
                                             <input class='input mb6' v-model='token.hours' placeholder='Hours' />
                                         </template>
@@ -171,11 +171,11 @@
                                     <button @click='mode = "tokens"' class='btn btn--stroke round'>Cancel</button>
                                 </div>
                                 <div class='col col--6 py12'>
-                                    <template v-if='token.new'>
+                                    <template v-if='!token.id'>
                                         <button @click='setToken' class='fr btn round mr12'>Create Token</button>
                                     </template>
                                     <template v-else>
-                                        <button @click='deleteToken' class='fr btn btn--red round mr12'>Delete Token</button>
+                                        <button @click='deleteToken(token.id)' class='fr btn btn--red round mr12'>Delete Token</button>
                                     </template>
                                 </div>
                             </div>
@@ -205,7 +205,7 @@ export default {
                 newConf: ''
             },
             token: {
-                new: true,
+                id: false,
                 name: '',
                 token: false,
                 scope: 'read',
@@ -251,12 +251,12 @@ export default {
             this.token.token = false;
 
             if (token) {
-                this.token.new = false;
+                this.token.id = token.id;
                 this.token.name = token.name;
                 this.token.scope = token.scope;
                 this.token.expiry = token.expiry;
             } else {
-                this.token.new = true;
+                this.token.id = false;
                 this.token.name = '';
                 this.token.scope = 'read';
                 this.token.expiry = 'none';
@@ -264,7 +264,7 @@ export default {
             }
         },
         setToken: function() {
-            if (!this.token.new) this.$emit('error', new Error('Cannot alter existing token'));
+            if (!this.token.id) this.$emit('error', new Error('Cannot alter existing token'));
 
             window.hecate.user.token.create(this.token, (err, token) => {
                 if (err) return this.$emit('error', err);
@@ -272,12 +272,15 @@ export default {
                 console.error(token);
             });
         },
-        deleteToken: function() {
-            // TODO
-            // Problem here- tokens need some sort of ID to identify them that is not the token
-            // Otherwise I can't delete them....
+        deleteToken: function(token) {
+            window.hecate.user.token.delete(token, (err) => {
+                if (err) return this.$emit('error', err);
 
-            this.getTokens();
+                this.getTokens();
+
+                this.mode = 'tokens';
+            });
+
         },
         createUrl: function() {
             fetch(`${window.location.protocol}//${window.location.host}/api/user/token`, {

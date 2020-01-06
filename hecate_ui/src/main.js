@@ -201,8 +201,8 @@ window.hecate = {
             delete: function(token, cb) {
                 if (!token) return cb(new Error('Token ID required'));
 
-                fetch(`${window.location.protocol}//${window.location.host}/api/user/token`, {
-                    method: 'POST',
+                fetch(`${window.location.protocol}//${window.location.host}/api/user/token/${token}`, {
+                    method: 'DELETE',
                     credentials: 'same-origin',
                     headers: new Headers({
                         'Content-Type': 'application/json'
