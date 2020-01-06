@@ -45,47 +45,59 @@ impl Token {
     }
 
     pub fn create(conn: &impl postgres::GenericConnection, name: impl ToString, uid: i64, hours: Option<i64>, scope: Scope) -> Result<Self, HecateError> {
-        let hours: Option<String> = match hours {
-            None => None,
-            Some(hours) => Some(format!("{} hours", hours))
-        };
-
-        let hours_str = match hours {
-            None => "$3,",
-            Some(_) => "now() + ($3::TEXT)::INTERVAL,"
-        };
-
-        match conn.query(format!("
-            INSERT INTO users_tokens (id, name, uid, token, expiry, scope)
-                VALUES (
-                    uuid_generate_v4(),
-                    $1,
-                    $2,
-                    md5(random()::TEXT),
-                    {hours}
-                    $4
-                )
-                RETURNING
-                    id::TEXT,
-                    name,
-                    uid,
-                    token,
-                    expiry::TEXT
-        ",
-            hours = hours_str
-        ).as_str(), &[ &name.to_string(), &uid, &hours, &scope.to_string() ]) {
-            Ok(res) => {
-                let id: String = res.get(0).get(0);
-                let name: String = res.get(0).get(1);
-                let uid: i64 = res.get(0).get(2);
-                let token: String = res.get(0).get(3);
-                let expiry: Option<String> = res.get(0).get(4);
-
-                Ok(Token::new(Some(id), name, uid, Some(token), expiry, scope))
+        let res = match hours {
+            None => match conn.query("
+                INSERT INTO users_tokens (id, name, uid, token, scope)
+                    VALUES (
+                        uuid_generate_v4(),
+                        $1,
+                        $2,
+                        md5(random()::TEXT),
+                        $3
+                    )
+                    RETURNING
+                        id::TEXT,
+                        name,
+                        uid,
+                        token,
+                        expiry::TEXT
+            ", &[ &name.to_string(), &uid, &scope.to_string() ]) {
+                Err(err) => { return Err(HecateError::from_db(err)); },
+                Ok(res) => res
             },
-            Err(err) => Err(HecateError::from_db(err))
-        }
+            Some(hours) => {
+                let hours = format!("{} hours", hours);
 
+                match conn.query("
+                    INSERT INTO users_tokens (id, name, uid, token, expiry, scope)
+                        VALUES (
+                            uuid_generate_v4(),
+                            $1,
+                            $2,
+                            md5(random()::TEXT),
+                            {hours}
+                            $4
+                        )
+                        RETURNING
+                            id::TEXT,
+                            name,
+                            uid,
+                            token,
+                            expiry::TEXT
+                ", &[ &name.to_string(), &uid, &hours, &scope.to_string() ]) {
+                    Err(err) => { return Err(HecateError::from_db(err)); },
+                    Ok(res) => res
+                }
+            }
+        };
+
+        let id: String = res.get(0).get(0);
+        let name: String = res.get(0).get(1);
+        let uid: i64 = res.get(0).get(2);
+        let token: String = res.get(0).get(3);
+        let expiry: Option<String> = res.get(0).get(4);
+
+        Ok(Token::new(Some(id), name, uid, Some(token), expiry, scope))
     }
 
     pub fn get(conn: &impl postgres::GenericConnection, uid: i64, token: &str) -> Result<Self, HecateError> {

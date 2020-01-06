@@ -124,13 +124,13 @@
                                 <div class='col col--12 grid grid--gut12'>
                                     <div class='col col--8'>
                                         <label>Token Name</label>
-                                        <input class='input mb6' v-model='token.name' placeholder='Token Name' />
+                                        <input :disabled='!!token.id' class='input mb6' v-model='token.name' placeholder='Token Name' />
                                     </div>
 
                                     <div class='col col--4'>
                                         <label>Scope</label>
                                         <div class='w-full select-container'>
-                                            <select v-model='token.scope' class='select'>
+                                            <select :disabled='!!token.id' v-model='token.scope' class='select'>
                                                 <option>read</option>
                                                 <option>full</option>
                                             </select>
@@ -143,7 +143,7 @@
                                     <div class='col col--6'>
                                         <label>Expiration</label>
                                         <div class='w-full select-container'>
-                                            <select v-model='token.expiry' class='select'>
+                                            <select :disabled='!!token.id' v-model='token.expiry' class='select'>
                                                 <option>none</option>
                                                 <option>expiration</option>
                                             </select>
@@ -161,23 +161,35 @@
                                 <template v-else>
                                     <div class='col col--6'>
                                         <label>Expiration</label>
-                                        <input class='input mb6' v-model='token.expiry' placeholder='Expiration' />
+                                        <input class='input mb6' :disabled='!!token.id' v-model='token.expiry' placeholder='Expiration' />
                                     </div>
                                     <div class='col col--6'>
                                     </div>
                                 </template>
 
-                                <div class='col col--6 py12'>
-                                    <button @click='mode = "tokens"' class='btn btn--stroke round'>Cancel</button>
-                                </div>
-                                <div class='col col--6 py12'>
-                                    <template v-if='!token.id'>
-                                        <button @click='setToken' class='fr btn round mr12'>Create Token</button>
-                                    </template>
-                                    <template v-else>
-                                        <button @click='deleteToken(token.id)' class='fr btn btn--red round mr12'>Delete Token</button>
-                                    </template>
-                                </div>
+                                <template v-if='token.token'>
+                                    <div class='col col--12 pt24 pb12'>
+                                        Your token has been created. Copy this token now as it will only be shown now
+
+                                        <pre class='pre my6 w-full'><code class='w-full' v-text='token.token'></code></pre>
+                                    </div>
+                                    <div class='col col--12'>
+                                        <button @click='mode = "tokens"' class='fr btn btn--stroke round mr12'>Done</button>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <div class='col col--6 py12'>
+                                        <button @click='mode = "tokens"' class='btn btn--stroke round'>Cancel</button>
+                                    </div>
+                                    <div class='col col--6 py12'>
+                                        <template v-if='!token.id'>
+                                            <button @click='setToken' class='fr btn round mr12'>Create Token</button>
+                                        </template>
+                                        <template v-else>
+                                            <button @click='deleteToken(token.id)' class='fr btn btn--red round mr12'>Delete Token</button>
+                                        </template>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                     </div>
@@ -264,12 +276,16 @@ export default {
             }
         },
         setToken: function() {
-            if (!this.token.id) this.$emit('error', new Error('Cannot alter existing token'));
+            if (this.token.id) this.$emit('error', new Error('Cannot alter existing token'));
 
             window.hecate.user.token.create(this.token, (err, token) => {
                 if (err) return this.$emit('error', err);
 
-                console.error(token);
+                this.token.id = token.id;
+                this.token.token = token.token;
+                this.token.expiry = token.expiry;
+
+                this.getTokens();
             });
         },
         deleteToken: function(token) {
