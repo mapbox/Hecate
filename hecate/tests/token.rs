@@ -249,6 +249,70 @@ mod test {
             }
         }
 
+        { // Test a token with no expiration
+            let token_id: String;
+            let token: String;
+
+            { // Create Full Token
+                let client = reqwest::Client::new();
+
+                let mut resp = client.post("http://0.0.0.0:8000/api/user/token")
+                    .body(r#"{
+                        "name": "No Expiry",
+                        "scope": "full"
+                    }"#)
+                    .basic_auth("ingalls", Some("yeahehyeah"))
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .send()
+                    .unwrap();
+
+                let json_body: serde_json::value::Value = resp.json().unwrap();
+
+                assert_eq!(json_body["name"], json!("No Expiry"));
+                assert_eq!(json_body["uid"], json!(1));
+
+                token_id = json_body["id"].as_str().unwrap().to_string();
+                token = json_body["token"].as_str().unwrap().to_string();
+
+                assert!(resp.status().is_success());
+            }
+
+            { // Access the Tokens List
+                let client = reqwest::Client::new();
+                let mut resp = client.get("http://0.0.0.0:8000/api/user/tokens")
+                    .basic_auth("ingalls", Some("yeahehyeah"))
+                    .send()
+                    .unwrap();
+
+                assert_eq!(resp.status().as_u16(), 200);
+
+                let json_body: serde_json::value::Value = resp.json().unwrap();
+
+                assert_eq!(json_body.as_array().unwrap().len(), 1);
+            }
+
+            { // Access the capabilities (READ scope) endpoint without token
+                let resp = reqwest::get("http://0.0.0.0:8000/api/capabilities").unwrap();
+                assert_eq!(resp.status().as_u16(), 401);
+            }
+
+            { // Access the capabilities (READ scope) endpoint with token
+                let resp = reqwest::get(format!("http://0.0.0.0:8000/token/{}/api/capabilities", token).as_str()).unwrap();
+                assert_eq!(resp.status().as_u16(), 200);
+            }
+
+            { // Delete Token Using UUID
+                let client = reqwest::Client::new();
+
+                let resp = client.delete(format!("http://0.0.0.0:8000/api/user/token/{}", token_id).as_str())
+                    .basic_auth("ingalls", Some("yeahehyeah"))
+                    .send()
+                    .unwrap();
+
+                assert_eq!(resp.status().as_u16(), 200);
+            }
+        }
+
         server.kill().unwrap();
     }
 }

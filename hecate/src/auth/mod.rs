@@ -413,7 +413,10 @@ impl Auth {
                     users
                 WHERE
                     token = $1
-                    AND now() < expiry
+                    AND (
+                        expiry IS NULL
+                        OR now() < expiry
+                    )
                     AND users_tokens.uid = users.id
             ", &[ &self.token.as_ref().unwrap() ]) {
                 Ok(res) => {
