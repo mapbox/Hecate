@@ -10,6 +10,13 @@
 
 # Version History
 
+## v0.85.0
+
+- :tada: [UI] Add ability to list & manage user's auth tokens
+- :tada: Add token listing endpoint
+- :rocket: Give each token a unique ID that it can be deleted with
+- :rocket: Add ability to create non-expiring API tokens
+
 ## v0.84.0
 
 - :tada: Add properties to VT output

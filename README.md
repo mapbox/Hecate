@@ -856,6 +856,98 @@ of this guide
 curl -X GET 'http://localhost:8000/api/auth'
 ```
 
+---
+
+#### `GET` `/api/user/tokens`
+
+Return a JSON array containing all of the tokens associated with the requesting user's account
+
+Note: The token itself will only ever be returned once, when it is created
+
+*Example*
+
+```bash
+curl -X GET \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/tokens
+```
+
+---
+
+#### `GET` `/api/user/token/<token|id>`
+
+Retrieve metadata about a given token
+
+Note: The token itself will only ever be returned once, when it is created
+
+*Options*
+
+| Option    | Notes |
+| :-------: | ----- |
+| `<id>`    | `REQUIRED` UUID of the token to fetch |
+| `<token>` | `REQUIRED` The Token itself to fetch |
+
+Note: Either the `<id>` or the `<token>` must be used.
+
+*Example*
+
+```bash
+curl -X GET \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/token/123-456-789'
+```
+
+---
+
+#### `POST` `/api/user/token`
+
+Given a JSON object, create a new API token
+
+*Body*
+
+| Option    | Notes |
+| :-------: | ----- |
+| `name`    | `OPTIOANL` The name of the token to create|
+| `scope`   | `OPTIONAL` `full` or `read` (default) |
+| `hours`   | `OPTIONAL` Number of hours until the token should expire, `undefined` for permanent tokens |
+
+*Example*
+
+```bash
+curl
+    -X POST
+    -H "Content-Type: application/json" \
+    -d '{ "name": "Token Name", "hours": 10, "scope": "full" }' \
+    -u 'username:password' \
+    'http://localhost:8000/api/user/token'
+
+```
+
+---
+
+#### `DELETE` `/api/user/token/<token|id>`
+
+Permanently delete a given API token
+
+*Options*
+
+| Option    | Notes |
+| :-------: | ----- |
+| `<id>`    | `REQUIRED` UUID of the token to fetch |
+| `<token>` | `REQUIRED` The Token itself to fetch |
+
+Note: Either the `<id>` or the `<token>` must be used.
+
+
+*Example*
+
+```bash
+curl
+    -X DELETE
+    -u 'username:password' \
+    'http://localhost:8000/api/user/token/123-456-789'
+```
+
 </details>
 
 ---

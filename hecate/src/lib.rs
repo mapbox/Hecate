@@ -224,6 +224,7 @@ pub fn start(
                     )
                     .service(web::resource("token/{token}")
                         .route(web::delete().to(user_token_delete))
+                        .route(web::get().to(user_token))
                     )
                     .service(web::resource("{uid}")
                         .route(web::get().to(user_info))
@@ -767,6 +768,27 @@ fn user_tokens(
 
     match serde_json::to_value(tokens) {
         Ok(tokens) => Ok(Json(tokens)),
+        Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
+    }
+}
+
+fn user_token(
+    conn: web::Data<DbReplica>,
+    auth: auth::Auth,
+    auth_rules: web::Data<auth::AuthContainer>,
+    token: web::Path<String>
+) -> Result<Json<serde_json::Value>, HecateError> {
+    auth::check(&auth_rules.0.user.info, auth::RW::Read, &auth)?;
+
+    let uid = match auth.uid {
+        Some(uid) => uid,
+        None => { return Err(HecateError::generic(401)); }
+    };
+
+    let token = user::Token::get(&*conn.get()?, uid, &token.into_inner())?;
+
+    match serde_json::to_value(token) {
+        Ok(token) => Ok(Json(token)),
         Err(_) => Err(HecateError::new(500, String::from("Internal Server Error"), None))
     }
 }

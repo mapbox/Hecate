@@ -106,20 +106,21 @@ impl Token {
                 id::TEXT,
                 name,
                 uid,
-                token,
                 expiry::TEXT,
                 scope
             FROM
                 users_tokens
             WHERE
-                uid = $1,
-                token = $2
+                uid = $1
+                AND (
+                    token = $2
+                    OR id = $2
+                )
         ", &[ &uid, &token ]) {
             Ok(res) => {
                 let id: String = res.get(0).get(0);
                 let name: String = res.get(0).get(1);
                 let uid: i64 = res.get(0).get(2);
-                let token: String = res.get(0).get(3);
                 let expiry: Option<String> = res.get(0).get(4);
                 let scope: String = res.get(0).get(5);
 
@@ -128,7 +129,7 @@ impl Token {
                     _ => Scope::Read
                 };
 
-                Ok(Token::new(Some(id), name, uid, Some(token), expiry, scope))
+                Ok(Token::new(Some(id), name, uid, None, expiry, scope))
             },
             Err(err) => Err(HecateError::from_db(err))
         }
