@@ -303,28 +303,16 @@ export default {
 
         },
         createUrl: function() {
-            fetch(`${window.location.protocol}//${window.location.host}/api/user/token`, {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: new Headers({
-                    'Content-Type': 'application/json'
-                }),
-                body: JSON.stringify({
-                    name: 'JOSM Token',
-                    hours: 336
-                })
-            }).then((response) => {
-                if (response.status !== 200) {
-                    return this.error = response.status + ':' + response.statusText;
-                }
+            window.hecate.user.token.create({
+                name: 'JOSM Token',
+                hours: 336,
+                scope: 'read'
+            }, (err, token) => {
+                if (err) return this.$emit('error', err);
 
-                return response.json();
-            }).then((user) => {
-                this.url = `${window.location.origin}/token/${user.token}/api`;
-            }).catch((err) => {
-                this.error = err.message;
+                this.url = `${window.location.origin}/token/${token.token}/api`;
+                this.getTokens();
             });
-
         },
         setPassword: function() {
             if (!this.pw.newPass || !this.pw.newConf || !this.pw.current) {
