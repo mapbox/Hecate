@@ -291,6 +291,39 @@ mod test {
                 assert_eq!(json_body.as_array().unwrap().len(), 1);
             }
 
+            { // Get Token By Token
+                let client = reqwest::Client::new();
+                let mut resp = client.get(format!("http://0.0.0.0:8000/api/user/token/{}", token).as_str())
+                    .basic_auth("ingalls", Some("yeahehyeah"))
+                    .send()
+                    .unwrap();
+
+                assert_eq!(resp.status().as_u16(), 200);
+
+                let json_body: serde_json::value::Value = resp.json().unwrap();
+
+                println!("{:?}", json_body);
+                assert_eq!(json_body["name"], json!("No Expiry"));
+                assert_eq!(json_body["scope"], json!("Full"));
+                assert_eq!(json_body["id"], json!(token_id));
+            }
+
+            { // Get Token By Token ID
+                let client = reqwest::Client::new();
+                let mut resp = client.get(format!("http://0.0.0.0:8000/api/user/token/{}", token_id).as_str())
+                    .basic_auth("ingalls", Some("yeahehyeah"))
+                    .send()
+                    .unwrap();
+
+                assert_eq!(resp.status().as_u16(), 200);
+
+                let json_body: serde_json::value::Value = resp.json().unwrap();
+
+                assert_eq!(json_body["name"], json!("No Expiry"));
+                assert_eq!(json_body["scope"], json!("Full"));
+                assert_eq!(json_body["id"], json!(token_id));
+            }
+
             { // Access the capabilities (READ scope) endpoint without token
                 let resp = reqwest::get("http://0.0.0.0:8000/api/capabilities").unwrap();
                 assert_eq!(resp.status().as_u16(), 401);

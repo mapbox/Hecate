@@ -103,10 +103,10 @@ impl Token {
     pub fn get(conn: &impl postgres::GenericConnection, uid: i64, token: &str) -> Result<Self, HecateError> {
         match conn.query("
             SELECT
-                id::TEXT,
+                id::TEXT AS id,
                 name,
                 uid,
-                expiry::TEXT,
+                expiry::TEXT AS expiry,
                 scope
             FROM
                 users_tokens
@@ -114,15 +114,15 @@ impl Token {
                 uid = $1
                 AND (
                     token = $2
-                    OR id = $2
+                    OR id::TEXT = $2
                 )
         ", &[ &uid, &token ]) {
             Ok(res) => {
                 let id: String = res.get(0).get(0);
                 let name: String = res.get(0).get(1);
                 let uid: i64 = res.get(0).get(2);
-                let expiry: Option<String> = res.get(0).get(4);
-                let scope: String = res.get(0).get(5);
+                let expiry: Option<String> = res.get(0).get(3);
+                let scope: String = res.get(0).get(4);
 
                 let scope = match scope.as_str() {
                     "full" => Scope::Full,
