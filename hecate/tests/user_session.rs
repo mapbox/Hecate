@@ -84,7 +84,7 @@ mod test {
                 .unwrap();
 
             let json_body: serde_json::value::Value = token_resp.json().unwrap();
-            assert_eq!(json_body["name"], json!("Access Token"));
+            assert_eq!(json_body["name"], json!("JOSM Token"));
             assert_eq!(json_body["uid"], json!(1));
             assert!(token_resp.status().is_success());
             token = json_body["token"].as_str().unwrap().to_string();
