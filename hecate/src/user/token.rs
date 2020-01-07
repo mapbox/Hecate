@@ -75,7 +75,7 @@ impl Token {
                             $1,
                             $2,
                             md5(random()::TEXT),
-                            {hours}
+                            now() + ($3::TEXT)::INTERVAL,
                             $4
                         )
                         RETURNING

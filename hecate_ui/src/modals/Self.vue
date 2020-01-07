@@ -278,7 +278,11 @@ export default {
         setToken: function() {
             if (this.token.id) this.$emit('error', new Error('Cannot alter existing token'));
 
-            window.hecate.user.token.create(this.token, (err, token) => {
+            window.hecate.user.token.create({
+                name: this.token.name,
+                hours: this.token.hours ? parseInt(this.token.hours) : undefined,
+                scope: this.token.scope
+            }, (err, token) => {
                 if (err) return this.$emit('error', err);
 
                 this.token.id = token.id;
