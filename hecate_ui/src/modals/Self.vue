@@ -29,7 +29,7 @@
 
                         <div class='py6 col col--12 border--gray-light border-b'>
                             <template v-if='mode === "token"'>
-                                <template v-if='token.id'>
+                                <template v-if='!token.id'>
                                     <span>Create a Token</span>
                                 </template>
                                 <template v-else>

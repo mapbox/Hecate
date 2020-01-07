@@ -752,11 +752,11 @@ fn user_delete_session(
 }
 
 fn user_tokens(
-    conn: web::Data<DbReadWrite>,
+    conn: web::Data<DbReplica>,
     auth: auth::Auth,
     auth_rules: web::Data<auth::AuthContainer>
 ) -> Result<Json<serde_json::Value>, HecateError> {
-    auth::check(&auth_rules.0.user.info, auth::RW::Full, &auth)?;
+    auth::check(&auth_rules.0.user.info, auth::RW::Read, &auth)?;
 
     let uid = match auth.uid {
         Some(uid) => uid,
