@@ -881,6 +881,7 @@ curl -X DELETE 'http://localhost:8000/api/tiles
 #### `GET` `/api/tiles/<z>/<x>/<y>`
 
 Request a vector tile for a given set of coordinates. A [Mapbox Vector Tile](https://www.mapbox.com/vector-tiles/) is returned.
+The layer of features is named `data`.
 
 *Options*
 
