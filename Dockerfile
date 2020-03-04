@@ -27,7 +27,6 @@ RUN apt-get update -y \
         wget \
         git \
         gcc \
-        git \
     && locale-gen en_US.UTF-8 \
     && bash -c "echo \"America/New_York\" > /etc/timezone"
 
