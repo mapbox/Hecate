@@ -23,7 +23,7 @@ impl futures::stream::Stream for PGStream {
 
     fn poll(&mut self) -> Result<futures::Async<Option<Self::Item>>, Self::Error> {
         println!("Fetching items from {}", &self.cursor);
-        println!("{Starting polling}");
+        println!("Starting polling");
         let rows = match self.trans.query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[]) {
             Ok(rows) => rows,
             Err(err) => { return Err(HecateError::new(500, err.to_string(), None)); }
