@@ -28,6 +28,7 @@ impl futures::stream::Stream for PGStream {
             Ok(rows) => rows,
             Err(err) => { return Err(HecateError::new(500, err.to_string(), None)); }
         };
+        println!("{}", rows.len());
         if rows.is_empty() {
             if self.eot {
                 // The Stream is complete
