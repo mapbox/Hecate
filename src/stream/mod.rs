@@ -26,7 +26,9 @@ impl futures::stream::Stream for PGStream {
         println!("Starting polling");
         let rows = match self.trans.query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[]) {
             Ok(rows) => rows,
-            Err(err) => { return Err(HecateError::new(500, err.to_string(), None)); }
+            Err(err) => { 
+                println!("ERROR: {}", err.to_string());
+                return Err(HecateError::new(500, err.to_string(), None)); }
         };
         println!("{}", rows.len());
         if rows.is_empty() {
@@ -69,6 +71,7 @@ impl std::io::Read for PGStream {
                 let rows = match self.trans.query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[]) {
                     Ok(rows) => rows,
                     Err(err) => {
+                        println!("ERROR: {}", err.to_string());
                         return Err(Error::new(ErrorKind::Other, format!("{:?}", err)))
                     }
                 };
