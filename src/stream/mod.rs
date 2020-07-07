@@ -1,8 +1,8 @@
-use postgres::types::ToSql;
-use std::io::{Error, ErrorKind};
 use crate::err::HecateError;
 use bytes::Bytes;
 use futures::Async;
+use postgres::types::ToSql;
+use std::io::{Error, ErrorKind};
 
 use std::mem;
 
@@ -14,7 +14,7 @@ pub struct PGStream {
     pending: Option<Vec<u8>>,
     trans: postgres::transaction::Transaction<'static>,
     #[allow(dead_code)]
-    conn: Box<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>>
+    conn: Box<r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>>,
 }
 
 impl futures::stream::Stream for PGStream {
@@ -22,15 +22,20 @@ impl futures::stream::Stream for PGStream {
     type Error = HecateError;
 
     fn poll(&mut self) -> Result<futures::Async<Option<Self::Item>>, Self::Error> {
+        let mut count = 0u32;
         println!("Fetching items from {}", &self.cursor);
-        println!("Starting polling");
-        let rows = match self.trans.query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[]) {
+        let rows = match self
+            .trans
+            .query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[])
+        {
             Ok(rows) => rows,
-            Err(err) => { 
-                println!("ERROR: {}", err.to_string());
-                return Err(HecateError::new(500, err.to_string(), None)); }
+            Err(err) => {
+                println!("polling error: {}", err.to_string());
+                return Err(HecateError::new(500, err.to_string(), None));
+            }
         };
-        println!("{}", rows.len());
+        count += rows.len() as u32;
+        println!("counter at {}", count);
         if rows.is_empty() {
             if self.eot {
                 // The Stream is complete
@@ -68,11 +73,14 @@ impl std::io::Read for PGStream {
                 write = self.pending.clone().unwrap();
                 self.pending = None;
             } else {
-                let rows = match self.trans.query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[]) {
+                let rows = match self
+                    .trans
+                    .query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[])
+                {
                     Ok(rows) => rows,
                     Err(err) => {
-                        println!("ERROR: {}", err.to_string());
-                        return Err(Error::new(ErrorKind::Other, format!("{:?}", err)))
+                        println!("reading error: {}", err.to_string());
+                        return Err(Error::new(ErrorKind::Other, format!("{:?}", err)));
                     }
                 };
 
@@ -124,25 +132,26 @@ impl std::io::Read for PGStream {
 }
 
 impl PGStream {
-    pub fn new(pg_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>, cursor: String, query: String, params: &[&dyn ToSql]) -> Result<Self, HecateError> {
+    pub fn new(
+        pg_conn: r2d2::PooledConnection<r2d2_postgres::PostgresConnectionManager>,
+        cursor: String,
+        query: String,
+        params: &[&dyn ToSql],
+    ) -> Result<Self, HecateError> {
         let conn = Box::new(pg_conn);
 
-        let trans: postgres::transaction::Transaction = unsafe {
-            mem::transmute(conn.transaction().unwrap())
-        };
+        let trans: postgres::transaction::Transaction =
+            unsafe { mem::transmute(conn.transaction().unwrap()) };
 
         match trans.execute(&*query, params) {
-            Ok(_) => {
-                Ok(PGStream {
-                    eot: false,
-                    cursor,
-                    pending: None,
-                    trans,
-                    conn
-                })
-            },
-            Err(err) => Err(HecateError::from_db(err))
+            Ok(_) => Ok(PGStream {
+                eot: false,
+                cursor,
+                pending: None,
+                trans,
+                conn,
+            }),
+            Err(err) => Err(HecateError::from_db(err)),
         }
     }
 }
-
