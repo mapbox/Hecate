@@ -22,7 +22,6 @@ impl futures::stream::Stream for PGStream {
     type Error = HecateError;
 
     fn poll(&mut self) -> Result<futures::Async<Option<Self::Item>>, Self::Error> {
-        let mut count = 0u32;
         println!("Fetching items from {}", &self.cursor);
         let rows = match self
             .trans
@@ -34,8 +33,6 @@ impl futures::stream::Stream for PGStream {
                 return Err(HecateError::new(500, err.to_string(), None));
             }
         };
-        count += rows.len() as u32;
-        println!("counter at {}", count);
         if rows.is_empty() {
             if self.eot {
                 // The Stream is complete
@@ -143,6 +140,7 @@ impl PGStream {
         let trans: postgres::transaction::Transaction =
             unsafe { mem::transmute(conn.transaction().unwrap()) };
 
+        println!("executing trans");
         match trans.execute(&*query, params) {
             Ok(_) => Ok(PGStream {
                 eot: false,
@@ -151,7 +149,10 @@ impl PGStream {
                 trans,
                 conn,
             }),
-            Err(err) => Err(HecateError::from_db(err)),
+            Err(err) => {
+                println!("stream error: {}", err.to_string());
+                Err(HecateError::from_db(err))
+            },
         }
     }
 }
