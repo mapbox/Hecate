@@ -25,7 +25,7 @@ impl futures::stream::Stream for PGStream {
         println!("Fetching items from {}", &self.cursor);
         let rows = match self
             .trans
-            .query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[])
+            .query(&*format!("FETCH 500 FROM {};", &self.cursor), &[])
         {
             Ok(rows) => rows,
             Err(err) => {
@@ -72,7 +72,7 @@ impl std::io::Read for PGStream {
             } else {
                 let rows = match self
                     .trans
-                    .query(&*format!("FETCH 1000 FROM {};", &self.cursor), &[])
+                    .query(&*format!("FETCH 500 FROM {};", &self.cursor), &[])
                 {
                     Ok(rows) => rows,
                     Err(err) => {
