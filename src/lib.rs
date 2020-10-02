@@ -84,14 +84,14 @@ pub fn start(
 
     HttpServer::new(move || {
         App::new()
+            .wrap(middleware::NormalizePath)
+            .wrap(middleware::Logger::default())
             .wrap(Cors::new()
                 .allowed_origin("https://labs.mapbox.com/")
                 .allowed_origin("http://localhost:3000/")
                 .allowed_methods(vec!["GET", "POST"])
                 .supports_credentials()
             )
-            .wrap(middleware::NormalizePath)
-            .wrap(middleware::Logger::default())
             .wrap(auth::middleware::EnforceAuth::new(db_replica.clone(), default.clone()))
             .wrap(middleware::Compress::default())
             .data(auth_rules.clone())
