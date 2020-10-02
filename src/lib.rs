@@ -30,11 +30,8 @@ pub mod osm;
 pub mod user;
 pub mod auth;
 
-<<<<<<< HEAD
 use actix_http::error::ResponseError;
-=======
 use actix_cors::Cors;
->>>>>>> add cors config
 use actix_http::httpmessage::HttpMessage;
 use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, middleware};
 use futures::{Future, Stream, future::Either};
