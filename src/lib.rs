@@ -30,7 +30,11 @@ pub mod osm;
 pub mod user;
 pub mod auth;
 
+<<<<<<< HEAD
 use actix_http::error::ResponseError;
+=======
+use actix_cors::Cors;
+>>>>>>> add cors config
 use actix_http::httpmessage::HttpMessage;
 use actix_web::{web, web::Json, App, HttpResponse, HttpRequest, HttpServer, middleware};
 use futures::{Future, Stream, future::Either};
@@ -83,6 +87,13 @@ pub fn start(
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Cors::new()
+                .allowed_origin("https://labs.mapbox.com/")
+                .allowed_origin("http://localhost:3000/")
+                .allowed_methods(vec!["GET", "POST"])
+                .supports_credentials(true)
+                .finish()
+            )
             .wrap(middleware::NormalizePath)
             .wrap(middleware::Logger::default())
             .wrap(auth::middleware::EnforceAuth::new(db_replica.clone(), default.clone()))
