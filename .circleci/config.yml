@@ -44,7 +44,7 @@ jobs:
                 name: "Install rust"
                 command: |
                   curl https://sh.rustup.rs -sSf > /tmp/rustup.sh \
-                  && sh /tmp/rustup.sh -y --default-toolchain 1.38.0 \
+                  && sh /tmp/rustup.sh -y --default-toolchain 1.39.0 \
                   && echo "export PATH=$HOME/.cargo/bin:$PATH" >> $BASH_ENV
             - run:
                 name: "Build Frontend"
